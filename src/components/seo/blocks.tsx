@@ -30,7 +30,7 @@ export function Breadcrumbs({ items, className = "mb-3" }: { items: { name: stri
 export function AnswerBox({ title = "Kısa cevap", children, updated }: { title?: string; children: React.ReactNode; updated?: string }) {
   return (
     <div className="answer-box rounded-2xl border-l-4 border-brand bg-tint p-4 md:p-5">
-      <p className="mb-1 flex items-center gap-1.5 text-[12px] font-extrabold tracking-wider text-brand uppercase">
+      <p className="mb-1.5 flex items-center gap-1.5 text-[14px] font-extrabold text-brand">
         <Sparkles size={14} /> {title}
       </p>
       <div className="text-[15.5px] leading-relaxed text-deep">{children}</div>
@@ -53,7 +53,7 @@ export function FaqSection({ items, title = "Sık sorulan sorular", id = "sss", 
               <h3 className="text-[15.5px]">{f.q}</h3>
               <ChevronDown size={18} className="mt-0.5 shrink-0 text-mute transition group-open:rotate-180" />
             </summary>
-            <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line text-[#3c4652]">{f.a}</p>
+            <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line text-[#3f3f46]">{f.a}</p>
           </details>
         ))}
       </div>

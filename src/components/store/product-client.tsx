@@ -36,7 +36,7 @@ export function BuyBox({ productId, name, max, disabled }: { productId: string; 
   const [q, setQ] = useState(1);
   return (
     <div className="flex gap-2">
-      <div className="flex h-12 items-center rounded-lg border border-[#d5d8de]">
+      <div className="flex h-12 items-center rounded-lg border border-[#d6d6d9]">
         <button className="grid h-full w-11 place-items-center" onClick={() => setQ(Math.max(1, q - 1))} aria-label="Azalt"><Minus size={16} /></button>
         <span className="w-8 text-center font-bold">{q}</span>
         <button className="grid h-full w-11 place-items-center" onClick={() => setQ(Math.min(Math.max(1, max), q + 1))} aria-label="Artır"><Plus size={16} /></button>

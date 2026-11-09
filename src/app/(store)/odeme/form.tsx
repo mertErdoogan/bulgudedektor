@@ -29,7 +29,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 function Opt({ checked, onClick, icon, title, desc }: { checked: boolean; onClick: () => void; icon: React.ReactNode; title: React.ReactNode; desc?: React.ReactNode }) {
   return (
     <button type="button" onClick={onClick} className={cn("flex w-full items-center gap-3 rounded-xl border-[1.5px] p-3.5 text-left", checked ? "border-brand bg-tint" : "border-line")}>
-      <span className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2", checked ? "border-brand" : "border-[#b8bec7]")}>{checked ? <span className="h-2.5 w-2.5 rounded-full bg-brand" /> : null}</span>
+      <span className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2", checked ? "border-brand" : "border-[#bdbdc2]")}>{checked ? <span className="h-2.5 w-2.5 rounded-full bg-brand" /> : null}</span>
       <span className="flex-1 text-sm"><b>{title}</b>{desc ? <span className="block text-mute">{desc}</span> : null}</span>
       <span className="text-mute">{icon}</span>
     </button>

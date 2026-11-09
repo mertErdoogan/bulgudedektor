@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  /* Arena Dedektör kurumsal renkleri: lacivert #19126B, logo kırmızısı #E03E2D, koyu #2B2C40 */
+  /* Arena Dedektör kurumsal renkleri: logo kırmızısı ve logo siyahı */
   --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Public Sans", ui-sans-serif, system-ui, sans-serif;
 
-  --color-brand: #19126b;
-  --color-brand-dark: #110c4d;
-  --color-deep: #2b2c40;
-  --color-pop: #e8e7f4;
-  --color-on-pop: #19126b;
-  --color-soft: #f4f5f7;
-  --color-tint: #ecebf6;
-  --color-link: #2a1fa0;
-  --color-accent: #e03e2d;
+  --color-brand: #d42e1e;
+  --color-brand-dark: #b02314;
+  --color-deep: #1d1d1f;
+  --color-pop: #fde8e5;
+  --color-on-pop: #a3200f;
+  --color-soft: #f5f5f5;
+  --color-tint: #fdf0ee;
+  --color-link: #c0281a;
+  --color-accent: #e73324;
   --color-accent-dark: #c32f20;
   --color-gold: #f2a900;
-  --color-line: #e4e6e8;
-  --color-mute: #646e78;
+  --color-line: #e5e5e5;
+  --color-mute: #66666b;
   --color-warn: #b45309;
   --color-warn-bg: #fdf3e2;
   --color-danger: #b42318;

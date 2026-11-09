@@ -15,7 +15,7 @@ export default async function SerialPage({ searchParams }: { searchParams: Promi
       <h1 className="font-display text-2xl font-extrabold">Cihazın orijinal mi?</h1>
       <p className="mt-1 text-sm text-mute">Seri numarası cihazın şasesinde veya kutunun üzerindeki etikette yazar. Sorgu, distribütör kayıtlarımızla karşılaştırılır.</p>
       <form className="mt-5 flex gap-2">
-        <input name="no" defaultValue={no} required placeholder="Seri no" className="h-12 flex-1 rounded-lg border border-[#d5d8de] px-4 font-mono uppercase" />
+        <input name="no" defaultValue={no} required placeholder="Seri no" className="h-12 flex-1 rounded-lg border border-[#d6d6d9] px-4 font-mono uppercase" />
         <button className="h-12 rounded-lg bg-brand px-5 font-extrabold text-white">Sorgula</button>
       </form>
       {no ? (

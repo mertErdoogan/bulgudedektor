@@ -132,12 +132,12 @@ export default async function Home() {
         case "TRUST":
           return (
             <section key={sec.id} className="container-x mt-10 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1.7fr_1fr_1fr_1fr]">
-              <form action="/seri-no" className="flex min-w-0 items-center gap-3 rounded-xl border border-[#dde0e6] bg-tint p-4">
+              <form action="/seri-no" className="flex min-w-0 items-center gap-3 rounded-xl border border-[#f3d6d1] bg-tint p-4">
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand text-white"><ShieldCheck size={24} /></span>
                 <span className="flex min-w-0 flex-1 flex-col gap-2">
                   <span><b>Cihazın orijinal mi?</b> <span className="text-[13px] text-mute">Seri numarasıyla distribütör kaydını kontrol et</span></span>
                   <span className="flex gap-2">
-                    <input name="no" required placeholder="Seri no" className="h-11 min-w-0 flex-1 rounded-lg border border-[#d5d8de] bg-white px-3" />
+                    <input name="no" required placeholder="Seri no" className="h-11 min-w-0 flex-1 rounded-lg border border-[#d6d6d9] bg-white px-3" />
                     <button className="h-11 shrink-0 rounded-lg bg-brand px-4 text-sm font-extrabold text-white">Sorgula</button>
                   </span>
                 </span>
@@ -189,7 +189,7 @@ export default async function Home() {
       ) : null}
       <section className="container-x mt-6">
         <h1 className="font-display text-[22px] leading-tight font-extrabold md:text-[28px]">Metal dedektörü ve define dedektörü: orijinal, faturalı, uzman desteğiyle</h1>
-        <p className="mt-2 max-w-4xl text-[15px] leading-relaxed text-[#3c4652]">{s.seo.aboutForAi}</p>
+        <p className="mt-2 max-w-4xl text-[15px] leading-relaxed text-[#3f3f46]">{s.seo.aboutForAi}</p>
       </section>
       {rendered}
       {posts.length ? (

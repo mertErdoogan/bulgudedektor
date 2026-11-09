@@ -56,7 +56,7 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
           <h1 className="font-display text-[26px] font-extrabold md:text-[32px]">{title}</h1>
-          {intro ? <div className="mt-2 text-[15px] leading-relaxed text-[#3c4652]">{intro}</div> : null}
+          {intro ? <div className="mt-2 text-[15px] leading-relaxed text-[#3f3f46]">{intro}</div> : null}
           {top ? <div className="mt-3">{top}</div> : null}
         </div>
         <Link href="/sihirbaz" className="flex shrink-0 items-center gap-3 rounded-xl bg-tint px-4 py-3 text-sm">

@@ -36,7 +36,7 @@ export default async function BlogIndex({ searchParams }: { searchParams: Promis
       />
       <Breadcrumbs items={[{ name: "Rehberler", path: "/blog" }]} />
       <h1 className="font-display text-[28px] font-extrabold md:text-[36px]">Dedektör rehberleri</h1>
-      <p className="mt-2 max-w-3xl text-[15px] text-[#3c4652]">Cihaz seçiminden ayarlara, sahada kullanımdan yasal mevzuata: sahada çalışan uzmanlarımızın sade ve doğrudan yanıtları.</p>
+      <p className="mt-2 max-w-3xl text-[15px] text-[#3f3f46]">Cihaz seçiminden ayarlara, sahada kullanımdan yasal mevzuata: sahada çalışan uzmanlarımızın sade ve doğrudan yanıtları.</p>
       {cats.length > 1 ? (
         <div className="scrollbar-none mt-5 flex gap-2 overflow-x-auto">
           <Link href="/blog" className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-bold ${!k ? "bg-deep text-white" : "border border-line"}`}>Tümü</Link>

@@ -63,7 +63,7 @@ export function CartView({ inst, freeThreshold, flatRate }: { inst: number; free
                 <Link href={`/urun/${l.slug}`} className="font-bold hover:text-link">{l.name}</Link>
                 <span className="text-xs text-mute">Birim {formatTL(l.unitPrice)}{l.error ? ` · ${l.error}` : ""}</span>
                 <div className="mt-auto flex items-center justify-between gap-2">
-                  <div className="flex h-10 items-center rounded-lg border border-[#d5d8de]">
+                  <div className="flex h-10 items-center rounded-lg border border-[#d6d6d9]">
                     <button className="grid h-full w-10 place-items-center" onClick={() => setQty(l.productId, l.quantity - 1)} aria-label="Azalt"><Minus size={15} /></button>
                     <span className="w-7 text-center font-bold">{l.quantity}</span>
                     <button className="grid h-full w-10 place-items-center disabled:opacity-30" disabled={l.quantity >= l.available} onClick={() => setQty(l.productId, l.quantity + 1)} aria-label="Artır"><Plus size={15} /></button>

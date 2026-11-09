@@ -56,7 +56,7 @@ export async function StoreHeader() {
           <div className="scrollbar-none flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto whitespace-nowrap">
             {header.map((m) => (
               <Link key={m.id} href={m.url} className={`rounded-lg px-3 py-2 text-sm font-bold text-white/95 hover:bg-white/10 hover:text-white ${m.highlight ? "text-white" : ""}`}>
-                {m.highlight ? <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle" /> : null}
+                {m.highlight ? <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-white align-middle" /> : null}
                 {m.label}
               </Link>
             ))}

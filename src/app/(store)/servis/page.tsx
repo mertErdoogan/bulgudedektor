@@ -17,8 +17,8 @@ export default async function ServicePublic({ searchParams }: { searchParams: Pr
       <h1 className="font-display text-2xl font-extrabold">Servis kaydı</h1>
       <p className="mt-1 text-sm text-mute">Yeni arıza kaydı için <Link href="/hesabim?t=servis" className="font-bold text-link">hesabından</Link> veya WhatsApp&apos;tan bize ulaş. Mevcut kaydını aşağıdan sorgula.</p>
       <form className="mt-5 flex flex-col gap-2">
-        <input name="no" defaultValue={sp.no} required placeholder="Servis no (SRV-00012)" className="h-12 rounded-lg border border-[#d5d8de] px-4" />
-        <input name="iletisim" defaultValue={sp.iletisim} required placeholder="Kayıttaki telefon veya e-posta" className="h-12 rounded-lg border border-[#d5d8de] px-4" />
+        <input name="no" defaultValue={sp.no} required placeholder="Servis no (SRV-00012)" className="h-12 rounded-lg border border-[#d6d6d9] px-4" />
+        <input name="iletisim" defaultValue={sp.iletisim} required placeholder="Kayıttaki telefon veya e-posta" className="h-12 rounded-lg border border-[#d6d6d9] px-4" />
         <button className="h-12 rounded-lg bg-brand font-extrabold text-white">Sorgula</button>
       </form>
       {sp.no && !r ? <p className="mt-4 font-semibold text-danger">Kayıt bulunamadı.</p> : null}

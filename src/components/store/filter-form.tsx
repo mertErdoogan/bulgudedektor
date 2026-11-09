@@ -71,7 +71,7 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
             {sp.amac ? <input type="hidden" name="amac" value={sp.amac[0]} /> : null}
             <div className="hidden border-b border-line pb-4 md:block">
               <label className="mb-2 block text-sm font-extrabold" htmlFor="sirala">Sırala</label>
-              <select id="sirala" name="sirala" defaultValue={sp.sirala?.[0] ?? ""} onChange={apply} className="h-10 w-full rounded-lg border border-[#d5d8de] px-3 text-sm">
+              <select id="sirala" name="sirala" defaultValue={sp.sirala?.[0] ?? ""} onChange={apply} className="h-10 w-full rounded-lg border border-[#d6d6d9] px-3 text-sm">
                 <option value="">Bu amaca en uygun</option>
                 <option value="fiyat-artan">Fiyat artan</option>
                 <option value="fiyat-azalan">Fiyat azalan</option>
@@ -86,8 +86,8 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
             <fieldset className="border-b border-line py-4">
               <legend className="mb-2 text-sm font-extrabold">Bütçe (TL)</legend>
               <div className="flex gap-2">
-                <input name="min" inputMode="numeric" placeholder="En az" defaultValue={sp.min?.[0]} className="h-10 w-full rounded-lg border border-[#d5d8de] px-3 text-sm" onBlur={apply} />
-                <input name="max" inputMode="numeric" placeholder="En çok" defaultValue={sp.max?.[0]} className="h-10 w-full rounded-lg border border-[#d5d8de] px-3 text-sm" onBlur={apply} />
+                <input name="min" inputMode="numeric" placeholder="En az" defaultValue={sp.min?.[0]} className="h-10 w-full rounded-lg border border-[#d6d6d9] px-3 text-sm" onBlur={apply} />
+                <input name="max" inputMode="numeric" placeholder="En çok" defaultValue={sp.max?.[0]} className="h-10 w-full rounded-lg border border-[#d6d6d9] px-3 text-sm" onBlur={apply} />
               </div>
             </fieldset>
             <div className="flex flex-col gap-2 py-4">

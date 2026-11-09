@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: { types: { "application/rss+xml": "/blog/rss.xml" } },
 };
 
-export const viewport: Viewport = { themeColor: "#19126B", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#D42E1E", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

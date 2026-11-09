@@ -91,7 +91,7 @@ export async function PostForm({ post }: { post?: Post }) {
               <div className="flex flex-col gap-1.5">
                 {cats.map((c) => (
                   <label key={c.id} className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="relatedCategoryIds" value={c.id} defaultChecked={post?.relatedCategoryIds.includes(c.id)} className="h-4 w-4 accent-[#19126b]" /> {c.name}
+                    <input type="checkbox" name="relatedCategoryIds" value={c.id} defaultChecked={post?.relatedCategoryIds.includes(c.id)} className="h-4 w-4 accent-[#d42e1e]" /> {c.name}
                   </label>
                 ))}
               </div>

@@ -24,7 +24,7 @@ export default async function GlossaryPage() {
       <JsonLd data={graph(definedTermSetLd(terms))} />
       <Breadcrumbs items={[{ name: "Dedektör sözlüğü", path: "/sozluk" }]} />
       <h1 className="font-display text-[28px] font-extrabold md:text-[36px]">Metal dedektörü sözlüğü</h1>
-      <p className="mt-2 text-[15px] text-[#3c4652]">Dedektör dünyasında sık geçen {terms.length} terimin kısa tanımı. Her tanım ilk cümlede doğrudan cevabı verir.</p>
+      <p className="mt-2 text-[15px] text-[#3f3f46]">Dedektör dünyasında sık geçen {terms.length} terimin kısa tanımı. Her tanım ilk cümlede doğrudan cevabı verir.</p>
       <nav className="mt-5 flex flex-wrap gap-1.5" aria-label="Harfler">
         {letters.map((l) => <a key={l} href={`#harf-${l}`} className="grid h-9 w-9 place-items-center rounded-lg border border-line text-sm font-bold hover:bg-soft">{l}</a>)}
       </nav>
@@ -36,7 +36,7 @@ export default async function GlossaryPage() {
               {groups.get(l)!.map((t) => (
                 <div key={t.id} id={t.id} className="scroll-mt-40 p-4">
                   <dt className="font-bold">{t.question}</dt>
-                  <dd className="mt-1 text-[15px] leading-relaxed text-[#3c4652]">{t.answer}</dd>
+                  <dd className="mt-1 text-[15px] leading-relaxed text-[#3f3f46]">{t.answer}</dd>
                 </div>
               ))}
             </dl>

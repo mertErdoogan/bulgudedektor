@@ -31,7 +31,7 @@ export function HeroSlider({ slides }: { slides: B[] }) {
             <picture>
               {s.mobileImageUrl ? <source media="(max-width: 767px)" srcSet={s.mobileImageUrl} /> : null}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.imageUrl} alt={s.title} className={cn("h-full w-full", wide ? "object-cover" : "object-contain bg-white p-6 md:pl-[45%]")} />
+              <img src={s.imageUrl} alt={s.title} className={cn("h-full w-full", wide ? (!s.showText && !s.mobileImageUrl ? "object-contain md:object-cover" : "object-cover") : "object-contain bg-white p-6 md:pl-[45%]")} />
             </picture>
             {s.showText ? (
               <span className={cn("absolute inset-y-0 left-0 flex max-w-[60%] flex-col justify-end gap-1 p-5 md:justify-center md:p-10", wide ? "bg-gradient-to-r from-black/55 to-transparent text-white" : "text-deep")}>

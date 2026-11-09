@@ -84,7 +84,7 @@ export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsa
       <div className="mt-6 flex flex-col gap-2.5">
         {q.opts.map((o) => (
           <button key={o.v} onClick={() => choose(o.v)} disabled={pending} className={cn("flex items-center gap-3 rounded-xl border-[1.5px] p-4 text-left hover:border-brand", a[q.key] === o.v ? "border-brand bg-tint" : "border-line")}>
-            <span className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2", a[q.key] === o.v ? "border-brand" : "border-[#b8bec7]")}>{a[q.key] === o.v ? <span className="h-2.5 w-2.5 rounded-full bg-brand" /> : null}</span>
+            <span className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2", a[q.key] === o.v ? "border-brand" : "border-[#bdbdc2]")}>{a[q.key] === o.v ? <span className="h-2.5 w-2.5 rounded-full bg-brand" /> : null}</span>
             <span><b className="text-[15.5px]">{o.l}</b>{o.d ? <span className="block text-sm text-mute">{o.d}</span> : null}</span>
           </button>
         ))}

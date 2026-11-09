@@ -21,7 +21,7 @@ export async function sendMail(to: string, subject: string, html: string) {
 }
 
 const wrap = (body: string, store: string) =>
-  `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#2b2c40"><p style="font-size:22px;font-weight:800">${store}</p>${body}<p style="color:#646e78;font-size:12px;margin-top:24px">Bu e-posta sipariş işlemin nedeniyle gönderildi.</p></div>`;
+  `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#1d1d1f"><p style="font-size:22px;font-weight:800">${store}</p>${body}<p style="color:#646e78;font-size:12px;margin-top:24px">Bu e-posta sipariş işlemin nedeniyle gönderildi.</p></div>`;
 
 export async function mailOrderPlaced(o: { id: string; number: number; email: string; total: number; paymentMethod: string; items: { name: string; quantity: number }[] }, link: string) {
   const s = await getSettings();
@@ -76,7 +76,7 @@ export async function mailReviewRequest(orderId: string) {
   const base = process.env.APP_URL || "";
   const list = items.map((i) => `<li style="margin:6px 0"><a href="${base}/urun/${i.slug}#yorumlar">${i.name} için yorum yaz →</a></li>`).join("");
   const google = s.store.googleReviewUrl
-    ? `<p style="margin-top:18px">Alışveriş deneyimini Google'da paylaşırsan, dedektör arayan başka birinin doğru mağazayı bulmasına yardım etmiş olursun:</p><p><a href="${s.store.googleReviewUrl}" style="display:inline-block;background:#19126b;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">Google'da değerlendir ★★★★★</a></p>`
+    ? `<p style="margin-top:18px">Alışveriş deneyimini Google'da paylaşırsan, dedektör arayan başka birinin doğru mağazayı bulmasına yardım etmiş olursun:</p><p><a href="${s.store.googleReviewUrl}" style="display:inline-block;background:#d42e1e;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">Google'da değerlendir ★★★★★</a></p>`
     : "";
   await sendMail(
     o.email,

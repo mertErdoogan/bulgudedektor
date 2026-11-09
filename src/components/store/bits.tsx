@@ -40,7 +40,7 @@ export function CompareToggle({ productId }: { productId: string }) {
   const on = compare.includes(productId);
   return (
     <button type="button" onClick={() => toggleCompare(productId)} className={cn("flex items-center gap-1.5 text-xs font-bold", on ? "text-brand" : "text-mute hover:text-deep")}>
-      <span className={cn("grid h-4 w-4 place-items-center rounded border-2", on ? "border-brand bg-brand text-white" : "border-[#b8bec7]")}>{on ? "✓" : ""}</span>
+      <span className={cn("grid h-4 w-4 place-items-center rounded border-2", on ? "border-brand bg-brand text-white" : "border-[#bdbdc2]")}>{on ? "✓" : ""}</span>
       Karşılaştır
     </button>
   );
@@ -85,7 +85,7 @@ export function MegaMenu({ categories, brands }: { categories: Cat[]; brands: { 
         <Menu size={16} /> Tüm kategoriler
       </button>
       {open && c ? (
-        <div className="absolute top-full left-0 z-40 flex w-[min(1000px,calc(100vw-48px))] overflow-hidden rounded-xl border border-line bg-white pt-0 shadow-2xl">
+        <div className="absolute top-full left-0 z-40 flex w-[min(1000px,calc(100vw-48px))] overflow-hidden rounded-xl border border-line bg-white pt-0 text-deep shadow-2xl">
           <ul className="w-72 shrink-0 bg-soft p-2">
             {categories.map((x, i) => (
               <li key={x.id}>

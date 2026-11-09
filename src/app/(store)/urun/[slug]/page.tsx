@@ -117,7 +117,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <Star size={15} className="fill-gold text-gold" /> <b>{rating.toFixed(1)}</b> <span className="text-mute">({p.reviews.length} yorum)</span>
             </a>
           ) : null}
-          {p.shortDescription ? <p className="text-[15px] leading-relaxed text-[#3c4652]">{p.shortDescription}</p> : null}
+          {p.shortDescription ? <p className="text-[15px] leading-relaxed text-[#3f3f46]">{p.shortDescription}</p> : null}
 
           <div className="rounded-2xl bg-soft p-4">
             <div className="flex flex-wrap items-baseline gap-x-3">
