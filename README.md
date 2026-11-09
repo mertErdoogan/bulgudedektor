@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bulgu Dedektör — e-ticaret mağazası + yönetim paneli
 
-## Getting Started
+Next.js 15 (App Router) · TypeScript · PostgreSQL + Drizzle ORM · Tailwind CSS · iyzico
 
-First, run the development server:
+Tek projede: müşteri mağazası (`/`), yönetim paneli (`/admin`), ödeme ve API'ler.
+
+## Hızlı başlangıç (yerel)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env            # DATABASE_URL ve AUTH_SECRET'ı doldur
+npm install
+npm run db:migrate              # tabloları oluşturur
+npm run db:seed                 # DEMO veri (mevcut veriyi SİLER)
+PAYMENT_SIMULATION=1 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Mağaza: http://localhost:3000
+- Panel: http://localhost:3000/admin — `admin@bulgu.local` / `Bulgu123!`
+  - Diğer roller (aynı şifre): `satis@`, `depo@`, `servis@bulgu.local`
+- `PAYMENT_SIMULATION=1` iken iyzico anahtarı yoksa kart ödemesi test ekranıyla simüle edilir (sadece geliştirmede çalışır).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Canlıya alma
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. PostgreSQL oluştur (Neon, Supabase, RDS, kendi sunucun…), `.env` değerlerini gir. `APP_URL` gerçek alan adı olmalı.
+2. `npm ci && npm run db:migrate`
+3. İlk yönetici: `ADMIN_EMAIL=sen@firma.com ADMIN_PASSWORD='en-az-10-karakter' npm run db:init` (demo veri yüklemez, tekrar çalıştırılabilir)
+4. `npm run build && npm start` (Node 20+). Bir ters vekil (Nginx/Caddy) ile HTTPS ver.
+5. Panelde **Kurulumu tamamla** listesini izle: mağaza bilgileri (ETBİS/MERSİS), iyzico, kargo, sözleşmeler, ekip.
 
-## Learn More
+**Görseller:** Yüklenen dosyalar `UPLOAD_DIR` klasörüne yazılır ve `/media/...` adresinden sunulur. Sunucusuz ortama (Vercel vb.) taşınacaksa `src/lib/storage.ts` S3/R2 sürücüsüyle değiştirilmeli; VPS/Docker'da kalıcı bir disk bağlamak yeterli.
 
-To learn more about Next.js, take a look at the following resources:
+### iyzico canlıya geçiş
+1. iyzico üye işyeri panelinden **canlı** API ve gizli anahtarı al.
+2. Admin › Ayarlar › Ödeme: anahtarları yapıştır, **Test modu**nu kapat, **Bağlantıyı test et**.
+3. Vade farksız taksit kampanyasını iyzico panelinde de tanımla (sitedeki "3 ay vade farksız" yazısı ayarlardan gelir).
+4. Ödeme akışı: sipariş `Ödeme bekliyor` olarak açılır → iyzico güvenli ödeme sayfası → `/api/odeme/iyzico` dönüşü ödemeyi iyzico'dan **sunucu tarafında doğrular** (tutar + sepet no) → sipariş `Yeni sipariş` olur. Tamamlanmayan kart ödemeleri 45 dk sonra otomatik iptal edilip stok geri eklenir.
+5. İade/iptal: aynı gün ise iyzico iptali, sonra ise kalem bazında iade otomatik yapılır. Havale siparişlerinde para iadesi EFT ile manuel gönderilir (panel hatırlatır).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Panel modülleri
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Modül | Ne yapar |
+|---|---|
+| Pano | Bekleyen işler (hazırlanacak, kargolanacak, mesaj, iade, servis, yorum), ciro/kâr, 30 günlük grafik, en çok satanlar, stok uyarısı |
+| Siparişler | Durum sekmeleri, filtre, toplu işlem, paket fişi yazdırma, CSV; detayda sıradaki adım, seri no atama, kargo/takip no, iptal-iade (iyzico), adres düzenleme, müşteriye not, iç not; telefon/showroom siparişi oluşturma (satıcı indirim limitiyle) |
+| İadeler | 14 gün kontrolü, onay + kargo kodu, ürün geldi, para iadesi, red |
+| Kampanyalar | Kuponlu / otomatik; %, sabit tutar, kargo bedava; marka/kategori/ürün kapsamı; min sepet, üst limit, tarih, toplam ve kişi başı limit; ciro takibi |
+| Ürünler | Liste + filtre + toplu işlem (yayınla, arşivle, vitrine al, % fiyat değiştir, sil); CSV indir / CSV ile toplu güncelle; ürün formu: görsel yükleme-sıralama, fiyat + canlı kâr marjı, stok, seri takibi, filtre/sihirbaz alanları, özellik tablosu, satış içeriği, video, SEO; kopyala; siparişi olan ürün silinmez, arşivlenir |
+| Markalar / Kategoriler | Logo/görsel, açıklama, alt kategori, menüde göster, SEO |
+| Stok ve seri no | Mal girişi, sayım, fire; seri no toplu giriş (barkod okuyucu uyumlu), durum değiştirme, hareket geçmişi, "gelince haber ver" listesi |
+| Müşteriler (CRM) | Segmentler (alanlar, tekrar alanlar, uyuyanlar, VIP, izinliler), harcama/LTV, notlar, mesajlar, servis, adres; İYS izinli liste CSV; KVKK anonimleştirme |
+| Mesajlar | Web formu + ürün soruları + kayda geçirilen WhatsApp/telefon; atama, durum, hazır yanıtlar |
+| Servis | Kayıt → cihaz bekleniyor → tamirde → hazır → kargoda; garanti seri no'dan otomatik; müşteri adım adım görür |
+| Yorum ve sorular | Onay, mağaza yanıtı, doğrulanmış alıcı işareti |
+| Vitrin | Duyuru şeridi, banner (zamanlı, mobil görsel), ana sayfa bölümleri sırala/aç-kapa/başlık; sayfalar (Markdown/HTML); menüler; medya kütüphanesi |
+| Raporlar | Dönem karşılaştırmalı ciro, sipariş, sepet, brüt kâr, indirim, iptal; marka/kategori, ürün kârlılığı, taksit dağılımı, iller, stok değeri, tekrar alma oranı; CSV |
+| Ayarlar | Mağaza (ETBİS, MERSİS), kargo (ücret kuralı, firmalar, takip linkleri, showroom), ödeme (iyzico, taksit, havale + IBAN), entegrasyonlar (GA4, Meta Pixel, SMTP, e-fatura/kargo anahtarları), SEO |
+| Ekip ve yetkiler | Kişi ekle/pasifleştir/şifre sıfırla, satış indirim limiti; rol bazlı 22 yetki, özel rol oluşturma; en az bir yönetici koruması |
+| İşlem kayıtları | Kim, ne zaman, neyi değiştirdi (silinemez) |
+| Kurulum | İlk girişte 7 adımlı kontrol listesi |
 
-## Deploy on Vercel
+Yetkiler hem menüde gizlenir hem **sunucuda** zorunlu tutulur (sayfa, server action ve API ayrı ayrı kontrol eder). Maliyet/kâr sadece `products.cost`, ciro sadece `reports.finance` yetkisiyle görünür.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Mağaza
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ana sayfa (panelden yönetilen bölümler), kategori/marka/arama (filtre: deneyim, marka, teknoloji, su geçirmezlik, bütçe, stok, ağırlık), ürün sayfası (galeri, taksit, havale indirimi, stok/kargo saati, WhatsApp ve görüntülü görüşme, deneme kiralaması, kimler için/bunu bekleme, özellikler, video, yorum, soru-cevap, gelince haber ver, JSON-LD), karşılaştırma, **Bana hangisi?** sihirbazı (6 soru → 3 gerekçeli öneri), sepet + kupon, tek sayfa ödeme (misafir veya üye, bireysel/kurumsal fatura, kargo/showroom, kart/havale), sipariş takip, hesabım (cihazlarım + garanti süresi, siparişler, iade talebi, servis kaydı, adresler, bilgiler), seri no orijinallik sorgusu, servis sorgusu, iletişim, kampanyalar, sözleşme sayfaları, sitemap/robots, mobil alt menü.
+
+## E-posta
+
+Admin › Ayarlar › Entegrasyonlar'da SMTP girilirse: sipariş onayı (havale bilgisiyle), yeni sipariş bildirimi, kargo/teslim/iptal bildirimleri ve "tekrar stokta" e-postaları gönderilir. SMTP yoksa uygulama normal çalışır, sadece e-posta gitmez.
+
+## Henüz bağlanmayan dış servisler
+
+Ayar alanları hazır ama entegrasyon kodu yazılmadı (her biri sağlayıcı seçimine bağlı):
+- **SMS** (sipariş/kargo SMS'i) ve **İYS** bildirimi
+- **e-Fatura / e-Arşiv** (Paraşüt, Logo vb.) — şu an fatura panel dışında kesilir
+- **Kargo API** (otomatik barkod/takip no) — şu an takip no elle girilir
+- **WhatsApp Business API** — şu an WhatsApp bağlantıları `wa.me` ile açılır, konuşmalar panele elle kaydedilir
+
+## Proje yapısı
+
+```
+src/app/(store)/      mağaza sayfaları + server action'lar
+src/app/admin/        panel (giriş, (panel)/… modüller, yazdır)
+src/app/api/          iyzico dönüşü, dosya yükleme, CSV dışa aktarma
+src/db/schema.ts      tüm tablolar (Drizzle)
+src/lib/              auth, yetkiler, fiyat/kampanya motoru, sipariş akışı, iyzico, raporlar, ayarlar, e-posta
+scripts/seed.ts       demo veri   ·   scripts/init.ts  canlı kurulum
+drizzle/              migration dosyaları
+```
+
+Şema değişikliği: `src/db/schema.ts` düzenle → `npm run db:generate` → `npm run db:migrate`.
