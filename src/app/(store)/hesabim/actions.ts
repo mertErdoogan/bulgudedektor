@@ -20,11 +20,13 @@ export async function customerLogin(_: ActionResult | null, fd: FormData): Promi
     const password = str(fd.get("password"));
     const t = tries.get(id);
     if (t && t.until > Date.now()) return fail("Çok fazla hatalı deneme. 5 dakika sonra tekrar dene.");
+    const { allowIp } = await import("@/lib/guard");
+    if (!(await allowIp("login", 20, 15 * 60 * 1000))) return fail("Çok fazla deneme. 15 dakika sonra tekrar dene.");
     const c = await db.query.customers.findFirst({ where: id.includes("@") ? eq(customers.email, id) : eq(customers.phone, normalizePhone(id)) });
     if (!c?.passwordHash || c.isBlocked || !(await bcrypt.compare(password, c.passwordHash))) {
       const n = (t?.n ?? 0) + 1;
       tries.set(id, { n, until: n >= 5 ? Date.now() + 300000 : 0 });
-      return fail(c && !c.passwordHash ? "Bu hesap için henüz şifre belirlenmemiş. Kayıt ol ekranından aynı e-posta ile şifre oluştur." : "E-posta/telefon veya şifre hatalı.");
+      return fail(c && !c.passwordHash ? "Bu hesap için henüz şifre belirlenmemiş. 'Şifremi unuttum' ile e-postana gelen bağlantıdan şifre oluştur." : "E-posta/telefon veya şifre hatalı.");
     }
     tries.delete(id);
     await db.update(customers).set({ lastSeenAt: new Date() }).where(eq(customers.id, c.id));
@@ -36,6 +38,10 @@ export async function customerLogin(_: ActionResult | null, fd: FormData): Promi
 
 export async function customerRegister(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
+    const { allowIp, verifyHuman } = await import("@/lib/guard");
+    if (fd.get("website")) return fail("Kayıt alınamadı.");
+    if (!(await allowIp("register", 5, 60 * 60 * 1000))) return fail("Çok fazla kayıt denemesi. Biraz sonra tekrar dene.");
+    if (!(await verifyHuman(fd))) return fail("Robot doğrulaması başarısız, sayfayı yenileyip tekrar dene.");
     const name = str(fd.get("name"));
     const email = str(fd.get("email")).toLowerCase();
     const phone = normalizePhone(str(fd.get("phone")));
@@ -148,5 +154,33 @@ export async function requestService(_: ActionResult | null, fd: FormData): Prom
       .returning();
     revalidatePath("/hesabim");
     return ok(`Servis kaydın açıldı (#${r.number}). Ücretsiz kargo kodunu SMS ile göndereceğiz.`, { redirect: "/hesabim?t=servis" });
+  });
+}
+
+/* ── Şifre sıfırlama ── */
+export async function customerForgot(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const { allowIp, verifyHuman } = await import("@/lib/guard");
+    const { requestReset } = await import("@/lib/reset");
+    const email = str(fd.get("email")).toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(email)) return fail("Geçerli bir e-posta gir.");
+    if (!(await allowIp("forgot", 5, 15 * 60 * 1000))) return fail("Çok fazla deneme. 15 dakika sonra tekrar dene.");
+    if (!(await verifyHuman(fd))) return fail("Robot doğrulaması başarısız, sayfayı yenileyip tekrar dene.");
+    const r = await requestReset("customer", email);
+    return ok(r.devLink ? `Geliştirme modu (e-posta ayarı yok): ${r.devLink}` : "Bu e-postaya kayıtlı bir hesap varsa şifre yenileme bağlantısı gönderdik. Gelen kutunu (ve gereksiz klasörünü) kontrol et.");
+  });
+}
+
+export async function customerResetPassword(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const { consumeReset } = await import("@/lib/reset");
+    const token = str(fd.get("t"));
+    const password = str(fd.get("password"));
+    if (password.length < 8) return fail("Şifre en az 8 karakter olmalı.");
+    if (password !== str(fd.get("password2"))) return fail("Şifreler aynı değil.");
+    const id = await consumeReset("customer", token, password);
+    if (!id) return fail("Bağlantının süresi dolmuş veya daha önce kullanılmış. Yeniden şifre yenileme iste.");
+    await setSessionCookie(CUSTOMER_COOKIE, await signToken({ sub: id, kind: "customer" }, 30), 30);
+    return ok("Şifren güncellendi, giriş yaptın.", { redirect: "/hesabim" });
   });
 }

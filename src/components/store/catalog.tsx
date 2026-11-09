@@ -1,3 +1,4 @@
+import { cardCtx } from "@/lib/card-ctx";
 import Link from "next/link";
 import { Compass } from "lucide-react";
 import { getSettings } from "@/lib/settings";
@@ -84,7 +85,7 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
           {items.length ? (
             <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
               {items.map((p) => (
-                <ProductCard key={p.id} p={p} installments={s.payment.noInterestInstallments} compare />
+                <ProductCard key={p.id} p={p} ctx={cardCtx(s)} compare />
               ))}
             </div>
           ) : (

@@ -7,6 +7,7 @@ import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { getCustomer } from "@/lib/auth";
 import { quoteCart, type CartInput } from "@/lib/pricing";
 import { normalizePhone, str, strOrNull } from "@/lib/utils";
+import { verifyHuman } from "@/lib/guard";
 
 const hits = new Map<string, number[]>();
 function rateLimit(key: string, max = 5, windowMs = 10 * 60 * 1000) {
@@ -25,6 +26,7 @@ export async function getCartQuote(items: CartInput, coupon?: string | null, pay
 
 export async function askQuestion(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
+    if (!(await verifyHuman(fd))) return fail("Robot doğrulaması başarısız, sayfayı yenileyip tekrar dene.");
     if (fd.get("website")) return ok("Teşekkürler."); // bal tuzağı
     const productId = str(fd.get("productId"));
     const name = str(fd.get("name"));
@@ -43,6 +45,7 @@ export async function askQuestion(_: ActionResult | null, fd: FormData): Promise
 
 export async function writeReview(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
+    if (!(await verifyHuman(fd))) return fail("Robot doğrulaması başarısız, sayfayı yenileyip tekrar dene.");
     const customer = await getCustomer();
     if (!customer) return fail("Yorum yazmak için giriş yapın.");
     const productId = str(fd.get("productId"));
@@ -72,6 +75,7 @@ export async function stockAlert(_: ActionResult | null, fd: FormData): Promise<
 
 export async function contactForm(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
+    if (!(await verifyHuman(fd))) return fail("Robot doğrulaması başarısız, sayfayı yenileyip tekrar dene.");
     if (fd.get("website")) return ok("Teşekkürler.");
     const name = str(fd.get("name"));
     const contactRaw = str(fd.get("contact"));

@@ -7,7 +7,9 @@ import {
   numeric,
   pgEnum,
   pgTable,
+  primaryKey,
   serial,
+  uniqueIndex,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -415,6 +417,7 @@ export const orders = pgTable(
     trackingNumber: text("tracking_number"),
     shippedAt: timestamp("shipped_at", { withTimezone: true }),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    reviewRequestedAt: timestamp("review_requested_at", { withTimezone: true }),
     customerNote: text("customer_note"),
     internalNote: text("internal_note"),
     createdAt: createdAt(),
@@ -672,3 +675,63 @@ export const faqsRelations = relations(faqs, ({ one }) => ({
   category: one(categories, { fields: [faqs.categoryId], references: [categories.id] }),
 }));
 export const campaignsRelations = relations(campaigns, ({ many }) => ({ orders: many(orders) }));
+
+
+/* ─────────── Etkileşim, favori, sepet hatırlatma, şifre sıfırlama ─────────── */
+
+/** Saatlik ürün etkileşimi: "24 saatte X kişi inceledi" gibi gerçek sosyal kanıt için. */
+export const productActivity = pgTable(
+  "product_activity",
+  {
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    hour: timestamp("hour", { withTimezone: true }).notNull(),
+    views: integer("views").notNull().default(0),
+    carts: integer("carts").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.productId, t.hour] }), index("product_activity_hour_idx").on(t.hour)],
+);
+
+export const favorites = pgTable(
+  "favorites",
+  {
+    customerId: text("customer_id")
+      .notNull()
+      .references(() => customers.id, { onDelete: "cascade" }),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.customerId, t.productId] })],
+);
+
+/** Terk edilen sepet: e-posta bilinen ziyaretçinin son sepeti. Sipariş verilirse kapanır. */
+export const cartSnapshots = pgTable(
+  "cart_snapshots",
+  {
+    id: id(),
+    email: text("email").notNull(),
+    name: text("name"),
+    customerId: text("customer_id").references(() => customers.id, { onDelete: "set null" }),
+    items: jsonb("items").$type<{ productId: string; qty: number }[]>().notNull().default([]),
+    /** Ticari ileti izni (ödeme formundaki onay kutusu). Hatırlatma yalnızca izin varsa gönderilir. */
+    consent: boolean("consent").notNull().default(false),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    remindedAt: timestamp("reminded_at", { withTimezone: true }),
+    recoveredAt: timestamp("recovered_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("cart_snapshots_email_idx").on(t.email)],
+);
+
+/** Şifre sıfırlama: token'ın yalnızca SHA-256 özeti saklanır. */
+export const passwordResets = pgTable("password_resets", {
+  id: id(),
+  kind: text("kind").$type<"customer" | "staff">().notNull(),
+  subjectId: text("subject_id").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: createdAt(),
+});

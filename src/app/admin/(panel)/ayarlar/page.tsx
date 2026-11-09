@@ -47,6 +47,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <Field label="MERSİS no"><Input name="mersis" defaultValue={s.store.mersis} /></Field>
               <Field label="ETBİS kayıt no"><Input name="etbis" defaultValue={s.store.etbis} /></Field>
               <Field label="Duyuru şeridi" className="md:col-span-2"><Input name="announcement" defaultValue={s.store.announcement} /></Field>
+              <Checkbox name="socialProof" defaultChecked={s.store.socialProof !== false} label="Ürünlerde gerçek ilgi bilgisini göster (ör. '24 saatte 30 kişi inceledi', 'Son 24 saatte 5 kişi sepete ekledi')" className="md:col-span-2" />
 
               <div className="mt-3 md:col-span-2">
                 <p className="font-bold">Konum ve işletme bilgisi (Google İşletme Profili ile birebir aynı olmalı)</p>
@@ -85,7 +86,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <Field label="Sabit kargo ücreti (TL)" hint="0 = her zaman ücretsiz"><Input name="flatRate" inputMode="decimal" defaultValue={s.shipping.flatRate} /></Field>
               <Field label="Ücretsiz kargo alt limiti (TL)" hint="0 = limit yok"><Input name="freeThreshold" inputMode="decimal" defaultValue={s.shipping.freeThreshold} /></Field>
               <Field label="Aynı gün kargo kesim saati"><Input name="sameDayCutoff" defaultValue={s.shipping.sameDayCutoff} placeholder="15:00" /></Field>
-              <Field label="Tahmini teslim süresi"><Input name="deliveryEstimate" defaultValue={s.shipping.deliveryEstimate} placeholder="1–3 iş günü" /></Field>
+              <Field label="Tahmini teslim süresi (metin)"><Input name="deliveryEstimate" defaultValue={s.shipping.deliveryEstimate} placeholder="1–3 iş günü" /></Field>
+              <Field label="Kargoda geçen süre: en az (iş günü)" hint="Ürün kartındaki 'Çar–Per kapında' tarihini hesaplar"><Input name="transitMinDays" type="number" min={1} defaultValue={s.shipping.transitMinDays} /></Field>
+              <Field label="Kargoda geçen süre: en çok (iş günü)"><Input name="transitMaxDays" type="number" min={1} defaultValue={s.shipping.transitMaxDays} /></Field>
+              <Checkbox name="shipOnSaturday" defaultChecked={s.shipping.shipOnSaturday} label="Cumartesi de kargo çıkıyor" />
               <Field label="Kargo firmaları" hint="Her satıra bir firma"><Textarea name="carriers" defaultValue={s.shipping.carriers.join("\n")} /></Field>
               <Field label="Varsayılan firma"><Input name="defaultCarrier" defaultValue={s.shipping.defaultCarrier} /></Field>
               <Field label="Takip bağlantıları" hint="Firma | adres ({code} takip no yerine geçer)" className="md:col-span-2">

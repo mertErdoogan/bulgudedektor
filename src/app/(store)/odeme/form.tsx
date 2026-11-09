@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { emit } from "@/lib/track";
 import { Building2, CreditCard, Lock, Store, Truck } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useCart } from "@/components/store/cart";
@@ -52,6 +53,20 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
   useEffect(() => {
     if (ready) start(async () => setQ(await getCartQuote(items, coupon, pay, delivery)));
   }, [items, coupon, pay, delivery, ready]);
+  const begun = useRef(false);
+  useEffect(() => {
+    if (!q || begun.current || !items.length) return;
+    begun.current = true;
+    emit("begin_checkout", { value: q.total, items: q.lines.map((l) => ({ item_id: l.productId, item_name: l.name, price: l.unitPrice, quantity: l.quantity })) });
+  }, [q, items.length]);
+  /** Terk edilen sepet hatırlatması için: e-posta yazıldığında sepetin son hali kaydedilir. */
+  const snapshot = (form: HTMLFormElement | null) => {
+    if (!form) return;
+    const fd = new FormData(form);
+    const email = String(fd.get("email") ?? "");
+    if (!/^\S+@\S+\.\S+$/.test(email)) return;
+    void fetch("/api/sepet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, name: fd.get("fullName"), items, consent: fd.get("marketing") === "on" }), keepalive: true }).catch(() => {});
+  };
 
   if (ready && !items.length)
     return (
@@ -79,7 +94,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
         <Step n={1} title="İletişim">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Cep telefonu"><Input name="phone" type="tel" autoComplete="tel" defaultValue={me?.phone ?? ""} placeholder="05xx xxx xx xx" required /></Field>
-            <Field label="E-posta"><Input name="email" type="email" autoComplete="email" defaultValue={me?.email ?? ""} required /></Field>
+            <Field label="E-posta"><Input name="email" type="email" autoComplete="email" defaultValue={me?.email ?? ""} required onBlur={(e) => snapshot(e.currentTarget.form)} /></Field>
           </div>
           {!me ? (
             <details className="mt-3 text-sm">
@@ -133,7 +148,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
           ) : null}
           <div className="mt-4 flex flex-col gap-2.5">
             <Checkbox name="terms" required label={<><Link href="/sayfa/on-bilgilendirme-formu" target="_blank" className="font-bold text-link">Ön bilgilendirme formunu</Link> ve <Link href="/sayfa/mesafeli-satis-sozlesmesi" target="_blank" className="font-bold text-link">mesafeli satış sözleşmesini</Link> okudum, onaylıyorum.</>} />
-            <Checkbox name="marketing" label={<span className="text-mute">Kampanya ve kullanım ipuçları için SMS / e-posta almak istiyorum. (İsteğe bağlı)</span>} />
+            <Checkbox name="marketing" onChange={(e) => snapshot(e.currentTarget.form)} label={<span className="text-mute">Kampanya ve kullanım ipuçları için SMS / e-posta almak istiyorum. (İsteğe bağlı)</span>} />
             <p className="text-xs text-mute">Kişisel verilerin <Link href="/sayfa/kvkk-aydinlatma-metni" target="_blank" className="underline">aydınlatma metni</Link> kapsamında işlenir.</p>
           </div>
         </Step>

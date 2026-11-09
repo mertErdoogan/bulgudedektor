@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { ConsentLink } from "./consent";
 import { getSettings } from "@/lib/settings";
 import { getFooterPages, getNav } from "@/lib/store";
 
@@ -51,7 +52,7 @@ export async function StoreFooter() {
       </div>
       <div className="border-t border-white/10">
         <div className="container-x flex flex-wrap items-center justify-between gap-2 py-4 text-xs opacity-60">
-          <span>© {new Date().getFullYear()} {s.store.name}. Tüm hakları saklıdır.</span>
+          <span>© {new Date().getFullYear()} {s.store.name}. Tüm hakları saklıdır. · <ConsentLink className="underline hover:text-white" /></span>
           <span>Ödemeler iyzico güvencesiyle 3D Secure · Kart bilgisi saklanmaz</span>
         </div>
       </div>

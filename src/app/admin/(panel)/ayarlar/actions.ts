@@ -34,7 +34,7 @@ export async function saveStore(_: ActionResult | null, fd: FormData): Promise<A
     }
     if (v.openingHours && !/^([A-Z][a-z](-[A-Z][a-z])? \d{2}:\d{2}-\d{2}:\d{2})(, ?[A-Z][a-z](-[A-Z][a-z])? \d{2}:\d{2}-\d{2}:\d{2})*$/.test(v.openingHours))
       return fail("Açılış saatleri biçimi: Mo-Fr 09:00-20:00, Sa 10:00-18:00");
-    await saveSettings("store", v);
+    await saveSettings("store", { ...v, socialProof: fd.get("socialProof") === "on" });
     return fin(staff.id, "store");
   });
 }
@@ -57,6 +57,9 @@ export async function saveShipping(_: ActionResult | null, fd: FormData): Promis
       defaultCarrier: carriers.includes(str(fd.get("defaultCarrier"))) ? str(fd.get("defaultCarrier")) : carriers[0],
       sameDayCutoff: str(fd.get("sameDayCutoff")) || "15:00",
       deliveryEstimate: str(fd.get("deliveryEstimate")),
+      transitMinDays: Math.min(10, Math.max(1, Math.round(toNum(fd.get("transitMinDays"), 1)))),
+      transitMaxDays: Math.min(15, Math.max(Math.max(1, Math.round(toNum(fd.get("transitMinDays"), 1))), Math.round(toNum(fd.get("transitMaxDays"), 2)))),
+      shipOnSaturday: fd.get("shipOnSaturday") === "on",
       pickupEnabled: fd.get("pickupEnabled") === "on",
       pickupAddress: str(fd.get("pickupAddress")),
       trackingUrlTemplate: Object.keys(tracking).length ? tracking : cur.trackingUrlTemplate,

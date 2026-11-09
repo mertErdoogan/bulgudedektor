@@ -27,7 +27,21 @@ PAYMENT_SIMULATION=1 npm run dev
 4. `npm run build && npm start` (Node 20+). Bir ters vekil (Nginx/Caddy) ile HTTPS ver.
 5. Panelde **Kurulumu tamamla** listesini izle: mağaza bilgileri (ETBİS/MERSİS), iyzico, kargo, sözleşmeler, ekip.
 
-**Görseller:** Yüklenen dosyalar `UPLOAD_DIR` klasörüne yazılır ve `/media/...` adresinden sunulur. Sunucusuz ortama (Vercel vb.) taşınacaksa `src/lib/storage.ts` S3/R2 sürücüsüyle değiştirilmeli; VPS/Docker'da kalıcı bir disk bağlamak yeterli.
+**Görseller:** Yüklenen fotoğraflar otomatik olarak en fazla 1600 px'e küçültülüp WebP'ye çevrilir. Varsayılan olarak `UPLOAD_DIR` klasörüne yazılır ve `/media/...` adresinden sunulur (VPS/Docker'da kalıcı disk bağlayın). Vercel gibi sunucusuz ortamda `STORAGE_DRIVER=s3` ile Cloudflare R2 / S3 kullanın (`.env.example`'daki `S3_*` değerleri).
+
+**Zamanlanmış işler:** `/api/cron` her 15 dakikada bir çağrılmalı (`Authorization: Bearer $CRON_SECRET`). Yaptıkları: süresi dolan kart ödemelerini iptal edip stoğu geri alma, teslimattan 3 gün sonra yorum daveti, izin veren müşterilere terk edilen sepet hatırlatması, eski kayıtların temizliği. Vercel'de `vercel.json` hazır; VPS'te crontab:
+```
+*/15 * * * * curl -fsS -H "Authorization: Bearer GIZLI" https://www.arenadedektor.com/api/cron > /dev/null
+```
+
+**İzleme ve yedek:**
+- `/api/health` → uptime servisine (UptimeRobot, Better Stack) ekleyin.
+- `ERROR_WEBHOOK_URL` → sunucu hataları Slack/Discord'a düşer.
+- Yönetilen Postgres kullanıyorsanız otomatik yedeği açın; VPS'te `scripts/backup.sh` (pg_dump + görseller, 14 gün saklar) gece cron'una eklenir.
+
+**Güvenlik:** Giriş, kayıt, şifre sıfırlama ve sorgu sayfalarında deneme sınırı vardır (sunucu belleğinde; birden fazla sunucuya ölçeklenirse Redis'e taşınmalı). Formlarda Cloudflare Turnstile, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` girilince otomatik açılır.
+
+**Çerezler (KVKK):** Google Analytics ve Meta Pixel yalnızca ziyaretçi çerez bandında onay verirse yüklenir. Sepete ekleme, ödemeye geçiş ve satın alma olayları GA4/Pixel'e gönderilir.
 
 ### iyzico canlıya geçiş
 1. iyzico üye işyeri panelinden **canlı** API ve gizli anahtarı al.

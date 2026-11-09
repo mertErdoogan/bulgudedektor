@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Logo } from "@/components/logo";
@@ -32,7 +33,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </SubmitButton>
           </ActionForm>
         </div>
-        <p className="mt-4 text-center text-xs text-mute">Şifreni unuttuysan yöneticinden sıfırlamasını iste.</p>
+        <p className="mt-4 text-center text-sm"><Link href="/admin/giris/sifremi-unuttum" className="font-bold text-link">Şifremi unuttum</Link></p>
       </div>
     </main>
   );

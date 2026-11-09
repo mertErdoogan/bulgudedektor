@@ -35,7 +35,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         </div>
       ) : sp.yeni ? (
         <div className="mb-5 flex gap-3 rounded-2xl bg-tint p-5">
-          <ClearCart />
+          <ClearCart purchase={o.paymentStatus === "PAID" || o.paymentMethod === "TRANSFER" ? { id: orderNo(o.number), value: o.total, items: o.items.map((i) => ({ item_id: i.productId ?? i.name, item_name: i.name, price: i.unitPrice, quantity: i.quantity })) } : undefined} />
           <CheckCircle2 className="shrink-0 text-brand" size={28} />
           <div>
             <b className="text-lg">Teşekkürler, siparişin alındı!</b>

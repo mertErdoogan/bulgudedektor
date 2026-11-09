@@ -29,6 +29,27 @@
       "when": 1794231737936,
       "tag": "0003_wooden_killer_shrike",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794256715465,
+      "tag": "0004_fresh_venom",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794257602387,
+      "tag": "0005_slimy_hedge_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794257728699,
+      "tag": "0006_boring_ben_urich",
+      "breakpoints": true
     }
   ]
 }

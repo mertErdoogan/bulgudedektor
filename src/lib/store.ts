@@ -3,7 +3,7 @@ import { cache } from "react";
 import { createHmac } from "node:crypto";
 import { and, asc, desc, eq, gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { banners, brands, campaigns, categories, homeSections, menuItems, pages, productImages, products, reviews } from "@/db/schema";
+import { banners, brands, campaigns, categories, homeSections, menuItems, orderItems, orders, pages, productActivity, productImages, products, reviews } from "@/db/schema";
 
 export const cardColumns = {
   id: products.id,
@@ -25,6 +25,9 @@ export const cardColumns = {
   image: sql<string | null>`(select ${productImages.url} from ${productImages} where ${productImages.productId} = ${products.id} order by ${productImages.sortOrder} limit 1)`,
   rating: sql<number | null>`(select avg(${reviews.rating})::float from ${reviews} where ${reviews.productId} = ${products.id} and ${reviews.isApproved})`,
   reviewCount: sql<number>`(select count(*)::int from ${reviews} where ${reviews.productId} = ${products.id} and ${reviews.isApproved})`,
+  createdAt: products.createdAt,
+  views24: sql<number>`coalesce((select sum(${productActivity.views})::int from ${productActivity} where ${productActivity.productId} = ${products.id} and ${productActivity.hour} > now() - interval '24 hours'), 0)`,
+  carts24: sql<number>`coalesce((select sum(${productActivity.carts})::int from ${productActivity} where ${productActivity.productId} = ${products.id} and ${productActivity.hour} > now() - interval '24 hours'), 0)`,
 };
 
 export type ProductCard = {
@@ -47,6 +50,9 @@ export type ProductCard = {
   image: string | null;
   rating: number | null;
   reviewCount: number;
+  createdAt: Date | string;
+  views24: number;
+  carts24: number;
 };
 
 const active = eq(products.status, "ACTIVE");
@@ -86,6 +92,29 @@ export async function getHome() {
   return { sections: secs, banners: bs };
 }
 
+/** Son 60 günde en çok satanlar (iptal/iade hariç); yetersizse öne çıkanlarla tamamlanır. */
+export async function bestSellers(limit = 10): Promise<ProductCard[]> {
+  const sold = db
+    .select({ pid: orderItems.productId, q: sql<number>`sum(${orderItems.quantity})`.as("q") })
+    .from(orderItems)
+    .innerJoin(orders, eq(orders.id, orderItems.orderId))
+    .where(and(gte(orders.createdAt, sql`now() - interval '60 days'`), sql`${orders.status} not in ('CANCELLED','REFUNDED','PENDING_PAYMENT')`))
+    .groupBy(orderItems.productId)
+    .as("sold");
+  const top = await db
+    .select(cardColumns)
+    .from(products)
+    .leftJoin(brands, eq(brands.id, products.brandId))
+    .innerJoin(sold, eq(sold.pid, products.id))
+    .where(active)
+    .orderBy(desc(sold.q))
+    .limit(limit);
+  if (top.length >= limit) return top;
+  const more = await productsFor("featured", limit);
+  const seen = new Set(top.map((t) => t.id));
+  return [...top, ...more.filter((m) => !seen.has(m.id))].slice(0, limit);
+}
+
 export async function productsFor(kind: "featured" | "new" | "deals" | "sameday" | "pro", limit = 10): Promise<ProductCard[]> {
   const base = cardQuery();
   const where =
@@ -98,7 +127,7 @@ export async function productsFor(kind: "featured" | "new" | "deals" | "sameday"
           : kind === "pro"
             ? and(active, eq(products.isPro, true))
             : active;
-  const order = kind === "new" ? desc(products.createdAt) : asc(products.sortOrder);
+  const order = kind === "new" ? desc(products.createdAt) : kind === "deals" ? desc(sql`(${products.compareAtPrice} - ${products.price}) / ${products.compareAtPrice}`) : asc(products.sortOrder);
   return base.where(where).orderBy(order).limit(limit);
 }
 

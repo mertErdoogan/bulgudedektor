@@ -1,3 +1,4 @@
+import { cardCtx } from "@/lib/card-ctx";
 import { redirectOrNotFound } from "@/lib/redirects";
 import Link from "next/link";
 import { and, eq, inArray } from "drizzle-orm";
@@ -99,7 +100,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       {items.length ? (
         <section className="mt-12">
           <h2 className="font-display mb-4 text-2xl font-extrabold">Yazıda geçen cihazlar</h2>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{items.map((r) => <ProductCard key={r.id} p={r} installments={s.payment.noInterestInstallments} />)}</div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{items.map((r) => <ProductCard key={r.id} p={r} ctx={cardCtx(s)} />)}</div>
         </section>
       ) : null}
       {more.length ? (

@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { MessageCircle, User } from "lucide-react";
+import { Heart, MessageCircle, User } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { getCustomer } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { getActiveBrands, getNav } from "@/lib/store";
-import { CartButton, MegaMenu, SearchBox } from "./bits";
+import { CartButton, SearchBox } from "./bits";
+import { NavBar } from "./nav-bar";
+import { QuickLists } from "./rails";
 
 export async function StoreHeader() {
   const [s, nav, brands, customer] = await Promise.all([getSettings(), getNav(), getActiveBrands(), getCustomer()]);
@@ -35,12 +37,16 @@ export async function StoreHeader() {
             <a href={wa} target="_blank" aria-label="WhatsApp ile uzmana sor" className="grid h-11 w-11 place-items-center rounded-full bg-[#e9f9ef] text-[#11643a] lg:hidden">
               <MessageCircle size={20} />
             </a>
+            <QuickLists />
             <Link href="/hesabim" className="hidden h-11 items-center gap-2 rounded-full px-3 text-sm font-bold hover:bg-soft md:flex" aria-label="Hesabım">
               <User size={19} /> <span className="hidden xl:inline">{customer ? customer.name.split(" ")[0] : "Giriş yap"}</span>
             </Link>
             <span className="hidden md:block">
               <CartButton />
             </span>
+            <Link href="/favoriler" aria-label="Favorilerim" className="grid h-11 w-11 place-items-center rounded-full hover:bg-soft md:hidden">
+              <Heart size={20} />
+            </Link>
             <span className="md:hidden">
               <CartButton compact />
             </span>
@@ -50,19 +56,11 @@ export async function StoreHeader() {
           <SearchBox />
         </div>
       </div>
-      <nav className="hidden bg-brand text-white md:block" aria-label="Kategoriler">
-        <div className="container-x flex h-[52px] items-center gap-2">
-          <MegaMenu categories={nav.categories} brands={brands.map((b) => ({ name: b.name, slug: b.slug }))} />
-          <div className="scrollbar-none flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto whitespace-nowrap">
-            {header.map((m) => (
-              <Link key={m.id} href={m.url} className={`rounded-lg px-3 py-2 text-sm font-bold text-white/95 hover:bg-white/10 hover:text-white ${m.highlight ? "text-white" : ""}`}>
-                {m.highlight ? <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-white align-middle" /> : null}
-                {m.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </nav>
+      <NavBar
+        items={header.map((m) => ({ id: m.id, label: m.label, url: m.url, highlight: !!m.highlight, image: nav.categories.find((c) => m.url === `/kategori/${c.slug}`)?.imageUrl ?? null }))}
+        categories={nav.categories}
+        brands={brands.map((b) => ({ name: b.name, slug: b.slug }))}
+      />
     </header>
   );
 }

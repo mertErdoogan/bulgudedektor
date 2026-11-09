@@ -1,0 +1,1 @@
+ALTER TABLE "cart_snapshots" ADD COLUMN "consent" boolean DEFAULT false NOT NULL;

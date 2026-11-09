@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/seo";
 
-const PRIVATE = ["/admin", "/api/", "/hesabim", "/odeme", "/sepet", "/siparis", "/giris", "/kayit", "/karsilastir", "/*?*sirala=", "/ara?"];
+const PRIVATE = ["/admin", "/api/", "/hesabim", "/favoriler", "/odeme", "/sepet", "/siparis", "/giris", "/kayit", "/karsilastir", "/*?*sirala=", "/ara?"];
 
 // AI arama motorlarının botları: açıkça izin veriyoruz ki ChatGPT Search, Perplexity, Claude,
 // Google AI Overviews / Gemini ve Apple Intelligence siteyi okuyup kaynak gösterebilsin.

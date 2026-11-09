@@ -1,3 +1,4 @@
+import { allowIp } from "@/lib/guard";
 import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { and, eq, or } from "drizzle-orm";
@@ -11,7 +12,8 @@ export default async function ServicePublic({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const num = Number((sp.no ?? "").replace(/\D/g, ""));
   const c = (sp.iletisim ?? "").trim().toLowerCase();
-  const r = num && c ? await db.query.serviceRecords.findFirst({ where: and(eq(serviceRecords.number, num), or(eq(serviceRecords.contact, c), eq(serviceRecords.contact, normalizePhone(c)))) }) : null;
+  const limited = !!(num && c) && !(await allowIp("service", 15, 15 * 60 * 1000));
+  const r = num && c && !limited ? await db.query.serviceRecords.findFirst({ where: and(eq(serviceRecords.number, num), or(eq(serviceRecords.contact, c), eq(serviceRecords.contact, normalizePhone(c)))) }) : null;
   return (
     <div className="container-x max-w-xl py-12">
       <h1 className="font-display text-2xl font-extrabold">Servis kaydı</h1>
@@ -21,7 +23,7 @@ export default async function ServicePublic({ searchParams }: { searchParams: Pr
         <input name="iletisim" defaultValue={sp.iletisim} required placeholder="Kayıttaki telefon veya e-posta" className="h-12 rounded-lg border border-[#d6d6d9] px-4" />
         <button className="h-12 rounded-lg bg-brand font-extrabold text-white">Sorgula</button>
       </form>
-      {sp.no && !r ? <p className="mt-4 font-semibold text-danger">Kayıt bulunamadı.</p> : null}
+      {limited ? <p className="mt-4 font-semibold text-danger">Çok fazla sorgu yapıldı. 15 dakika sonra tekrar dene.</p> : sp.no && !r ? <p className="mt-4 font-semibold text-danger">Kayıt bulunamadı.</p> : null}
       {r ? (
         <div className="mt-6 rounded-2xl border border-line p-5 text-sm">
           <b className="text-base">{serviceNo(r.number)} · {r.productName}</b>

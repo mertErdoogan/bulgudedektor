@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { Turnstile } from "@/components/turnstile";
 import { Checkbox, Field, Input } from "@/components/ui";
 import { customerRegister } from "../hesabim/actions";
 
@@ -17,6 +18,8 @@ export default function RegisterPage() {
         <Field label="Şifre (en az 8 karakter)"><Input name="password" type="password" autoComplete="new-password" required minLength={8} className="h-12" /></Field>
         <Checkbox name="kvkk" required label={<><Link href="/sayfa/kvkk-aydinlatma-metni" target="_blank" className="font-bold text-link">Aydınlatma metnini</Link> okudum.</>} />
         <Checkbox name="marketing" label={<span className="text-mute">Kampanya ve kullanım ipuçları için SMS / e-posta almak istiyorum (isteğe bağlı).</span>} />
+        <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
+        <Turnstile />
         <SubmitButton size="lg">Hesabımı oluştur</SubmitButton>
       </ActionForm>
       <p className="mt-6 text-sm">Zaten hesabın var mı? <Link href="/giris" className="font-bold text-link">Giriş yap</Link></p>

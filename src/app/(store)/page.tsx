@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { ArrowRight, Compass, FileText, MessageCircle, RotateCcw, ShieldCheck, Store, Video } from "lucide-react";
-import { HeroSlider, ProductTabs } from "@/components/store/home-client";
-import { ProductCard } from "@/components/store/product-card";
+import { HeroSlider } from "@/components/store/home-client";
+import { BestSellers, CategoryRail, Deals, NewArrivals, SameDay } from "@/components/store/home-lists";
+import { RecentlyViewed } from "@/components/store/rails";
+import { cardCtx } from "@/lib/card-ctx";
+import { msToCutoff } from "@/lib/delivery";
+import { and, eq } from "drizzle-orm";
+import { products } from "@/db/schema";
+import { cardQuery } from "@/lib/store";
 import { getSettings } from "@/lib/settings";
-import { getHome, getNav, productsFor, type ProductCard as P } from "@/lib/store";
+import { bestSellers, getHome, getNav, productsFor } from "@/lib/store";
 import { FaqSection } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PostCards } from "@/components/store/post-cards";
@@ -18,23 +24,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const dynamic = "force-dynamic";
 
-function Grid({ items, inst }: { items: P[]; inst: number }) {
-  if (!items.length) return <p className="rounded-xl bg-soft p-6 text-center text-sm text-mute">Bu listede şu an ürün yok.</p>;
-  return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-      {items.map((p) => (
-        <ProductCard key={p.id} p={p} installments={inst} />
-      ))}
-    </div>
-  );
-}
-
 export default async function Home() {
   const [{ sections, banners }, nav, s, homeFaq, posts] = await Promise.all([getHome(), getNav(), getSettings(), getFaqs({ home: true }), getPublishedPosts()]);
   const hero = banners.filter((b) => b.placement === "HERO");
   const side = banners.filter((b) => b.placement === "SIDE").slice(0, 2);
   const strip = banners.find((b) => b.placement === "STRIP");
-  const inst = s.payment.noInterestInstallments;
+  const ctx = cardCtx(s);
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}` : "/iletisim";
 
   const rendered = await Promise.all(
@@ -87,31 +82,31 @@ export default async function Home() {
             </section>
           );
         case "PRODUCT_TABS": {
-          const [f, n, d, sd] = await Promise.all([productsFor("featured", limit), productsFor("new", limit), productsFor("deals", limit), productsFor("sameday", limit)]);
-          const tabs = [
-            { key: "f", label: sec.title || "Çok satanlar", items: f },
-            { key: "n", label: "Yeni gelenler", items: n },
-            { key: "d", label: "Fırsatlar", items: d },
-            { key: "s", label: "Aynı gün kargo", items: sd },
-          ].filter((t) => t.items.length);
+          // Eski "sekmeli" bölüm artık alt alta listeler: çok satanlar, yeni gelenler, fırsatlar, aynı gün kargo
+          const n = Math.max(limit, 10);
+          const [best, fresh, deals, sameday] = await Promise.all([bestSellers(n), productsFor("new", n + 1), productsFor("deals", 12), productsFor("sameday", 12)]);
           return (
-            <section key={sec.id} className="container-x mt-10">
-              <div className="flex justify-end"><Link href="/urunler" className="-mb-12 text-sm font-extrabold text-link underline">Tümünü gör →</Link></div>
-              <ProductTabs tabs={tabs.map(({ key, label }) => ({ key, label }))}>{tabs.map((t) => <Grid key={t.key} items={t.items} inst={inst} />)}</ProductTabs>
-            </section>
+            <div key={sec.id}>
+              <BestSellers items={best} ctx={ctx} />
+              <NewArrivals items={fresh} ctx={ctx} />
+              <Deals items={deals} ctx={ctx} />
+              <SameDay items={sameday} ctx={ctx} ms={msToCutoff(s.shipping)} cutoff={s.shipping.sameDayCutoff} />
+            </div>
           );
         }
         case "PRODUCT_ROW": {
-          const items = await productsFor("pro", limit);
-          if (!items.length) return null;
+          const items = await productsFor("pro", Math.max(limit, 10));
+          return <CategoryRail key={sec.id} title={sec.title || "Profesyonel seçim"} href="/kategori/derin-arama" items={items} ctx={ctx} />;
+        }
+        case "CATEGORY_RAILS": {
+          const cats = nav.categories.filter((c) => !c.parentId).slice(0, Number(sec.config.count) || 4);
+          const rails = await Promise.all(cats.map((c) => cardQuery().where(and(eq(products.status, "ACTIVE"), eq(products.categoryId, c.id))).orderBy(products.sortOrder).limit(12)));
           return (
-            <section key={sec.id} className="container-x mt-10">
-              <div className="mb-4 flex items-end justify-between">
-                <h2 className="font-display text-2xl font-extrabold md:text-[30px]">{sec.title}</h2>
-                <Link href="/kategori/derin-arama" className="text-sm font-extrabold text-link underline">Tümünü gör →</Link>
-              </div>
-              <Grid items={items} inst={inst} />
-            </section>
+            <div key={sec.id}>
+              {cats.map((c, i) => (
+                <CategoryRail key={c.id} title={c.name} href={`/kategori/${c.slug}`} items={rails[i]} ctx={ctx} />
+              ))}
+            </div>
           );
         }
         case "EXPERT_BAND":
@@ -187,10 +182,10 @@ export default async function Home() {
           <img src={strip.imageUrl} alt={strip.title} className="w-full rounded-xl" />
         </Link>
       ) : null}
-      <section className="container-x mt-6">
-        <h1 className="font-display text-[22px] leading-tight font-extrabold md:text-[28px]">Metal dedektörü ve define dedektörü: orijinal, faturalı, uzman desteğiyle</h1>
-        <p className="mt-2 max-w-4xl text-[15px] leading-relaxed text-[#3f3f46]">{s.seo.aboutForAi}</p>
-      </section>
+      <div className="container-x mt-4">
+        <h1 className="text-[13.5px] font-bold text-mute">{s.store.name} · Metal dedektörü ve define dedektörü modelleri — orijinal, faturalı, garantili</h1>
+      </div>
+      <RecentlyViewed className="container-x mt-8" />
       {rendered}
       {posts.length ? (
         <section className="container-x mt-12">
@@ -201,6 +196,10 @@ export default async function Home() {
           <PostCards posts={posts.slice(0, 3)} />
         </section>
       ) : null}
+      <section className="container-x mt-12 max-w-4xl">
+        <h2 className="font-display text-[22px] leading-tight font-extrabold md:text-[26px]">{s.store.name}: metal dedektörü ve define dedektörü, uzman desteğiyle</h2>
+        <p className="mt-2 text-[15px] leading-relaxed text-[#3f3f46]">{s.seo.aboutForAi}</p>
+      </section>
       {homeFaq.length ? (
         <div className="container-x mt-12 max-w-4xl">
           <FaqSection items={toQA(homeFaq)} title="Metal dedektörü hakkında sık sorulan sorular" />

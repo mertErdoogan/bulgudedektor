@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { Turnstile } from "@/components/turnstile";
 import { Stars } from "@/components/store/product-client";
 import { Input, Textarea } from "@/components/ui";
 import { askQuestion, stockAlert, writeReview } from "../../actions";
@@ -31,6 +32,7 @@ export function ProductForms({ productId, mode }: { productId: string; mode: "re
         <Stars value={rating} onChange={setRating} />
         <Textarea name="body" placeholder="Cihazı nerede, nasıl kullandın? Neyi beğendin, neyi beğenmedin?" required minLength={10} />
         <p className="text-xs text-mute">Yorum yazmak için giriş yapman gerekir. Satın alan müşterilerin yorumları &quot;Doğrulanmış alıcı&quot; olarak işaretlenir.</p>
+        <Turnstile />
         <SubmitButton className="self-start">Gönder</SubmitButton>
       </ActionForm>
     );
@@ -41,6 +43,7 @@ export function ProductForms({ productId, mode }: { productId: string; mode: "re
       <Input name="name" placeholder="Adın" required />
       <Input name="contact" placeholder="E-posta veya telefon (yanıt için)" required />
       <Textarea name="question" placeholder="Sorun" required className="sm:col-span-2" />
+      <Turnstile />
       <SubmitButton className="self-start">Soruyu gönder</SubmitButton>
     </ActionForm>
   );

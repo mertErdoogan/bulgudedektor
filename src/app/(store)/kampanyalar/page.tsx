@@ -1,3 +1,4 @@
+import { cardCtx } from "@/lib/card-ctx";
 import { pageMeta } from "@/lib/seo";
 import { liveCampaigns, productsFor } from "@/lib/store";
 import { ProductCard } from "@/components/store/product-card";
@@ -25,7 +26,7 @@ export default async function CampaignsPage() {
       {deals.length ? (
         <>
           <h2 className="font-display mt-10 mb-4 text-2xl font-extrabold">İndirimli ürünler</h2>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{deals.map((p) => <ProductCard key={p.id} p={p} installments={s.payment.noInterestInstallments} />)}</div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{deals.map((p) => <ProductCard key={p.id} p={p} ctx={cardCtx(s)} />)}</div>
         </>
       ) : null}
     </div>

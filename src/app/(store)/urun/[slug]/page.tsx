@@ -1,3 +1,4 @@
+import { cardCtx } from "@/lib/card-ctx";
 import Link from "next/link";
 import { redirectOrNotFound } from "@/lib/redirects";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
@@ -5,7 +6,12 @@ import { Check, MessageCircle, Play, Star, Truck, Video } from "lucide-react";
 import { db } from "@/db";
 import { productImages, productQuestions, products, reviews } from "@/db/schema";
 import { ProductCard } from "@/components/store/product-card";
-import { BuyBox, Gallery, StickyBuy } from "@/components/store/product-client";
+import { BuyBox, Gallery, ProductViewTracker, StickyBuy } from "@/components/store/product-client";
+import { DeliveryBadge, SocialProof } from "@/components/store/product-card";
+import { FavoriteButton } from "@/components/store/bits";
+import { RecentlyViewed } from "@/components/store/rails";
+import { productActivity } from "@/db/schema";
+import { sql } from "drizzle-orm";
 import { getSettings } from "@/lib/settings";
 import { cardQuery } from "@/lib/store";
 import { markdownToHtml } from "@/lib/markdown";
@@ -98,12 +104,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     p.waterproof ? { k: "Su geçirmezlik", v: WATERPROOF_LABEL[p.waterproof] } : null,
     p.experience ? { k: "Kimin için", v: EXPERIENCE_LABEL[p.experience] } : null,
   ].filter(Boolean) as { k: string; v: string }[];
-  const [dbFaq, guides] = await Promise.all([getFaqs({ productId: p.id }), relatedPosts({ productId: p.id, categoryId: p.categoryId, limit: 3 })]);
+  const [dbFaq, guides, [act]] = await Promise.all([
+    getFaqs({ productId: p.id }),
+    relatedPosts({ productId: p.id, categoryId: p.categoryId, limit: 3 }),
+    db
+      .select({ views24: sql<number>`coalesce(sum(${productActivity.views}),0)::int`, carts24: sql<number>`coalesce(sum(${productActivity.carts}),0)::int` })
+      .from(productActivity)
+      .where(and(eq(productActivity.productId, p.id), sql`${productActivity.hour} > now() - interval '24 hours'`)),
+  ]);
+  const ctx = cardCtx(s);
   const faqItems = [...toQA(dbFaq), ...autoFaq(p, s)];
 
   return (
     <div className="container-x pt-4 pb-24 md:pb-10">
       <JsonLd data={graph(productLd(p, s))} />
+      <ProductViewTracker id={p.id} name={p.name} price={p.price} brand={p.brand?.name} />
       <Breadcrumbs items={[...(p.category ? [{ name: p.category.name, path: `/kategori/${p.category.slug}` }] : []), ...(p.brand ? [{ name: p.brand.name, path: `/marka/${p.brand.slug}` }] : []), { name: p.name, path: `/urun/${p.slug}` }]} />
       <div className="grid gap-6 md:grid-cols-2 lg:gap-10">
         <Gallery images={p.images} name={p.name} badge={p.badges[0]} />
@@ -111,13 +126,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <p className="text-[13px] font-semibold text-mute">
             {p.brand ? <Link href={`/marka/${p.brand.slug}`} className="font-extrabold text-link">{p.brand.name}</Link> : null} · Kod {p.sku}
           </p>
-          <h1 className="font-display text-[26px] leading-tight font-extrabold md:text-[34px]">{p.name}</h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="font-display text-[26px] leading-tight font-extrabold md:text-[34px]">{p.name}</h1>
+            <FavoriteButton productId={p.id} name={p.name} className="mt-1 shrink-0" />
+          </div>
           {rating ? (
             <a href="#yorumlar" className="flex items-center gap-1.5 text-sm">
               <Star size={15} className="fill-gold text-gold" /> <b>{rating.toFixed(1)}</b> <span className="text-mute">({p.reviews.length} yorum)</span>
             </a>
           ) : null}
           {p.shortDescription ? <p className="text-[15px] leading-relaxed text-[#3f3f46]">{p.shortDescription}</p> : null}
+          {act ? <SocialProof p={act} ctx={ctx} className="text-[13px]" /> : null}
 
           <div className="rounded-2xl bg-soft p-4">
             <div className="flex flex-wrap items-baseline gap-x-3">
@@ -137,13 +156,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           {!archived ? (
             <p className="flex items-start gap-2.5 text-sm">
-              <Truck size={20} className="mt-0.5 shrink-0 text-brand" />
+              {out ? <Truck size={20} className="mt-0.5 shrink-0 text-brand" /> : null}
               {out ? (
                 <span><b className="text-danger">Şu an stokta yok.</b> Gelince haber verelim veya uzmana benzerini sor.</span>
               ) : (
-                <span>
-                  <b className="text-link">Stokta.</b> {p.sameDayShipping ? `${s.shipping.sameDayCutoff}'e kadar verilen siparişler bugün kargoda.` : "1–2 iş günü içinde kargoda."}
-                  <span className="block text-mute">Tahmini teslim {s.shipping.deliveryEstimate}{s.shipping.pickupEnabled ? " · Showroom'dan aynı gün teslim alınabilir" : ""}</span>
+                <span className="flex flex-col gap-1.5">
+                  <DeliveryBadge p={p} ctx={ctx} className="w-fit text-[13px]" />
+                  <span className="text-mute">
+                    {p.sameDayShipping && p.stock > 0 ? `Saat ${s.shipping.sameDayCutoff}'e kadar verilen siparişler aynı gün kargoda.` : "Kargo süresi stok durumuna göre hesaplanır."}
+                    {s.shipping.pickupEnabled ? " Showroom'dan da teslim alabilirsin." : ""}
+                  </span>
                 </span>
               )}
             </p>
@@ -152,7 +174,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           )}
 
           <div className="hidden md:block">
-            <BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} />
+            <BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} amount={p.price} brand={p.brand?.name} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <a href={wa} target="_blank" className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#25D366] text-sm font-extrabold text-white"><MessageCircle size={18} /> Bu ürünü sor</a>
@@ -278,7 +300,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <b className="text-lg">{p.name}</b>
             <p className="font-display mt-1 text-2xl font-extrabold">{formatTL(p.price)}</p>
             {inst > 1 ? <p className="text-sm text-mute">{inst} × {formatTL(Math.round(p.price / inst))} vade farksız</p> : null}
-            <div className="mt-4"><BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} /></div>
+            <div className="mt-4"><BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} amount={p.price} brand={p.brand?.name} /></div>
             <a href={wa} target="_blank" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-lg bg-[#e9f9ef] text-sm font-extrabold text-[#11643a]"><MessageCircle size={17} /> Uzmana sor</a>
           </div>
         </aside>
@@ -290,13 +312,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <PostCards posts={guides} />
         </section>
       ) : null}
+      <RecentlyViewed exclude={p.id} className="mt-12" />
       {related.length ? (
         <section className="mt-12">
           <h2 className="font-display mb-4 text-2xl font-extrabold">Bunlara da bak</h2>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{related.map((r) => <ProductCard key={r.id} p={r} installments={inst} />)}</div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{related.map((r) => <ProductCard key={r.id} p={r} ctx={ctx} />)}</div>
         </section>
       ) : null}
-      <StickyBuy productId={p.id} name={p.name} price={formatTL(p.price)} inst={inst > 1 ? `${inst} × ${formatTL(Math.round(p.price / inst))}` : undefined} disabled={out} />
+      <StickyBuy productId={p.id} name={p.name} price={formatTL(p.price)} inst={inst > 1 ? `${inst} × ${formatTL(Math.round(p.price / inst))}` : undefined} disabled={out} amount={p.price} brand={p.brand?.name} />
     </div>
   );
 }

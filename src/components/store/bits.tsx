@@ -26,12 +26,35 @@ export function CartButton({ compact }: { compact?: boolean }) {
   );
 }
 
-export function AddToCart({ productId, name, disabled, size = "md", className, label = "Sepete ekle" }: { productId: string; name: string; disabled?: boolean; size?: "md" | "lg"; className?: string; label?: string }) {
+export function AddToCart({ productId, name, disabled, size = "md", className, label = "Sepete ekle", price, brand }: { productId: string; name: string; disabled?: boolean; size?: "md" | "lg"; className?: string; label?: string; price?: number; brand?: string | null }) {
   const { add } = useCart();
   return (
-    <Button type="button" size={size} disabled={disabled} className={cn("w-full", className)} onClick={() => add(productId, 1, name)}>
+    <Button type="button" size={size} disabled={disabled} className={cn("w-full", className)} onClick={() => add(productId, 1, name, { price, brand })}>
       {disabled ? "Stokta yok" : label}
     </Button>
+  );
+}
+
+export function FavoriteButton({ productId, name, className, withLabel }: { productId: string; name?: string; className?: string; withLabel?: boolean }) {
+  const { favorites, toggleFavorite, ready } = useCart();
+  const on = ready && favorites.includes(productId);
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        toggleFavorite(productId, name);
+      }}
+      aria-pressed={on}
+      aria-label={on ? "Favorilerden çıkar" : "Favorilere ekle"}
+      className={cn(
+        withLabel ? "flex h-12 items-center justify-center gap-2 rounded-lg border border-line px-4 text-sm font-bold hover:border-deep" : "grid h-9 w-9 place-items-center rounded-full bg-white/90 shadow-sm ring-1 ring-line backdrop-blur hover:scale-105",
+        className,
+      )}
+    >
+      <Heart size={withLabel ? 18 : 17} className={on ? "fill-accent text-accent" : "text-deep"} />
+      {withLabel ? (on ? "Favorilerde" : "Favorilere ekle") : null}
+    </button>
   );
 }
 
@@ -80,7 +103,7 @@ export function MegaMenu({ categories, brands }: { categories: Cat[]; brands: { 
         onClick={() => setOpen((o) => !o)}
         onMouseEnter={() => setOpen(true)}
         aria-expanded={open}
-        className="flex h-[42px] items-center gap-2 rounded-lg bg-white/10 px-4 text-sm font-extrabold text-white hover:bg-white/20"
+        className="flex h-[40px] items-center gap-2 rounded-full bg-deep px-4 text-sm font-extrabold text-white hover:bg-black"
       >
         <Menu size={16} /> Tüm kategoriler
       </button>

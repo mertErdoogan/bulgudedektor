@@ -20,7 +20,7 @@ export async function sendMail(to: string, subject: string, html: string) {
   }
 }
 
-const wrap = (body: string, store: string) =>
+export const wrap = (body: string, store: string) =>
   `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#1d1d1f"><p style="font-size:22px;font-weight:800">${store}</p>${body}<p style="color:#646e78;font-size:12px;margin-top:24px">Bu e-posta sipariş işlemin nedeniyle gönderildi.</p></div>`;
 
 export async function mailOrderPlaced(o: { id: string; number: number; email: string; total: number; paymentMethod: string; items: { name: string; quantity: number }[] }, link: string) {
@@ -82,5 +82,25 @@ export async function mailReviewRequest(orderId: string) {
     o.email,
     `Cihazın eline ulaştı mı? · ${orderNo(o.number)}`,
     wrap(`<p>Merhaba${first ? ` ${first}` : ""},</p><p>Siparişin teslim edildi. Kurulumda takıldığın bir yer olursa bu e-postayı yanıtlaman yeterli.</p><p>Birkaç kez sahaya çıktıktan sonra deneyimini yazarsan çok seviniriz:</p><ul style="padding-left:18px">${list}</ul>${google}`, s.store.name),
+  );
+}
+
+/** Terk edilen sepet hatırlatması (yalnızca ticari ileti izni olanlara). */
+export async function mailCartReminder(email: string, name: string | null, items: { name: string; slug: string; price: number; image: string | null; qty: number }[]) {
+  const s = await getSettings();
+  const base = process.env.APP_URL || "";
+  const rows = items
+    .map(
+      (i) =>
+        `<tr><td style="padding:8px 0;width:64px">${i.image ? `<img src="${i.image.startsWith("http") ? i.image : base + i.image}" width="56" height="56" style="object-fit:contain" alt="">` : ""}</td><td style="padding:8px"><a href="${base}/urun/${i.slug}" style="color:#1d1d1f;font-weight:700;text-decoration:none">${i.name}</a><br><span style="color:#66666b">${i.qty} adet · ${formatTL(i.price)}</span></td></tr>`,
+    )
+    .join("");
+  return sendMail(
+    email,
+    `Sepetinde ürünler seni bekliyor · ${s.store.name}`,
+    wrap(
+      `<p>Merhaba${name ? ` ${name.split(" ")[0]}` : ""},</p><p>Sepetine eklediğin ürünler hâlâ seni bekliyor. Aklına takılan bir soru varsa uzmanımız WhatsApp'tan hemen yanıtlar.</p><table style="width:100%;border-collapse:collapse">${rows}</table><p style="margin-top:16px"><a href="${base}/sepet" style="display:inline-block;background:#d42e1e;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">Sepete dön</a></p><p style="color:#66666b;font-size:12px">Bu e-postayı, ödeme sırasında kampanya ve bilgilendirme iletilerine izin verdiğin için aldın. İstemiyorsan yanıtlayıp "iptal" yazman yeterli.</p>`,
+      s.store.name,
+    ),
   );
 }

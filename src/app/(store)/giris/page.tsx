@@ -21,7 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <SubmitButton size="lg">Giriş yap</SubmitButton>
       </ActionForm>
       <p className="mt-6 text-sm">Hesabın yok mu? <Link href={`/kayit${next ? `?next=${next}` : ""}`} className="font-bold text-link">Kayıt ol</Link></p>
-      <p className="mt-2 text-sm text-mute">Şifreni unuttuysan <Link href="/iletisim?konu=sifre" className="font-bold text-link">bize yaz</Link>, hemen sıfırlayalım.</p>
+      <p className="mt-2 text-sm"><Link href="/sifremi-unuttum" className="font-bold text-link">Şifremi unuttum / şifre oluştur</Link></p>
     </div>
   );
 }

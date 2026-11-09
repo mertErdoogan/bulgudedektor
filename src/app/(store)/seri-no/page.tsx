@@ -1,3 +1,4 @@
+import { allowIp } from "@/lib/guard";
 import { pageMeta } from "@/lib/seo";
 import { eq } from "drizzle-orm";
 import { CheckCircle2, CircleAlert } from "lucide-react";
@@ -9,7 +10,8 @@ export const metadata = pageMeta({ title: "Dedektör Seri No Sorgulama — Cihaz
 
 export default async function SerialPage({ searchParams }: { searchParams: Promise<{ no?: string }> }) {
   const no = ((await searchParams).no ?? "").trim().toUpperCase();
-  const s = no ? await db.query.serialNumbers.findFirst({ where: eq(serialNumbers.serial, no), with: { product: { with: { brand: true } } } }) : null;
+  const limited = !!no && !(await allowIp("serial", 30, 15 * 60 * 1000));
+  const s = no && !limited ? await db.query.serialNumbers.findFirst({ where: eq(serialNumbers.serial, no), with: { product: { with: { brand: true } } } }) : null;
   return (
     <div className="container-x max-w-xl py-12">
       <h1 className="font-display text-2xl font-extrabold">Cihazın orijinal mi?</h1>
@@ -18,7 +20,8 @@ export default async function SerialPage({ searchParams }: { searchParams: Promi
         <input name="no" defaultValue={no} required placeholder="Seri no" className="h-12 flex-1 rounded-lg border border-[#d6d6d9] px-4 font-mono uppercase" />
         <button className="h-12 rounded-lg bg-brand px-5 font-extrabold text-white">Sorgula</button>
       </form>
-      {no ? (
+      {limited ? <p className="mt-6 font-semibold text-danger">Çok fazla sorgu yapıldı. 15 dakika sonra tekrar dene.</p> : null}
+      {no && !limited ? (
         s ? (
           <div className="mt-6 flex gap-3 rounded-2xl bg-tint p-5">
             <CheckCircle2 className="shrink-0 text-brand" size={28} />

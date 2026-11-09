@@ -35,6 +35,8 @@ export type StoreSettings = {
   googleBusinessUrl: string;
   googleReviewUrl: string;
   sikayetvarUrl: string;
+  /** Ürün kartlarında "24 saatte X kişi inceledi" gibi gerçek etkileşim bilgileri */
+  socialProof: boolean;
 };
 
 export type ShippingSettings = {
@@ -44,6 +46,10 @@ export type ShippingSettings = {
   defaultCarrier: string;
   sameDayCutoff: string;
   deliveryEstimate: string;
+  /** Kargoya verildikten sonra teslim için iş günü aralığı (ürün kartındaki tahmini teslim tarihi) */
+  transitMinDays: number;
+  transitMaxDays: number;
+  shipOnSaturday: boolean;
   pickupEnabled: boolean;
   pickupAddress: string;
   trackingUrlTemplate: Record<string, string>;
@@ -128,6 +134,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     googleBusinessUrl: "",
     googleReviewUrl: "",
     sikayetvarUrl: "",
+    socialProof: true,
   },
   shipping: {
     freeThreshold: 0,
@@ -136,6 +143,9 @@ export const DEFAULT_SETTINGS: AllSettings = {
     defaultCarrier: "Yurtiçi Kargo",
     sameDayCutoff: "15:00",
     deliveryEstimate: "1–3 iş günü",
+    transitMinDays: 1,
+    transitMaxDays: 2,
+    shipOnSaturday: false,
     pickupEnabled: true,
     pickupAddress: "",
     trackingUrlTemplate: {

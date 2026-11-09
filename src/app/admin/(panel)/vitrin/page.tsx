@@ -18,10 +18,11 @@ const PLACE: Record<string, string> = { HERO: "Büyük slider", SIDE: "Yan kutul
 const SECTION: Record<string, string> = {
   WIZARD_BAND: "'Bana hangisi?' bandı",
   CATEGORY_TILES: "Kategori kutuları",
-  PRODUCT_TABS: "Sekmeli ürünler (çok satan / yeni / fırsat)",
+  PRODUCT_TABS: "Ürün listeleri (çok satan / yeni / fırsat / aynı gün)",
   EXPERT_BAND: "Uzmana sor bandı",
   PRODUCT_ROW: "Profesyonel ürün şeridi",
   TRUST: "Güven şeridi + seri no sorgu",
+  CATEGORY_RAILS: "Kategori şeritleri (her kategoriden ürünler)",
 };
 const dt = (x: Date | null) => (x ? new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "");
 

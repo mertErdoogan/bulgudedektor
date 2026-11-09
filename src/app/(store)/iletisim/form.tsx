@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { Turnstile } from "@/components/turnstile";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui";
 import { contactForm } from "../actions";
 
@@ -14,6 +15,7 @@ export function ContactForm({ subject }: { subject: string }) {
       <Field label="Konu"><Input name="subject" defaultValue={subject} /></Field>
       <Field label="Mesajın"><Textarea name="message" required className="min-h-[130px]" /></Field>
       <Checkbox name="kvkk" required label={<><Link href="/sayfa/kvkk-aydinlatma-metni" target="_blank" className="font-bold text-link">Aydınlatma metnini</Link> okudum.</>} />
+      <Turnstile />
       <SubmitButton size="lg">Gönder</SubmitButton>
     </ActionForm>
   );

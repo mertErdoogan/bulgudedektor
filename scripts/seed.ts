@@ -15,7 +15,7 @@ async function main() {
   console.log("Tablolar temizleniyor…");
   await db.execute(sql`TRUNCATE roles, users, audit_logs, brands, categories, products, product_images, serial_numbers, stock_movements,
     media_assets, customers, addresses, customer_notes, conversations, messages, service_records, reviews, product_questions, stock_alerts,
-    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects RESTART IDENTITY CASCADE`);
+    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects, product_activity, favorites, cart_snapshots, password_resets RESTART IDENTITY CASCADE`);
 
   // Roller ve ekip
   const roleRows = await db.insert(t.roles).values(DEFAULT_ROLES.map((r) => ({ ...r, permissions: [...r.permissions], isSystem: r.key === "admin" }))).returning();
@@ -96,7 +96,16 @@ async function main() {
     const slug = p.name.toLowerCase().replace(/[^a-z0-9ğüşöçı]+/gi, "-").replace(/ı/g, "i").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s").replace(/ö/g, "o").replace(/ç/g, "c").replace(/^-|-$/g, "");
     const [row] = await db
       .insert(t.products)
-      .values({ ...rest, slug, status: "ACTIVE", sortOrder: i, specs: (rest.specs as t.Spec[]) ?? [] })
+      .values({
+        ...rest,
+        slug,
+        status: "ACTIVE",
+        sortOrder: i,
+        specs: (rest.specs as t.Spec[]) ?? [],
+        // Demo: ilk 5 ürün "yeni", diğerleri daha eski; birkaç üründe indirim
+        createdAt: new Date(Date.now() - (i < 5 ? 2 + i * 3 : 45 + i * 4) * 86400000),
+        compareAtPrice: "compareAtPrice" in rest && rest.compareAtPrice ? rest.compareAtPrice : [3, 6, 9, 12].includes(i) ? Math.round((rest.price * 1.09) / 100) * 100 : null,
+      })
       .returning();
     await db.insert(t.productImages).values({ productId: row.id, url: img(image), alt: p.name, sortOrder: 0 });
     if (row.trackSerial && row.stock > 0) {
@@ -120,6 +129,7 @@ async function main() {
     { type: "EXPERT_BAND", sortOrder: 3, title: "Kararsız mı kaldın? Bir uzman cihazı kamerada göstersin." },
     { type: "PRODUCT_ROW", sortOrder: 4, title: "Profesyonel ve derin arama", config: { filter: "pro", limit: 5 } },
     { type: "TRUST", sortOrder: 5 },
+    { type: "CATEGORY_RAILS", sortOrder: 6, title: "Kategorilere göre", config: { count: 4 } },
   ]);
   await db.insert(t.menuItems).values([
     { location: "HEADER", label: "Define ve sikke", url: "/kategori/define-ve-sikke", sortOrder: 0 },
@@ -235,6 +245,14 @@ async function main() {
     { key: "setup", value: { completed: false, completedSteps: ["store"] } },
   ]);
   await db.insert(t.auditLogs).values({ userId: admin.id, action: "create", entity: "system", summary: "Demo verisi yüklendi" });
+
+  // Demo etkileşim verisi (sosyal kanıt rozetlerini görmek için; canlıda gerçek ziyaretlerden oluşur)
+  const hourNow = Math.floor(Date.now() / 3600_000) * 3600_000;
+  const act: { productId: string; hour: Date; views: number; carts: number }[] = [];
+  prodRows.slice(0, 10).forEach((p, i) => {
+    for (let h = 0; h < 6; h++) act.push({ productId: p.id, hour: new Date(hourNow - h * 3 * 3600_000), views: 2 + ((i * 7 + h * 3) % 6), carts: i % 3 === 0 ? 1 : 0 });
+  });
+  await db.insert(t.productActivity).values(act);
 
   await seedContent();
   console.log("Bitti. Giriş: admin@arenadedektor.local / Arena123!  (satis@, depo@, servis@ aynı şifre)");

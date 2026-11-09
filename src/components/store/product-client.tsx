@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { countActivity, emit, pushRecent } from "@/lib/track";
+import { useEffect, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui";
@@ -31,7 +32,7 @@ export function Gallery({ images, name, badge }: { images: { url: string; alt: s
   );
 }
 
-export function BuyBox({ productId, name, max, disabled }: { productId: string; name: string; max: number; disabled: boolean }) {
+export function BuyBox({ productId, name, max, disabled, amount, brand }: { productId: string; name: string; max: number; disabled: boolean; amount?: number; brand?: string | null }) {
   const { add } = useCart();
   const [q, setQ] = useState(1);
   return (
@@ -41,12 +42,12 @@ export function BuyBox({ productId, name, max, disabled }: { productId: string; 
         <span className="w-8 text-center font-bold">{q}</span>
         <button className="grid h-full w-11 place-items-center" onClick={() => setQ(Math.min(Math.max(1, max), q + 1))} aria-label="Artır"><Plus size={16} /></button>
       </div>
-      <Button size="lg" className="flex-1" disabled={disabled} onClick={() => add(productId, q, name)}>{disabled ? "Stokta yok" : "Sepete ekle"}</Button>
+      <Button size="lg" className="flex-1" disabled={disabled} onClick={() => add(productId, q, name, { price: amount, brand })}>{disabled ? "Stokta yok" : "Sepete ekle"}</Button>
     </div>
   );
 }
 
-export function StickyBuy({ productId, name, price, inst, disabled }: { productId: string; name: string; price: string; inst?: string; disabled: boolean }) {
+export function StickyBuy({ productId, name, price, inst, disabled, amount, brand }: { productId: string; name: string; price: string; inst?: string; disabled: boolean; amount?: number; brand?: string | null }) {
   const { add } = useCart();
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-line bg-white px-4 pt-2.5 pb-[max(10px,env(safe-area-inset-bottom))] md:hidden">
@@ -54,7 +55,7 @@ export function StickyBuy({ productId, name, price, inst, disabled }: { productI
         <b className="font-display text-lg">{price}</b>
         {inst ? <span className="text-[11.5px] text-mute">{inst}</span> : null}
       </span>
-      <Button size="lg" className="flex-1" disabled={disabled} onClick={() => add(productId, 1, name)}>{disabled ? "Stokta yok" : "Sepete ekle"}</Button>
+      <Button size="lg" className="flex-1" disabled={disabled} onClick={() => add(productId, 1, name, { price: amount, brand })}>{disabled ? "Stokta yok" : "Sepete ekle"}</Button>
     </div>
   );
 }
@@ -67,4 +68,14 @@ export function Stars({ value, onChange }: { value: number; onChange: (n: number
       ))}
     </div>
   );
+}
+
+/** Ürün sayfası açıldığında: görüntüleme sayacı, son gezilenler ve GA4/Pixel view_item. */
+export function ProductViewTracker({ id, name, price, brand }: { id: string; name: string; price: number; brand?: string | null }) {
+  useEffect(() => {
+    countActivity(id, "v");
+    pushRecent(id);
+    emit("view_item", { value: price, items: [{ item_id: id, item_name: name, price, item_brand: brand }] });
+  }, [id, name, price, brand]);
+  return null;
 }

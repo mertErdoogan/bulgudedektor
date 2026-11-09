@@ -1,3 +1,4 @@
+import { allowIp } from "@/lib/guard";
 import { redirect } from "next/navigation";
 import { and, eq, or } from "drizzle-orm";
 import { db } from "@/db";
@@ -10,7 +11,8 @@ export const metadata = { title: "Sipariş takibi" };
 export default async function TrackPage({ searchParams }: { searchParams: Promise<{ no?: string; iletisim?: string }> }) {
   const sp = await searchParams;
   let error = "";
-  if (sp.no && sp.iletisim) {
+  if (sp.no && sp.iletisim && !(await allowIp("track", 15, 15 * 60 * 1000))) error = "Çok fazla sorgu yapıldı. 15 dakika sonra tekrar dene.";
+  else if (sp.no && sp.iletisim) {
     const num = Number(sp.no.replace(/\D/g, ""));
     const c = sp.iletisim.trim().toLowerCase();
     const o = num ? await db.query.orders.findFirst({ where: and(eq(orders.number, num), or(eq(orders.email, c), eq(orders.phone, normalizePhone(c)))) }) : null;
