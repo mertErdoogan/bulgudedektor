@@ -1,4 +1,4 @@
-# Bulgu Dedektör — e-ticaret mağazası + yönetim paneli
+# Arena Dedektör — e-ticaret mağazası + yönetim paneli
 
 Next.js 15 (App Router) · TypeScript · PostgreSQL + Drizzle ORM · Tailwind CSS · iyzico
 
@@ -15,8 +15,8 @@ PAYMENT_SIMULATION=1 npm run dev
 ```
 
 - Mağaza: http://localhost:3000
-- Panel: http://localhost:3000/admin — `admin@bulgu.local` / `Bulgu123!`
-  - Diğer roller (aynı şifre): `satis@`, `depo@`, `servis@bulgu.local`
+- Panel: http://localhost:3000/admin — `admin@arenadedektor.local` / `Arena123!`
+  - Diğer roller (aynı şifre): `satis@`, `depo@`, `servis@arenadedektor.local`
 - `PAYMENT_SIMULATION=1` iken iyzico anahtarı yoksa kart ödemesi test ekranıyla simüle edilir (sadece geliştirmede çalışır).
 
 ## Canlıya alma

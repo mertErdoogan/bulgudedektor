@@ -15,7 +15,7 @@ export function CartButton({ compact }: { compact?: boolean }) {
     return (
       <Link href="/sepet" aria-label="Sepet" className="relative grid h-11 w-11 place-items-center rounded-full hover:bg-soft">
         <ShoppingCart size={21} />
-        {ready && count ? <span className="absolute -top-0.5 -right-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gold px-1 text-[11px] font-extrabold text-white">{count}</span> : null}
+        {ready && count ? <span className="absolute -top-0.5 -right-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[11px] font-extrabold text-white">{count}</span> : null}
       </Link>
     );
   return (
@@ -40,7 +40,7 @@ export function CompareToggle({ productId }: { productId: string }) {
   const on = compare.includes(productId);
   return (
     <button type="button" onClick={() => toggleCompare(productId)} className={cn("flex items-center gap-1.5 text-xs font-bold", on ? "text-brand" : "text-mute hover:text-deep")}>
-      <span className={cn("grid h-4 w-4 place-items-center rounded border-2", on ? "border-brand bg-brand text-white" : "border-[#b9c0b6]")}>{on ? "✓" : ""}</span>
+      <span className={cn("grid h-4 w-4 place-items-center rounded border-2", on ? "border-brand bg-brand text-white" : "border-[#b8bec7]")}>{on ? "✓" : ""}</span>
       Karşılaştır
     </button>
   );
@@ -80,7 +80,7 @@ export function MegaMenu({ categories, brands }: { categories: Cat[]; brands: { 
         onClick={() => setOpen((o) => !o)}
         onMouseEnter={() => setOpen(true)}
         aria-expanded={open}
-        className="flex h-[42px] items-center gap-2 rounded-lg bg-brand px-4 text-sm font-extrabold text-white"
+        className="flex h-[42px] items-center gap-2 rounded-lg bg-white/10 px-4 text-sm font-extrabold text-white hover:bg-white/20"
       >
         <Menu size={16} /> Tüm kategoriler
       </button>
@@ -156,7 +156,7 @@ export function MobileTabBar() {
             ) : (
               <i.icon size={21} />
             )}
-            {i.badge ? <span className="absolute top-1 left-1/2 ml-2 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[10px] text-white">{i.badge}</span> : null}
+            {i.badge ? <span className="absolute top-1 left-1/2 ml-2 grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 text-[10px] text-white">{i.badge}</span> : null}
             {i.label}
           </Link>
         );

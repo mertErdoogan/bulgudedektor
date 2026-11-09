@@ -44,7 +44,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         </div>
       ) : null}
       {o.paymentMethod === "TRANSFER" && o.paymentStatus === "PENDING" ? (
-        <div className="mb-5 rounded-2xl border border-gold/40 bg-[#f6efe3] p-5 text-sm">
+        <div className="mb-5 rounded-2xl border border-accent/30 bg-[#fff4f2] p-5 text-sm">
           <b className="text-base">Havale / EFT bilgileri</b>
           <p className="mt-1">Açıklamaya <b>{orderNo(o.number)}</b> yazarak <b>{formatTL(o.total)}</b> gönder. Ödeme hesabımıza geçince siparişin hazırlanır.</p>
           <ul className="mt-2 flex flex-col gap-1">{s.payment.bankAccounts.map((b) => <li key={b.iban}><b>{b.bank}</b> · {b.holder} · <span className="font-mono select-all">{b.iban}</span></li>)}</ul>

@@ -74,7 +74,7 @@ export async function PostForm({ post }: { post?: Post }) {
         <Card>
           <CardHeader title="Yazar (E-E-A-T)" description="Gerçek bir kişi ve uzmanlığı: Google ve AI motorları deneyimi olan yazarı daha güvenilir bulur." />
           <div className="flex flex-col gap-4 p-5">
-            <Field label="Ad"><Input name="authorName" defaultValue={post?.authorName ?? "Bulgu Dedektör Uzman Ekibi"} /></Field>
+            <Field label="Ad"><Input name="authorName" defaultValue={post?.authorName ?? "Arena Dedektör Uzman Ekibi"} /></Field>
             <Field label="Unvan"><Input name="authorTitle" defaultValue={post?.authorTitle ?? ""} placeholder="12 yıllık saha uzmanı, Minelab eğitmeni" /></Field>
             <Field label="Kısa biyografi"><Textarea name="authorBio" defaultValue={post?.authorBio ?? ""} className="min-h-[80px]" /></Field>
           </div>
@@ -91,7 +91,7 @@ export async function PostForm({ post }: { post?: Post }) {
               <div className="flex flex-col gap-1.5">
                 {cats.map((c) => (
                   <label key={c.id} className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="relatedCategoryIds" value={c.id} defaultChecked={post?.relatedCategoryIds.includes(c.id)} className="h-4 w-4 accent-[#3f6b4f]" /> {c.name}
+                    <input type="checkbox" name="relatedCategoryIds" value={c.id} defaultChecked={post?.relatedCategoryIds.includes(c.id)} className="h-4 w-4 accent-[#19126b]" /> {c.name}
                   </label>
                 ))}
               </div>

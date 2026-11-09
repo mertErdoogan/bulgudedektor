@@ -20,14 +20,14 @@ async function main() {
   // Roller ve ekip
   const roleRows = await db.insert(t.roles).values(DEFAULT_ROLES.map((r) => ({ ...r, permissions: [...r.permissions], isSystem: r.key === "admin" }))).returning();
   const role = (k: string) => roleRows.find((r) => r.key === k)!.id;
-  const pw = await bcrypt.hash("Bulgu123!", 10);
+  const pw = await bcrypt.hash("Arena123!", 10);
   const [admin, sales, depo, servis] = await db
     .insert(t.users)
     .values([
-      { name: "Yönetici", email: "admin@bulgu.local", passwordHash: pw, roleId: role("admin"), maxDiscountPct: 100 },
-      { name: "Elif Satış", email: "satis@bulgu.local", passwordHash: pw, roleId: role("sales"), maxDiscountPct: 5 },
-      { name: "Murat Depo", email: "depo@bulgu.local", passwordHash: pw, roleId: role("warehouse") },
-      { name: "Kemal Servis", email: "servis@bulgu.local", passwordHash: pw, roleId: role("service") },
+      { name: "Yönetici", email: "admin@arenadedektor.local", passwordHash: pw, roleId: role("admin"), maxDiscountPct: 100 },
+      { name: "Elif Satış", email: "satis@arenadedektor.local", passwordHash: pw, roleId: role("sales"), maxDiscountPct: 5 },
+      { name: "Murat Depo", email: "depo@arenadedektor.local", passwordHash: pw, roleId: role("warehouse") },
+      { name: "Kemal Servis", email: "servis@arenadedektor.local", passwordHash: pw, roleId: role("service") },
     ])
     .returning();
 
@@ -143,7 +143,7 @@ async function main() {
     { slug: "kvkk-aydinlatma-metni", title: "KVKK aydınlatma metni", content: legal("Kişisel verilerin korunması aydınlatma metni") },
     { slug: "cerez-politikasi", title: "Çerez politikası", content: legal("Çerez politikası") },
     { slug: "iade-ve-degisim", title: "İade ve değişim", content: legal("İade ve değişim koşulları") + "<p>Ürünü teslim aldıktan sonra 14 gün içinde koşulsuz iade edebilirsiniz.</p>", footerGroup: "Yardım" },
-    { slug: "hakkimizda", title: "Hakkımızda", content: "<p>Bulgu Dedektör, yetkili distribütör ürünlerini faturalı ve garantili olarak sunar. Satıştan sonra da yanınızdayız: kurulum, eğitim ve servis.</p>", footerGroup: "Kurumsal" },
+    { slug: "hakkimizda", title: "Hakkımızda", content: "<p>Arena Dedektör, yetkili distribütör ürünlerini faturalı ve garantili olarak sunar. Satıştan sonra da yanınızdayız: kurulum, eğitim ve servis.</p>", footerGroup: "Kurumsal" },
   ]);
 
   // Kampanyalar
@@ -230,14 +230,14 @@ async function main() {
   await db.insert(t.returnRequests).values({ orderId: (await db.select().from(t.orders).limit(1))[0].id, customerId: cust[0].id, reason: "Beklentimi karşılamadı" });
 
   await db.insert(t.settings).values([
-    { key: "store", value: { phone: "0 (212) 000 00 00", whatsapp: "905000000000", email: "destek@bulgudedektor.com", address: "[SHOWROOM ADRESİ]" } },
-    { key: "payment", value: { bankAccounts: [{ bank: "[BANKA]", holder: "[ŞİRKET UNVANI]", iban: "TR00 0000 0000 0000 0000 0000 00" }] } },
+    { key: "store", value: { name: "Arena Dedektör", legalName: "Arena Dedektör Teknolojileri", phone: "0212 275 94 94", whatsapp: "905436796968", email: "admin@arenadedektor.com", address: "Fulya Mah. Büyükdere Cad. Altınova Apt. No: 54 Kat: 3 D: 3, Şişli / İstanbul" } },
+    { key: "payment", value: { bankAccounts: [{ bank: "[BANKA]", holder: "Arena Dedektör Teknolojileri", iban: "TR00 0000 0000 0000 0000 0000 00" }] } },
     { key: "setup", value: { completed: false, completedSteps: ["store"] } },
   ]);
   await db.insert(t.auditLogs).values({ userId: admin.id, action: "create", entity: "system", summary: "Demo verisi yüklendi" });
 
   await seedContent();
-  console.log("Bitti. Giriş: admin@bulgu.local / Bulgu123!  (satis@, depo@, servis@ aynı şifre)");
+  console.log("Bitti. Giriş: admin@arenadedektor.local / Arena123!  (satis@, depo@, servis@ aynı şifre)");
   process.exit(0);
 }
 

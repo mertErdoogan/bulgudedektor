@@ -540,7 +540,7 @@ export const posts = pgTable(
     coverImage: text("cover_image"),
     category: text("category").notNull().default("Rehber"),
     tags: textArray("tags"),
-    authorName: text("author_name").notNull().default("Bulgu Dedektör Uzman Ekibi"),
+    authorName: text("author_name").notNull().default("Arena Dedektör Uzman Ekibi"),
     authorTitle: text("author_title"),
     authorBio: text("author_bio"),
     status: postStatus("status").notNull().default("DRAFT"),

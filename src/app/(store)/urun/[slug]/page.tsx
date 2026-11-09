@@ -65,7 +65,7 @@ function quickAnswer(p: P, s: AllSettings) {
 function autoFaq(p: P, s: AllSettings) {
   const n = fullName(p);
   const out: { q: string; a: string }[] = [];
-  out.push({ q: `${n} orijinal mi, garantisi var mı?`, a: `Evet. Bulgu Dedektör'de satılan ${n} yetkili distribütör ürünüdür; faturalı ve ${p.warrantyMonths} ay garantilidir.${p.trackSerial ? " Cihazın seri numarasını sitemizdeki Seri No Sorgula sayfasından kontrol edebilirsiniz." : ""}` });
+  out.push({ q: `${n} orijinal mi, garantisi var mı?`, a: `Evet. Arena Dedektör'de satılan ${n} yetkili distribütör ürünüdür; faturalı ve ${p.warrantyMonths} ay garantilidir.${p.trackSerial ? " Cihazın seri numarasını sitemizdeki Seri No Sorgula sayfasından kontrol edebilirsiniz." : ""}` });
   if (p.waterproof) out.push({ q: `${n} su geçirmez mi?`, a: `${n} için su dayanımı: ${WATERPROOF_LABEL[p.waterproof]}.${p.waterproof === "NONE" ? " Yağmurda koruyucu kılıf kullanılması önerilir." : ""}` });
   if (p.weightKg) out.push({ q: `${n} kaç kilo?`, a: `${n} yaklaşık ${p.weightKg.toLocaleString("tr-TR")} kg ağırlığındadır.${p.weightKg <= 1.5 ? " Uzun süreli aramalarda yormayan hafif sınıftadır." : ""}` });
   if (p.experience) out.push({ q: `${n} yeni başlayanlar için uygun mu?`, a: p.experience === "BEGINNER" ? `Evet, ${n} kolay menüsü ve hazır programlarıyla yeni başlayanlar için uygundur.` : `${n} ${WHO[p.experience]} kullanıcılar için tasarlanmıştır. Yeni başlıyorsanız satın alma sonrası ücretsiz kurulum eğitimimizden yararlanabilirsiniz.` });
@@ -117,13 +117,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <Star size={15} className="fill-gold text-gold" /> <b>{rating.toFixed(1)}</b> <span className="text-mute">({p.reviews.length} yorum)</span>
             </a>
           ) : null}
-          {p.shortDescription ? <p className="text-[15px] leading-relaxed text-[#3e4440]">{p.shortDescription}</p> : null}
+          {p.shortDescription ? <p className="text-[15px] leading-relaxed text-[#3c4652]">{p.shortDescription}</p> : null}
 
           <div className="rounded-2xl bg-soft p-4">
             <div className="flex flex-wrap items-baseline gap-x-3">
               <strong className="font-display text-[32px] font-extrabold">{formatTL(p.price)}</strong>
               {discount ? <s className="text-mute">{formatTL(p.compareAtPrice)}</s> : null}
-              {discount ? <span className="rounded bg-gold px-2 py-0.5 text-xs font-extrabold text-white">{formatTL(discount)} indirim</span> : null}
+              {discount ? <span className="rounded bg-accent px-2 py-0.5 text-xs font-extrabold text-white">{formatTL(discount)} indirim</span> : null}
             </div>
             {inst > 1 ? (
               <p className="mt-1 text-sm">
@@ -198,7 +198,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             ) : null}
             {p.idealFor.length ? <ul className="flex flex-col gap-2">{p.idealFor.map((t) => <li key={t} className="flex gap-2.5"><Check size={18} className="mt-0.5 shrink-0 text-brand" />{t}</li>)}</ul> : null}
             {p.notFor.length ? (
-              <div className="mt-4 rounded-xl bg-[#f6efe3] p-4 text-sm text-[#6b5128]">
+              <div className="mt-4 rounded-xl bg-[#fff4f2] p-4 text-sm text-[#7a2a20]">
                 <b>Bilmen gereken:</b>
                 <ul className="mt-1 list-disc pl-5">{p.notFor.map((t) => <li key={t}>{t}</li>)}</ul>
                 <Link href="/sihirbaz" className="mt-2 inline-block font-bold underline">Farklı bir iş için mi arıyorsun? 6 soruda bulalım →</Link>

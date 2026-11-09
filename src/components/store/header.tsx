@@ -16,7 +16,7 @@ export async function StoreHeader() {
         <div className="scrollbar-none overflow-x-auto bg-deep px-4 py-2 text-center text-[12.5px] font-bold whitespace-nowrap text-white">
           {s.store.announcement.split("·").map((t, i) => (
             <span key={i}>
-              {i ? <span className="mx-3 text-gold">✦</span> : null}
+              {i ? <span className="mx-3 text-accent">✦</span> : null}
               {t.trim()}
             </span>
           ))}
@@ -50,13 +50,13 @@ export async function StoreHeader() {
           <SearchBox />
         </div>
       </div>
-      <nav className="hidden border-b border-line md:block" aria-label="Kategoriler">
-        <div className="container-x flex h-[60px] items-center gap-2">
+      <nav className="hidden bg-brand text-white md:block" aria-label="Kategoriler">
+        <div className="container-x flex h-[52px] items-center gap-2">
           <MegaMenu categories={nav.categories} brands={brands.map((b) => ({ name: b.name, slug: b.slug }))} />
           <div className="scrollbar-none flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto whitespace-nowrap">
             {header.map((m) => (
-              <Link key={m.id} href={m.url} className={`rounded-lg px-3 py-2 text-sm font-bold hover:bg-soft hover:text-link ${m.highlight ? "text-link" : ""}`}>
-                {m.highlight ? <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-brand align-middle" /> : null}
+              <Link key={m.id} href={m.url} className={`rounded-lg px-3 py-2 text-sm font-bold text-white/95 hover:bg-white/10 hover:text-white ${m.highlight ? "text-white" : ""}`}>
+                {m.highlight ? <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent align-middle" /> : null}
                 {m.label}
               </Link>
             ))}

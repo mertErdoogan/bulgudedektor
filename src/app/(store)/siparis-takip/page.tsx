@@ -22,8 +22,8 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
       <h1 className="font-display text-2xl font-extrabold">Sipariş takibi</h1>
       <p className="mt-1 text-sm text-mute">Üye olmadan verdiğin siparişi buradan takip edebilirsin.</p>
       <form className="mt-5 flex flex-col gap-3">
-        <input name="no" defaultValue={sp.no} placeholder="Sipariş no (BD-000123)" required className="h-12 rounded-lg border border-[#cfd6cc] px-4" />
-        <input name="iletisim" defaultValue={sp.iletisim} placeholder="Sipariş e-postası veya telefonu" required className="h-12 rounded-lg border border-[#cfd6cc] px-4" />
+        <input name="no" defaultValue={sp.no} placeholder="Sipariş no (BD-000123)" required className="h-12 rounded-lg border border-[#d5d8de] px-4" />
+        <input name="iletisim" defaultValue={sp.iletisim} placeholder="Sipariş e-postası veya telefonu" required className="h-12 rounded-lg border border-[#d5d8de] px-4" />
         {error ? <p className="text-sm font-semibold text-danger">{error}</p> : null}
         <button className="h-12 rounded-lg bg-brand font-extrabold text-white">Siparişimi göster</button>
       </form>

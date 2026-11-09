@@ -41,7 +41,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
   <input
     ref={ref}
     className={cn(
-      "h-10 w-full rounded-lg border border-[#cfd6cc] bg-white px-3 text-deep placeholder:text-[#9aa09a] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 disabled:bg-soft",
+      "h-10 w-full rounded-lg border border-[#d5d8de] bg-white px-3 text-deep placeholder:text-[#9aa1ab] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 disabled:bg-soft",
       className,
     )}
     {...props}
@@ -53,7 +53,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
   <textarea
     ref={ref}
     className={cn(
-      "min-h-[90px] w-full rounded-lg border border-[#cfd6cc] bg-white px-3 py-2 text-deep placeholder:text-[#9aa09a] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20",
+      "min-h-[90px] w-full rounded-lg border border-[#d5d8de] bg-white px-3 py-2 text-deep placeholder:text-[#9aa1ab] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20",
       className,
     )}
     {...props}
@@ -65,7 +65,7 @@ export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttrib
   <select
     ref={ref}
     className={cn(
-      "h-10 w-full rounded-lg border border-[#cfd6cc] bg-white px-3 text-deep focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20",
+      "h-10 w-full rounded-lg border border-[#d5d8de] bg-white px-3 text-deep focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20",
       className,
     )}
     {...props}
@@ -126,7 +126,7 @@ const badgeTones = {
   warn: "bg-warn-bg text-warn",
   danger: "bg-danger-bg text-danger",
   dark: "bg-deep text-white",
-  gold: "bg-[#f6efe3] text-[#6b5128]",
+  gold: "bg-[#fff4f2] text-[#7a2a20]",
 };
 export function Badge({ tone = "neutral", className, ...props }: React.HTMLAttributes<HTMLSpanElement> & { tone?: keyof typeof badgeTones }) {
   return <span className={cn("inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold whitespace-nowrap", badgeTones[tone], className)} {...props} />;

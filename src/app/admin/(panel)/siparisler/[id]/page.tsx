@@ -250,7 +250,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             <ol className="flex flex-col gap-0 p-5">
               {o.events.map((e) => (
                 <li key={e.id} className="relative border-l-2 border-line pb-4 pl-5 last:pb-0">
-                  <span className={`absolute top-1 -left-[7px] h-3 w-3 rounded-full ${e.isPublic ? "bg-brand" : "bg-[#c9cfc6]"}`} />
+                  <span className={`absolute top-1 -left-[7px] h-3 w-3 rounded-full ${e.isPublic ? "bg-brand" : "bg-[#c9ced6]"}`} />
                   <p className="text-sm font-semibold">{e.message}</p>
                   <p className="text-xs text-mute">
                     {formatDate(e.createdAt, true)} · {e.user?.name ?? "Sistem / müşteri"}

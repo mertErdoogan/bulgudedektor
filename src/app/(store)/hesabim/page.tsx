@@ -138,7 +138,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <div className="flex flex-col gap-3">
             {services.map((x) => (
               <div key={x.id} className="rounded-xl border border-line p-4 text-sm">
-                <div className="flex justify-between"><b>{serviceNo(x.number)} · {x.productName}</b><span className="rounded-md bg-[#f6efe3] px-2 py-0.5 text-xs font-bold text-[#6b5128]">{SERVICE_STATUS_LABEL[x.status]}</span></div>
+                <div className="flex justify-between"><b>{serviceNo(x.number)} · {x.productName}</b><span className="rounded-md bg-[#fff4f2] px-2 py-0.5 text-xs font-bold text-[#7a2a20]">{SERVICE_STATUS_LABEL[x.status]}</span></div>
                 <p className="text-mute">{x.issue}</p>
                 <ol className="mt-3 flex flex-col gap-2">
                   {x.history.map((h, i) => <li key={i} className="border-l-2 border-brand pl-3"><b>{SERVICE_STATUS_LABEL[h.status]}</b> <span className="text-xs text-mute">{formatDate(h.at, true)}</span>{h.note ? <p className="text-mute">{h.note}</p> : null}</li>)}

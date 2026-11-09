@@ -47,7 +47,7 @@ export function AdminShell({ user, badges, setupPending, logout, children }: Pro
               >
                 <Icon size={17} className="shrink-0" />
                 <span className="flex-1">{i.label}</span>
-                {b ? <span className="rounded-full bg-gold px-1.5 text-[11px] font-extrabold text-white">{b}</span> : null}
+                {b ? <span className="rounded-full bg-accent px-1.5 text-[11px] font-extrabold text-white">{b}</span> : null}
               </Link>
             );
           })}

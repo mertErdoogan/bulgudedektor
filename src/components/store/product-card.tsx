@@ -14,7 +14,7 @@ export function ProductCard({ p, installments = 1, compare = false }: { p: P; in
         {p.image ? <img src={p.image} alt={p.name} loading="lazy" className="block h-[190px] w-full object-contain px-4 pt-5 pb-2 md:h-[220px]" /> : <div className="h-[190px] bg-soft md:h-[220px]" />}
         <span className="absolute top-3 left-3 flex flex-col items-start gap-1">
           {out ? <span className="rounded-md bg-deep px-2 py-0.5 text-xs font-extrabold text-white">Tükendi</span> : null}
-          {discount ? <span className="rounded-md bg-gold px-2 py-0.5 text-xs font-extrabold text-white">%{discount}</span> : null}
+          {discount ? <span className="rounded-md bg-accent px-2 py-0.5 text-xs font-extrabold text-white">%{discount}</span> : null}
           {p.badges.slice(0, 1).map((b) => (
             <span key={b} className="rounded-md bg-pop px-2 py-0.5 text-xs font-extrabold text-on-pop">{b}</span>
           ))}

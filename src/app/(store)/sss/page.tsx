@@ -23,7 +23,7 @@ export default async function FaqPage() {
       <JsonLd data={graph(faqLd(toQA(rows)))} />
       <Breadcrumbs items={[{ name: "Sık sorulan sorular", path: "/sss" }]} />
       <h1 className="font-display text-[28px] font-extrabold md:text-[36px]">Sık sorulan sorular</h1>
-      <p className="mt-2 text-[15px] text-[#3e4440]">Aradığın cevap burada yoksa uzmanımız WhatsApp’tan genellikle 15 dakika içinde yanıtlar.</p>
+      <p className="mt-2 text-[15px] text-[#3c4652]">Aradığın cevap burada yoksa uzmanımız WhatsApp’tan genellikle 15 dakika içinde yanıtlar.</p>
       {groups.size > 1 ? (
         <nav className="mt-5 flex flex-wrap gap-2" aria-label="Konular">
           {[...groups.keys()].map((g) => <a key={g} href={`#${encodeURIComponent(g)}`} className="rounded-full border border-line px-4 py-1.5 text-sm font-bold hover:bg-soft">{g}</a>)}

@@ -38,7 +38,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   const lower = c.name.toLocaleLowerCase("tr-TR");
   const summary = stats.count ? (
     <AnswerBox title={`${c.name} için hangi dedektör?`}>
-      Bulgu Dedektör’de {lower} için <b>{stats.count} model</b> var
+      Arena Dedektör’de {lower} için <b>{stats.count} model</b> var
       {stats.min != null ? (stats.min === stats.max ? <>; fiyatı <b>{formatTL(stats.min)}</b></> : <>; fiyatlar <b>{formatTL(stats.min)}</b> ile <b>{formatTL(stats.max)}</b> arasında</>) : null}
       {stats.brands.length ? <> ({stats.brands.join(", ")})</> : null}. Öne çıkanlar:{" "}
       {stats.picks.map((p, i) => (

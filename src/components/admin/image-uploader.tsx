@@ -97,7 +97,7 @@ export function ImageUploader({ value, onChange, single }: { value: Img[]; onCha
           }}
           onClick={() => input.current?.click()}
           className={cn(
-            "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#cfd6cc] px-4 py-8 text-center text-sm text-mute hover:border-brand hover:bg-tint/50",
+            "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#d5d8de] px-4 py-8 text-center text-sm text-mute hover:border-brand hover:bg-tint/50",
             drag && "border-brand bg-tint",
           )}
         >

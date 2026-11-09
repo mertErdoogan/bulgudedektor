@@ -51,7 +51,7 @@ export async function savePost(_: ActionResult | null, fd: FormData): Promise<Ac
       content,
       coverImage: strOrNull(fd.get("coverImage")),
       tags: str(fd.get("tags")).split(",").map((t) => t.trim()).filter(Boolean),
-      authorName: str(fd.get("authorName")) || "Bulgu Dedektör Uzman Ekibi",
+      authorName: str(fd.get("authorName")) || "Arena Dedektör Uzman Ekibi",
       authorTitle: strOrNull(fd.get("authorTitle")),
       authorBio: strOrNull(fd.get("authorBio")),
       status: status as "DRAFT" | "PUBLISHED",

@@ -31,7 +31,7 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
   const st = await catalogStats({ brandId: b.id });
   const top = st.count ? (
     <AnswerBox title={`${b.name} dedektör fiyatları`}>
-      Bulgu Dedektör’de <b>{st.count} orijinal {b.name} modeli</b> var
+      Arena Dedektör’de <b>{st.count} orijinal {b.name} modeli</b> var
       {st.min != null ? (st.min === st.max ? <>; fiyatı <b>{formatTL(st.min)}</b></> : <>; fiyatlar <b>{formatTL(st.min)}</b> – <b>{formatTL(st.max)}</b> arasında</>) : null}. Öne çıkanlar:{" "}
       {st.picks.map((p, i) => (
         <span key={p.id}>{i ? ", " : ""}<Link className="font-bold text-link" href={`/urun/${p.slug}`}>{p.name}</Link></span>

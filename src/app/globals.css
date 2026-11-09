@@ -1,20 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Archivo", "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Arena Dedektör kurumsal renkleri: lacivert #19126B, logo kırmızısı #E03E2D, koyu #2B2C40 */
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Public Sans", ui-sans-serif, system-ui, sans-serif;
 
-  --color-brand: #3f6b4f;
-  --color-brand-dark: #335a41;
-  --color-deep: #1f2421;
-  --color-pop: #e7eee8;
-  --color-on-pop: #2c4a37;
-  --color-soft: #f6f7f4;
-  --color-tint: #edf1ec;
-  --color-link: #36603f;
-  --color-gold: #c99a2e;
-  --color-line: #e6e8e3;
-  --color-mute: #5a5f66;
+  --color-brand: #19126b;
+  --color-brand-dark: #110c4d;
+  --color-deep: #2b2c40;
+  --color-pop: #e8e7f4;
+  --color-on-pop: #19126b;
+  --color-soft: #f4f5f7;
+  --color-tint: #ecebf6;
+  --color-link: #2a1fa0;
+  --color-accent: #e03e2d;
+  --color-accent-dark: #c32f20;
+  --color-gold: #f2a900;
+  --color-line: #e4e6e8;
+  --color-mute: #646e78;
   --color-warn: #b45309;
   --color-warn-bg: #fdf3e2;
   --color-danger: #b42318;
@@ -88,7 +91,7 @@
     scroll-margin-top: 140px;
   }
   .prose-lite blockquote {
-    @apply my-4 rounded-r-lg border-l-4 border-gold bg-[#faf5ea] px-4 py-3 text-[#5a4520];
+    @apply my-4 rounded-r-lg border-l-4 border-accent bg-[#fff4f2] px-4 py-3 text-[#6b2a22];
   }
   .prose-lite .table-wrap {
     @apply my-4 overflow-x-auto rounded-xl border border-line;

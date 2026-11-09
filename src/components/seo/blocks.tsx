@@ -53,7 +53,7 @@ export function FaqSection({ items, title = "Sık sorulan sorular", id = "sss", 
               <h3 className="text-[15.5px]">{f.q}</h3>
               <ChevronDown size={18} className="mt-0.5 shrink-0 text-mute transition group-open:rotate-180" />
             </summary>
-            <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line text-[#3e4440]">{f.a}</p>
+            <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line text-[#3c4652]">{f.a}</p>
           </details>
         ))}
       </div>

@@ -9,7 +9,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "../src/db";
 import * as t from "../src/db/schema";
 
-const AUTHOR = { authorName: "Bulgu Dedektör Uzman Ekibi", authorTitle: "Saha ve satış sonrası destek ekibi" };
+const AUTHOR = { authorName: "Arena Dedektör Uzman Ekibi", authorTitle: "Saha ve satış sonrası destek ekibi" };
 const days = (d: number) => new Date(Date.now() - d * 86400000);
 
 type PostSeed = Omit<typeof t.posts.$inferInsert, "relatedProductIds" | "relatedCategoryIds"> & { productSkus?: string[]; categorySlugs?: string[] };
@@ -139,7 +139,7 @@ Kısa ve güçlü darbeler gönderir, metaldeki sönümlenmeyi ölçer. **Minera
 
 ## Dedektör satın almak yasal mı?
 
-Evet. Metal dedektörü Türkiye'de serbestçe satılan bir cihazdır; satın almak ve bulundurmak için izin gerekmez. Bulgu Dedektör'den aldığın her cihaz faturalıdır.
+Evet. Metal dedektörü Türkiye'de serbestçe satılan bir cihazdır; satın almak ve bulundurmak için izin gerekmez. Arena Dedektör'den aldığın her cihaz faturalıdır.
 
 ## Define aramak için izin gerekir mi?
 
@@ -282,7 +282,7 @@ Tuzlu su iletkendir. Islak kumdaki tuz, cihaza metal gibi görünür ve tek frek
       "Orijinal dedektörü anlamak için cihazın seri numarasını yetkili distribütör kaydıyla sorgula, adına düzenlenmiş fatura iste ve garanti belgesinin Türkiye distribütörüne ait olduğunu kontrol et. Piyasa fiyatının çok altındaki, faturasız veya 'yurt dışından getirildi' denen cihazlar genellikle garantisizdir ya da kopyadır.",
     content: `## Satın almadan önce 5 kontrol
 
-1. **Seri numarası:** Cihazın üzerindeki seri numarasını satıcıdan iste ve distribütör kaydında sorgula. Bulgu Dedektör'den aldığın cihazları [seri no sorgulama](/seri-no) sayfasından kontrol edebilirsin.
+1. **Seri numarası:** Cihazın üzerindeki seri numarasını satıcıdan iste ve distribütör kaydında sorgula. Arena Dedektör'den aldığın cihazları [seri no sorgulama](/seri-no) sayfasından kontrol edebilirsin.
 2. **Fatura:** Senin adına (veya şirketine) düzenlenmiş e-fatura ya da e-arşiv fatura olmalı.
 3. **Garanti belgesi:** Türkiye distribütörüne ait, seri numarası işlenmiş garanti belgesi.
 4. **Fiyat:** Piyasanın belirgin şekilde altındaki fiyat, kopya veya garantisiz cihaz işaretidir.
@@ -301,7 +301,7 @@ Tuzlu su iletkendir. Islak kumdaki tuz, cihaza metal gibi görünür ve tek frek
 - Seri numarasını sorgula, garanti süresi devam ediyor mu bak.
 - Cihazı sahada denemeden ödeme yapma.
 
-> Bulgu Dedektör'deki tüm cihazlar yetkili distribütör ürünüdür, faturalı ve garantilidir.`,
+> Arena Dedektör'deki tüm cihazlar yetkili distribütör ürünüdür, faturalı ve garantilidir.`,
     faq: [
       { q: "Yurt dışından alınan dedektörün garantisi geçerli mi?", a: "Genellikle Türkiye distribütörü garantisi kapsamına girmez. Arızada yurt dışına gönderim veya ücretli servis gerekebilir." },
       { q: "Seri numarasını nereden bulurum?", a: "Çoğu cihazda kontrol ünitesinin altında veya şase üzerinde etiket olarak bulunur; ayrıca kutuda ve garanti belgesinde yazar." },

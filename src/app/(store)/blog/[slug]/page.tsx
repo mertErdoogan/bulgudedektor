@@ -91,7 +91,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <div className="rounded-2xl bg-deep p-5 text-white">
               <b className="text-lg">Hangi dedektör sana uygun?</b>
               <p className="mt-1 text-sm text-white/80">6 soruyu yanıtla, sana özel 3 öneri al.</p>
-              <Link href="/sihirbaz" className="mt-3 inline-flex h-10 items-center rounded-lg bg-gold px-4 text-sm font-extrabold text-deep">Sihirbazı başlat</Link>
+              <Link href="/sihirbaz" className="mt-3 inline-flex h-10 items-center rounded-lg bg-accent px-4 text-sm font-extrabold text-white">Sihirbazı başlat</Link>
             </div>
           </div>
         </aside>
