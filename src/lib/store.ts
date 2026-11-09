@@ -1,8 +1,9 @@
 import "server-only";
 import { cache } from "react";
 import { createHmac } from "node:crypto";
-import { and, asc, desc, eq, gte, ilike, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
+import { productSearch } from "./search";
 import { banners, brands, campaigns, categories, homeSections, menuItems, orderItems, orders, pages, productActivity, productImages, products, reviews } from "@/db/schema";
 
 export const cardColumns = {
@@ -149,10 +150,8 @@ export type CatalogFilter = {
 
 export async function listProducts(f: CatalogFilter) {
   const conds: SQL[] = [active];
-  if (f.q) {
-    const words = f.q.trim().split(/\s+/).slice(0, 5);
-    for (const w of words) conds.push(or(ilike(products.name, `%${w}%`), ilike(products.sku, `%${w}%`), ilike(brands.name, `%${w}%`), ilike(products.shortDescription, `%${w}%`))!);
-  }
+  const search = f.q ? productSearch(f.q) : null;
+  if (search) conds.push(search.where);
   if (f.category) {
     const cat = await db.query.categories.findFirst({ where: eq(categories.slug, f.category) });
     if (cat) {
@@ -179,7 +178,9 @@ export async function listProducts(f: CatalogFilter) {
           ? desc(products.createdAt)
           : f.sort === "hafif"
             ? sql`${products.weightKg} asc nulls last`
-            : sql`(${products.stock} > 0) desc, ${products.isFeatured} desc, ${products.sortOrder} asc`;
+            : search
+              ? sql`${search.score} desc, ${products.isFeatured} desc`
+              : sql`(${products.stock} > 0) desc, ${products.isFeatured} desc, ${products.sortOrder} asc`;
   return cardQuery().where(and(...conds)).orderBy(order).limit(120);
 }
 

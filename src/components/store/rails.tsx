@@ -106,6 +106,64 @@ export function RecentlyViewed({ exclude, title = "Son gezdiklerin", className }
   );
 }
 
+function useRecs(ids: string[], tip: "kisisel" | "birlikte") {
+  const [state, setState] = useState<{ items: P[]; ctx: CardCtx | null }>({ items: [], ctx: null });
+  const key = ids.join(",");
+  useEffect(() => {
+    if (!key) {
+      setState({ items: [], ctx: null });
+      return;
+    }
+    let live = true;
+    fetch(`/api/oneriler?tip=${tip}&ids=${key}`)
+      .then((r) => r.json())
+      .then((d) => live && setState(d))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [key, tip]);
+  return state;
+}
+
+/** "Sana özel": ziyaretçinin son gezdiği ürünlere göre öneriler (yalnızca gezinme geçmişi varsa görünür). */
+export function PersonalPicks({ className }: { className?: string }) {
+  const ids = useRecentIds();
+  const { items, ctx } = useRecs(ids.slice(0, 12), "kisisel");
+  if (items.length < 3 || !ctx) return null;
+  return (
+    <section className={className}>
+      <div className="mb-5 border-l-4 border-brand pl-3.5">
+        <h2 className="font-display text-[23px] leading-tight font-extrabold md:text-[30px]">Sana özel öneriler</h2>
+        <p className="mt-0.5 text-sm text-mute">İncelediğin cihazlara benzer modeller</p>
+      </div>
+      <Rail>
+        {items.map((p) => (
+          <ProductCard key={p.id} p={p} ctx={ctx} className="h-full" />
+        ))}
+      </Rail>
+    </section>
+  );
+}
+
+/** Sepette: "bunu alanlar şunu da aldı". */
+export function CartUpsell({ className }: { className?: string }) {
+  const { items: cart, ready } = useCart();
+  const ids = cart.map((c) => c.productId);
+  const { items, ctx } = useRecs(ready ? ids.slice(0, 10) : [], "birlikte");
+  if (!items.length || !ctx) return null;
+  return (
+    <section className={className}>
+      <h2 className="font-display mb-4 text-xl font-extrabold md:text-2xl">Bunlarla birlikte alınanlar</h2>
+      <Rail>
+        {items.map((p) => (
+          <ProductCard key={p.id} p={p} ctx={ctx} className="h-full" />
+        ))}
+      </Rail>
+    </section>
+  );
+}
+
 /** Header'daki kısayol: son gezilenler ve favoriler küçük bir açılır pencerede. */
 export function QuickLists() {
   const [open, setOpen] = useState<null | "recent" | "fav">(null);

@@ -1,5 +1,7 @@
 "use client";
 
+import { CartUpsell } from "@/components/store/rails";
+
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { Minus, Plus, ShieldCheck, Trash2 } from "lucide-react";
@@ -99,6 +101,7 @@ export function CartView({ inst, freeThreshold, flatRate }: { inst: number; free
           <p className="flex items-center gap-2 text-xs text-mute"><ShieldCheck size={16} className="text-brand" /> iyzico güvencesi, 3D Secure. Kart bilgin bizde saklanmaz.</p>
         </div>
       </div>
+      <CartUpsell className="mt-10 pb-24 lg:pb-0" />
       <div className="fixed inset-x-0 bottom-[60px] z-30 border-t border-line bg-white px-4 py-3 lg:hidden">
         <Button size="lg" className="w-full" asChild>
           <Link href="/odeme">Siparişi tamamla · {formatTL(q?.total)}</Link>

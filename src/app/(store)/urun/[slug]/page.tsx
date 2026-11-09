@@ -13,7 +13,7 @@ import { RecentlyViewed } from "@/components/store/rails";
 import { productActivity } from "@/db/schema";
 import { sql } from "drizzle-orm";
 import { getSettings } from "@/lib/settings";
-import { cardQuery } from "@/lib/store";
+import { boughtTogether, similarTo } from "@/lib/recommend";
 import { markdownToHtml } from "@/lib/markdown";
 import { EXPERIENCE_LABEL, TECH_LABEL, WATERPROOF_LABEL, formatDate, formatTL } from "@/lib/utils";
 import { ProductForms } from "./forms";
@@ -94,7 +94,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const out = archived || (p.stock <= 0 && !p.allowBackorder);
   const inst = s.payment.noInterestInstallments;
   const rating = p.reviews.length ? p.reviews.reduce((a, r) => a + r.rating, 0) / p.reviews.length : null;
-  const related = p.categoryId ? await cardQuery().where(and(eq(products.status, "ACTIVE"), eq(products.categoryId, p.categoryId), ne(products.id, p.id))).limit(4) : [];
+  const [related, together] = await Promise.all([similarTo(p, 4), boughtTogether([p.id], 4)]);
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}?text=${encodeURIComponent(`Merhaba, ${p.name} hakkında bilgi almak istiyorum.`)}` : "/iletisim";
   const discount = p.compareAtPrice && p.compareAtPrice > p.price ? p.compareAtPrice - p.price : 0;
   const vid = ytId(p.videoUrl);
@@ -312,10 +312,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <PostCards posts={guides} />
         </section>
       ) : null}
+      {together.length ? (
+        <section className="mt-12">
+          <h2 className="font-display mb-4 text-2xl font-extrabold">Bunu alanlar şunları da aldı</h2>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{together.map((r) => <ProductCard key={r.id} p={r} ctx={ctx} />)}</div>
+        </section>
+      ) : null}
       <RecentlyViewed exclude={p.id} className="mt-12" />
       {related.length ? (
         <section className="mt-12">
-          <h2 className="font-display mb-4 text-2xl font-extrabold">Bunlara da bak</h2>
+          <h2 className="font-display mb-4 text-2xl font-extrabold">Benzer modeller</h2>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{related.map((r) => <ProductCard key={r.id} p={r} ctx={ctx} />)}</div>
         </section>
       ) : null}

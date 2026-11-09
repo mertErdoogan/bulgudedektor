@@ -735,3 +735,11 @@ export const passwordResets = pgTable("password_resets", {
   usedAt: timestamp("used_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
+
+/** Arama kayıtları: en çok arananlar ve sonuç vermeyen aramalar (ürün/içerik açığını görmek için). */
+export const searchQueries = pgTable("search_queries", {
+  term: text("term").primaryKey(),
+  count: integer("count").notNull().default(1),
+  results: integer("results").notNull().default(0),
+  lastAt: timestamp("last_at", { withTimezone: true }).notNull().defaultNow(),
+});

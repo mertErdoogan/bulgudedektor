@@ -15,7 +15,7 @@ async function main() {
   console.log("Tablolar temizleniyor…");
   await db.execute(sql`TRUNCATE roles, users, audit_logs, brands, categories, products, product_images, serial_numbers, stock_movements,
     media_assets, customers, addresses, customer_notes, conversations, messages, service_records, reviews, product_questions, stock_alerts,
-    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects, product_activity, favorites, cart_snapshots, password_resets RESTART IDENTITY CASCADE`);
+    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects, search_queries, product_activity, favorites, cart_snapshots, password_resets RESTART IDENTITY CASCADE`);
 
   // Roller ve ekip
   const roleRows = await db.insert(t.roles).values(DEFAULT_ROLES.map((r) => ({ ...r, permissions: [...r.permissions], isSystem: r.key === "admin" }))).returning();

@@ -2,7 +2,8 @@
 
 import { countActivity, emit, pushRecent } from "@/lib/track";
 import { useEffect, useState } from "react";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Zap } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui";
 import { useCart } from "./cart";
@@ -35,7 +36,9 @@ export function Gallery({ images, name, badge }: { images: { url: string; alt: s
 export function BuyBox({ productId, name, max, disabled, amount, brand }: { productId: string; name: string; max: number; disabled: boolean; amount?: number; brand?: string | null }) {
   const { add } = useCart();
   const [q, setQ] = useState(1);
+  const router = useRouter();
   return (
+    <div className="flex flex-col gap-2">
     <div className="flex gap-2">
       <div className="flex h-12 items-center rounded-lg border border-[#d6d6d9]">
         <button className="grid h-full w-11 place-items-center" onClick={() => setQ(Math.max(1, q - 1))} aria-label="Azalt"><Minus size={16} /></button>
@@ -43,6 +46,20 @@ export function BuyBox({ productId, name, max, disabled, amount, brand }: { prod
         <button className="grid h-full w-11 place-items-center" onClick={() => setQ(Math.min(Math.max(1, max), q + 1))} aria-label="Artır"><Plus size={16} /></button>
       </div>
       <Button size="lg" className="flex-1" disabled={disabled} onClick={() => add(productId, q, name, { price: amount, brand })}>{disabled ? "Stokta yok" : "Sepete ekle"}</Button>
+    </div>
+      {!disabled ? (
+        <button
+          type="button"
+          onClick={() => {
+            add(productId, q, name, { price: amount, brand });
+            window.dispatchEvent(new Event("arena-nav-start"));
+            router.push("/odeme");
+          }}
+          className="flex h-12 items-center justify-center gap-2 rounded-lg bg-deep text-sm font-extrabold text-white hover:bg-black"
+        >
+          <Zap size={17} /> Hemen al
+        </button>
+      ) : null}
     </div>
   );
 }

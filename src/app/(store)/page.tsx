@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Compass, FileText, MessageCircle, RotateCcw, ShieldCheck, Store, Video } from "lucide-react";
 import { HeroSlider } from "@/components/store/home-client";
 import { BestSellers, CategoryRail, Deals, NewArrivals, SameDay } from "@/components/store/home-lists";
-import { RecentlyViewed } from "@/components/store/rails";
+import { PersonalPicks, RecentlyViewed } from "@/components/store/rails";
 import { HomeReviews } from "@/components/store/home-reviews";
 import { cardCtx } from "@/lib/card-ctx";
 import { msToCutoff } from "@/lib/delivery";
@@ -199,6 +199,7 @@ export default async function Home() {
         <h1 className="text-[13.5px] font-bold text-mute">{s.store.name} · Metal dedektörü ve define dedektörü modelleri — orijinal, faturalı, garantili</h1>
       </div>
       <RecentlyViewed className="container-x mt-8" />
+      <PersonalPicks className="container-x mt-10" />
       {rendered}
       <HomeReviews googleReviewUrl={s.store.googleReviewUrl || undefined} />
       {posts.length ? (

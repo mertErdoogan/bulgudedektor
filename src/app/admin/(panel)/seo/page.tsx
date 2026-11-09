@@ -2,7 +2,7 @@ import Link from "next/link";
 import { eq, sql } from "drizzle-orm";
 import { CheckCircle2, CircleAlert, XCircle } from "lucide-react";
 import { db } from "@/db";
-import { categories, faqs, posts, products, reviews } from "@/db/schema";
+import { categories, faqs, posts, products, reviews, searchQueries } from "@/db/schema";
 import { PageHeader } from "@/components/admin/shell";
 import { Card, CardHeader, Stat } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
@@ -22,6 +22,10 @@ export default async function SeoHealth() {
     db.select({ n: sql<number>`count(*)::int` }).from(faqs).where(eq(faqs.kind, "FAQ")),
     db.select({ n: sql<number>`count(*)::int` }).from(faqs).where(eq(faqs.kind, "GLOSSARY")),
     db.select({ n: sql<number>`count(*)::int` }).from(reviews).where(eq(reviews.isApproved, true)),
+  ]);
+  const [noResult, topSearch] = await Promise.all([
+    db.select().from(searchQueries).where(eq(searchQueries.results, 0)).orderBy(sql`${searchQueries.count} desc`).limit(15),
+    db.select().from(searchQueries).where(sql`${searchQueries.results} > 0`).orderBy(sql`${searchQueries.count} desc`).limit(15),
   ]);
   const st = s.store;
   const social = sameAs(s).length;
@@ -100,6 +104,18 @@ export default async function SeoHealth() {
             </ul>
           </Card>
         </div>
+        <Card>
+          <CardHeader title="Sonuç vermeyen aramalar" description="Müşteriler bunları aradı ama bulamadı: ürün ekle, ürün adına/açıklamasına bu kelimeyi yaz ya da bir rehber yazısı hazırla." />
+          {noResult.length ? (
+            <ul className="divide-y divide-line">{noResult.map((r) => <li key={r.term} className="flex justify-between px-5 py-2.5 text-sm"><b>{r.term}</b><span className="text-mute">{r.count} kez</span></li>)}</ul>
+          ) : <p className="px-5 pb-5 text-sm text-mute">Henüz sonuçsuz arama yok.</p>}
+        </Card>
+        <Card>
+          <CardHeader title="En çok arananlar" description="Site içi aramada en sık yazılan kelimeler." />
+          {topSearch.length ? (
+            <ul className="divide-y divide-line">{topSearch.map((r) => <li key={r.term} className="flex justify-between px-5 py-2.5 text-sm"><b>{r.term}</b><span className="text-mute">{r.count} kez · {r.results} sonuç</span></li>)}</ul>
+          ) : <p className="px-5 pb-5 text-sm text-mute">Henüz arama yapılmadı.</p>}
+        </Card>
         {prodIssues.length ? (
           <Card className="xl:col-span-2">
             <CardHeader title="Ürünler" description="Eksik bilgi, hem Google zengin sonuçlarını hem AI cevaplarında seçilmeyi düşürür." />

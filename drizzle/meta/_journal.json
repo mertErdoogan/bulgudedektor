@@ -50,6 +50,20 @@
       "when": 1794257728699,
       "tag": "0006_boring_ben_urich",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794264161975,
+      "tag": "0007_moaning_magus",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794264162785,
+      "tag": "0008_search_trgm",
+      "breakpoints": true
     }
   ]
 }

@@ -188,15 +188,7 @@ export function MobileTabBar() {
   );
 }
 
-export function SearchBox({ defaultValue, className }: { defaultValue?: string; className?: string }) {
-  return (
-    <form action="/ara" className={cn("flex h-12 items-center gap-2 rounded-xl bg-soft pr-1.5 pl-4", className)} role="search">
-      <Search size={18} className="text-mute" />
-      <input name="q" defaultValue={defaultValue} placeholder="Ne arıyorsun? Vanquish, pointer, altın dedektörü…" className="h-full w-full bg-transparent text-[15px] outline-none" aria-label="Ürün ara" />
-      <button className="hidden h-10 rounded-lg bg-brand px-5 text-sm font-extrabold text-white sm:block">Ara</button>
-    </form>
-  );
-}
+export { SearchBox } from "./search-box";
 
 export function FavIcon() {
   return <Heart size={16} />;
