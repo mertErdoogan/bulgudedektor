@@ -80,4 +80,38 @@
   .prose-lite a {
     @apply text-link underline;
   }
+  .prose-lite li {
+    @apply my-1;
+  }
+  .prose-lite h2,
+  .prose-lite h3 {
+    scroll-margin-top: 140px;
+  }
+  .prose-lite blockquote {
+    @apply my-4 rounded-r-lg border-l-4 border-gold bg-[#faf5ea] px-4 py-3 text-[#5a4520];
+  }
+  .prose-lite .table-wrap {
+    @apply my-4 overflow-x-auto rounded-xl border border-line;
+  }
+  .prose-lite table {
+    @apply w-full border-collapse text-sm;
+  }
+  .prose-lite th {
+    @apply bg-soft px-3 py-2 text-left font-bold whitespace-nowrap;
+  }
+  .prose-lite td {
+    @apply border-t border-line px-3 py-2 align-top;
+  }
+  .prose-article {
+    @apply text-[16.5px] leading-[1.75];
+  }
+  .prose-article h2 {
+    @apply font-display mt-10 mb-3 text-[24px] leading-tight font-extrabold;
+  }
+  .prose-article h3 {
+    @apply mt-6 mb-2 text-[18px] font-extrabold;
+  }
+  .prose-article p {
+    @apply my-3;
+  }
 }

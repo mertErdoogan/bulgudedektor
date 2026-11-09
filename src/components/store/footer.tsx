@@ -5,10 +5,12 @@ import { getFooterPages, getNav } from "@/lib/store";
 
 export async function StoreFooter() {
   const [s, nav, pages] = await Promise.all([getSettings(), getNav(), getFooterPages()]);
+  const st = s.store;
+  const social = ([[st.instagram, "Instagram"], [st.youtube, "YouTube"], [st.tiktok, "TikTok"], [st.facebook, "Facebook"], [st.x, "X"], [st.linkedin, "LinkedIn"], [st.googleBusinessUrl, "Google Haritalar"]] as const).filter(([h]) => h) as unknown as [string, string][];
   const help = nav.menu.filter((m) => m.location === "FOOTER_HELP");
   const groups = [
     { title: "Kategoriler", links: nav.categories.map((c) => ({ href: `/kategori/${c.slug}`, label: c.name })) },
-    { title: "Yardım", links: [...help.map((m) => ({ href: m.url, label: m.label })), ...pages.filter((p) => p.group === "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title }))] },
+    { title: "Yardım ve rehberler", links: [{ href: "/blog", label: "Dedektör rehberleri" }, { href: "/sss", label: "Sık sorulan sorular" }, { href: "/sozluk", label: "Dedektör sözlüğü" }, { href: "/sihirbaz", label: "Hangi dedektörü almalıyım?" }, ...help.map((m) => ({ href: m.url, label: m.label })), ...pages.filter((p) => p.group === "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title }))] },
     { title: "Sözleşmeler ve kurumsal", links: pages.filter((p) => p.group !== "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title })) },
   ];
   return (
@@ -28,6 +30,13 @@ export async function StoreFooter() {
             {s.store.mersis ? `MERSİS: ${s.store.mersis} · ` : ""}
             {s.store.etbis ? `ETBİS: ${s.store.etbis}` : ""}
           </p>
+          {social.length ? (
+            <p className="mt-2 flex flex-wrap gap-2">
+              {social.map(([href, label]) => (
+                <a key={href} href={href} target="_blank" rel="noopener me" className="rounded-full border border-white/25 px-3 py-1 text-xs font-bold hover:bg-white/10">{label}</a>
+              ))}
+            </p>
+          ) : null}
         </div>
         {groups.map((g) => (
           <div key={g.title} className="flex flex-col gap-2 text-sm">

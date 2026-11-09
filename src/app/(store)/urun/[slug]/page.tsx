@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { redirectOrNotFound } from "@/lib/redirects";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { Check, MessageCircle, Play, Star, Truck, Video } from "lucide-react";
 import { db } from "@/db";
@@ -11,6 +11,12 @@ import { cardQuery } from "@/lib/store";
 import { markdownToHtml } from "@/lib/markdown";
 import { EXPERIENCE_LABEL, TECH_LABEL, WATERPROOF_LABEL, formatDate, formatTL } from "@/lib/utils";
 import { ProductForms } from "./forms";
+import { AnswerBox, Breadcrumbs, FaqSection } from "@/components/seo/blocks";
+import { JsonLd } from "@/components/seo/json-ld";
+import { PostCards } from "@/components/store/post-cards";
+import { getFaqs, relatedPosts, toQA } from "@/lib/content";
+import { graph, pageMeta, productLd } from "@/lib/seo";
+import type { AllSettings } from "@/lib/settings";
 
 async function getProduct(slug: string) {
   return db.query.products.findFirst({
@@ -28,11 +34,44 @@ async function getProduct(slug: string) {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const p = await getProduct((await params).slug);
   if (!p) return {};
-  return {
-    title: p.seoTitle || `${p.brand?.name ?? ""} ${p.name}`.trim(),
-    description: p.seoDescription || p.shortDescription || undefined,
-    openGraph: { images: p.images[0]?.url ? [p.images[0].url] : [] },
-  };
+  const full = fullName(p);
+  return pageMeta({
+    title: p.seoTitle || `${full} Fiyatı ve Özellikleri`,
+    description: p.seoDescription || p.shortDescription || `${full}: orijinal, faturalı, ${p.warrantyMonths} ay garantili. Teknik özellikler, kimler için uygun, yorumlar ve uzman desteği.`,
+    path: `/urun/${p.slug}`,
+    image: p.images[0]?.url,
+    noindex: p.status === "ARCHIVED",
+  });
+}
+
+type P = NonNullable<Awaited<ReturnType<typeof getProduct>>>;
+const WHO: Record<string, string> = { BEGINNER: "yeni başlayan", INTERMEDIATE: "deneyimli", PRO: "profesyonel" };
+const fullName = (p: P) => (p.brand && !p.name.toLowerCase().startsWith(p.brand.name.toLowerCase()) ? `${p.brand.name} ${p.name}` : p.name);
+
+/** Ürün verisinden kısa, doğrudan yanıt (AI özetleri için 40–60 kelime). */
+function quickAnswer(p: P, s: AllSettings) {
+  const bits: string[] = [];
+  const who = p.experience ? WHO[p.experience] : null;
+  const uses = p.idealFor.slice(0, 2).map((x) => x.replace(/\.$/, "").toLocaleLowerCase("tr-TR"));
+  bits.push(`${fullName(p)}, ${p.technology && p.technology !== "OTHER" ? `${TECH_LABEL[p.technology]} teknolojili ` : ""}bir ${p.category?.name.toLocaleLowerCase("tr-TR") ?? "metal"} dedektörüdür${who ? ` ve ${who} kullanıcılar için uygundur` : ""}.`);
+  if (uses.length) bits.push(`Öne çıktığı alanlar: ${uses.join(", ")}.`);
+  const facts = [p.weightKg ? `${p.weightKg.toLocaleString("tr-TR")} kg` : null, p.waterproof ? WATERPROOF_LABEL[p.waterproof].toLocaleLowerCase("tr-TR") : null].filter(Boolean);
+  if (facts.length) bits.push(`Ağırlığı ve su dayanımı: ${facts.join(", ")}.`);
+  bits.push(`Fiyatı ${formatTL(p.price)}; faturalı, ${p.warrantyMonths} ay garantili${s.payment.noInterestInstallments > 1 ? `, ${s.payment.noInterestInstallments} ay vade farksız taksitle` : ""} satılır.`);
+  return bits.join(" ");
+}
+
+/** Ürün verisinden otomatik SSS (yalnızca gerçek veriden; uydurma yok). */
+function autoFaq(p: P, s: AllSettings) {
+  const n = fullName(p);
+  const out: { q: string; a: string }[] = [];
+  out.push({ q: `${n} orijinal mi, garantisi var mı?`, a: `Evet. Bulgu Dedektör'de satılan ${n} yetkili distribütör ürünüdür; faturalı ve ${p.warrantyMonths} ay garantilidir.${p.trackSerial ? " Cihazın seri numarasını sitemizdeki Seri No Sorgula sayfasından kontrol edebilirsiniz." : ""}` });
+  if (p.waterproof) out.push({ q: `${n} su geçirmez mi?`, a: `${n} için su dayanımı: ${WATERPROOF_LABEL[p.waterproof]}.${p.waterproof === "NONE" ? " Yağmurda koruyucu kılıf kullanılması önerilir." : ""}` });
+  if (p.weightKg) out.push({ q: `${n} kaç kilo?`, a: `${n} yaklaşık ${p.weightKg.toLocaleString("tr-TR")} kg ağırlığındadır.${p.weightKg <= 1.5 ? " Uzun süreli aramalarda yormayan hafif sınıftadır." : ""}` });
+  if (p.experience) out.push({ q: `${n} yeni başlayanlar için uygun mu?`, a: p.experience === "BEGINNER" ? `Evet, ${n} kolay menüsü ve hazır programlarıyla yeni başlayanlar için uygundur.` : `${n} ${WHO[p.experience]} kullanıcılar için tasarlanmıştır. Yeni başlıyorsanız satın alma sonrası ücretsiz kurulum eğitimimizden yararlanabilirsiniz.` });
+  out.push({ q: `${n} taksitle alınabilir mi?`, a: `${n} kredi kartına ${s.payment.maxInstallment} taksite kadar alınabilir${s.payment.noInterestInstallments > 1 ? `; ${s.payment.noInterestInstallments} taksite kadar vade farkı yoktur` : ""}.${s.payment.transferEnabled && s.payment.transferDiscountPct ? ` Havale/EFT ile ödemede %${s.payment.transferDiscountPct} indirim uygulanır.` : ""}` });
+  out.push({ q: `${n} ne zaman kargoya verilir?`, a: p.sameDayShipping ? `Stoktaysa saat ${s.shipping.sameDayCutoff}'e kadar verilen siparişler aynı gün kargoya verilir; tahmini teslim süresi ${s.shipping.deliveryEstimate}.` : `Siparişler 1–2 iş günü içinde kargoya verilir; tahmini teslim süresi ${s.shipping.deliveryEstimate}.` });
+  return out;
 }
 
 function ytId(url: string | null) {
@@ -43,7 +82,7 @@ function ytId(url: string | null) {
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const p = await getProduct((await params).slug);
-  if (!p) notFound();
+  if (!p) return redirectOrNotFound(`/urun/${(await params).slug}`);
   const s = await getSettings();
   const archived = p.status === "ARCHIVED";
   const out = archived || (p.stock <= 0 && !p.allowBackorder);
@@ -59,26 +98,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     p.waterproof ? { k: "Su geçirmezlik", v: WATERPROOF_LABEL[p.waterproof] } : null,
     p.experience ? { k: "Kimin için", v: EXPERIENCE_LABEL[p.experience] } : null,
   ].filter(Boolean) as { k: string; v: string }[];
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: p.name,
-    sku: p.sku,
-    gtin: p.barcode ?? undefined,
-    brand: p.brand ? { "@type": "Brand", name: p.brand.name } : undefined,
-    image: p.images.map((i) => i.url),
-    description: p.shortDescription ?? undefined,
-    offers: { "@type": "Offer", priceCurrency: "TRY", price: p.price, availability: out ? "https://schema.org/OutOfStock" : "https://schema.org/InStock" },
-    ...(rating ? { aggregateRating: { "@type": "AggregateRating", ratingValue: rating.toFixed(1), reviewCount: p.reviews.length } } : {}),
-  };
+  const [dbFaq, guides] = await Promise.all([getFaqs({ productId: p.id }), relatedPosts({ productId: p.id, categoryId: p.categoryId, limit: 3 })]);
+  const faqItems = [...toQA(dbFaq), ...autoFaq(p, s)];
 
   return (
     <div className="container-x pt-4 pb-24 md:pb-10">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-      <nav className="mb-3 text-[13px] text-mute" aria-label="Konum">
-        <Link href="/">Ana sayfa</Link>
-        {p.category ? <> / <Link href={`/kategori/${p.category.slug}`}>{p.category.name}</Link></> : null} / {p.name}
-      </nav>
+      <JsonLd data={graph(productLd(p, s))} />
+      <Breadcrumbs items={[...(p.category ? [{ name: p.category.name, path: `/kategori/${p.category.slug}` }] : []), ...(p.brand ? [{ name: p.brand.name, path: `/marka/${p.brand.slug}` }] : []), { name: p.name, path: `/urun/${p.slug}` }]} />
       <div className="grid gap-6 md:grid-cols-2 lg:gap-10">
         <Gallery images={p.images} name={p.name} badge={p.badges[0]} />
         <div className="flex flex-col gap-3">
@@ -155,13 +181,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </div>
 
       <nav className="scrollbar-none sticky top-[132px] z-20 -mx-4 mt-8 flex gap-2 overflow-x-auto border-y border-line bg-white px-4 py-2.5 md:top-0" aria-label="Ürün bölümleri">
-        {[["neden", "Kimler için"], ["ozellikler", "Teknik özellikler"], ...(vid ? [["video", "Video"]] : []), ["garanti", "Garanti ve servis"], ["yorumlar", `Yorumlar (${p.reviews.length})`], ["sorular", `Sorular (${p.questions.length})`]].map(([id, l]) => (
+        {[["neden", "Kimler için"], ["ozellikler", "Teknik özellikler"], ...(vid ? [["video", "Video"]] : []), ["garanti", "Garanti ve servis"], ["sss", "SSS"], ["yorumlar", `Yorumlar (${p.reviews.length})`], ["sorular", `Sorular (${p.questions.length})`]].map(([id, l]) => (
           <a key={id} href={`#${id}`} className="shrink-0 rounded-full border border-line px-4 py-1.5 text-sm font-bold hover:bg-soft">{l}</a>
         ))}
       </nav>
 
       <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex flex-col gap-10">
+          <AnswerBox title={`${fullName(p)} nedir?`} updated={formatDate(p.updatedAt)}>{quickAnswer(p, s)}</AnswerBox>
           <section id="neden" className="scroll-mt-40">
             <h2 className="font-display mb-3 text-2xl font-extrabold">Kimler için ideal</h2>
             {quick.length ? (
@@ -215,6 +242,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           </section>
 
+          <FaqSection items={faqItems} title={`${fullName(p)} hakkında sık sorulanlar`} />
+
           <section id="yorumlar" className="scroll-mt-40">
             <h2 className="font-display mb-3 text-2xl font-extrabold">Yorumlar</h2>
             {p.reviews.length ? (
@@ -255,6 +284,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </aside>
       </div>
 
+      {guides.length ? (
+        <section className="mt-12">
+          <h2 className="font-display mb-4 text-2xl font-extrabold">Uzman rehberleri</h2>
+          <PostCards posts={guides} />
+        </section>
+      ) : null}
       {related.length ? (
         <section className="mt-12">
           <h2 className="font-display mb-4 text-2xl font-extrabold">Bunlara da bak</h2>

@@ -1,10 +1,11 @@
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { and, eq, or } from "drizzle-orm";
 import { db } from "@/db";
 import { serviceRecords } from "@/db/schema";
 import { SERVICE_STATUS_LABEL, formatDate, normalizePhone, serviceNo } from "@/lib/utils";
 
-export const metadata = { title: "Servis kaydı sorgulama" };
+export const metadata = pageMeta({ title: "Dedektör Teknik Servis ve Kayıt Sorgulama", description: "Servis kaydınızın durumunu sorgulayın. Arızalı cihazlar için ücretsiz kargo kodu ve aşama aşama takip.", path: "/servis" });
 
 export default async function ServicePublic({ searchParams }: { searchParams: Promise<{ no?: string; iletisim?: string }> }) {
   const sp = await searchParams;

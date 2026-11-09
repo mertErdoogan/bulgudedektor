@@ -4,6 +4,17 @@ import { HeroSlider, ProductTabs } from "@/components/store/home-client";
 import { ProductCard } from "@/components/store/product-card";
 import { getSettings } from "@/lib/settings";
 import { getHome, getNav, productsFor, type ProductCard as P } from "@/lib/store";
+import { FaqSection } from "@/components/seo/blocks";
+import { JsonLd } from "@/components/seo/json-ld";
+import { PostCards } from "@/components/store/post-cards";
+import { getFaqs, getPublishedPosts, toQA } from "@/lib/content";
+import { graph, pageMeta, storeLd } from "@/lib/seo";
+import type { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getSettings();
+  return pageMeta({ title: s.seo.title, absoluteTitle: true, description: s.seo.description, path: "/", image: s.seo.ogImage });
+}
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +30,7 @@ function Grid({ items, inst }: { items: P[]; inst: number }) {
 }
 
 export default async function Home() {
-  const [{ sections, banners }, nav, s] = await Promise.all([getHome(), getNav(), getSettings()]);
+  const [{ sections, banners }, nav, s, homeFaq, posts] = await Promise.all([getHome(), getNav(), getSettings(), getFaqs({ home: true }), getPublishedPosts()]);
   const hero = banners.filter((b) => b.placement === "HERO");
   const side = banners.filter((b) => b.placement === "SIDE").slice(0, 2);
   const strip = banners.find((b) => b.placement === "STRIP");
@@ -176,7 +187,27 @@ export default async function Home() {
           <img src={strip.imageUrl} alt={strip.title} className="w-full rounded-xl" />
         </Link>
       ) : null}
+      <section className="container-x mt-6">
+        <h1 className="font-display text-[22px] leading-tight font-extrabold md:text-[28px]">Metal dedektörü ve define dedektörü: orijinal, faturalı, uzman desteğiyle</h1>
+        <p className="mt-2 max-w-4xl text-[15px] leading-relaxed text-[#3e4440]">{s.seo.aboutForAi}</p>
+      </section>
       {rendered}
+      {posts.length ? (
+        <section className="container-x mt-12">
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <h2 className="font-display text-2xl font-extrabold md:text-[30px]">Dedektör rehberleri</h2>
+            <Link href="/blog" className="flex items-center gap-1 text-sm font-bold text-link">Tümü <ArrowRight size={16} /></Link>
+          </div>
+          <PostCards posts={posts.slice(0, 3)} />
+        </section>
+      ) : null}
+      {homeFaq.length ? (
+        <div className="container-x mt-12 max-w-4xl">
+          <FaqSection items={toQA(homeFaq)} title="Metal dedektörü hakkında sık sorulan sorular" />
+          <p className="mt-3 text-sm"><Link href="/sss" className="font-bold text-link">Tüm soruları gör →</Link> · <Link href="/sozluk" className="font-bold text-link">Dedektör sözlüğü →</Link></p>
+        </div>
+      ) : null}
+      <JsonLd data={graph(storeLd(s))} />
     </>
   );
 }

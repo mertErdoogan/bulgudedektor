@@ -57,3 +57,30 @@ export async function notifyStockAlerts(productId: string) {
   }
   return n;
 }
+
+/**
+ * Teslimat sonrası yorum daveti: ürün sayfasına yorum + Google İşletme yorumu.
+ * Gerçek müşteri yorumu = sosyal kanıt (Google yıldızları, AI motorlarının güven sinyali).
+ * Teşvik (indirim vb.) karşılığı yorum istenmez; Google ve Ticaret Bakanlığı kurallarına aykırıdır.
+ */
+export async function mailReviewRequest(orderId: string) {
+  const { db } = await import("@/db");
+  const { orderItems, orders, products } = await import("@/db/schema");
+  const { eq } = await import("drizzle-orm");
+  const s = await getSettings();
+  const o = await db.query.orders.findFirst({ where: eq(orders.id, orderId), columns: { email: true, number: true, shippingAddress: true } });
+  if (!o?.email) return;
+  const sa = o.shippingAddress;
+  const first = (sa?.fullName ?? "").split(" ")[0];
+  const items = await db.select({ name: products.name, slug: products.slug }).from(orderItems).innerJoin(products, eq(products.id, orderItems.productId)).where(eq(orderItems.orderId, orderId));
+  const base = process.env.APP_URL || "";
+  const list = items.map((i) => `<li style="margin:6px 0"><a href="${base}/urun/${i.slug}#yorumlar">${i.name} için yorum yaz →</a></li>`).join("");
+  const google = s.store.googleReviewUrl
+    ? `<p style="margin-top:18px">Alışveriş deneyimini Google'da paylaşırsan, dedektör arayan başka birinin doğru mağazayı bulmasına yardım etmiş olursun:</p><p><a href="${s.store.googleReviewUrl}" style="display:inline-block;background:#3f6b4f;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">Google'da değerlendir ★★★★★</a></p>`
+    : "";
+  await sendMail(
+    o.email,
+    `Cihazın eline ulaştı mı? · ${orderNo(o.number)}`,
+    wrap(`<p>Merhaba${first ? ` ${first}` : ""},</p><p>Siparişin teslim edildi. Kurulumda takıldığın bir yer olursa bu e-postayı yanıtlaman yeterli.</p><p>Birkaç kez sahaya çıktıktan sonra deneyimini yazarsan çok seviniriz:</p><ul style="padding-left:18px">${list}</ul>${google}`, s.store.name),
+  );
+}

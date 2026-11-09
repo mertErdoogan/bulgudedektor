@@ -199,3 +199,26 @@ export function orderKey(orderId: string) {
 export function installmentText(price: number, n: number) {
   return `${n} × ${Math.round(price / n).toLocaleString("tr-TR")} TL`;
 }
+
+/** Kategori/marka özet istatistikleri: "Kısa cevap" kutusu ve llms.txt için. */
+export async function catalogStats(where: { categoryId?: string; brandId?: string }) {
+  const cond = and(
+    eq(products.status, "ACTIVE"),
+    where.categoryId ? eq(products.categoryId, where.categoryId) : undefined,
+    where.brandId ? eq(products.brandId, where.brandId) : undefined,
+  );
+  const [agg] = await db
+    .select({ n: sql<number>`count(*)::int`, min: sql<number | null>`min(${products.price})::float`, max: sql<number | null>`max(${products.price})::float` })
+    .from(products)
+    .where(cond);
+  const top = await db
+    .select({ name: brands.name, n: sql<number>`count(*)::int` })
+    .from(products)
+    .innerJoin(brands, eq(brands.id, products.brandId))
+    .where(cond)
+    .groupBy(brands.name)
+    .orderBy(desc(sql`count(*)`))
+    .limit(5);
+  const best = await cardQuery().where(cond).orderBy(desc(products.isFeatured), asc(products.price)).limit(3);
+  return { count: agg?.n ?? 0, min: agg?.min ?? null, max: agg?.max ?? null, brands: top.map((t) => t.name), picks: best };
+}

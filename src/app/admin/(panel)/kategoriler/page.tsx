@@ -118,6 +118,9 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
             <Field label="SEO açıklaması">
               <Textarea name="seoDescription" defaultValue={edit?.seoDescription ?? ""} className="min-h-[60px]" />
             </Field>
+            <Field label="Kategori rehber metni (Markdown)" hint="Ürün listesinin altında görünür. ## alt başlıklar, listeler ve | tablo | kullanılabilir. 300–800 kelime, soru biçiminde başlıklar AI aramada öne çıkar.">
+              <Textarea name="seoContent" defaultValue={edit?.seoContent ?? ""} className="min-h-[160px] font-mono text-[12px]" />
+            </Field>
             <Checkbox name="isActive" defaultChecked={edit?.isActive ?? true} label="Aktif" />
             <Checkbox name="showInMenu" defaultChecked={edit?.showInMenu ?? true} label="Mağaza menüsünde ve ana sayfa kutularında göster" />
             <SubmitButton>{edit ? "Kaydet" : "Kategori ekle"}</SubmitButton>

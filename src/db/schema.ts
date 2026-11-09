@@ -124,6 +124,7 @@ export const categories = pgTable("categories", {
   sortOrder: integer("sort_order").notNull().default(0),
   seoTitle: text("seo_title"),
   seoDescription: text("seo_description"),
+  seoContent: text("seo_content"),
   createdAt: createdAt(),
 });
 
@@ -522,6 +523,62 @@ export const settings = pgTable("settings", {
   updatedAt: updatedAt(),
 });
 
+// ───────────────────────────── SEO içerik: blog, SSS, sözlük, yönlendirme
+export const postStatus = pgEnum("post_status", ["DRAFT", "PUBLISHED"]);
+export const faqKind = pgEnum("faq_kind", ["FAQ", "GLOSSARY"]);
+
+export const posts = pgTable(
+  "posts",
+  {
+    id: id(),
+    title: text("title").notNull(),
+    slug: text("slug").notNull().unique(),
+    excerpt: text("excerpt"),
+    /** Yapay zekâ ve öne çıkan snippet için 40–60 kelimelik doğrudan yanıt */
+    answer: text("answer"),
+    content: text("content").notNull().default(""),
+    coverImage: text("cover_image"),
+    category: text("category").notNull().default("Rehber"),
+    tags: textArray("tags"),
+    authorName: text("author_name").notNull().default("Bulgu Dedektör Uzman Ekibi"),
+    authorTitle: text("author_title"),
+    authorBio: text("author_bio"),
+    status: postStatus("status").notNull().default("DRAFT"),
+    faq: jsonb("faq").$type<{ q: string; a: string }[]>().notNull().default([]),
+    relatedProductIds: textArray("related_product_ids"),
+    relatedCategoryIds: textArray("related_category_ids"),
+    seoTitle: text("seo_title"),
+    seoDescription: text("seo_description"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("post_status_idx").on(t.status, t.publishedAt)],
+);
+
+export const faqs = pgTable("faqs", {
+  id: id(),
+  kind: faqKind("kind").notNull().default("FAQ"),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  group: text("group").notNull().default("Genel"),
+  productId: text("product_id").references(() => products.id, { onDelete: "cascade" }),
+  categoryId: text("category_id").references(() => categories.id, { onDelete: "cascade" }),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isPublished: boolean("is_published").notNull().default(true),
+  showOnHome: boolean("show_on_home").notNull().default(false),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export const redirects = pgTable("redirects", {
+  id: id(),
+  fromPath: text("from_path").notNull().unique(),
+  toPath: text("to_path").notNull(),
+  hits: integer("hits").notNull().default(0),
+  createdAt: createdAt(),
+});
+
 // ───────────────────────────── Relations
 export const rolesRelations = relations(roles, ({ many }) => ({ users: many(users) }));
 export const usersRelations = relations(users, ({ one }) => ({ role: one(roles, { fields: [users.roleId], references: [roles.id] }) }));
@@ -609,5 +666,9 @@ export const orderEventsRelations = relations(orderEvents, ({ one }) => ({
 export const returnsRelations = relations(returnRequests, ({ one }) => ({
   order: one(orders, { fields: [returnRequests.orderId], references: [orders.id] }),
   customer: one(customers, { fields: [returnRequests.customerId], references: [customers.id] }),
+}));
+export const faqsRelations = relations(faqs, ({ one }) => ({
+  product: one(products, { fields: [faqs.productId], references: [products.id] }),
+  category: one(categories, { fields: [faqs.categoryId], references: [categories.id] }),
 }));
 export const campaignsRelations = relations(campaigns, ({ many }) => ({ orders: many(orders) }));

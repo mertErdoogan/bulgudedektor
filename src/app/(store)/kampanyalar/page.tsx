@@ -1,9 +1,10 @@
+import { pageMeta } from "@/lib/seo";
 import { liveCampaigns, productsFor } from "@/lib/store";
 import { ProductCard } from "@/components/store/product-card";
 import { getSettings } from "@/lib/settings";
 import { formatDate, formatTL } from "@/lib/utils";
 
-export const metadata = { title: "Kampanyalar" };
+export const metadata = pageMeta({ title: "Dedektör Kampanyaları ve İndirimler", description: "Güncel metal dedektörü kampanyaları, indirimli modeller ve vade farksız taksit fırsatları.", path: "/kampanyalar" });
 
 export default async function CampaignsPage() {
   const [cs, deals, s] = await Promise.all([liveCampaigns(), productsFor("deals", 12), getSettings()]);

@@ -83,7 +83,10 @@ async function transition(orderId: string, to: Status, staff: StaffSession, extr
   if (["SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED", "PAID"].includes(to)) {
     const { mailStatus } = await import("@/lib/mail");
     const { orderKey } = await import("@/lib/store");
-    void mailStatus(o.email, o.number, to === "SHIPPED" && extra.tracking ? `Siparişin kargoya verildi: ${extra.carrier} · takip no ${extra.tracking}` : `Sipariş durumu: ${ORDER_STATUS_LABEL[to]}`, `${process.env.APP_URL || ""}/siparis/${o.id}?k=${orderKey(o.id)}`);
+    if (to === "DELIVERED") {
+      const { mailReviewRequest } = await import("@/lib/mail");
+      void mailReviewRequest(o.id);
+    } else void mailStatus(o.email, o.number, to === "SHIPPED" && extra.tracking ? `Siparişin kargoya verildi: ${extra.carrier} · takip no ${extra.tracking}` : `Sipariş durumu: ${ORDER_STATUS_LABEL[to]}`, `${process.env.APP_URL || ""}/siparis/${o.id}?k=${orderKey(o.id)}`);
   }
   return info;
 }

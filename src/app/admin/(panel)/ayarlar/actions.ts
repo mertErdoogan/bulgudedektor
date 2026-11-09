@@ -17,10 +17,23 @@ const fin = async (staffId: string, key: string) => {
 export async function saveStore(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
     const staff = await assertStaff("settings.manage");
-    const keys = ["name", "legalName", "phone", "whatsapp", "email", "address", "taxOffice", "taxNumber", "mersis", "etbis", "workingHours", "announcement"] as const;
+    const keys = [
+      "name", "legalName", "phone", "whatsapp", "email", "address", "taxOffice", "taxNumber", "mersis", "etbis", "workingHours", "announcement",
+      "city", "district", "postalCode", "latitude", "longitude", "openingHours", "foundingYear", "priceRange",
+      "instagram", "youtube", "facebook", "tiktok", "x", "linkedin", "googleBusinessUrl", "googleReviewUrl", "sikayetvarUrl",
+    ] as const;
     const v = Object.fromEntries(keys.map((k) => [k, str(fd.get(k))]));
     if (!v.name) return fail("Mağaza adı zorunlu.");
     v.whatsapp = v.whatsapp.replace(/\D/g, "");
+    for (const k of ["instagram", "youtube", "facebook", "tiktok", "x", "linkedin", "googleBusinessUrl", "googleReviewUrl", "sikayetvarUrl"] as const) {
+      if (v[k] && !/^https:\/\//.test(v[k])) return fail("Sosyal profil ve Google bağlantıları https:// ile başlamalı.");
+    }
+    for (const k of ["latitude", "longitude"] as const) {
+      v[k] = v[k].replace(",", ".");
+      if (v[k] && Number.isNaN(Number(v[k]))) return fail("Enlem/boylam sayı olmalı (örn. 41.0082).");
+    }
+    if (v.openingHours && !/^([A-Z][a-z](-[A-Z][a-z])? \d{2}:\d{2}-\d{2}:\d{2})(, ?[A-Z][a-z](-[A-Z][a-z])? \d{2}:\d{2}-\d{2}:\d{2})*$/.test(v.openingHours))
+      return fail("Açılış saatleri biçimi: Mo-Fr 09:00-20:00, Sa 10:00-18:00");
     await saveSettings("store", v);
     return fin(staff.id, "store");
   });
@@ -80,6 +93,16 @@ export async function savePayment(_: ActionResult | null, fd: FormData): Promise
   });
 }
 
+export async function generateIndexNowKey(): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("settings.manage");
+    const cur = (await getSettings()).seo;
+    const key = crypto.randomUUID().replace(/-/g, "");
+    await saveSettings("seo", { ...cur, indexNowKey: key });
+    return fin(staff.id, "seo");
+  });
+}
+
 export async function testIyzico(): Promise<ActionResult> {
   return safe(async () => {
     await assertStaff("payments.manage");
@@ -116,7 +139,26 @@ export async function saveIntegrations(_: ActionResult | null, fd: FormData): Pr
 export async function saveSeo(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
     const staff = await assertStaff("settings.manage");
-    await saveSettings("seo", { title: str(fd.get("title")), description: str(fd.get("description")) });
+    const title = str(fd.get("title"));
+    const description = str(fd.get("description"));
+    if (title.length < 10) return fail("Site başlığı en az 10 karakter olmalı.");
+    const indexNowKey = str(fd.get("indexNowKey"));
+    if (indexNowKey && !/^[a-zA-Z0-9-]{8,128}$/.test(indexNowKey)) return fail("IndexNow anahtarı 8–128 karakter, harf/rakam/tire olmalı.");
+    const meta = (k: string) => {
+      const v = str(fd.get(k));
+      const m = v.match(/content="([^"]+)"/);
+      return m ? m[1] : v; // tam <meta> etiketi yapıştırılırsa sadece değeri al
+    };
+    await saveSettings("seo", {
+      title,
+      description,
+      ogImage: str(fd.get("ogImage")),
+      googleVerification: meta("googleVerification"),
+      bingVerification: meta("bingVerification"),
+      yandexVerification: meta("yandexVerification"),
+      indexNowKey,
+      aboutForAi: str(fd.get("aboutForAi")),
+    });
     return fin(staff.id, "seo");
   });
 }

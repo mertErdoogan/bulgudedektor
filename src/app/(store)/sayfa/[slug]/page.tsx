@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -10,7 +11,7 @@ async function get(slug: string) {
 }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const p = await get((await params).slug);
-  return p ? { title: p.title, description: p.seoDescription ?? undefined } : {};
+  return p ? pageMeta({ title: p.title, description: p.seoDescription, path: `/sayfa/${p.slug}` }) : {};
 }
 export default async function ContentPage({ params }: { params: Promise<{ slug: string }> }) {
   const p = await get((await params).slug);

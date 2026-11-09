@@ -1,10 +1,11 @@
+import { pageMeta } from "@/lib/seo";
 import { eq } from "drizzle-orm";
 import { CheckCircle2, CircleAlert } from "lucide-react";
 import { db } from "@/db";
 import { serialNumbers } from "@/db/schema";
 import { formatDate } from "@/lib/utils";
 
-export const metadata = { title: "Seri no sorgulama — cihazın orijinal mi?" };
+export const metadata = pageMeta({ title: "Dedektör Seri No Sorgulama — Cihazım Orijinal mi?", description: "Dedektörünüzün seri numarasını girin; orijinal, faturalı ve garantili olup olmadığını anında öğrenin.", path: "/seri-no" });
 
 export default async function SerialPage({ searchParams }: { searchParams: Promise<{ no?: string }> }) {
   const no = ((await searchParams).no ?? "").trim().toUpperCase();

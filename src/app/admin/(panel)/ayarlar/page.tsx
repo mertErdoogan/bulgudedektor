@@ -6,7 +6,7 @@ import { Badge, Card, CardHeader, Checkbox, Field, Input, Textarea } from "@/com
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSettings } from "@/lib/settings";
-import { saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, testIyzico } from "./actions";
+import { generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, testIyzico } from "./actions";
 
 export const metadata = { title: "Ayarlar" };
 const mask = (v: string) => (v ? `${v.slice(0, 4)}••••••••${v.slice(-3)}` : "");
@@ -47,6 +47,33 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <Field label="MERSİS no"><Input name="mersis" defaultValue={s.store.mersis} /></Field>
               <Field label="ETBİS kayıt no"><Input name="etbis" defaultValue={s.store.etbis} /></Field>
               <Field label="Duyuru şeridi" className="md:col-span-2"><Input name="announcement" defaultValue={s.store.announcement} /></Field>
+
+              <div className="mt-3 md:col-span-2">
+                <p className="font-bold">Konum ve işletme bilgisi (Google İşletme Profili ile birebir aynı olmalı)</p>
+                <p className="text-sm text-mute">Ad, adres, telefon her yerde aynı yazılırsa Google Haritalar ve AI aramaları seni güvenilir yerel işletme olarak tanır.</p>
+              </div>
+              <Field label="İl"><Input name="city" defaultValue={s.store.city} /></Field>
+              <Field label="İlçe"><Input name="district" defaultValue={s.store.district} /></Field>
+              <Field label="Posta kodu"><Input name="postalCode" defaultValue={s.store.postalCode} /></Field>
+              <Field label="Kuruluş yılı"><Input name="foundingYear" defaultValue={s.store.foundingYear} placeholder="2015" /></Field>
+              <Field label="Enlem" hint="Google Haritalar'da konuma sağ tıkla → ilk sayı"><Input name="latitude" defaultValue={s.store.latitude} placeholder="41.0082" /></Field>
+              <Field label="Boylam"><Input name="longitude" defaultValue={s.store.longitude} placeholder="28.9784" /></Field>
+              <Field label="Açılış saatleri (şema biçimi)" hint="Mo-Fr 09:00-20:00, Sa 10:00-18:00"><Input name="openingHours" defaultValue={s.store.openingHours} /></Field>
+              <Field label="Fiyat aralığı"><Input name="priceRange" defaultValue={s.store.priceRange} placeholder="₺₺₺" /></Field>
+
+              <div className="mt-3 md:col-span-2">
+                <p className="font-bold">Dijital ayak izi (sosyal kanıt)</p>
+                <p className="text-sm text-mute">Bu profiller şemaya “sameAs” olarak eklenir; AI motorları markayı bu kaynaklarla doğrular. Sadece aktif kullandığın hesapları gir.</p>
+              </div>
+              <Field label="Google İşletme Profili (Haritalar) linki"><Input name="googleBusinessUrl" defaultValue={s.store.googleBusinessUrl} placeholder="https://maps.app.goo.gl/…" /></Field>
+              <Field label="Google yorum bırakma linki" hint="Teslimattan sonra müşteriye e-postayla gönderilir"><Input name="googleReviewUrl" defaultValue={s.store.googleReviewUrl} placeholder="https://g.page/r/…/review" /></Field>
+              <Field label="Instagram"><Input name="instagram" defaultValue={s.store.instagram} placeholder="https://instagram.com/…" /></Field>
+              <Field label="YouTube"><Input name="youtube" defaultValue={s.store.youtube} placeholder="https://youtube.com/@…" /></Field>
+              <Field label="TikTok"><Input name="tiktok" defaultValue={s.store.tiktok} /></Field>
+              <Field label="Facebook"><Input name="facebook" defaultValue={s.store.facebook} /></Field>
+              <Field label="X (Twitter)"><Input name="x" defaultValue={s.store.x} /></Field>
+              <Field label="LinkedIn"><Input name="linkedin" defaultValue={s.store.linkedin} /></Field>
+              <Field label="Şikayetvar marka sayfası" className="md:col-span-2"><Input name="sikayetvarUrl" defaultValue={s.store.sikayetvarUrl} /></Field>
               <SubmitButton className="md:col-span-2 md:justify-self-start">Kaydet</SubmitButton>
             </ActionForm>
           </Card>
@@ -123,10 +150,30 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <Card>
             <CardHeader title="Arama motoru" description="Ana sayfa başlığı ve açıklaması. Ürün ve kategori SEO'su kendi sayfalarında." />
             <ActionForm action={saveSeo} className="flex flex-col gap-4 p-5">
-              <Field label="Site başlığı"><Input name="title" defaultValue={s.seo.title} /></Field>
-              <Field label="Site açıklaması"><Textarea name="description" defaultValue={s.seo.description} /></Field>
-              <p className="text-sm text-mute">Site haritası: <a className="text-link" href="/sitemap.xml" target="_blank">/sitemap.xml</a> · robots: <a className="text-link" href="/robots.txt" target="_blank">/robots.txt</a></p>
-              <SubmitButton className="self-start">Kaydet</SubmitButton>
+              <Field label="Site başlığı" hint="50–60 karakter ideal"><Input name="title" defaultValue={s.seo.title} /></Field>
+              <Field label="Site açıklaması" hint="140–160 karakter ideal"><Textarea name="description" defaultValue={s.seo.description} /></Field>
+              <Field label="Mağaza tanımı (AI motorları için)" hint="ChatGPT, Perplexity, Claude ve Google AI'ın seni nasıl tanıtmasını istiyorsan 2–4 cümlede, somut bilgilerle yaz. Ana sayfada, llms.txt'de ve kurum şemasında kullanılır.">
+                <Textarea name="aboutForAi" defaultValue={s.seo.aboutForAi} className="min-h-[110px]" />
+              </Field>
+              <Field label="Paylaşım görseli (Open Graph)" hint="1200×630 px. WhatsApp/sosyal medya paylaşımlarında görünür."><Input name="ogImage" defaultValue={s.seo.ogImage} placeholder="/media/… veya https://…" /></Field>
+              <p className="mt-2 font-bold">Arama motoru doğrulama</p>
+              <Field label="Google Search Console" hint="HTML etiketi yöntemi: <meta …> etiketini veya sadece content değerini yapıştır"><Input name="googleVerification" defaultValue={s.seo.googleVerification} /></Field>
+              <Field label="Bing Webmaster Tools" hint="ChatGPT Search Bing dizinini kullanır — mutlaka ekle"><Input name="bingVerification" defaultValue={s.seo.bingVerification} /></Field>
+              <Field label="Yandex Webmaster"><Input name="yandexVerification" defaultValue={s.seo.yandexVerification} /></Field>
+              <Field label="IndexNow anahtarı" hint="Ürün/yazı yayınlanınca Bing ve Yandex'e anında bildirilir. Boşsa aşağıdan üret."><Input name="indexNowKey" defaultValue={s.seo.indexNowKey} /></Field>
+              <div className="flex flex-wrap gap-2">
+                <SubmitButton>Kaydet</SubmitButton>
+                {!s.seo.indexNowKey ? <ActionButton variant="outline" run={generateIndexNowKey}>IndexNow anahtarı üret</ActionButton> : null}
+              </div>
+              <div className="rounded-xl bg-soft p-4 text-sm">
+                <p className="font-bold">Otomatik üretilen dosyalar</p>
+                <ul className="mt-1 grid gap-1 sm:grid-cols-2">
+                  {[["/sitemap.xml", "Site haritası"], ["/robots.txt", "Robots (AI botlarına izinli)"], ["/llms.txt", "llms.txt (AI özet)"], ["/llms-full.txt", "llms-full.txt (tam katalog)"], ["/feed/google.xml", "Google Merchant ürün feed'i"], ["/blog/rss.xml", "Blog RSS"]].map(([h, l]) => (
+                    <li key={h}><a className="text-link" href={h} target="_blank">{l}</a> <span className="text-mute">{h}</span></li>
+                  ))}
+                </ul>
+                <p className="mt-2"><Link href="/admin/seo" className="font-bold text-link">SEO sağlık kontrolü →</Link></p>
+              </div>
             </ActionForm>
           </Card>
         ) : null}

@@ -9,6 +9,8 @@ import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { audit } from "@/lib/audit";
 import { assertStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { recordSlugChange } from "@/lib/redirects";
+import { pingIndexNow } from "@/lib/indexnow";
 import { lines, parseAmount, slugify, str, strOrNull, toNum, toNumOrNull } from "@/lib/utils";
 
 const ProductSchema = z.object({
@@ -101,6 +103,7 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
       seoDescription: strOrNull(fd.get("seoDescription")),
     };
 
+    const prevSlug = id ? (await db.query.products.findFirst({ where: eq(products.id, id), columns: { slug: true } }))?.slug : null;
     const productId = await db.transaction(async (tx) => {
       let pid = id;
       if (pid) {
@@ -119,6 +122,8 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
       return pid!;
     });
 
+    await recordSlugChange("/urun", prevSlug, slug);
+    if (status === "ACTIVE") await pingIndexNow([`/urun/${slug}`]);
     await audit(staff.id, id ? "update" : "create", "product", productId, `${name} ${id ? "güncellendi" : "eklendi"}`);
     revalidatePath("/", "layout");
     return ok(id ? "Ürün kaydedildi." : "Ürün eklendi.", id ? {} : { redirect: `/admin/urunler/${productId}` });

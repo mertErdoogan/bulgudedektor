@@ -68,6 +68,26 @@ Ana sayfa (panelden yönetilen bölümler), kategori/marka/arama (filtre: deneyi
 
 Admin › Ayarlar › Entegrasyonlar'da SMTP girilirse: sipariş onayı (havale bilgisiyle), yeni sipariş bildirimi, kargo/teslim/iptal bildirimleri ve "tekrar stokta" e-postaları gönderilir. SMTP yoksa uygulama normal çalışır, sadece e-posta gitmez.
 
+## SEO ve AI arama görünürlüğü
+
+Google, Google AI Overviews, ChatGPT Search, Perplexity ve Claude için hazır gelenler:
+
+- **Doğrudan yanıt yapısı:** Ürün, kategori, marka ve blog sayfalarının üstünde 40–60 kelimelik "Kısa cevap" kutusu; soru biçiminde alt başlıklar; içindekiler; tablolar.
+- **Yapılandırılmış veri (JSON-LD, tek @graph):** Organization (+sameAs), WebSite (+site içi arama), Store (yerel işletme, açılış saatleri, koordinat), Product (+Offer, kargo, 14 gün iade politikası, garanti, puan ve yorumlar), BreadcrumbList, ItemList, FAQPage, BlogPosting (yazar, tarih), DefinedTermSet (sözlük), Brand.
+- **İçerik:** `/blog` rehberler, `/sss`, `/sozluk`, kategori rehber metinleri, ürün/kategori SSS'leri, ürün verisinden otomatik SSS.
+- **Teknik:** canonical, Open Graph/Twitter, filtreli sayfalarda `noindex`, görselli sitemap, robots.txt (GPTBot, OAI-SearchBot, PerplexityBot, ClaudeBot, Google-Extended… açıkça izinli), `/llms.txt` ve `/llms-full.txt`, Google Merchant feed (`/feed/google.xml`), RSS (`/blog/rss.xml`), IndexNow, adres değişince otomatik 301 (`/admin/yonlendirmeler`).
+- **Sosyal kanıt:** teslimattan sonra ürün yorumu + Google yorum daveti e-postası, footer'da sosyal profiller, `/admin/seo` sağlık skoru.
+
+Canlıya aldıktan sonra yapılacaklar (panelden):
+
+1. `APP_URL`'i gerçek alan adına ayarla ve **build'i bu değerle al** (canonical ve şema linkleri buna bağlı).
+2. Ayarlar › SEO: Google Search Console, Bing Webmaster ve Yandex doğrulama kodları; IndexNow anahtarı üret. Search Console ve Bing'e `/sitemap.xml` gönder.
+3. Ayarlar › Mağaza: adres, ilçe, koordinat, açılış saatleri, Google İşletme Profili ve yorum linki, sosyal profiller (Google İşletme Profili'ndeki ad-adres-telefonla birebir aynı).
+4. Google Merchant Center'a `/feed/google.xml` ekle (ücretsiz Alışveriş listelemesi).
+5. `/admin/seo`'daki eksikleri kapat; haftada 1–2 rehber yaz.
+
+Var olan bir veritabanına örnek rehber/SSS/sözlük eklemek için (mevcut kayıtlara dokunmaz): `npm run db:seed-content`
+
 ## Henüz bağlanmayan dış servisler
 
 Ayar alanları hazır ama entegrasyon kodu yazılmadı (her biri sağlayıcı seçimine bağlı):

@@ -4,6 +4,9 @@ import { getSettings } from "@/lib/settings";
 import { facetCounts, listProducts, type CatalogFilter } from "@/lib/store";
 import { EXPERIENCE_LABEL, TECH_LABEL, WATERPROOF_LABEL } from "@/lib/utils";
 import { FilterForm } from "./filter-form";
+import { Breadcrumbs } from "@/components/seo/blocks";
+import { JsonLd } from "@/components/seo/json-ld";
+import { graph, itemListLd } from "@/lib/seo";
 import { ProductCard } from "./product-card";
 
 export type SP = Record<string, string | string[] | undefined>;
@@ -26,7 +29,7 @@ export function parseFilter(sp: SP, base: Partial<CatalogFilter> = {}): CatalogF
   };
 }
 
-export async function Catalog({ title, intro, crumbs, sp, base, hideBrand }: { title: string; intro?: React.ReactNode; crumbs?: { href: string; label: string }[]; sp: SP; base?: Partial<CatalogFilter>; hideBrand?: boolean }) {
+export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, children }: { title: string; intro?: React.ReactNode; crumbs?: { href: string; label: string }[]; sp: SP; base?: Partial<CatalogFilter>; hideBrand?: boolean; top?: React.ReactNode; children?: React.ReactNode }) {
   const f = parseFilter(sp, base);
   const [items, facets, s] = await Promise.all([listProducts(f), facetCounts(base?.category), getSettings()]);
   const active = [
@@ -48,18 +51,13 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand }: { t
   };
   return (
     <div className="container-x py-5">
-      {crumbs ? (
-        <nav className="mb-2 text-[13px] text-mute" aria-label="Konum">
-          <Link href="/">Ana sayfa</Link>
-          {crumbs.map((c) => (
-            <span key={c.href}> / <Link href={c.href}>{c.label}</Link></span>
-          ))}
-        </nav>
-      ) : null}
+      {crumbs ? <Breadcrumbs className="mb-2" items={crumbs.map((c) => ({ name: c.label, path: c.href }))} /> : null}
+      {!active.length && !f.q ? <JsonLd data={graph(itemListLd(title, items))} /> : null}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
           <h1 className="font-display text-[26px] font-extrabold md:text-[32px]">{title}</h1>
           {intro ? <div className="mt-2 text-[15px] leading-relaxed text-[#3e4440]">{intro}</div> : null}
+          {top ? <div className="mt-3">{top}</div> : null}
         </div>
         <Link href="/sihirbaz" className="flex shrink-0 items-center gap-3 rounded-xl bg-tint px-4 py-3 text-sm">
           <Compass className="text-brand" />
@@ -97,6 +95,7 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand }: { t
           )}
         </div>
       </div>
+      {children ? <div className="mt-12 flex flex-col gap-10">{children}</div> : null}
     </div>
   );
 }

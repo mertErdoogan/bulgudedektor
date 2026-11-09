@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import { db } from "../src/db";
 import * as t from "../src/db/schema";
 import { DEFAULT_ROLES } from "../src/lib/permissions";
+import { seedContent } from "./seed-content";
 
 const img = (f: string) => `/demo/${f}.jpg`;
 const daysAgo = (d: number, h = 12) => new Date(Date.now() - d * 86400000 - h * 3600000);
@@ -14,7 +15,7 @@ async function main() {
   console.log("Tablolar temizleniyor…");
   await db.execute(sql`TRUNCATE roles, users, audit_logs, brands, categories, products, product_images, serial_numbers, stock_movements,
     media_assets, customers, addresses, customer_notes, conversations, messages, service_records, reviews, product_questions, stock_alerts,
-    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings RESTART IDENTITY CASCADE`);
+    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects RESTART IDENTITY CASCADE`);
 
   // Roller ve ekip
   const roleRows = await db.insert(t.roles).values(DEFAULT_ROLES.map((r) => ({ ...r, permissions: [...r.permissions], isSystem: r.key === "admin" }))).returning();
@@ -235,6 +236,7 @@ async function main() {
   ]);
   await db.insert(t.auditLogs).values({ userId: admin.id, action: "create", entity: "system", summary: "Demo verisi yüklendi" });
 
+  await seedContent();
   console.log("Bitti. Giriş: admin@bulgu.local / Bulgu123!  (satis@, depo@, servis@ aynı şifre)");
   process.exit(0);
 }

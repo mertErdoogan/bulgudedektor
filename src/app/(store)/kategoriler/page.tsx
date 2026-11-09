@@ -1,7 +1,8 @@
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { getActiveBrands, getNav } from "@/lib/store";
 
-export const metadata = { title: "Kategoriler" };
+export const metadata = pageMeta({ title: "Dedektör Kategorileri ve Markaları", description: "Define, doğal altın, sahil ve derin arama dedektörleri; pinpointer ve aksesuarlar. Tüm kategoriler ve markalar tek sayfada.", path: "/kategoriler" });
 
 export default async function CategoriesPage() {
   const [nav, brands] = await Promise.all([getNav(), getActiveBrands()]);

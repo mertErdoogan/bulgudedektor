@@ -7,6 +7,8 @@ import { brands, categories, products } from "@/db/schema";
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { audit } from "@/lib/audit";
 import { assertStaff } from "@/lib/auth";
+import { recordSlugChange } from "@/lib/redirects";
+import { pingIndexNow } from "@/lib/indexnow";
 import { slugify, str, strOrNull, toNum } from "@/lib/utils";
 
 export async function saveBrand(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
@@ -19,8 +21,11 @@ export async function saveBrand(_: ActionResult | null, fd: FormData): Promise<A
     const dupe = await db.query.brands.findFirst({ where: id ? and(eq(brands.slug, slug), ne(brands.id, id)) : eq(brands.slug, slug) });
     if (dupe) return fail("Bu URL başka bir markada kullanılıyor.");
     const values = { name, slug, logoUrl: strOrNull(fd.get("logoUrl")), description: strOrNull(fd.get("description")), isActive: fd.get("isActive") === "on", sortOrder: toNum(fd.get("sortOrder"), 0) };
-    if (id) await db.update(brands).set(values).where(eq(brands.id, id));
-    else await db.insert(brands).values(values);
+    if (id) {
+      const prev = await db.query.brands.findFirst({ where: eq(brands.id, id), columns: { slug: true } });
+      await db.update(brands).set(values).where(eq(brands.id, id));
+      await recordSlugChange("/marka", prev?.slug, slug);
+    } else await db.insert(brands).values(values);
     await audit(staff.id, id ? "update" : "create", "brand", id, `Marka ${name} kaydedildi`);
     revalidatePath("/", "layout");
     return ok("Marka kaydedildi.", { redirect: "/admin/markalar" });
@@ -62,9 +67,14 @@ export async function saveCategory(_: ActionResult | null, fd: FormData): Promis
       sortOrder: toNum(fd.get("sortOrder"), 0),
       seoTitle: strOrNull(fd.get("seoTitle")),
       seoDescription: strOrNull(fd.get("seoDescription")),
+      seoContent: strOrNull(fd.get("seoContent")),
     };
-    if (id) await db.update(categories).set(values).where(eq(categories.id, id));
-    else await db.insert(categories).values(values);
+    if (id) {
+      const prev = await db.query.categories.findFirst({ where: eq(categories.id, id), columns: { slug: true } });
+      await db.update(categories).set(values).where(eq(categories.id, id));
+      await recordSlugChange("/kategori", prev?.slug, slug);
+    } else await db.insert(categories).values(values);
+    await pingIndexNow([`/kategori/${slug}`]);
     await audit(staff.id, id ? "update" : "create", "category", id, `Kategori ${name} kaydedildi`);
     revalidatePath("/", "layout");
     return ok("Kategori kaydedildi.", { redirect: "/admin/kategoriler" });

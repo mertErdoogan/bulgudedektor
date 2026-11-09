@@ -41,6 +41,15 @@ export const NAV: NavGroup[] = [
     ],
   },
   {
+    label: "SEO ve içerik",
+    items: [
+      { href: "/admin/blog", label: "Blog ve rehberler", icon: "BookOpen", perm: "cms.manage" },
+      { href: "/admin/sss", label: "SSS ve sözlük", icon: "CircleHelp", perm: "cms.manage" },
+      { href: "/admin/seo", label: "SEO sağlığı", icon: "Gauge", perm: "cms.manage" },
+      { href: "/admin/yonlendirmeler", label: "Yönlendirmeler", icon: "Signpost", perm: "cms.manage" },
+    ],
+  },
+  {
     label: "Yönetim",
     items: [
       { href: "/admin/raporlar", label: "Raporlar", icon: "BarChart3", perm: "reports.finance" },

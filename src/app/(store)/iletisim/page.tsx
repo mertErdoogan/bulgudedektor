@@ -1,8 +1,11 @@
+import { pageMeta } from "@/lib/seo";
 import { MessageCircle, Phone, Store } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 import { ContactForm } from "./form";
+import { JsonLd } from "@/components/seo/json-ld";
+import { graph, storeLd } from "@/lib/seo";
 
-export const metadata = { title: "İletişim" };
+export const metadata = pageMeta({ title: "İletişim — Uzmana Sor, Showroom ve WhatsApp", description: "Dedektör uzmanımıza WhatsApp, telefon veya görüntülü görüşmeyle ulaşın. Showroom adresi ve çalışma saatleri.", path: "/iletisim" });
 
 export default async function ContactPage({ searchParams }: { searchParams: Promise<{ konu?: string; urun?: string }> }) {
   const s = await getSettings();
@@ -10,6 +13,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
   const subject = sp.konu === "goruntulu" ? `Görüntülü görüşme talebi${sp.urun ? `: ${sp.urun}` : ""}` : sp.konu === "kiralama" ? `Deneme kiralaması${sp.urun ? `: ${sp.urun}` : ""}` : sp.konu === "sifre" ? "Şifre sıfırlama" : "";
   return (
     <div className="container-x grid max-w-5xl gap-8 py-10 md:grid-cols-[1fr_1.2fr]">
+      <JsonLd data={graph(storeLd(s))} />
       <div className="flex flex-col gap-4">
         <h1 className="font-display text-3xl font-extrabold">Bize ulaş</h1>
         <p className="text-mute">{s.store.workingHours}. Cihaz seçimi, sipariş, servis — hepsi aynı hatta.</p>

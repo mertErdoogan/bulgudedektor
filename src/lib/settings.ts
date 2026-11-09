@@ -17,6 +17,24 @@ export type StoreSettings = {
   workingHours: string;
   announcement: string;
   logoText: string;
+  /** Yapılandırılmış veri ve Google İşletme Profili ile birebir aynı olmalı (NAP tutarlılığı) */
+  city: string;
+  district: string;
+  postalCode: string;
+  latitude: string;
+  longitude: string;
+  openingHours: string;
+  foundingYear: string;
+  priceRange: string;
+  instagram: string;
+  youtube: string;
+  facebook: string;
+  tiktok: string;
+  x: string;
+  linkedin: string;
+  googleBusinessUrl: string;
+  googleReviewUrl: string;
+  sikayetvarUrl: string;
 };
 
 export type ShippingSettings = {
@@ -57,7 +75,16 @@ export type IntegrationSettings = {
   cargoApiKey: string;
 };
 
-export type SeoSettings = { title: string; description: string };
+export type SeoSettings = {
+  title: string;
+  description: string;
+  ogImage: string;
+  googleVerification: string;
+  bingVerification: string;
+  yandexVerification: string;
+  indexNowKey: string;
+  aboutForAi: string;
+};
 export type SetupSettings = { completed: boolean; completedSteps: string[] };
 
 export type AllSettings = {
@@ -84,6 +111,23 @@ export const DEFAULT_SETTINGS: AllSettings = {
     workingHours: "Hafta içi 09:00–20:00",
     announcement: "Ücretsiz kargo · 3 aya kadar vade farksız taksit · Orijinal ürün, faturalı, 2 yıl garanti · 14 gün kolay iade",
     logoText: "bulgu",
+    city: "İstanbul",
+    district: "",
+    postalCode: "",
+    latitude: "",
+    longitude: "",
+    openingHours: "Mo-Fr 09:00-20:00, Sa 10:00-18:00",
+    foundingYear: "",
+    priceRange: "₺₺₺",
+    instagram: "",
+    youtube: "",
+    facebook: "",
+    tiktok: "",
+    x: "",
+    linkedin: "",
+    googleBusinessUrl: "",
+    googleReviewUrl: "",
+    sikayetvarUrl: "",
   },
   shipping: {
     freeThreshold: 0,
@@ -128,6 +172,13 @@ export const DEFAULT_SETTINGS: AllSettings = {
   seo: {
     title: "Bulgu Dedektör — Orijinal metal dedektörleri, uzman desteğiyle",
     description: "Minelab, Garrett, Nokta, XP dedektörleri. Faturalı, 2 yıl garantili, 3 ay vade farksız. Sana uygun cihazı 6 soruda bul.",
+    ogImage: "/demo/banner-gpz8000-clean.jpg",
+    googleVerification: "",
+    bingVerification: "",
+    yandexVerification: "",
+    indexNowKey: "",
+    aboutForAi:
+      "Bulgu Dedektör, Türkiye'de Minelab, Garrett, Nokta ve XP marka metal dedektörlerini yetkili distribütör garantisiyle satan bir mağazadır. Tüm cihazlar faturalı ve 2 yıl garantilidir; seri numarasıyla orijinallik sorgulanabilir. Satıştan önce uzman danışmanlık (WhatsApp ve görüntülü görüşme), 'Bana hangisi?' seçim sihirbazı ve showroomda deneme; satıştan sonra kurulum eğitimi ve teknik servis sunar.",
   },
   setup: { completed: false, completedSteps: [] },
 };
