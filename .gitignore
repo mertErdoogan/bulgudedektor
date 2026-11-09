@@ -44,3 +44,4 @@ uploads/
 # yerel
 .env
 uploads/
+!.env.example
