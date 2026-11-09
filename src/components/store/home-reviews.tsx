@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, MessageSquareQuote, Star } from "lucide-react";
+import { BadgeCheck, Star } from "lucide-react";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { productImages, products, reviews } from "@/db/schema";
@@ -35,15 +35,12 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
   return (
     <section className="container-x mt-12" aria-labelledby="yorumlar-baslik">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-deep text-white"><MessageSquareQuote size={21} /></span>
-          <div>
-            <h2 id="yorumlar-baslik" className="font-display text-[22px] leading-tight font-extrabold md:text-[28px]">Müşterilerimiz ne diyor?</h2>
-            <p className="flex flex-wrap items-center gap-1.5 text-sm text-mute">
-              <Star size={14} className="fill-gold text-gold" />
-              <b className="text-deep">{agg.avg?.toFixed(1)}</b> ortalama · {agg.n} onaylı ürün yorumu
-            </p>
-          </div>
+        <div className="border-l-4 border-brand pl-3.5">
+          <h2 id="yorumlar-baslik" className="font-display text-[23px] leading-tight font-extrabold md:text-[30px]">Müşterilerimiz ne diyor?</h2>
+          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-mute">
+            <Star size={14} className="fill-gold text-gold" />
+            <b className="text-deep">{agg.avg?.toFixed(1)}</b> ortalama · {agg.n} onaylı ürün yorumu
+          </p>
         </div>
         {googleReviewUrl ? (
           <a href={googleReviewUrl} target="_blank" rel="noopener" className="flex h-10 items-center rounded-full border border-line px-4 text-sm font-extrabold hover:border-deep">Google&apos;da yorum yaz</a>

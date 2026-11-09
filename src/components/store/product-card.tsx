@@ -56,43 +56,58 @@ export function ProductCard({ p, ctx, compare = false, className, rank }: { p: P
   const discount = p.compareAtPrice && p.compareAtPrice > p.price ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100) : 0;
   const fresh = isNew(p);
   const badge = p.badges.find((b) => !/^yeni/i.test(b) || !fresh);
+  const d = deliveryInfo(p, ctx.ship);
   return (
-    <article className={cn("group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-white text-deep transition duration-200 hover:-translate-y-0.5 hover:border-transparent hover:shadow-[0_14px_30px_rgba(20,20,20,.10)]", className)}>
-      <Link href={`/urun/${p.slug}`} className="relative block bg-white">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {p.image ? <img src={p.image} alt={p.name} loading="lazy" decoding="async" className="block h-[180px] w-full object-contain px-4 pt-6 pb-2 transition duration-300 group-hover:scale-[1.03] md:h-[210px]" /> : <div className="h-[180px] bg-soft md:h-[210px]" />}
-        <span className="absolute top-3 left-3 flex flex-col items-start gap-1">
-          {rank ? <span className={cn("grid h-8 w-8 place-items-center rounded-full text-sm font-black text-white shadow", rank <= 3 ? "bg-accent" : "bg-deep")}>{rank}</span> : null}
+    <article className={cn("group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-white text-deep transition duration-200 hover:border-[#d6d6d9] hover:shadow-[0_14px_30px_rgba(20,20,20,.10)]", className)}>
+      {/* Görsel: kartın en baskın öğesi */}
+      <Link href={`/urun/${p.slug}`} className="relative m-2 mb-0 block overflow-hidden rounded-xl bg-[#f6f6f6]">
+        <span className="block aspect-[5/4]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {p.image ? <img src={p.image} alt={`${p.brand ?? ""} ${p.name}`.trim()} loading="lazy" decoding="async" className="h-full w-full object-contain p-3 mix-blend-multiply transition duration-300 group-hover:scale-[1.05]" /> : null}
+        </span>
+        <span className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1 pr-10">
+          {rank ? <span className={cn("grid h-7 min-w-7 place-items-center rounded-full px-1.5 text-[13px] font-black text-white", rank <= 3 ? "bg-accent" : "bg-deep")}>{rank}</span> : null}
           {out ? <span className="rounded-md bg-deep px-2 py-0.5 text-[11px] font-extrabold text-white">Tükendi</span> : null}
-          {discount ? <span className="rounded-md bg-accent px-2 py-0.5 text-[11px] font-extrabold text-white">%{discount} indirim</span> : null}
+          {discount ? <span className="rounded-md bg-accent px-2 py-0.5 text-[11px] font-extrabold text-white">%{discount}</span> : null}
           {fresh ? <span className="rounded-md bg-deep px-2 py-0.5 text-[11px] font-extrabold text-white">Yeni</span> : null}
-          {badge && !discount ? <span className="rounded-md bg-pop px-2 py-0.5 text-[11px] font-extrabold text-on-pop">{badge}</span> : null}
+          {badge && !discount && !fresh ? <span className="rounded-md bg-white px-2 py-0.5 text-[11px] font-extrabold text-deep ring-1 ring-line">{badge}</span> : null}
         </span>
       </Link>
-      <FavoriteButton productId={p.id} name={p.name} className="absolute top-2.5 right-2.5" />
-      <div className="flex flex-1 flex-col gap-1 px-3.5 pt-1 pb-3.5 md:px-4 md:pb-4">
-        <span className="text-[11px] font-extrabold tracking-wider text-mute">{p.brand?.toLocaleUpperCase("en-US")}</span>
-        <Link href={`/urun/${p.slug}`} className="line-clamp-2 min-h-[39px] text-[14.5px] leading-[1.3] font-bold hover:text-link">
+      <FavoriteButton productId={p.id} name={p.name} className="absolute top-4 right-4" />
+      <div className="flex flex-1 flex-col px-3.5 pt-3 pb-3.5 md:px-4 md:pb-4">
+        {/* Üretici + model: ikinci baskın öğe */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-[12.5px] font-black tracking-[0.08em] text-brand">{p.brand?.toLocaleUpperCase("en-US")}</span>
+          {p.reviewCount ? (
+            <span className="flex shrink-0 items-center gap-1 text-xs text-mute">
+              <Star size={12} className="fill-gold text-gold" /> <b className="text-deep">{p.rating?.toFixed(1)}</b> ({p.reviewCount})
+            </span>
+          ) : null}
+        </div>
+        <Link href={`/urun/${p.slug}`} className="font-display mt-0.5 line-clamp-2 text-[16px] leading-[1.25] font-extrabold hover:text-link md:text-[17.5px]">
           {p.name}
         </Link>
-        {p.reviewCount ? (
-          <span className="flex items-center gap-1 text-xs text-mute">
-            <Star size={12} className="fill-gold text-gold" /> <b className="text-deep">{p.rating?.toFixed(1)}</b> ({p.reviewCount})
-          </span>
-        ) : (
-          <span className="h-4" />
-        )}
-        <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
-          <strong className="font-display text-[18px] font-extrabold md:text-[20px]">{formatTL(p.price)}</strong>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+          <strong className="font-display text-[19px] font-extrabold md:text-[21px]">{formatTL(p.price)}</strong>
           {discount ? <s className="text-[13px] text-mute">{formatTL(p.compareAtPrice)}</s> : null}
         </div>
-        <span className="text-[12px] font-semibold text-mute">
+        <span className="text-[12px] text-mute">
           {out ? "Gelince haber verelim" : ctx.installments > 1 && p.price >= 3000 ? `${ctx.installments} × ${formatTL(Math.round(p.price / ctx.installments))} vade farksız` : "Taksit seçenekleri"}
         </span>
-        <div className="mt-2 flex flex-col gap-1.5">
-          <DeliveryBadge p={p} ctx={ctx} />
-          <SocialProof p={p} ctx={ctx} />
-        </div>
+        {d.tone !== "none" || (ctx.social && (p.carts24 >= SOCIAL_MIN_CARTS || p.views24 >= SOCIAL_MIN_VIEWS)) ? (
+          <div className="mt-2 flex flex-col gap-1 border-t border-line pt-2">
+            {d.tone !== "none" ? (
+              <span className={cn("flex items-start gap-1.5 text-[12px] leading-snug", d.tone === "fast" ? "text-ok" : d.tone === "slow" ? "text-warn" : "text-mute")}>
+                <Truck size={14} className="mt-px shrink-0" />
+                <span>
+                  <b>{d.ship}</b>
+                  {d.eta ? <span className="text-mute"> · {d.eta}</span> : null}
+                </span>
+              </span>
+            ) : null}
+            <SocialProof p={p} ctx={ctx} />
+          </div>
+        ) : null}
         <div className="mt-auto flex flex-col gap-2 pt-3">
           {out ? (
             <Link href={`/urun/${p.slug}`} className="grid h-10 place-items-center rounded-lg border border-deep text-sm font-bold">

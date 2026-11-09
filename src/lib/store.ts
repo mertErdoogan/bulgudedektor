@@ -251,3 +251,42 @@ export async function catalogStats(where: { categoryId?: string; brandId?: strin
   const best = await cardQuery().where(cond).orderBy(desc(products.isFeatured), asc(products.price)).limit(3);
   return { count: agg?.n ?? 0, min: agg?.min ?? null, max: agg?.max ?? null, brands: top.map((t) => t.name), picks: best };
 }
+
+export type BrandGroup = {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  description: string | null;
+  total: number;
+  image: string | null;
+  categories: { name: string; slug: string; count: number }[];
+};
+
+/** Markalar ve her markanın ürün bulunan kategorileri (marka → kategori gezinmesi için). */
+export const getBrandGroups = cache(async (): Promise<BrandGroup[]> => {
+  const [bs, rows, imgs] = await Promise.all([
+    getActiveBrands(),
+    db
+      .select({ brandId: products.brandId, name: categories.name, slug: categories.slug, sort: categories.sortOrder, count: sql<number>`count(*)::int` })
+      .from(products)
+      .innerJoin(categories, eq(categories.id, products.categoryId))
+      .where(and(active, eq(categories.isActive, true)))
+      .groupBy(products.brandId, categories.name, categories.slug, categories.sortOrder)
+      .orderBy(asc(categories.sortOrder)),
+    db
+      .selectDistinctOn([products.brandId], {
+        brandId: products.brandId,
+        image: sql<string | null>`(select ${productImages.url} from ${productImages} where ${productImages.productId} = ${products.id} order by ${productImages.sortOrder} limit 1)`,
+      })
+      .from(products)
+      .where(active)
+      .orderBy(products.brandId, desc(products.isFeatured), desc(products.price)),
+  ]);
+  return bs
+    .map((b) => {
+      const cats = rows.filter((r) => r.brandId === b.id).map(({ name, slug, count }) => ({ name, slug, count }));
+      return { id: b.id, name: b.name, slug: b.slug, logoUrl: b.logoUrl, description: b.description, total: cats.reduce((a, c) => a + c.count, 0), image: imgs.find((i) => i.brandId === b.id)?.image ?? null, categories: cats };
+    })
+    .filter((b) => b.total > 0);
+});

@@ -3,13 +3,13 @@ import { Heart, MessageCircle, User } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { getCustomer } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
-import { getActiveBrands, getNav } from "@/lib/store";
+import { getActiveBrands, getBrandGroups, getNav } from "@/lib/store";
 import { CartButton, SearchBox } from "./bits";
 import { NavBar } from "./nav-bar";
 import { QuickLists } from "./rails";
 
 export async function StoreHeader() {
-  const [s, nav, brands, customer] = await Promise.all([getSettings(), getNav(), getActiveBrands(), getCustomer()]);
+  const [s, nav, brands, customer, brandGroups] = await Promise.all([getSettings(), getNav(), getActiveBrands(), getCustomer(), getBrandGroups()]);
   const header = nav.menu.filter((m) => m.location === "HEADER");
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}` : "/iletisim";
   return (
@@ -60,6 +60,7 @@ export async function StoreHeader() {
         items={header.map((m) => ({ id: m.id, label: m.label, url: m.url, highlight: !!m.highlight, image: nav.categories.find((c) => m.url === `/kategori/${c.slug}`)?.imageUrl ?? null }))}
         categories={nav.categories}
         brands={brands.map((b) => ({ name: b.name, slug: b.slug }))}
+        brandGroups={brandGroups}
       />
     </header>
   );

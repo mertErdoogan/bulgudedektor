@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Flame, PackageCheck, Sparkles, Tag, Trophy } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import type { CardCtx } from "@/lib/card-ctx";
 import type { ProductCard as P } from "@/lib/store";
 import { formatTL } from "@/lib/utils";
@@ -7,15 +7,12 @@ import { CutoffCountdown } from "./countdown";
 import { ProductCard } from "./product-card";
 import { Rail } from "./rails";
 
-function Head({ icon, title, sub, href, cta = "Tümünü gör", extra }: { icon: React.ReactNode; title: string; sub?: React.ReactNode; href?: string; cta?: string; extra?: React.ReactNode }) {
+export function Head({ title, sub, href, cta = "Tümünü gör", extra }: { icon?: React.ReactNode; title: string; sub?: React.ReactNode; href?: string; cta?: string; extra?: React.ReactNode }) {
   return (
-    <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-      <div className="flex items-center gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-deep text-white">{icon}</span>
-        <div>
-          <h2 className="font-display text-[22px] leading-tight font-extrabold md:text-[28px]">{title}</h2>
-          {sub ? <p className="text-sm text-mute">{sub}</p> : null}
-        </div>
+    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div className="border-l-4 border-brand pl-3.5">
+        <h2 className="font-display text-[23px] leading-tight font-extrabold md:text-[30px]">{title}</h2>
+        {sub ? <p className="mt-0.5 text-sm text-mute">{sub}</p> : null}
       </div>
       <div className="flex items-center gap-3">
         {extra}
@@ -34,9 +31,9 @@ export function BestSellers({ items, ctx }: { items: P[]; ctx: CardCtx }) {
   if (!items.length) return null;
   return (
     <section className="container-x mt-12">
-      <Head icon={<Trophy size={21} />} title="Çok satanlar" sub="Son 60 günde en çok tercih edilen cihazlar" href="/urunler" />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-        {items.map((p, i) => (
+      <Head title="Çok satanlar" sub="Son 60 günde en çok tercih edilen cihazlar" href="/urunler" />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
+        {items.slice(0, 8).map((p, i) => (
           <ProductCard key={p.id} p={p} ctx={ctx} rank={i + 1} className="h-full" />
         ))}
       </div>
@@ -69,7 +66,7 @@ export function NewArrivals({ items, ctx }: { items: P[]; ctx: CardCtx }) {
             <span className="mt-1 text-lg font-extrabold">{formatTL(lead.price)}</span>
             <span className="mt-3 inline-flex w-fit items-center gap-1.5 text-sm font-extrabold text-link">İncele <ArrowRight size={15} /></span>
           </Link>
-          <Rail itemClass="w-[46%] sm:w-[31%] md:w-[23.5%] lg:w-[31.5%] xl:w-[23.6%]">
+          <Rail itemClass="w-[62%] sm:w-[40%] md:w-[31.5%] lg:w-[46%] xl:w-[31.6%]">
             {items.slice(1).map((p) => (
               <ProductCard key={p.id} p={p} ctx={ctx} className="h-full" />
             ))}
@@ -87,7 +84,7 @@ export function Deals({ items, ctx }: { items: P[]; ctx: CardCtx }) {
   return (
     <section className="container-x mt-12">
       <div className="rounded-3xl bg-gradient-to-br from-[#fff1ee] to-white p-4 ring-1 ring-[#f6d9d3] md:p-6">
-        <Head icon={<Tag size={21} />} title="Fırsatlar" sub={maxPct > 0 ? <>Seçili modellerde <b className="text-accent">%{maxPct}&apos;e varan</b> indirim</> : "İndirimli modeller"} href="/kampanyalar" cta="Tüm fırsatlar" />
+        <Head title="Fırsatlar" sub={maxPct > 0 ? <>Seçili modellerde <b className="text-accent">%{maxPct}&apos;e varan</b> indirim</> : "İndirimli modeller"} href="/kampanyalar" cta="Tüm fırsatlar" />
         <Rail>
           {items.map((p) => (
             <ProductCard key={p.id} p={p} ctx={ctx} className="h-full" />
@@ -104,7 +101,6 @@ export function SameDay({ items, ctx, ms, cutoff }: { items: P[]; ctx: CardCtx; 
   return (
     <section className="container-x mt-12">
       <Head
-        icon={<PackageCheck size={21} />}
         title="Aynı gün kargo"
         sub={`Stokta, saat ${cutoff}'e kadar siparişte bugün kargoda`}
         href="/urunler?stok=1"
@@ -124,7 +120,7 @@ export function CategoryRail({ title, href, items, ctx }: { title: string; href:
   if (items.length < 3) return null;
   return (
     <section className="container-x mt-12">
-      <Head icon={<Flame size={21} />} title={title} href={href} />
+      <Head title={title} href={href} />
       <Rail>
         {items.map((p) => (
           <ProductCard key={p.id} p={p} ctx={ctx} className="h-full" />

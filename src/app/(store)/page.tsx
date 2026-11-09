@@ -10,7 +10,9 @@ import { and, eq } from "drizzle-orm";
 import { products } from "@/db/schema";
 import { cardQuery } from "@/lib/store";
 import { getSettings } from "@/lib/settings";
-import { bestSellers, getHome, getNav, productsFor } from "@/lib/store";
+import { bestSellers, getBrandGroups, getHome, getNav, productsFor } from "@/lib/store";
+import { BrandGrid } from "@/components/store/brand-cards";
+import { Head } from "@/components/store/home-lists";
 import { FaqSection } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PostCards } from "@/components/store/post-cards";
@@ -98,6 +100,16 @@ export default async function Home() {
         case "PRODUCT_ROW": {
           const items = await productsFor("pro", Math.max(limit, 10));
           return <CategoryRail key={sec.id} title={sec.title || "Profesyonel seçim"} href="/kategori/derin-arama" items={items} ctx={ctx} />;
+        }
+        case "BRANDS": {
+          const groups = await getBrandGroups();
+          if (!groups.length) return null;
+          return (
+            <section key={sec.id} className="container-x mt-12">
+              <Head title={sec.title || "Markaya göre alışveriş"} sub={sec.subtitle || "Markanı seç, kategorisine göre modelleri gör"} href="/markalar" cta="Tüm markalar" />
+              <BrandGrid brands={groups.slice(0, 8)} />
+            </section>
+          );
         }
         case "CATEGORY_RAILS": {
           const cats = nav.categories.filter((c) => !c.parentId).slice(0, Number(sec.config.count) || 4);

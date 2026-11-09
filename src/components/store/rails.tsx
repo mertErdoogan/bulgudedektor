@@ -11,7 +11,7 @@ import { useCart } from "./cart";
 import { ProductCard } from "./product-card";
 
 /** Yatay kaydırmalı ürün şeridi: mobilde parmakla, masaüstünde oklarla. */
-export function Rail({ children, className, itemClass = "w-[46%] sm:w-[31%] md:w-[23.5%] xl:w-[19%]" }: { children: React.ReactNode[]; className?: string; itemClass?: string }) {
+export function Rail({ children, className, itemClass = "w-[62%] sm:w-[40%] md:w-[31.5%] xl:w-[23.8%]" }: { children: React.ReactNode[]; className?: string; itemClass?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ l: true, r: false });
   const update = () => {
@@ -97,7 +97,7 @@ export function RecentlyViewed({ exclude, title = "Son gezdiklerin", className }
         </h2>
         <button type="button" onClick={clearRecent} className="text-sm font-bold text-mute hover:text-deep">Temizle</button>
       </div>
-      <Rail itemClass="w-[46%] sm:w-[31%] md:w-[23.5%] xl:w-[15.8%]">
+      <Rail itemClass="w-[62%] sm:w-[40%] md:w-[31.5%] xl:w-[19%]">
         {items.map((p) => (
           <ProductCard key={p.id} p={p} ctx={ctx} />
         ))}
@@ -182,7 +182,7 @@ export function FavoritesGrid() {
     );
   if (!ctx) return <p className="text-mute">Yükleniyor…</p>;
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
       {items.map((p) => (
         <ProductCard key={p.id} p={p} ctx={ctx} />
       ))}

@@ -17,6 +17,7 @@ export function parseFilter(sp: SP, base: Partial<CatalogFilter> = {}): CatalogF
   return {
     ...base,
     q: typeof sp.q === "string" ? sp.q : base.q,
+    category: base.category ?? (typeof sp.kategori === "string" ? sp.kategori : undefined),
     brand: base.brand ?? arr(sp.marka),
     tech: arr(sp.tek),
     water: arr(sp.su),
@@ -83,7 +84,7 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
             <span className="ml-auto text-[13px] font-semibold text-mute">{items.length} ürün</span>
           </div>
           {items.length ? (
-            <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
               {items.map((p) => (
                 <ProductCard key={p.id} p={p} ctx={cardCtx(s)} compare />
               ))}

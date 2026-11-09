@@ -23,6 +23,7 @@ const SECTION: Record<string, string> = {
   PRODUCT_ROW: "Profesyonel ürün şeridi",
   TRUST: "Güven şeridi + seri no sorgu",
   CATEGORY_RAILS: "Kategori şeritleri (her kategoriden ürünler)",
+  BRANDS: "Markaya göre alışveriş (marka kartları)",
 };
 const dt = (x: Date | null) => (x ? new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "");
 

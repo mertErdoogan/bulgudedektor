@@ -1,11 +1,12 @@
 import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
-import { getActiveBrands, getNav } from "@/lib/store";
+import { getBrandGroups, getNav } from "@/lib/store";
+import { BrandGrid } from "@/components/store/brand-cards";
 
 export const metadata = pageMeta({ title: "Dedektör Kategorileri ve Markaları", description: "Define, doğal altın, sahil ve derin arama dedektörleri; pinpointer ve aksesuarlar. Tüm kategoriler ve markalar tek sayfada.", path: "/kategoriler" });
 
 export default async function CategoriesPage() {
-  const [nav, brands] = await Promise.all([getNav(), getActiveBrands()]);
+  const [nav, brands] = await Promise.all([getNav(), getBrandGroups()]);
   return (
     <div className="container-x py-6">
       <h1 className="font-display mb-4 text-2xl font-extrabold">Kategoriler</h1>
@@ -18,10 +19,8 @@ export default async function CategoriesPage() {
           </Link>
         ))}
       </div>
-      <h2 className="mt-8 mb-3 text-lg font-extrabold">Markalar</h2>
-      <div className="flex flex-wrap gap-2">
-        {brands.map((b) => <Link key={b.id} href={`/marka/${b.slug}`} className="rounded-lg border border-line px-4 py-2 font-bold">{b.name}</Link>)}
-      </div>
+      <h2 className="font-display mt-10 mb-3 text-2xl font-extrabold">Markaya göre</h2>
+      <BrandGrid brands={brands} />
       <Link href="/urunler" className="mt-6 block rounded-xl bg-deep p-4 text-center font-bold text-white">Tüm ürünleri gör</Link>
     </div>
   );

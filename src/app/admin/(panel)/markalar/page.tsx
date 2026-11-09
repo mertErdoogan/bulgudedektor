@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { brands, products } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";

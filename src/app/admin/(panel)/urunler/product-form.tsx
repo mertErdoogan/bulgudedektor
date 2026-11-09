@@ -352,7 +352,7 @@ export function ProductForm({
                     const r = await duplicateProduct(product.id);
                     if (r.ok) {
                       toast.success(r.message);
-                      if (r.redirect) window.dispatchEvent(new Event("arena-nav-start")), router.push(r.redirect);
+                      if (r.redirect) router.push(r.redirect);
                     } else toast.error(r.error);
                   }}
                 >
@@ -367,7 +367,7 @@ export function ProductForm({
                       const r = await deleteProduct(product.id);
                       if (r.ok) {
                         toast.success(r.message);
-                        window.dispatchEvent(new Event("arena-nav-start")), router.push(r.redirect ?? "/admin/urunler");
+                        router.push(r.redirect ?? "/admin/urunler");
                       } else toast.error(r.error);
                     }}
                   >

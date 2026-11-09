@@ -126,10 +126,11 @@ async function main() {
     { type: "WIZARD_BAND", sortOrder: 0, title: "Hangi dedektörü alacağını bilmiyor musun?", subtitle: "6 kısa soru, yaklaşık 1 dakika. Sana uygun 3 cihazı nedenleriyle gösterelim." },
     { type: "CATEGORY_TILES", sortOrder: 1, title: "Ne arıyorsun?", subtitle: "Seç, gerisini bize bırak." },
     { type: "PRODUCT_TABS", sortOrder: 2, title: "Çok satanlar", config: { tabs: ["featured", "new", "deals", "sameday"], limit: 10 } },
-    { type: "EXPERT_BAND", sortOrder: 3, title: "Kararsız mı kaldın? Bir uzman cihazı kamerada göstersin." },
-    { type: "PRODUCT_ROW", sortOrder: 4, title: "Profesyonel ve derin arama", config: { filter: "pro", limit: 5 } },
-    { type: "TRUST", sortOrder: 5 },
-    { type: "CATEGORY_RAILS", sortOrder: 6, title: "Kategorilere göre", config: { count: 4 } },
+    { type: "BRANDS", sortOrder: 3, title: "Markaya göre alışveriş", subtitle: "Markanı seç, kategorisine göre modelleri gör" },
+    { type: "EXPERT_BAND", sortOrder: 4, title: "Kararsız mı kaldın? Bir uzman cihazı kamerada göstersin." },
+    { type: "PRODUCT_ROW", sortOrder: 5, title: "Profesyonel ve derin arama", config: { filter: "pro", limit: 5 } },
+    { type: "TRUST", sortOrder: 6 },
+    { type: "CATEGORY_RAILS", sortOrder: 7, title: "Kategorilere göre", config: { count: 4 } },
   ]);
   await db.insert(t.menuItems).values([
     { location: "HEADER", label: "Define ve sikke", url: "/kategori/define-ve-sikke", sortOrder: 0 },
