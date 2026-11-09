@@ -3,6 +3,7 @@ import { ArrowRight, Compass, FileText, MessageCircle, RotateCcw, ShieldCheck, S
 import { HeroSlider } from "@/components/store/home-client";
 import { BestSellers, CategoryRail, Deals, NewArrivals, SameDay } from "@/components/store/home-lists";
 import { RecentlyViewed } from "@/components/store/rails";
+import { HomeReviews } from "@/components/store/home-reviews";
 import { cardCtx } from "@/lib/card-ctx";
 import { msToCutoff } from "@/lib/delivery";
 import { and, eq } from "drizzle-orm";
@@ -187,6 +188,7 @@ export default async function Home() {
       </div>
       <RecentlyViewed className="container-x mt-8" />
       {rendered}
+      <HomeReviews googleReviewUrl={s.store.googleReviewUrl || undefined} />
       {posts.length ? (
         <section className="container-x mt-12">
           <div className="mb-4 flex items-end justify-between gap-3">

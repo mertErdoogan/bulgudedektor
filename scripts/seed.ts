@@ -235,6 +235,12 @@ async function main() {
     { productId: prodRows[0].id, customerId: cust[1].id, name: "Mehmet K.", rating: 5, body: "İlk cihazım, plaj modunda çok sakin. Kulaklık gecikmesiz.", isVerified: true, isApproved: true },
     { productId: prodRows[0].id, name: "Ayşe D.", rating: 4, body: "Hafif, gün boyu taşınıyor. Su altına giremiyor, onu bilerek alın.", isVerified: true, isApproved: true },
     { productId: prodRows[2].id, name: "Ali Ö.", rating: 5, body: "Basit ve güvenilir.", isVerified: false, isApproved: false },
+    // Demo yorumlar (ana sayfa bölümünü görmek için; canlıda gerçek müşteri yorumlarıyla değişir)
+    { productId: prodRows[1].id, name: "Hakan T.", rating: 5, body: "Ayarları showroomda birlikte yaptık, ilk hafta sonu sahada hiç zorlanmadım. Kargo ertesi gün elimdeydi.", isVerified: true, isApproved: true, createdAt: new Date(Date.now() - 6 * 86400000) },
+    { productId: prodRows[3].id, name: "Serkan Y.", rating: 5, body: "Seri numarasını siteden sorguladım, kayıtlı çıktı. Faturası da aynı gün e-postama geldi.", isVerified: true, isApproved: true, createdAt: new Date(Date.now() - 11 * 86400000) },
+    { productId: prodRows[4].id, name: "Emre A.", rating: 4, body: "Cihaz beklediğim gibi. Kulaklık kutudan çıkmadı ama WhatsApp'tan yazınca hemen çözdüler.", isVerified: true, isApproved: true, createdAt: new Date(Date.now() - 15 * 86400000) },
+    { productId: prodRows[5].id, name: "Zeynep K.", rating: 5, body: "Babama hediye aldım, görüntülü görüşmede cihazı tek tek anlattılar. Yeni başlayan için doğru seçim oldu.", isVerified: true, isApproved: true, createdAt: new Date(Date.now() - 20 * 86400000) },
+    { productId: prodRows[7].id, name: "Murat B.", rating: 5, body: "Pointer olmadan kazı yapmak işkenceymiş, bunu aldıktan sonra süre yarıya indi.", isVerified: false, isApproved: true, createdAt: new Date(Date.now() - 27 * 86400000) },
   ]);
   await db.insert(t.productQuestions).values({ productId: prodRows[0].id, name: "Burak", contact: "burak@ornek.com", question: "Başlık kaç metreye kadar su geçirmez?" });
   await db.insert(t.returnRequests).values({ orderId: (await db.select().from(t.orders).limit(1))[0].id, customerId: cust[0].id, reason: "Beklentimi karşılamadı" });

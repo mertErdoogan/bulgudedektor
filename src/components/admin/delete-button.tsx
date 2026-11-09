@@ -26,7 +26,7 @@ export function ActionButton({
           const r = await run();
           if (r.ok) {
             if (r.message) toast.success(r.message);
-            if (r.redirect) router.push(r.redirect);
+            if (r.redirect) window.dispatchEvent(new Event("arena-nav-start")), router.push(r.redirect);
             else router.refresh();
           } else toast.error(r.error);
         });

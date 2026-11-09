@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
+import { NavProgress } from "@/components/nav-progress";
 import { siteUrl } from "@/lib/seo";
 import "./globals.css";
 
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <NavProgress />
         {children}
         <Toaster position="top-center" richColors closeButton />
       </body>

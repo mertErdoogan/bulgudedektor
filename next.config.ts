@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   experimental: { serverActions: { bodySizeLimit: "10mb" } },
   poweredByHeader: false,
+  // Geliştirme modunda sol alttaki Next.js göstergesini gizle (canlıda zaten çıkmaz)
+  devIndicators: false,
   async headers() {
     return [
       {

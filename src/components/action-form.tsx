@@ -32,7 +32,10 @@ export function ActionForm({ action, children, resetOnSuccess, confirm, onDone, 
       onDone?.(state);
       if (state.redirect) {
         if (/^https?:\/\//.test(state.redirect)) window.location.href = state.redirect;
-        else router.push(state.redirect);
+        else {
+          window.dispatchEvent(new Event("arena-nav-start"));
+          router.push(state.redirect);
+        }
       }
       else router.refresh();
     } else if (state.error) toast.error(state.error);
