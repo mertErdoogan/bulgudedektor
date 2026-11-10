@@ -1,30 +1,34 @@
 import "server-only";
 import { headers } from "next/headers";
+import { sql } from "drizzle-orm";
+import { db } from "@/db";
+import { rateHits } from "@/db/schema";
 
 /**
- * Basit kötüye kullanım koruması.
- * Not: Sayaç sunucu belleğinde tutulur; tek sunuculu kurulum için yeterli.
- * Birden fazla sunucuya ölçeklenirse Redis/Upstash gibi paylaşılan bir depoya taşınmalı.
+ * Kötüye kullanım koruması (deneme sınırları ve bot doğrulaması).
  */
-const buckets = new Map<string, number[]>();
-
 export async function clientIp() {
   const h = await headers();
   return (h.get("cf-connecting-ip") ?? h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0] ?? "local").trim();
 }
 
-/** windowMs içinde en fazla `max` istek. Aşılırsa false. */
-export function allow(key: string, max: number, windowMs: number) {
-  const now = Date.now();
-  const arr = (buckets.get(key) ?? []).filter((t) => now - t < windowMs);
-  if (arr.length >= max) {
-    buckets.set(key, arr);
-    return false;
+/**
+ * windowMs içinde en fazla `max` istek. Aşılırsa false.
+ * Sayaçlar veritabanında sabit pencerelerle tutulur; böylece birden fazla sunucu aynı sınırı paylaşır.
+ * Veritabanı hatasında müşteriyi engellemez (true döner).
+ */
+export async function allow(key: string, max: number, windowMs: number) {
+  const win = new Date(Math.floor(Date.now() / windowMs) * windowMs);
+  try {
+    const [r] = await db
+      .insert(rateHits)
+      .values({ key, windowStart: win })
+      .onConflictDoUpdate({ target: [rateHits.key, rateHits.windowStart], set: { count: sql`${rateHits.count} + 1` } })
+      .returning({ n: rateHits.count });
+    return (r?.n ?? 1) <= max;
+  } catch {
+    return true;
   }
-  arr.push(now);
-  buckets.set(key, arr);
-  if (buckets.size > 20000) buckets.clear();
-  return true;
 }
 
 /** IP bazlı sınır: aynı IP'den çok fazla deneme. */

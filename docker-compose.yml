@@ -1,0 +1,76 @@
+# Tek sunucuda canlı kurulum: PostgreSQL + uygulama + Caddy (otomatik HTTPS) + zamanlanmış işler.
+# 1) cp .env.example .env  ve değerleri doldurun (DOMAIN, POSTGRES_PASSWORD, AUTH_SECRET, CRON_SECRET, APP_URL)
+# 2) docker compose up -d --build
+# 3) docker compose exec app npm run db:init   (ADMIN_EMAIL / ADMIN_PASSWORD ile)
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: arena
+      POSTGRES_USER: arena
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arena -d arena"]
+      interval: 10s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://arena:${POSTGRES_PASSWORD}@db:5432/arena
+      UPLOAD_DIR: /data/uploads
+      NODE_ENV: production
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN gerekli (ör. www.arenadedektor.com)}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  # Her 15 dakikada /api/cron: süresi dolan ödemeler, sepet hatırlatma, yorum daveti, Trendyol senkronu, temizlik
+  cron:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET gerekli}
+    entrypoint: ["/bin/sh", "-c", "while true; do sleep 900; curl -fsS -H \"Authorization: Bearer $$CRON_SECRET\" http://app:3000/api/cron || true; echo; done"]
+    depends_on:
+      - app
+
+  # Her gece 03:30 veritabanı yedeği (14 gün saklanır) → ./backups
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./backups:/backups
+    entrypoint: ["/bin/sh", "-c", "while true; do now=$$(date +%H%M); if [ \"$$now\" = \"0330\" ]; then pg_dump -h db -U arena -Fc arena > /backups/arena-$$(date +%F).dump && find /backups -name '*.dump' -mtime +14 -delete; sleep 60; fi; sleep 30; done"]
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

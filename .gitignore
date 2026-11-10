@@ -45,3 +45,7 @@ uploads/
 .env
 uploads/
 !.env.example
+
+# içe aktarma ve yedek
+/data/
+/backups/

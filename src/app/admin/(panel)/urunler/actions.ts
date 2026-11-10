@@ -83,6 +83,8 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
       sameDayShipping: fd.get("sameDayShipping") === "on",
       weightKg: toNumOrNull(fd.get("weightKg")),
       warrantyMonths: toNum(fd.get("warrantyMonths"), 24),
+      variantGroup: strOrNull(fd.get("variantGroup"))?.toLowerCase().replace(/[^a-z0-9-]+/g, "-") ?? null,
+      variantLabel: strOrNull(fd.get("variantLabel")),
       technology: (strOrNull(fd.get("technology")) as typeof products.$inferInsert.technology) ?? null,
       waterproof: (strOrNull(fd.get("waterproof")) as typeof products.$inferInsert.waterproof) ?? null,
       experience: (strOrNull(fd.get("experience")) as typeof products.$inferInsert.experience) ?? null,

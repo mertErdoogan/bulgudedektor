@@ -94,10 +94,13 @@ export function AdminShell({ user, badges, setupPending, logout, children }: Pro
             <Link href="/" target="_blank" className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-soft sm:flex">
               <Icons.ExternalLink size={15} /> Mağazayı aç
             </Link>
-            <div className="hidden text-right sm:block">
+            <Link href="/admin/hesap" className="hidden rounded-lg px-2 py-1 text-right hover:bg-soft sm:block" title="Hesabım: şifre ve iki adımlı doğrulama">
               <p className="text-sm leading-tight font-bold">{user.name}</p>
               <p className="text-xs text-mute">{user.roleName}</p>
-            </div>
+            </Link>
+            <Link href="/admin/hesap" className="rounded-lg p-2 text-mute hover:bg-soft hover:text-deep sm:hidden" aria-label="Hesabım">
+              <Icons.UserCog size={18} />
+            </Link>
             <form action={logout}>
               <button className="rounded-lg p-2 text-mute hover:bg-soft hover:text-deep" title="Çıkış yap" aria-label="Çıkış yap">
                 <Icons.LogOut size={18} />

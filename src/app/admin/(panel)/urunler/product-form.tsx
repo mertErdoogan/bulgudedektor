@@ -48,6 +48,8 @@ type Product = {
   trialRentalPrice: number | null;
   seoTitle: string | null;
   seoDescription: string | null;
+  variantGroup?: string | null;
+  variantLabel?: string | null;
   images: Img[];
 };
 
@@ -105,6 +107,12 @@ export function ProductForm({
               </Field>
               <Field label="Barkod (GTIN)">
                 <Input name="barcode" defaultValue={product?.barcode ?? ""} />
+              </Field>
+              <Field label="Varyant grubu" hint="Aynı modelin farklı paketleri/başlıkları için aynı kodu yaz (örn. vanquish-540). Ürün sayfasında seçenek olarak birbirine bağlanır.">
+                <Input name="variantGroup" defaultValue={product?.variantGroup ?? ""} placeholder="Boş bırakılabilir" />
+              </Field>
+              <Field label="Varyant adı" hint="Seçenek düğmesinde görünen kısa ad (örn. Standart, Pro-Pack, 15&quot; başlık).">
+                <Input name="variantLabel" defaultValue={product?.variantLabel ?? ""} placeholder="Örn. Pro-Pack" />
               </Field>
               <Field label="Marka">
                 <Select name="brandId" defaultValue={product?.brandId ?? ""}>

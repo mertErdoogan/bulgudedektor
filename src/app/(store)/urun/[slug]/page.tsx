@@ -14,6 +14,8 @@ import { productActivity } from "@/db/schema";
 import { sql } from "drizzle-orm";
 import { getSettings } from "@/lib/settings";
 import { boughtTogether, similarTo } from "@/lib/recommend";
+import { installmentTable } from "@/lib/iyzico";
+import { InstallmentTable } from "@/components/store/installments";
 import { markdownToHtml } from "@/lib/markdown";
 import { EXPERIENCE_LABEL, TECH_LABEL, WATERPROOF_LABEL, formatDate, formatTL } from "@/lib/utils";
 import { ProductForms } from "./forms";
@@ -94,7 +96,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const out = archived || (p.stock <= 0 && !p.allowBackorder);
   const inst = s.payment.noInterestInstallments;
   const rating = p.reviews.length ? p.reviews.reduce((a, r) => a + r.rating, 0) / p.reviews.length : null;
-  const [related, together] = await Promise.all([similarTo(p, 4), boughtTogether([p.id], 4)]);
+  const [related, together, variants] = await Promise.all([
+    similarTo(p, 4),
+    boughtTogether([p.id], 4),
+    p.variantGroup
+      ? db
+          .select({ id: products.id, slug: products.slug, name: products.name, label: products.variantLabel, price: products.price, stock: products.stock, allowBackorder: products.allowBackorder })
+          .from(products)
+          .where(and(eq(products.variantGroup, p.variantGroup), eq(products.status, "ACTIVE")))
+          .orderBy(asc(products.price))
+      : Promise.resolve([]),
+  ]);
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}?text=${encodeURIComponent(`Merhaba, ${p.name} hakkında bilgi almak istiyorum.`)}` : "/iletisim";
   const discount = p.compareAtPrice && p.compareAtPrice > p.price ? p.compareAtPrice - p.price : 0;
   const vid = ytId(p.videoUrl);
@@ -113,6 +125,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       .where(and(eq(productActivity.productId, p.id), sql`${productActivity.hour} > now() - interval '24 hours'`)),
   ]);
   const ctx = cardCtx(s);
+  const banks = s.payment.cardEnabled && p.price >= 1000 ? await installmentTable(p.price, s.payment.maxInstallment) : null;
   const faqItems = [...toQA(dbFaq), ...autoFaq(p, s)];
 
   return (
@@ -137,6 +150,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           ) : null}
           {p.shortDescription ? <p className="text-[15px] leading-relaxed text-[#3f3f46]">{p.shortDescription}</p> : null}
           {act ? <SocialProof p={act} ctx={ctx} className="text-[13px]" /> : null}
+
+          {variants.length > 1 ? (
+            <div>
+              <p className="mb-1.5 text-[13px] font-bold">Seçenek</p>
+              <div className="flex flex-wrap gap-2">
+                {variants.map((v) => {
+                  const cur = v.id === p.id;
+                  const none = v.stock <= 0 && !v.allowBackorder;
+                  return (
+                    <Link
+                      key={v.id}
+                      href={`/urun/${v.slug}`}
+                      aria-current={cur ? "page" : undefined}
+                      className={`rounded-xl border px-3 py-2 text-sm transition ${cur ? "border-brand bg-tint font-bold text-brand" : "border-line hover:border-deep"} ${none ? "opacity-60" : ""}`}
+                    >
+                      <span className="block leading-tight">{v.label || v.name}</span>
+                      <span className="text-xs text-mute">{none ? "Stokta yok" : formatTL(v.price)}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
 
           <div className="rounded-2xl bg-soft p-4">
             <div className="flex flex-wrap items-baseline gap-x-3">
@@ -263,6 +299,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <div className="rounded-xl bg-soft p-4 text-sm"><b>14 gün iade</b><p className="text-mute">Beğenmezsen tek tıkla iade talebi.</p></div>
             </div>
           </section>
+
+          {!out && p.price >= 1000 ? (
+            <section id="taksit" className="scroll-mt-40">
+              <h2 className="font-display mb-3 text-2xl font-extrabold">Taksit seçenekleri</h2>
+              <InstallmentTable price={p.price} banks={banks} noInterest={s.payment.noInterestInstallments} max={s.payment.maxInstallment} rates={s.payment.installmentRates} />
+            </section>
+          ) : null}
 
           <FaqSection items={faqItems} title={`${fullName(p)} hakkında sık sorulanlar`} />
 

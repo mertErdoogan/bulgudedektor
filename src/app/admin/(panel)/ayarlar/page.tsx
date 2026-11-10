@@ -2,11 +2,11 @@ import Link from "next/link";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { ActionButton } from "@/components/admin/delete-button";
 import { PageHeader } from "@/components/admin/shell";
-import { Badge, Card, CardHeader, Checkbox, Field, Input, Textarea } from "@/components/ui";
+import { Badge, Card, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSettings } from "@/lib/settings";
-import { generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, testIyzico } from "./actions";
+import { generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, testIyzico, testSms, trendyolSyncNow } from "./actions";
 
 export const metadata = { title: "Ayarlar" };
 const mask = (v: string) => (v ? `${v.slice(0, 4)}••••••••${v.slice(-3)}` : "");
@@ -115,6 +115,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <Checkbox name="iyzicoSandbox" defaultChecked={s.payment.iyzicoSandbox} label="Test modu (sandbox) — canlıya geçerken kapat" className="md:col-span-2" />
               <Field label="En fazla taksit"><Input name="maxInstallment" type="number" min={1} max={12} defaultValue={s.payment.maxInstallment} /></Field>
               <Field label="Vade farksız taksit sayısı" hint="Sitede '3 ay vade farksız' olarak gösterilir; iyzico panelinden de tanımlanmalı."><Input name="noInterestInstallments" type="number" min={1} max={12} defaultValue={s.payment.noInterestInstallments} /></Field>
+              <Field label="Genel taksit farkları (%)" hint="iyzico'ya bağlanılamadığında ürün sayfasındaki tabloda kullanılır. Biçim: taksit:oran, örn. 4:7.34, 5:9.21, 6:11.08" className="md:col-span-2"><Input name="installmentRates" defaultValue={Object.entries(s.payment.installmentRates ?? {}).map(([n, r]) => `${n}:${r}`).join(", ")} /></Field>
               <Checkbox name="transferEnabled" defaultChecked={s.payment.transferEnabled} label="Havale / EFT ile ödeme" className="md:col-span-2" />
               <Field label="Havale indirimi %"><Input name="transferDiscountPct" inputMode="decimal" defaultValue={s.payment.transferDiscountPct} /></Field>
               <div />
@@ -141,6 +142,27 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <Field label="Kullanıcı"><Input name="smtpUser" defaultValue={s.integrations.smtpUser} /></Field>
               <Field label="Şifre"><Input name="smtpPass" defaultValue={mask(s.integrations.smtpPass)} autoComplete="off" /></Field>
               <Field label="Yeni sipariş bildirimi gidecek adres" className="md:col-span-2"><Input name="notifyEmail" defaultValue={s.integrations.notifyEmail} /></Field>
+              <p className="mt-2 font-bold md:col-span-2">SMS (Netgsm)</p>
+              <Field label="SMS sağlayıcı">
+                <Select name="smsProvider" defaultValue={s.integrations.smsProvider}>
+                  <option value="">Kapalı</option>
+                  <option value="netgsm">Netgsm</option>
+                </Select>
+              </Field>
+              <Field label="Gönderici başlığı" hint="Netgsm'de onaylı başlık (örn. ARENADEDEKT)"><Input name="netgsmHeader" defaultValue={s.integrations.netgsmHeader} /></Field>
+              <Field label="Kullanıcı kodu" hint="Netgsm → Ayarlar → Alt kullanıcı (API yetkili)"><Input name="netgsmUser" defaultValue={s.integrations.netgsmUser} placeholder="850XXXXXXX" /></Field>
+              <Field label="API şifresi"><Input name="netgsmPass" defaultValue={mask(s.integrations.netgsmPass)} autoComplete="off" /></Field>
+              <div className="flex flex-wrap gap-4 md:col-span-2">
+                <Checkbox name="smsOnPlaced" defaultChecked={s.integrations.smsOnPlaced} label="Sipariş alındı" />
+                <Checkbox name="smsOnShipped" defaultChecked={s.integrations.smsOnShipped} label="Kargoya verildi" />
+                <Checkbox name="smsOnDelivered" defaultChecked={s.integrations.smsOnDelivered} label="Teslim edildi" />
+              </div>
+              <p className="mt-2 font-bold md:col-span-2">Trendyol pazaryeri</p>
+              <Checkbox name="trendyolEnabled" defaultChecked={s.integrations.trendyolEnabled} label="Fiyat/stok senkronu ve sipariş aktarımı açık (her saat)" className="md:col-span-2" />
+              <Field label="Satıcı ID (supplierId)"><Input name="trendyolSupplierId" defaultValue={s.integrations.trendyolSupplierId} /></Field>
+              <Field label="Fiyat farkı %" hint="Komisyon için Trendyol fiyatı site fiyatından bu kadar yüksek gönderilir."><Input name="trendyolPriceMarkupPct" inputMode="decimal" defaultValue={s.integrations.trendyolPriceMarkupPct} /></Field>
+              <Field label="API key"><Input name="trendyolApiKey" defaultValue={mask(s.integrations.trendyolApiKey)} autoComplete="off" /></Field>
+              <Field label="API secret"><Input name="trendyolApiSecret" defaultValue={mask(s.integrations.trendyolApiSecret)} autoComplete="off" /></Field>
               <p className="mt-2 font-bold md:col-span-2">Diğer</p>
               <Field label="WhatsApp Business API token"><Input name="whatsappApiToken" defaultValue={mask(s.integrations.whatsappApiToken)} autoComplete="off" /></Field>
               <Field label="Kargo entegrasyonu API anahtarı"><Input name="cargoApiKey" defaultValue={mask(s.integrations.cargoApiKey)} autoComplete="off" /></Field>
@@ -148,6 +170,18 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <Field label="e-Fatura API anahtarı"><Input name="eInvoiceApiKey" defaultValue={mask(s.integrations.eInvoiceApiKey)} autoComplete="off" /></Field>
               <SubmitButton className="md:col-span-2 md:justify-self-start">Kaydet</SubmitButton>
             </ActionForm>
+            {s.integrations.smsProvider ? (
+              <ActionForm action={testSms} className="flex flex-wrap items-end gap-2 border-t border-line p-5">
+                <Field label="Test SMS'i gönder"><Input name="phone" placeholder="05XX XXX XX XX" /></Field>
+                <SubmitButton variant="outline">Gönder</SubmitButton>
+              </ActionForm>
+            ) : null}
+            {s.integrations.trendyolEnabled ? (
+              <div className="flex flex-wrap items-center gap-2 border-t border-line p-5 text-sm">
+                <span className="flex-1 text-mute">Trendyol&apos;da ürünler <b>barkod</b> ile eşleşir; barkodu boş ürünler gönderilmez.</span>
+                <ActionButton run={trendyolSyncNow} variant="outline">Şimdi senkronla</ActionButton>
+              </div>
+            ) : null}
           </Card>
         ) : null}
         {tab === "seo" ? (

@@ -6,6 +6,8 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "../src/db";
 import * as t from "../src/db/schema";
 import { DEFAULT_ROLES } from "../src/lib/permissions";
+import { LEGACY_REDIRECTS } from "./lib/arena-map";
+import { LEGAL_PAGES } from "./lib/legal-texts";
 
 async function main() {
   for (const r of DEFAULT_ROLES) {
@@ -32,16 +34,9 @@ async function main() {
       { type: "PRODUCT_ROW", sortOrder: 4, title: "Profesyonel ve derin arama", config: { limit: 5 } },
       { type: "TRUST", sortOrder: 5 },
     ]);
-  const legal = (title: string) => `<p><strong>Bu metin örnektir.</strong> Yayına almadan önce şirket bilgilerinizle güncelleyin ve bir hukukçuya kontrol ettirin.</p><h2>${title}</h2>`;
-  for (const [slug, title, group] of [
-    ["mesafeli-satis-sozlesmesi", "Mesafeli satış sözleşmesi", "Sözleşmeler"],
-    ["on-bilgilendirme-formu", "Ön bilgilendirme formu", "Sözleşmeler"],
-    ["kvkk-aydinlatma-metni", "KVKK aydınlatma metni", "Sözleşmeler"],
-    ["cerez-politikasi", "Çerez politikası", "Sözleşmeler"],
-    ["iade-ve-degisim", "İade ve değişim", "Yardım"],
-  ]) {
-    await db.insert(t.pages).values({ slug, title, content: legal(title), footerGroup: group }).onConflictDoNothing();
-  }
+  // Yasal sayfalar (şirket bilgileri ayarlardan otomatik dolar) ve eski site adres yönlendirmeleri
+  for (const p of LEGAL_PAGES) await db.insert(t.pages).values(p).onConflictDoNothing();
+  await db.insert(t.redirects).values(LEGACY_REDIRECTS.map(([fromPath, toPath]) => ({ fromPath, toPath }))).onConflictDoNothing();
   const [{ m }] = await db.select({ m: sql<number>`count(*)::int` }).from(t.menuItems);
   if (!m)
     await db.insert(t.menuItems).values([

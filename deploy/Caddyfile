@@ -1,0 +1,16 @@
+# Caddy alan adı için Let's Encrypt sertifikasını kendisi alır ve yeniler.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000 {
+		header_up X-Forwarded-For {remote_host}
+	}
+	# Büyük dekont/görsel yüklemeleri için
+	request_body {
+		max_size 12MB
+	}
+}
+
+# Çıplak alan adını www'ya yönlendir (DOMAIN www ile başlıyorsa)
+arenadedektor.com {
+	redir https://www.arenadedektor.com{uri} permanent
+}

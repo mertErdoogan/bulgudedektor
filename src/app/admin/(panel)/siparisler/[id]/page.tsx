@@ -13,8 +13,9 @@ import { requireStaff } from "@/lib/auth";
 import { ORDER_FLOW } from "@/lib/orders";
 import { can } from "@/lib/permissions";
 import { getSettings } from "@/lib/settings";
+import { orderKey } from "@/lib/store";
 import { ORDER_STATUS_LABEL, formatDate, formatTL, orderNo } from "@/lib/utils";
-import { addCustomerMessage, assignSerials, changeStatus, saveInternalNote, unassignSerial, updateShippingAddress } from "../actions";
+import { addCustomerMessage, assignSerials, changeStatus, saveInternalNote, saveInvoice, unassignSerial, updateShippingAddress } from "../actions";
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
   const staff = await requireStaff("orders.view");
@@ -30,7 +31,18 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
     },
   });
   if (!o) notFound();
+  const tn = o.paymentMeta?.transferNotice;
   const settings = await getSettings();
+  const waNo = o.phone.replace(/\D/g, "").replace(/^0/, "90").replace(/^5/, "905");
+  const trackLink = o.carrier && o.trackingNumber ? settings.shipping.trackingUrlTemplate[o.carrier]?.replace("{code}", o.trackingNumber) : null;
+  const waText = [
+    `Merhaba ${(o.shippingAddress?.fullName ?? "").split(" ")[0]},`,
+    `${settings.store.name} ${orderNo(o.number)} numaralı siparişinizin durumu: ${ORDER_STATUS_LABEL[o.status]}.`,
+    trackLink ? `Kargo takip (${o.carrier}): ${trackLink}` : "",
+    `Sipariş detayı: ${process.env.APP_URL || ""}/siparis/${o.id}?k=${orderKey(o.id)}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
   const manage = can(staff.permissions, "orders.manage");
   const refund = can(staff.permissions, "orders.refund");
   const next = ORDER_FLOW[o.status] ?? [];
@@ -76,7 +88,27 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                   <ActionForm action={changeStatus} className="flex flex-wrap items-center gap-3">
                     <input type="hidden" name="orderId" value={o.id} />
                     <input type="hidden" name="to" value="PAID" />
-                    <p className="flex-1 text-sm">{o.paymentMethod === "TRANSFER" ? "Havale hesaba geçtiyse ödemeyi onayla." : "Ödeme bekleniyor."}</p>
+                    <div className="flex-1 text-sm">
+                      <p>{o.paymentMethod === "TRANSFER" ? "Havale hesaba geçtiyse ödemeyi onayla." : "Ödeme bekleniyor."}</p>
+                      {tn ? (
+                        <p className="mt-2 rounded-lg bg-ok-bg p-2.5 text-ok">
+                          <b>Müşteri ödeme bildirimi gönderdi</b> · {formatDate(new Date(tn.at), true)}
+                          <br />
+                          Gönderen: <b>{tn.sender}</b>
+                          {tn.note ? <> · Not: {tn.note}</> : null}
+                          {tn.receiptUrl ? (
+                            <>
+                              {" · "}
+                              <a href={tn.receiptUrl} target="_blank" className="font-bold underline">
+                                Dekontu aç
+                              </a>
+                            </>
+                          ) : null}
+                        </p>
+                      ) : o.paymentMethod === "TRANSFER" ? (
+                        <p className="mt-1 text-xs text-mute">Müşteri henüz ödeme bildirimi göndermedi. Açıklamada sipariş no: {orderNo(o.number)}</p>
+                      ) : null}
+                    </div>
                     <SubmitButton>Ödeme alındı</SubmitButton>
                   </ActionForm>
                 ) : null}
@@ -275,7 +307,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               <b>{a.fullName}</b>
               <a href={`tel:${o.phone}`} className="text-link">{o.phone}</a>
               <a href={`mailto:${o.email}`} className="text-link">{o.email}</a>
-              <a href={`https://wa.me/${o.phone.replace(/\D/g, "")}`} target="_blank" className="mt-1 font-bold text-[#128c4a]">WhatsApp&apos;tan yaz →</a>
+              <a href={`https://wa.me/${waNo}?text=${encodeURIComponent(waText)}`} target="_blank" className="mt-1 font-bold text-[#128c4a]">WhatsApp&apos;tan durum bildir →</a>
               {o.customerNote ? <p className="mt-2 rounded-lg bg-warn-bg p-2 text-warn">Müşteri notu: {o.customerNote}</p> : null}
             </div>
           </Card>
@@ -338,6 +370,33 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                   "Bireysel fatura"
                 )}
               </p>
+              {o.invoiceUrl ? (
+                <p className="mt-2 rounded-lg bg-ok-bg p-2 text-ok">
+                  Fatura{o.invoiceNo ? ` ${o.invoiceNo}` : ""} · {o.invoicedAt ? formatDate(o.invoicedAt) : ""} ·{" "}
+                  <a href={o.invoiceUrl} target="_blank" className="font-bold underline">
+                    Aç
+                  </a>
+                </p>
+              ) : null}
+              {manage && !["CANCELLED", "PENDING"].includes(o.status) ? (
+                <details className="mt-2" open={!o.invoiceUrl && o.paymentStatus === "PAID"}>
+                  <summary className="cursor-pointer font-bold text-link">{o.invoiceUrl ? "Faturayı değiştir" : "Fatura ekle"}</summary>
+                  <ActionForm action={saveInvoice} className="mt-3 flex flex-col gap-2">
+                    <input type="hidden" name="orderId" value={o.id} />
+                    <Input name="invoiceNo" defaultValue={o.invoiceNo ?? ""} placeholder="Fatura no (örn. ARN2026000001234)" />
+                    <input type="file" name="file" accept="application/pdf" className="text-xs" />
+                    <Input name="invoiceLink" placeholder="veya e-fatura portalı bağlantısı (https://…)" />
+                    {o.invoiceUrl ? (
+                      <label className="flex items-center gap-2 text-xs">
+                        <input type="checkbox" name="notify" /> Müşteriye tekrar e-posta gönder
+                      </label>
+                    ) : (
+                      <p className="text-xs text-mute">Kaydedince müşteriye &quot;Faturan hazır&quot; e-postası gider.</p>
+                    )}
+                    <SubmitButton size="sm">Kaydet</SubmitButton>
+                  </ActionForm>
+                </details>
+              ) : null}
             </div>
           </Card>
           {o.returns.length ? (

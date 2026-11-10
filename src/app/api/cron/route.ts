@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, eq, gt, inArray, isNull, lt, ne, notInArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { cartSnapshots, customers, orders, passwordResets, productActivity, productImages, products } from "@/db/schema";
+import { cartSnapshots, customers, orders, passwordResets, productActivity, rateHits, productImages, products } from "@/db/schema";
 import { mailCartReminder, mailReviewRequest } from "@/lib/mail";
 import { expireStalePendingOrders } from "@/lib/orders";
 
@@ -98,7 +98,17 @@ export async function GET(req: Request) {
   await run("cleanup", async () => {
     const a = await db.delete(productActivity).where(lt(productActivity.hour, new Date(Date.now() - 30 * 24 * H))).returning({ p: productActivity.productId });
     const b = await db.delete(passwordResets).where(lt(passwordResets.expiresAt, new Date(Date.now() - 7 * 24 * H))).returning({ id: passwordResets.id });
+    await db.delete(rateHits).where(lt(rateHits.windowStart, new Date(Date.now() - 24 * H)));
     return a.length + b.length;
+  });
+
+  // 5) Trendyol: yeni siparişleri al, fiyat/stok gönder (ayarlarda açıksa)
+  await run("trendyol", async () => {
+    const { isTrendyolOn, trendyolSync } = await import("@/lib/trendyol");
+    if (!(await isTrendyolOn())) return 0;
+    const r = await trendyolSync();
+    if (!r.ok) throw new Error(r.message);
+    return 1;
   });
 
   return NextResponse.json({ ok: true, at: new Date().toISOString(), ...out });

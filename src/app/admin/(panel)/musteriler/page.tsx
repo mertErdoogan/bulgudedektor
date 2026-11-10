@@ -9,6 +9,7 @@ import { Badge, Button, Card, EmptyState, Input, Select, Table, Td, Th } from "@
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { formatDate, formatTL } from "@/lib/utils";
+import { ImportCustomers } from "./import-csv";
 
 export const metadata = { title: "Müşteriler" };
 const PER = 30;
@@ -49,6 +50,15 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                 </a>
               </Button>
             ) : null}
+            {can(staff.permissions, "customers.manage") ? (
+              <Button variant="outline" asChild>
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- dosya indirme */}
+                <a href="/api/admin/export/customers?format=iys" download title="İleti Yönetim Sistemi'ne toplu izin yüklemek için">
+                  <Download size={16} /> İYS listesi
+                </a>
+              </Button>
+            ) : null}
+            {can(staff.permissions, "customers.manage") ? <ImportCustomers /> : null}
             {can(staff.permissions, "customers.manage") ? <Button asChild><Link href="/admin/musteriler/yeni">+ Müşteri ekle</Link></Button> : null}
           </>
         }

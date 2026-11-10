@@ -4,7 +4,7 @@ import { getSettings } from "./settings";
 import { formatTL, orderNo } from "./utils";
 
 /** SMTP ayarlanmışsa e-posta gönderir; ayarlı değilse veya hata olursa sessizce loglar (sipariş akışını asla bozmaz). */
-export async function sendMail(to: string, subject: string, html: string) {
+export async function sendMail(to: string, subject: string, html: string, opts: { headers?: Record<string, string>; attachments?: { filename: string; content: Buffer | string; contentType?: string }[] } = {}) {
   const s = await getSettings();
   const i = s.integrations;
   if (!i.smtpHost || !i.smtpUser || !i.smtpPass || !to) return false;
@@ -12,7 +12,7 @@ export async function sendMail(to: string, subject: string, html: string) {
     const [host, portStr] = i.smtpHost.split(":");
     const port = Number(portStr) || 465;
     const t = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user: i.smtpUser, pass: i.smtpPass } });
-    await t.sendMail({ from: i.smtpFrom || i.smtpUser, to, subject, html });
+    await t.sendMail({ from: i.smtpFrom || i.smtpUser, to, subject, html, headers: opts.headers, attachments: opts.attachments });
     return true;
   } catch (e) {
     console.error("mail gönderilemedi", e);
@@ -30,7 +30,10 @@ export async function mailOrderPlaced(o: { id: string; number: number; email: st
     o.paymentMethod === "TRANSFER"
       ? `<p><b>Havale bilgileri</b> (açıklamaya ${orderNo(o.number)} yazın):</p><ul>${s.payment.bankAccounts.map((b) => `<li>${b.bank} · ${b.holder} · ${b.iban}</li>`).join("")}</ul>`
       : "";
-  await sendMail(o.email, `Siparişin alındı · ${orderNo(o.number)}`, wrap(`<p>Teşekkürler! Siparişin alındı.</p><ul>${list}</ul><p><b>Toplam: ${formatTL(o.total)}</b></p>${bank}<p><a href="${link}">Siparişini takip et</a></p>`, s.store.name));
+  // Mevzuat gereği ön bilgilendirme ve mesafeli satış sözleşmesi sipariş onayıyla birlikte gönderilir.
+  const { contractHtml } = await import("./contract");
+  const contract = await contractHtml(o.id).catch(() => "");
+  await sendMail(o.email, `Siparişin alındı · ${orderNo(o.number)}`, wrap(`<p>Teşekkürler! Siparişin alındı.</p><ul>${list}</ul><p><b>Toplam: ${formatTL(o.total)}</b></p>${bank}<p><a href="${link}">Siparişini takip et</a></p>${contract}`, s.store.name));
   if (s.integrations.notifyEmail) await sendMail(s.integrations.notifyEmail, `Yeni sipariş ${orderNo(o.number)} · ${formatTL(o.total)}`, wrap(`<ul>${list}</ul><p>${o.paymentMethod === "TRANSFER" ? "Havale bekleniyor" : "Kartla ödendi"}</p>`, s.store.name));
 }
 
@@ -99,8 +102,29 @@ export async function mailCartReminder(email: string, name: string | null, items
     email,
     `Sepetinde ürünler seni bekliyor · ${s.store.name}`,
     wrap(
-      `<p>Merhaba${name ? ` ${name.split(" ")[0]}` : ""},</p><p>Sepetine eklediğin ürünler hâlâ seni bekliyor. Aklına takılan bir soru varsa uzmanımız WhatsApp'tan hemen yanıtlar.</p><table style="width:100%;border-collapse:collapse">${rows}</table><p style="margin-top:16px"><a href="${base}/sepet" style="display:inline-block;background:#d42e1e;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">Sepete dön</a></p><p style="color:#66666b;font-size:12px">Bu e-postayı, ödeme sırasında kampanya ve bilgilendirme iletilerine izin verdiğin için aldın. İstemiyorsan yanıtlayıp "iptal" yazman yeterli.</p>`,
+      `<p>Merhaba${name ? ` ${name.split(" ")[0]}` : ""},</p><p>Sepetine eklediğin ürünler hâlâ seni bekliyor. Aklına takılan bir soru varsa uzmanımız WhatsApp'tan hemen yanıtlar.</p><table style="width:100%;border-collapse:collapse">${rows}</table><p style="margin-top:16px"><a href="${base}/sepet" style="display:inline-block;background:#d42e1e;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">Sepete dön</a></p><p style="color:#66666b;font-size:12px">Bu e-postayı, kampanya ve bilgilendirme iletilerine izin verdiğin için aldın. <a href="${unsubLink(email)}" style="color:#66666b">Listeden çık</a></p>`,
       s.store.name,
     ),
+    { headers: { "List-Unsubscribe": `<${unsubLink(email).replace("/bulten/cikis", "/api/unsub")}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } },
   );
+}
+
+/** Fatura kesildiğinde müşteriye bildirim (PDF bağlantısıyla). */
+export async function mailInvoice(o: { id: string; number: number; email: string; invoiceNo: string | null; invoiceUrl: string }) {
+  const s = await getSettings();
+  const base = process.env.APP_URL || "";
+  const url = o.invoiceUrl.startsWith("http") ? o.invoiceUrl : base + o.invoiceUrl;
+  return sendMail(
+    o.email,
+    `Faturan hazır · ${orderNo(o.number)}`,
+    wrap(`<p>${orderNo(o.number)} numaralı siparişinin faturası${o.invoiceNo ? ` (<b>${o.invoiceNo}</b>)` : ""} düzenlendi.</p><p><a href="${url}">Faturayı indir (PDF)</a></p><p>Faturana her zaman <a href="${base}/siparis/${o.id}">sipariş sayfandan</a> da ulaşabilirsin.</p>`, s.store.name),
+  );
+}
+
+/** Ticari iletilerin altına eklenen "listeden çık" bağlantısı. */
+export function unsubLink(email: string) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createHmac } = require("node:crypto") as typeof import("node:crypto");
+  const k = createHmac("sha256", process.env.AUTH_SECRET || "dev-secret").update(`unsub:${email.toLowerCase()}`).digest("hex").slice(0, 24);
+  return `${process.env.APP_URL || ""}/bulten/cikis?e=${encodeURIComponent(email)}&k=${k}`;
 }

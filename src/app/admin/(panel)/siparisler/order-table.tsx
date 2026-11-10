@@ -15,6 +15,7 @@ type Row = {
   paymentStatus: string;
   paymentMethod: string;
   deliveryMethod: string;
+  channel?: string;
   total: number;
   createdAt: Date;
   shippingAddress: { fullName: string; city: string };
@@ -72,6 +73,7 @@ export function OrderTable({ rows, canManage }: { rows: Row[]; canManage: boolea
               ) : null}
               <Td>
                 <Link href={`/admin/siparisler/${o.id}`} className="font-bold text-link">{orderNo(o.number)}</Link>
+                {o.channel && o.channel !== "WEB" ? <span className="ml-1.5 rounded bg-soft px-1.5 py-0.5 text-[10px] font-bold text-mute">{o.channel === "TRENDYOL" ? "Trendyol" : "Panel"}</span> : null}
                 <span className="block text-xs text-mute">{formatDate(o.createdAt, true)}</span>
               </Td>
               <Td>

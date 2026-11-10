@@ -1,5 +1,6 @@
 "use client";
 
+import { CityDistrict } from "@/components/city-district";
 import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
@@ -88,8 +89,7 @@ export function ManualOrderForm({ maxDiscount }: { maxDiscount: number }) {
             </Field>
             {delivery === "CARGO" ? (
               <>
-                <Field label="İl"><Input name="city" required /></Field>
-                <Field label="İlçe"><Input name="district" required /></Field>
+                <CityDistrict />
                 <Field label="Adres" className="md:col-span-2"><Textarea name="line" required className="min-h-[60px]" /></Field>
               </>
             ) : null}

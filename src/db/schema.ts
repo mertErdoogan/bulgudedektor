@@ -82,6 +82,11 @@ export const users = pgTable("users", {
     .references(() => roles.id),
   isActive: boolean("is_active").notNull().default(true),
   maxDiscountPct: integer("max_discount_pct").notNull().default(0),
+  /** İki adımlı doğrulama (TOTP). Gizli anahtar AUTH_SECRET ile şifrelenmiş saklanır. */
+  totpSecret: text("totp_secret"),
+  totpEnabled: boolean("totp_enabled").notNull().default(false),
+  /** Son kabul edilen TOTP adımı: aynı kodun ikinci kez kullanılmasını engeller */
+  totpLastStep: integer("totp_last_step"),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
@@ -159,6 +164,9 @@ export const products = pgTable(
     waterproof: waterproof("waterproof"),
     experience: experience("experience"),
     useCases: textArray("use_cases"),
+    /** Seçenek grubu: aynı gruptaki ürünler ürün sayfasında "seçenek" olarak birbirine bağlanır (paket, başlık boyu…). */
+    variantGroup: text("variant_group"),
+    variantLabel: text("variant_label"),
     badges: textArray("badges"),
     specs: jsonb("specs").$type<Spec[]>().notNull().default([]),
     boxContents: textArray("box_contents"),
@@ -235,6 +243,11 @@ export const customers = pgTable("customers", {
   consentAt: timestamp("consent_at", { withTimezone: true }),
   tags: textArray("tags"),
   isBlocked: boolean("is_blocked").notNull().default(false),
+  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+  /** KVKK: hesap silindiğinde kişisel veriler anonimleştirilir, kayıt muhasebe için kalır. */
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  /** iyzico kayıtlı kart anahtarı (kart bilgisi iyzico'da saklanır; burada sadece anahtar tutulur) */
+  cardUserKey: text("card_user_key"),
   createdAt: createdAt(),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
 });
@@ -399,7 +412,10 @@ export const orders = pgTable(
     paymentMethod: paymentMethod("payment_method").notNull().default("CARD"),
     paymentRef: text("payment_ref"),
     paymentToken: text("payment_token"),
-    paymentMeta: jsonb("payment_meta").$type<{ paymentId?: string; transactions?: { itemId: string; transactionId: string; price: number }[]; raw?: unknown }>(),
+    /** Satış kanalı: WEB (site), TRENDYOL, MANUAL (panelden). Pazaryeri siparişlerinde externalRef = paket no */
+    channel: text("channel").notNull().default("WEB"),
+    externalRef: text("external_ref").unique(),
+    paymentMeta: jsonb("payment_meta").$type<{ paymentId?: string; transactions?: { itemId: string; transactionId: string; price: number }[]; raw?: unknown; transferNotice?: { sender: string; note?: string; receiptUrl?: string | null; at: string } }>(),
     installments: integer("installments").notNull().default(1),
     subtotal: money("subtotal").notNull(),
     discountTotal: money("discount_total").notNull().default(0),
@@ -413,6 +429,10 @@ export const orders = pgTable(
     companyName: text("company_name"),
     taxOffice: text("tax_office"),
     taxNumber: text("tax_number"),
+    /** e-Arşiv/e-Fatura: numara ve PDF adresi (panelden yüklenir; müşteri sipariş sayfasından indirir) */
+    invoiceNo: text("invoice_no"),
+    invoiceUrl: text("invoice_url"),
+    invoicedAt: timestamp("invoiced_at", { withTimezone: true }),
     carrier: text("carrier"),
     trackingNumber: text("tracking_number"),
     shippedAt: timestamp("shipped_at", { withTimezone: true }),
@@ -743,3 +763,14 @@ export const searchQueries = pgTable("search_queries", {
   results: integer("results").notNull().default(0),
   lastAt: timestamp("last_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Deneme sınırı sayaçları (veritabanında; birden fazla sunucuda da tutarlı). */
+export const rateHits = pgTable(
+  "rate_hits",
+  {
+    key: text("key").notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    count: integer("count").notNull().default(1),
+  },
+  (t) => [primaryKey({ columns: [t.key, t.windowStart] })],
+);

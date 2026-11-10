@@ -7,17 +7,9 @@ import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { getCustomer } from "@/lib/auth";
 import { quoteCart, type CartInput } from "@/lib/pricing";
 import { normalizePhone, str, strOrNull } from "@/lib/utils";
-import { verifyHuman } from "@/lib/guard";
+import { allow, verifyHuman } from "@/lib/guard";
 
-const hits = new Map<string, number[]>();
-function rateLimit(key: string, max = 5, windowMs = 10 * 60 * 1000) {
-  const now = Date.now();
-  const arr = (hits.get(key) ?? []).filter((t) => now - t < windowMs);
-  if (arr.length >= max) return false;
-  arr.push(now);
-  hits.set(key, arr);
-  return true;
-}
+const rateLimit = (key: string, max = 5, windowMs = 10 * 60 * 1000) => allow(key, max, windowMs);
 
 export async function getCartQuote(items: CartInput, coupon?: string | null, paymentMethod?: "CARD" | "TRANSFER", deliveryMethod?: "CARGO" | "PICKUP") {
   const c = await getCustomer();
@@ -33,7 +25,7 @@ export async function askQuestion(_: ActionResult | null, fd: FormData): Promise
     const contact = str(fd.get("contact"));
     const question = str(fd.get("question"));
     if (!name || !contact || question.length < 5) return fail("Ad, iletişim ve soru alanlarını doldurun.");
-    if (!rateLimit(`q:${contact}`)) return fail("Çok fazla deneme. Biraz sonra tekrar deneyin.");
+    if (!(await rateLimit(`q:${contact}`))) return fail("Çok fazla deneme. Biraz sonra tekrar deneyin.");
     const p = await db.query.products.findFirst({ where: eq(products.id, productId) });
     if (!p) return fail("Ürün bulunamadı.");
     await db.insert(productQuestions).values({ productId, name, contact, question });
@@ -83,7 +75,7 @@ export async function contactForm(_: ActionResult | null, fd: FormData): Promise
     const body = str(fd.get("message"));
     if (!name || !contactRaw || body.length < 5) return fail("Tüm alanları doldurun.");
     if (!fd.get("kvkk")) return fail("Aydınlatma metnini onaylayın.");
-    if (!rateLimit(`c:${contactRaw}`, 3)) return fail("Çok fazla deneme. Biraz sonra tekrar deneyin.");
+    if (!(await rateLimit(`c:${contactRaw}`, 3))) return fail("Çok fazla deneme. Biraz sonra tekrar deneyin.");
     const contact = contactRaw.includes("@") ? contactRaw.toLowerCase() : normalizePhone(contactRaw);
     const cust = await db.query.customers.findFirst({ where: contact.includes("@") ? eq(customers.email, contact) : eq(customers.phone, contact) });
     const [c] = await db.insert(conversations).values({ contactName: name, contact, subject, channel: "WEB", customerId: cust?.id ?? null }).returning();
@@ -96,7 +88,7 @@ export async function subscribe(_: ActionResult | null, fd: FormData): Promise<A
   return safe(async () => {
     const email = str(fd.get("email")).toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(email)) return fail("Geçerli bir e-posta girin.");
-    await db.insert(newsletterSubscribers).values({ email }).onConflictDoNothing();
+    await db.insert(newsletterSubscribers).values({ email }).onConflictDoUpdate({ target: newsletterSubscribers.email, set: { isActive: true } });
     return ok("Kaydın alındı.");
   });
 }

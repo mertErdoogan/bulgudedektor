@@ -6,6 +6,8 @@ import { db } from "../src/db";
 import * as t from "../src/db/schema";
 import { DEFAULT_ROLES } from "../src/lib/permissions";
 import { seedContent } from "./seed-content";
+import { LEGACY_REDIRECTS } from "./lib/arena-map";
+import { LEGAL_PAGES } from "./lib/legal-texts";
 
 const img = (f: string) => `/demo/${f}.jpg`;
 const daysAgo = (d: number, h = 12) => new Date(Date.now() - d * 86400000 - h * 3600000);
@@ -146,16 +148,10 @@ async function main() {
     { location: "FOOTER_HELP", label: "Seri no sorgula", url: "/seri-no", sortOrder: 3 },
     { location: "FOOTER_HELP", label: "İletişim", url: "/iletisim", sortOrder: 4 },
   ]);
-  const legal = (title: string) =>
-    `<p><strong>Bu metin örnektir.</strong> Yayına almadan önce şirket bilgilerinizle güncelleyin ve bir hukukçuya kontrol ettirin.</p><h2>${title}</h2><p>[ŞİRKET UNVANI], [ADRES], [VERGİ DAİRESİ / NO], [MERSİS NO]. İletişim: [E-POSTA], [TELEFON].</p>`;
-  await db.insert(t.pages).values([
-    { slug: "mesafeli-satis-sozlesmesi", title: "Mesafeli satış sözleşmesi", content: legal("Mesafeli satış sözleşmesi") },
-    { slug: "on-bilgilendirme-formu", title: "Ön bilgilendirme formu", content: legal("Ön bilgilendirme formu") },
-    { slug: "kvkk-aydinlatma-metni", title: "KVKK aydınlatma metni", content: legal("Kişisel verilerin korunması aydınlatma metni") },
-    { slug: "cerez-politikasi", title: "Çerez politikası", content: legal("Çerez politikası") },
-    { slug: "iade-ve-degisim", title: "İade ve değişim", content: legal("İade ve değişim koşulları") + "<p>Ürünü teslim aldıktan sonra 14 gün içinde koşulsuz iade edebilirsiniz.</p>", footerGroup: "Yardım" },
-    { slug: "hakkimizda", title: "Hakkımızda", content: "<p>Arena Dedektör, yetkili distribütör ürünlerini faturalı ve garantili olarak sunar. Satıştan sonra da yanınızdayız: kurulum, eğitim ve servis.</p>", footerGroup: "Kurumsal" },
-  ]);
+  await db.insert(t.pages).values(LEGAL_PAGES);
+  // Demo varyant: aynı ailenin iki modeli ürün sayfasında seçenek olarak görünür
+  await db.update(t.products).set({ variantGroup: "minelab-gp", variantLabel: "GPZ 8000 · ZVT" }).where(sql`${t.products.slug} = 'gpz-8000'`);
+  await db.update(t.products).set({ variantGroup: "minelab-gp", variantLabel: "GPX 6000 · PI" }).where(sql`${t.products.slug} = 'gpx-6000'`);
 
   // Kampanyalar
   await db.insert(t.campaigns).values([
@@ -247,8 +243,8 @@ async function main() {
   await db.insert(t.returnRequests).values({ orderId: (await db.select().from(t.orders).limit(1))[0].id, customerId: cust[0].id, reason: "Beklentimi karşılamadı" });
 
   await db.insert(t.settings).values([
-    { key: "store", value: { name: "Arena Dedektör", legalName: "Arena Dedektör Teknolojileri", phone: "0212 275 94 94", whatsapp: "905436796968", email: "admin@arenadedektor.com", address: "Fulya Mah. Büyükdere Cad. Altınova Apt. No: 54 Kat: 3 D: 3, Şişli / İstanbul" } },
-    { key: "payment", value: { bankAccounts: [{ bank: "[BANKA]", holder: "Arena Dedektör Teknolojileri", iban: "TR00 0000 0000 0000 0000 0000 00" }] } },
+    // Gerçek şirket bilgileri DEFAULT_SETTINGS'te (src/lib/settings.ts); burada yalnızca demo farkları
+    { key: "store", value: { name: "Arena Dedektör" } },
     { key: "setup", value: { completed: false, completedSteps: ["store"] } },
   ]);
   await db.insert(t.auditLogs).values({ userId: admin.id, action: "create", entity: "system", summary: "Demo verisi yüklendi" });
@@ -262,6 +258,9 @@ async function main() {
   await db.insert(t.productActivity).values(act);
 
   await seedContent();
+  // Eski site (arenadedektor.com / Efortek) adresleri → yeni adresler (301)
+  await db.insert(t.redirects).values(LEGACY_REDIRECTS.map(([fromPath, toPath]) => ({ fromPath, toPath }))).onConflictDoNothing();
+
   console.log("Bitti. Giriş: admin@arenadedektor.local / Arena123!  (satis@, depo@, servis@ aynı şifre)");
   process.exit(0);
 }

@@ -16,7 +16,7 @@ export default function RegisterPage() {
         <Field label="E-posta"><Input name="email" type="email" autoComplete="email" required className="h-12" /></Field>
         <Field label="Cep telefonu"><Input name="phone" type="tel" autoComplete="tel" required className="h-12" placeholder="05xx xxx xx xx" /></Field>
         <Field label="Şifre (en az 8 karakter)"><Input name="password" type="password" autoComplete="new-password" required minLength={8} className="h-12" /></Field>
-        <Checkbox name="kvkk" required label={<><Link href="/sayfa/kvkk-aydinlatma-metni" target="_blank" className="font-bold text-link">Aydınlatma metnini</Link> okudum.</>} />
+        <Checkbox name="kvkk" required label={<><Link href="/sayfa/uyelik-sozlesmesi" target="_blank" className="font-bold text-link">Üyelik sözleşmesini</Link> kabul ediyorum, <Link href="/sayfa/kvkk-aydinlatma-metni" target="_blank" className="font-bold text-link">aydınlatma metnini</Link> okudum.</>} />
         <Checkbox name="marketing" label={<span className="text-mute">Kampanya ve kullanım ipuçları için SMS / e-posta almak istiyorum (isteğe bağlı).</span>} />
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
         <Turnstile />

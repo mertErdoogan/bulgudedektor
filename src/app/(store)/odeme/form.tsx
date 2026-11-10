@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { emit } from "@/lib/track";
+import { CityDistrict } from "@/components/city-district";
 import { Building2, CreditCard, Lock, Store, Truck } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useCart } from "@/components/store/cart";
@@ -114,8 +115,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
             <Field label="Ad soyad" className="sm:col-span-2"><Input name="fullName" autoComplete="name" defaultValue={me?.name ?? ""} required /></Field>
             {delivery === "CARGO" ? (
               <>
-                <Field label="İl"><Input name="city" autoComplete="address-level1" defaultValue={address?.city ?? ""} required /></Field>
-                <Field label="İlçe"><Input name="district" autoComplete="address-level2" defaultValue={address?.district ?? ""} required /></Field>
+                <CityDistrict city={address?.city} district={address?.district} />
                 <Field label="Adres" className="sm:col-span-2"><Textarea name="line" autoComplete="street-address" defaultValue={address?.line ?? ""} required className="min-h-[70px]" placeholder="Mahalle, sokak, bina ve daire no" /></Field>
                 <Field label="Posta kodu (isteğe bağlı)"><Input name="zip" autoComplete="postal-code" defaultValue={address?.zip ?? ""} /></Field>
                 <Checkbox name="saveAddress" defaultChecked label="Adresi hesabıma kaydet" className="self-end pb-2" />
@@ -141,6 +141,11 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
             {s.payment.cardEnabled ? <Opt checked={pay === "CARD"} onClick={() => setPay("CARD")} icon={<CreditCard />} title="Kredi / banka kartı" desc={`${s.payment.noInterestInstallments > 1 ? `${s.payment.noInterestInstallments} taksit vade farksız · ` : ""}taksit seçeneklerini ödeme ekranında görürsün`} /> : null}
             {s.payment.transferEnabled ? <Opt checked={pay === "TRANSFER"} onClick={() => setPay("TRANSFER")} icon={<Building2 />} title={<>Havale / EFT {s.payment.transferDiscountPct ? `· %${s.payment.transferDiscountPct} indirim` : ""}</>} desc="Sipariş sonrası IBAN gösterilir; ödeme gelince kargolanır" /> : null}
           </div>
+          {pay === "CARD" ? (
+            <Field label="TC kimlik no (isteğe bağlı)" hint="Bazı bankalar kartlı ödemede ister. Yalnızca ödeme kuruluşuna iletilir, sitemizde saklanmaz." className="mt-3">
+              <Input name="tckn" inputMode="numeric" maxLength={11} autoComplete="off" placeholder="11 haneli" />
+            </Field>
+          ) : null}
           {pay === "CARD" ? (
             <p className="mt-3 flex items-center gap-2 rounded-lg bg-soft p-3 text-xs text-mute"><Lock size={14} /> &quot;Ödemeye geç&quot; dediğinde iyzico&apos;nun güvenli ödeme sayfası açılır. Kart bilgin sitemizde saklanmaz.</p>
           ) : bankAccounts.length ? (

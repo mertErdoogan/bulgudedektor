@@ -1,7 +1,8 @@
+import { CityDistrict } from "@/components/city-district";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { desc, eq, inArray } from "drizzle-orm";
-import { ShieldCheck } from "lucide-react";
+import { Download, MailWarning, ShieldCheck } from "lucide-react";
 import { db } from "@/db";
 import { addresses, orderItems, orders, serialNumbers, serviceRecords } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
@@ -12,7 +13,7 @@ import { getSettings } from "@/lib/settings";
 import { orderKey } from "@/lib/store";
 import { ORDER_STATUS_LABEL, RETURN_STATUS_LABEL, SERVICE_STATUS_LABEL, formatDate, formatTL, orderNo, serviceNo } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { customerLogout, deleteAddress, requestReturn, requestService, saveAddress, updateProfile } from "./actions";
+import { customerLogout, deleteAddress, deleteMyAccount, requestReturn, requestService, resendVerification, saveAddress, updateProfile } from "./actions";
 
 export const metadata = { title: "Hesabım", robots: { index: false } };
 
@@ -55,6 +56,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </div>
         <form action={customerLogout}><button className="rounded-lg bg-white/10 px-4 py-2 text-sm font-bold">Çıkış yap</button></form>
       </div>
+      {me.email && !me.emailVerifiedAt ? (
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-warn/30 bg-warn-bg p-4 text-sm">
+          <MailWarning size={20} className="shrink-0 text-warn" />
+          <p className="flex-1">
+            <b>E-posta adresini doğrula.</b> <span className="text-mute">{me.email} adresine gönderdiğimiz bağlantıya tıkla; sipariş ve garanti bildirimleri bu adrese gelir.</span>
+          </p>
+          <ActionButton run={resendVerification} variant="outline" size="sm">
+            Tekrar gönder
+          </ActionButton>
+        </div>
+      ) : null}
       <nav className="scrollbar-none mb-5 flex gap-2 overflow-x-auto">
         {TABS.map(([k, l]) => (
           <Link key={k} href={`/hesabim?t=${k}`} className={cn("shrink-0 rounded-full px-4 py-2 text-sm font-bold", tab === k ? "bg-deep text-white" : "border border-line")}>{l}</Link>
@@ -181,7 +193,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             <Input name="title" placeholder="Adres adı (Ev, İş)" />
             <Input name="fullName" placeholder="Ad soyad" defaultValue={me.name} required />
             <Input name="phone" placeholder="Telefon" defaultValue={me.phone ?? ""} required />
-            <div className="grid grid-cols-2 gap-2"><Input name="city" placeholder="İl" required /><Input name="district" placeholder="İlçe" required /></div>
+            <div className="grid grid-cols-2 gap-2"><CityDistrict labels={false} /></div>
             <Textarea name="line" placeholder="Adres" required className="min-h-[70px]" />
             <SubmitButton>Kaydet</SubmitButton>
           </ActionForm>
@@ -197,8 +209,39 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <Field label="Yeni şifre"><Input name="newPassword" type="password" autoComplete="new-password" /></Field>
           <Checkbox name="marketing" defaultChecked={me.marketingConsent} label="Kampanya ve kullanım ipuçları için SMS / e-posta almak istiyorum" className="sm:col-span-2" />
           <SubmitButton className="sm:justify-self-start">Kaydet</SubmitButton>
-          <p className="text-xs text-mute sm:col-span-2">Hesabının silinmesini istiyorsan {s.store.email || "bize"} adresine yaz; KVKK kapsamında 30 gün içinde işleme alınır.</p>
         </ActionForm>
+      ) : null}
+      {tab === "profil" ? (
+        <div className="mt-5 grid max-w-2xl gap-4">
+          <div className="rounded-2xl border border-line p-5 text-sm">
+            <b>Verilerim</b>
+            <p className="mt-1 text-mute">KVKK kapsamında hesabına ait tüm kişisel verilerin (sipariş, adres, servis, yorum, izinler) dökümünü indirebilirsin.</p>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- dosya indirme, sayfa değil */}
+            <a href="/api/hesap/verilerim" download className="mt-3 inline-flex items-center gap-2 rounded-lg border border-deep px-4 py-2 font-bold">
+              <Download size={16} /> Verilerimi indir (JSON)
+            </a>
+          </div>
+          <details className="rounded-2xl border border-line p-5 text-sm">
+            <summary className="cursor-pointer font-bold text-danger">Hesabımı sil</summary>
+            <p className="mt-2 text-mute">
+              Ad, e-posta, telefon, adres ve favorilerin silinir; kampanya izinlerin kaldırılır. Fatura ve sipariş kayıtları vergi mevzuatı gereği 10 yıl anonim olarak saklanır. Bu işlem geri alınamaz; garanti sorgusu
+              için seri numaranı not almanı öneririz.
+            </p>
+            <ActionForm action={deleteMyAccount} className="mt-3 grid gap-3 sm:grid-cols-2">
+              {me.passwordHash ? (
+                <Field label="Şifren">
+                  <Input name="password" type="password" autoComplete="current-password" required />
+                </Field>
+              ) : null}
+              <Field label='Onay için "SİL" yaz'>
+                <Input name="confirm" required autoComplete="off" />
+              </Field>
+              <SubmitButton variant="danger" className="sm:col-span-2 sm:justify-self-start">
+                Hesabımı kalıcı olarak sil
+              </SubmitButton>
+            </ActionForm>
+          </details>
+        </div>
       ) : null}
     </div>
   );

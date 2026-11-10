@@ -102,13 +102,28 @@ Canlıya aldıktan sonra yapılacaklar (panelden):
 
 Var olan bir veritabanına örnek rehber/SSS/sözlük eklemek için (mevcut kayıtlara dokunmaz): `npm run db:seed-content`
 
-## Henüz bağlanmayan dış servisler
+## Entegrasyonlar ve eski siteden geçiş
 
-Ayar alanları hazır ama entegrasyon kodu yazılmadı (her biri sağlayıcı seçimine bağlı):
-- **SMS** (sipariş/kargo SMS'i) ve **İYS** bildirimi
-- **e-Fatura / e-Arşiv** (Paraşüt, Logo vb.) — şu an fatura panel dışında kesilir
-- **Kargo API** (otomatik barkod/takip no) — şu an takip no elle girilir
-- **WhatsApp Business API** — şu an WhatsApp bağlantıları `wa.me` ile açılır, konuşmalar panele elle kaydedilir
+Canlıya alma (Docker + Caddy), arenadedektor.com'dan ürün/blog/müşteri aktarımı ve dış servis hesapları için: **[docs/KURULUM.md](docs/KURULUM.md)**.
+
+| Özellik | Durum |
+|---|---|
+| Eski siteden aktarım (`npm run import:arena`) | Hazır; ürün/blog adresleri korunur, eski kategori/sayfa adresleri 301 |
+| Netgsm SMS (sipariş alındı / kargoda / teslim) | Kod hazır, gerçek hesapla test edilmedi |
+| Trendyol fiyat-stok senkronu ve sipariş aktarımı | Kod hazır (Order V2), gerçek hesapla test edilmedi |
+| e-Arşiv fatura | PDF/bağlantı siparişe eklenir, müşteriye e-postayla gider; fatura entegratörde kesilir |
+| İYS | İzinli liste İYS toplu yükleme biçiminde dışa aktarılır; ticari iletilerde tek tıkla çıkış |
+| iyzico kayıtlı kart | Kod hazır; iyzico'dan kart saklama yetkisi gerekir |
+| Kargo API (otomatik barkod) | Yok; takip no elle girilir, takip bağlantıları otomatik |
+| WhatsApp Business API | Yok; panelden `wa.me` ile hazır mesajlı bildirim |
+
+## Testler
+
+```bash
+npx tsx tests/unit/arena-parse.test.ts && npx tsx tests/unit/csv.test.ts && npx tsx tests/unit/totp.test.ts
+npm run db:seed && npm run build && npm start   # ayrı terminalde
+python3 tests/e2e/core_e2e.py   # ayrıntılar: tests/README.md
+```
 
 ## Proje yapısı
 

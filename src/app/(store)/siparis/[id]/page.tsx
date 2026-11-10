@@ -8,6 +8,7 @@ import { getCustomer } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { orderKey } from "@/lib/store";
 import { ClearCart } from "@/components/store/clear-cart";
+import { TransferForm } from "./transfer-form";
 import { ORDER_STATUS_LABEL, formatDate, formatTL, orderNo } from "@/lib/utils";
 
 export const metadata = { title: "Sipariş", robots: { index: false } };
@@ -48,6 +49,11 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           <b className="text-base">Havale / EFT bilgileri</b>
           <p className="mt-1">Açıklamaya <b>{orderNo(o.number)}</b> yazarak <b>{formatTL(o.total)}</b> gönder. Ödeme hesabımıza geçince siparişin hazırlanır.</p>
           <ul className="mt-2 flex flex-col gap-1">{s.payment.bankAccounts.map((b) => <li key={b.iban}><b>{b.bank}</b> · {b.holder} · <span className="font-mono select-all">{b.iban}</span></li>)}</ul>
+          {o.paymentMeta?.transferNotice ? (
+            <p className="mt-4 rounded-lg bg-white p-3 font-semibold text-ok">Ödeme bildirimin alındı ({formatDate(new Date(o.paymentMeta.transferNotice.at), true)}). Hesabımızı kontrol edip siparişini onaylayacağız.</p>
+          ) : (
+            <TransferForm orderId={o.id} k={sp.k ?? ""} defaultName={o.shippingAddress?.fullName ?? ""} />
+          )}
         </div>
       ) : null}
       <h1 className="font-display text-2xl font-extrabold">Sipariş {orderNo(o.number)}</h1>
@@ -86,6 +92,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         {o.events.map((e) => <li key={e.id} className="border-l-2 border-brand pl-3 text-sm"><b>{e.message}</b><span className="block text-xs text-mute">{formatDate(e.createdAt, true)}</span></li>)}
       </ol>
       <div className="mt-8 flex flex-wrap gap-2">
+        {o.invoiceUrl ? <a href={o.invoiceUrl} target="_blank" rel="noopener" className="rounded-lg border border-deep px-4 py-2.5 text-sm font-bold">Faturayı indir{o.invoiceNo ? ` · ${o.invoiceNo}` : ""}</a> : null}
         {canReturn ? <Link href={`/hesabim?iade=${o.id}`} className="rounded-lg border border-deep px-4 py-2.5 text-sm font-bold">İade talebi oluştur</Link> : null}
         <Link href="/hesabim" className="rounded-lg bg-soft px-4 py-2.5 text-sm font-bold">Hesabıma git</Link>
         {s.store.whatsapp ? <a href={`https://wa.me/${s.store.whatsapp}?text=${encodeURIComponent(`Merhaba, ${orderNo(o.number)} numaralı siparişim hakkında`)}`} target="_blank" className="rounded-lg bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white">WhatsApp&apos;tan sor</a> : null}

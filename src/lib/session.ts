@@ -6,15 +6,17 @@ const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET || "dev-se
 
 export const ADMIN_COOKIE = "bulgu_admin";
 export const CUSTOMER_COOKIE = "bulgu_customer";
+/** Şifre doğru, iki adımlı doğrulama kodu bekleniyor (10 dk) */
+export const TWOFA_COOKIE = "bulgu_2fa";
 
-type Payload = { sub: string; kind: "staff" | "customer" };
+type Payload = { sub: string; kind: "staff" | "customer" | "staff-2fa" };
 
-export async function signToken(payload: Payload, days = 7) {
+export async function signToken(payload: Payload, days = 7, ttl?: string) {
   return new SignJWT({ kind: payload.kind })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.sub)
     .setIssuedAt()
-    .setExpirationTime(`${days}d`)
+    .setExpirationTime(ttl ?? `${days}d`)
     .sign(secret());
 }
 
@@ -29,14 +31,14 @@ export async function verifyToken(token: string | undefined): Promise<Payload | 
   }
 }
 
-export async function setSessionCookie(name: string, token: string, days = 7) {
+export async function setSessionCookie(name: string, token: string, days = 7, maxAgeSec?: number) {
   const jar = await cookies();
   jar.set(name, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: days * 24 * 60 * 60,
+    maxAge: maxAgeSec ?? days * 24 * 60 * 60,
   });
 }
 

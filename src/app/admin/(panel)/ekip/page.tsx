@@ -3,13 +3,13 @@ import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { roles, users } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
-import { DeleteButton } from "@/components/admin/delete-button";
+import { ActionButton, DeleteButton } from "@/components/admin/delete-button";
 import { PageHeader } from "@/components/admin/shell";
 import { Badge, Button, Card, CardHeader, Checkbox, Field, Input, Select, Table, Td, Th } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { PERMISSIONS, PERMISSION_GROUPS } from "@/lib/permissions";
 import { formatDate } from "@/lib/utils";
-import { deleteRole, saveRole, saveUser } from "./actions";
+import { deleteRole, reset2fa, saveRole, saveUser } from "./actions";
 
 export const metadata = { title: "Ekip ve yetkiler" };
 
@@ -38,7 +38,9 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                     <Td>{role}</Td>
                     <Td>%{u.maxDiscountPct}</Td>
                     <Td className="text-mute">{formatDate(u.lastLoginAt, true)}</Td>
-                    <Td>{u.isActive ? <Badge tone="ok">Aktif</Badge> : <Badge>Pasif</Badge>}</Td>
+                    <Td>
+                      {u.isActive ? <Badge tone="ok">Aktif</Badge> : <Badge>Pasif</Badge>} {u.totpEnabled ? <Badge tone="ok">2FA</Badge> : null}
+                    </Td>
                   </tr>
                 ))}
               </tbody>
@@ -95,6 +97,14 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                 <Checkbox name="isActive" defaultChecked={editUser?.isActive ?? true} label="Aktif (pasif kişi giriş yapamaz)" />
                 <SubmitButton>{editUser ? "Kaydet" : "Ekle"}</SubmitButton>
               </ActionForm>
+              {editUser?.totpEnabled ? (
+                <div className="flex items-center justify-between gap-2 border-t border-line p-5 text-sm">
+                  <span className="text-mute">İki adımlı doğrulama açık. Telefonunu kaybettiyse sıfırla.</span>
+                  <ActionButton run={reset2fa.bind(null, editUser.id)} variant="outline" size="sm" confirmText="Bu kişinin iki adımlı doğrulaması kapatılsın mı?">
+                    2FA sıfırla
+                  </ActionButton>
+                </div>
+              ) : null}
             </Card>
           )}
         </div>

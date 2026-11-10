@@ -88,6 +88,13 @@ export async function savePayment(_: ActionResult | null, fd: FormData): Promise
       iyzicoSandbox: fd.get("iyzicoSandbox") === "on",
       maxInstallment: Math.min(12, Math.max(1, toNum(fd.get("maxInstallment"), 12))),
       noInterestInstallments: Math.min(12, Math.max(1, toNum(fd.get("noInterestInstallments"), 1))),
+      installmentRates: Object.fromEntries(
+        str(fd.get("installmentRates"))
+          .split(/[,\n]/)
+          .map((x) => x.split(":").map((y) => y.trim().replace(",", ".")))
+          .filter(([n, r]) => Number(n) >= 2 && Number(n) <= 12 && Number(r) >= 0 && Number(r) < 100)
+          .map(([n, r]) => [String(Number(n)), Number(r)]),
+      ),
       transferEnabled,
       transferDiscountPct: Math.max(0, Math.min(20, toNum(fd.get("transferDiscountPct"), 0))),
       bankAccounts,
@@ -118,9 +125,10 @@ export async function saveIntegrations(_: ActionResult | null, fd: FormData): Pr
   return safe(async () => {
     const staff = await assertStaff("settings.manage");
     const cur = (await getSettings()).integrations;
-    const keep = (k: keyof typeof cur) => {
+    type StrKey = { [K in keyof typeof cur]: (typeof cur)[K] extends string ? K : never }[keyof typeof cur];
+    const keep = (k: StrKey) => {
       const v = str(fd.get(k));
-      return v.includes("•") ? cur[k] : v;
+      return v.includes("•") ? (cur[k] as string) : v;
     };
     await saveSettings("integrations", {
       gaMeasurementId: str(fd.get("gaMeasurementId")),
@@ -134,8 +142,31 @@ export async function saveIntegrations(_: ActionResult | null, fd: FormData): Pr
       eInvoiceProvider: str(fd.get("eInvoiceProvider")),
       eInvoiceApiKey: keep("eInvoiceApiKey"),
       cargoApiKey: keep("cargoApiKey"),
+      smsProvider: str(fd.get("smsProvider")) === "netgsm" ? "netgsm" : "",
+      netgsmUser: str(fd.get("netgsmUser")),
+      netgsmPass: keep("netgsmPass"),
+      netgsmHeader: str(fd.get("netgsmHeader")),
+      smsOnPlaced: fd.get("smsOnPlaced") === "on",
+      smsOnShipped: fd.get("smsOnShipped") === "on",
+      smsOnDelivered: fd.get("smsOnDelivered") === "on",
+      trendyolEnabled: fd.get("trendyolEnabled") === "on",
+      trendyolSupplierId: str(fd.get("trendyolSupplierId")).replace(/\D/g, ""),
+      trendyolApiKey: keep("trendyolApiKey"),
+      trendyolApiSecret: keep("trendyolApiSecret"),
+      trendyolPriceMarkupPct: Math.max(-50, Math.min(100, toNum(fd.get("trendyolPriceMarkupPct"), 0))),
     });
     return fin(staff.id, "integrations");
+  });
+}
+
+export async function testSms(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    await assertStaff("settings.manage");
+    const phone = str(fd.get("phone"));
+    if (!phone) return fail("Test için telefon numarası girin.");
+    const { sendSms } = await import("@/lib/sms");
+    const s = await getSettings();
+    return (await sendSms(phone, `${s.store.name} test SMS'i. Entegrasyon calisiyor.`)) ? ok("SMS gönderildi.") : fail("SMS gönderilemedi. Bilgileri ve Netgsm panelinde API izni/IP kısıtını kontrol edin.");
   });
 }
 
@@ -163,5 +194,15 @@ export async function saveSeo(_: ActionResult | null, fd: FormData): Promise<Act
       aboutForAi: str(fd.get("aboutForAi")),
     });
     return fin(staff.id, "seo");
+  });
+}
+
+export async function trendyolSyncNow(): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("settings.manage");
+    const { trendyolSync } = await import("@/lib/trendyol");
+    const r = await trendyolSync();
+    await audit(staff.id, "settings", "settings", "integrations", `Trendyol senkronu: ${r.message}`);
+    return r.ok ? ok(r.message) : fail(r.message);
   });
 }

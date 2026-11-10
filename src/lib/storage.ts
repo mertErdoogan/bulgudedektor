@@ -1,4 +1,5 @@
 import "server-only";
+export { putObject } from "./storage-core";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";

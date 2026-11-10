@@ -28,7 +28,7 @@ function call<T>(fn: (cb: (err: unknown, res: T) => void) => void): Promise<T> {
   return new Promise((resolve, reject) => fn((err, res) => (err ? reject(err) : resolve(res))));
 }
 
-type Buyer = { id: string; name: string; email: string; phone: string; city: string; address: string; ip: string };
+type Buyer = { id: string; name: string; email: string; phone: string; city: string; address: string; ip: string; identityNumber?: string };
 type Item = { id: string; name: string; category: string; price: number };
 
 const p2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
@@ -42,6 +42,8 @@ export async function initCheckoutForm(args: {
   buyer: Buyer;
   items: Item[];
   enabledInstallments: number[];
+  /** Giriş yapmış müşterinin iyzico'daki kayıtlı kart anahtarı: formda kayıtlı kartları gösterir */
+  cardUserKey?: string | null;
 }) {
   const cfg = await getIyzicoConfig();
   if (!cfg) throw new Error("iyzico anahtarları ayarlanmamış. Admin › Ayarlar › Ödeme'den girin.");
@@ -59,13 +61,15 @@ export async function initCheckoutForm(args: {
     paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,
     callbackUrl: args.callbackUrl,
     enabledInstallments: args.enabledInstallments,
+    ...(args.cardUserKey ? { cardUserKey: args.cardUserKey } : {}),
     buyer: {
       id: args.buyer.id,
       name: first,
       surname,
       gsmNumber: args.buyer.phone,
       email: args.buyer.email,
-      identityNumber: "11111111111",
+      // TC kimlik no müşteri girerse o gönderilir ve saklanmaz; girilmezse iyzico'nun kabul ettiği varsayılan değer.
+      identityNumber: args.buyer.identityNumber || "11111111111",
       registrationAddress: args.buyer.address,
       ip: args.buyer.ip,
       city: args.buyer.city,
@@ -100,6 +104,8 @@ export async function retrieveCheckoutForm(token: string) {
     paidPrice?: number | string;
     installment?: number;
     errorMessage?: string;
+    /** Müşteri formda "kartımı kaydet" dediyse iyzico'nun verdiği anahtar */
+    cardUserKey?: string;
     itemTransactions?: { itemId: string; paymentTransactionId: string; paidPrice: number | string }[];
   };
 }
@@ -140,5 +146,38 @@ export async function testConnection() {
     return res.status === "success" ? { ok: true, message: "Bağlantı başarılı." } : { ok: false, message: String(res.errorMessage) };
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : "Bağlantı kurulamadı." };
+  }
+}
+
+export type InstallmentBank = { bank: string; family: string; rows: { n: number; total: number; monthly: number }[] };
+const instCache = new Map<number, { at: number; data: InstallmentBank[] }>();
+
+/**
+ * Banka/kart ailesine göre taksit tablosu (iyzico'dan, 1 saat önbellekli).
+ * Anahtar yoksa veya iyzico yanıt vermezse null döner; sayfa genel taksit bilgisini gösterir.
+ */
+export async function installmentTable(price: number, maxInstallment: number): Promise<InstallmentBank[] | null> {
+  const cfg = await getIyzicoConfig();
+  if (!cfg) return null;
+  const key = Math.round(price);
+  const hit = instCache.get(key);
+  if (hit && Date.now() - hit.at < 3600_000) return hit.data;
+  try {
+    const res = await call<{ status: string; installmentDetails?: { bankName: string; cardFamilyName: string; installmentPrices: { installmentNumber: number; totalPrice: number | string; installmentPrice: number | string }[] }[] }>((cb) =>
+      client(cfg).installmentInfo.retrieve({ locale: Iyzipay.LOCALE.TR, conversationId: `inst-${key}`, price: p2(price) } as never, cb as never),
+    );
+    if (res.status !== "success" || !res.installmentDetails) return null;
+    const data = res.installmentDetails
+      .map((d) => ({
+        bank: d.bankName,
+        family: d.cardFamilyName,
+        rows: d.installmentPrices.filter((r) => r.installmentNumber > 1 && r.installmentNumber <= maxInstallment).map((r) => ({ n: r.installmentNumber, total: Number(r.totalPrice), monthly: Number(r.installmentPrice) })),
+      }))
+      .filter((d) => d.rows.length);
+    if (instCache.size > 500) instCache.clear();
+    instCache.set(key, { at: Date.now(), data });
+    return data;
+  } catch {
+    return null;
   }
 }

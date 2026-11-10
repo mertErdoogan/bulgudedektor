@@ -47,7 +47,11 @@ async function notifyPlaced(orderId: string) {
   const { mailOrderPlaced } = await import("./mail");
   const { orderKey } = await import("./store");
   const o = await db.query.orders.findFirst({ where: eq(orders.id, orderId), with: { items: true } });
-  if (o) await mailOrderPlaced(o, `${process.env.APP_URL || ""}/siparis/${o.id}?k=${orderKey(o.id)}`);
+  if (!o) return;
+  const link = `${process.env.APP_URL || ""}/siparis/${o.id}?k=${orderKey(o.id)}`;
+  await mailOrderPlaced(o, link);
+  const { smsOrderEvent } = await import("./sms");
+  await smsOrderEvent("placed", { phone: o.phone, number: o.number, link });
 }
 export { notifyPlaced };
 

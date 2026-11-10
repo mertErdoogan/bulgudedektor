@@ -86,3 +86,14 @@ export async function deleteRole(id: string): Promise<ActionResult> {
     return ok("Rol silindi.", { redirect: "/admin/ekip" });
   });
 }
+
+/** Telefonunu kaybeden ekip üyesinin iki adımlı doğrulamasını kapatır (yeniden kurması gerekir). */
+export async function reset2fa(userId: string): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("users.manage");
+    await db.update(users).set({ totpEnabled: false, totpSecret: null, totpLastStep: null }).where(eq(users.id, userId));
+    await audit(staff.id, "update", "user", userId, "İki adımlı doğrulama sıfırlandı");
+    revalidatePath("/admin/ekip");
+    return ok("İki adımlı doğrulama kapatıldı. Kullanıcı Hesabım sayfasından yeniden kurabilir.");
+  });
+}

@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { orders } from "@/db/schema";
+import { customers, orders } from "@/db/schema";
 import { retrieveCheckoutForm } from "@/lib/iyzico";
 import { failOrderPayment, markOrderPaid } from "@/lib/orders";
 import { orderKey } from "@/lib/store";
@@ -37,6 +37,13 @@ export async function POST(req: Request) {
       transactions: (r.itemTransactions ?? []).map((t) => ({ itemId: t.itemId, transactionId: t.paymentTransactionId, price: Number(t.paidPrice) })),
       raw: { paidPrice: r.paidPrice, installment: r.installment },
     });
+    // Kart kaydedildiyse anahtarı yalnızca şifreli (kayıtlı) hesaba yaz; misafir siparişlerde saklanmaz
+    if (r.cardUserKey && order.customerId) {
+      await db
+        .update(customers)
+        .set({ cardUserKey: r.cardUserKey })
+        .where(and(eq(customers.id, order.customerId), isNotNull(customers.passwordHash)));
+    }
     return back(order.id, "&yeni=1");
   } catch (e) {
     console.error("iyzico callback", e);

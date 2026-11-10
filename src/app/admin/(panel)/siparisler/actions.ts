@@ -84,7 +84,12 @@ async function transition(orderId: string, to: Status, staff: StaffSession, extr
     const { mailStatus } = await import("@/lib/mail");
     const { orderKey } = await import("@/lib/store");
     // Yorum daveti teslimattan 3 gün sonra zamanlanmış görevle (/api/cron) gönderilir.
-    void mailStatus(o.email, o.number, to === "SHIPPED" && extra.tracking ? `Siparişin kargoya verildi: ${extra.carrier} · takip no ${extra.tracking}` : `Sipariş durumu: ${ORDER_STATUS_LABEL[to]}`, `${process.env.APP_URL || ""}/siparis/${o.id}?k=${orderKey(o.id)}`);
+    const link = `${process.env.APP_URL || ""}/siparis/${o.id}?k=${orderKey(o.id)}`;
+    void mailStatus(o.email, o.number, to === "SHIPPED" && extra.tracking ? `Siparişin kargoya verildi: ${extra.carrier} · takip no ${extra.tracking}` : `Sipariş durumu: ${ORDER_STATUS_LABEL[to]}`, link);
+    if (to === "SHIPPED" || to === "DELIVERED") {
+      const { smsOrderEvent } = await import("@/lib/sms");
+      void smsOrderEvent(to === "SHIPPED" ? "shipped" : "delivered", { phone: o.phone, number: o.number, link, carrier: extra.carrier, tracking: extra.tracking });
+    }
   }
   return info;
 }
@@ -239,6 +244,7 @@ export async function createManualOrder(_: ActionResult | null, fd: FormData): P
           campaignId: q.campaign?.id ?? null,
           deliveryMethod,
           shippingAddress: addr,
+          channel: "MANUAL",
           internalNote: `Panelden oluşturuldu (${staff.name})${discountPct ? ` · %${discountPct} satış indirimi` : ""}`,
           paymentMeta: paid ? { raw: "manual" } : null,
         })
@@ -265,4 +271,37 @@ export async function searchProductsForOrder(q: string) {
 
 export async function getCarriers() {
   return (await getSettings()).shipping.carriers;
+}
+
+/** e-Arşiv/e-Fatura PDF'ini siparişe ekler; müşteri sipariş sayfasından indirir ve e-postayla bilgilendirilir. */
+export async function saveInvoice(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("orders.manage");
+    const id = str(fd.get("orderId"));
+    const o = await db.query.orders.findFirst({ where: eq(orders.id, id) });
+    if (!o) return fail("Sipariş bulunamadı.");
+    const invoiceNo = strOrNull(fd.get("invoiceNo"));
+    const link = strOrNull(fd.get("invoiceLink"));
+    const file = fd.get("file");
+    let url = o.invoiceUrl;
+    if (file instanceof File && file.size) {
+      if (file.type !== "application/pdf") return fail("Fatura PDF olmalı.");
+      const { saveUpload } = await import("@/lib/storage");
+      url = (await saveUpload(file)).url;
+    } else if (link) {
+      if (!/^https:\/\//.test(link)) return fail("Bağlantı https:// ile başlamalı.");
+      url = link;
+    }
+    if (!url) return fail("PDF yükleyin ya da e-fatura portalındaki bağlantıyı yapıştırın.");
+    const first = !o.invoiceUrl;
+    await db.update(orders).set({ invoiceNo, invoiceUrl: url, invoicedAt: o.invoicedAt ?? new Date() }).where(eq(orders.id, id));
+    await addOrderEvent(db, id, "invoice", `Fatura düzenlendi${invoiceNo ? ` (${invoiceNo})` : ""}.`, staff.id, true);
+    await audit(staff.id, "update", "order", id, `Fatura ${first ? "eklendi" : "güncellendi"}`);
+    if (first || fd.get("notify") === "on") {
+      const { mailInvoice } = await import("@/lib/mail");
+      void mailInvoice({ id, number: o.number, email: o.email, invoiceNo, invoiceUrl: url });
+    }
+    revalidatePath(`/admin/siparisler/${id}`);
+    return ok(first ? "Fatura eklendi, müşteriye e-posta gönderildi." : "Fatura güncellendi.");
+  });
 }

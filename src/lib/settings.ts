@@ -62,6 +62,8 @@ export type PaymentSettings = {
   iyzicoSandbox: boolean;
   maxInstallment: number;
   noInterestInstallments: number;
+  /** iyzico'ya bağlanılamadığında gösterilecek taksit farkları (%): {"4": 7.34} = 4 taksitte toplam %7,34 fazla */
+  installmentRates: Record<string, number>;
   transferEnabled: boolean;
   transferDiscountPct: number;
   bankAccounts: { bank: string; holder: string; iban: string }[];
@@ -79,6 +81,21 @@ export type IntegrationSettings = {
   eInvoiceProvider: string;
   eInvoiceApiKey: string;
   cargoApiKey: string;
+  /** SMS (Netgsm) */
+  smsProvider: "" | "netgsm";
+  netgsmUser: string;
+  netgsmPass: string;
+  netgsmHeader: string;
+  smsOnPlaced: boolean;
+  smsOnShipped: boolean;
+  smsOnDelivered: boolean;
+  /** Trendyol pazaryeri: fiyat/stok senkronu ve sipariş aktarımı */
+  trendyolEnabled: boolean;
+  trendyolSupplierId: string;
+  trendyolApiKey: string;
+  trendyolApiSecret: string;
+  /** Trendyol'da fiyat site fiyatından % kaç farklı olsun (komisyon için, örn. 8) */
+  trendyolPriceMarkupPct: number;
 };
 
 export type SeoSettings = {
@@ -105,7 +122,7 @@ export type AllSettings = {
 export const DEFAULT_SETTINGS: AllSettings = {
   store: {
     name: "Arena Dedektör",
-    legalName: "Arena Dedektör Teknolojileri",
+    legalName: "Arena Dedektör Teknolojileri Elektronik San. ve Tic. Ltd. Şti.",
     phone: "0212 275 94 94",
     whatsapp: "905436796968",
     email: "admin@arenadedektor.com",
@@ -114,7 +131,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     taxNumber: "",
     mersis: "",
     etbis: "",
-    workingHours: "Hafta içi 09:00–20:00",
+    workingHours: "Hafta içi 09:00–19:00, Cumartesi 10:00–17:00",
     announcement: "Ücretsiz kargo · 3 aya kadar vade farksız taksit · Orijinal ürün, faturalı, 2 yıl garanti · 14 gün kolay iade",
     logoText: "Arena Dedektör",
     city: "İstanbul",
@@ -160,11 +177,15 @@ export const DEFAULT_SETTINGS: AllSettings = {
     iyzicoApiKey: "",
     iyzicoSecretKey: "",
     iyzicoSandbox: true,
-    maxInstallment: 12,
+    maxInstallment: 6,
     noInterestInstallments: 3,
+    installmentRates: { "4": 7.34, "5": 9.21, "6": 11.08 },
     transferEnabled: true,
     transferDiscountPct: 2,
-    bankAccounts: [],
+    bankAccounts: [
+      { bank: "Garanti BBVA", holder: "Arena Dedektör Teknolojileri Elektronik San. ve Tic. Ltd. Şti.", iban: "TR18 0006 2000 3570 0006 2929 42" },
+      { bank: "Ziraat Bankası", holder: "Arena Dedektör Teknolojileri Elektronik San. ve Tic. Ltd. Şti.", iban: "TR32 0001 0007 5775 8307 7550 01" },
+    ],
   },
   integrations: {
     gaMeasurementId: "",
@@ -178,6 +199,18 @@ export const DEFAULT_SETTINGS: AllSettings = {
     eInvoiceProvider: "",
     eInvoiceApiKey: "",
     cargoApiKey: "",
+    smsProvider: "",
+    netgsmUser: "",
+    netgsmPass: "",
+    netgsmHeader: "",
+    smsOnPlaced: true,
+    smsOnShipped: true,
+    smsOnDelivered: false,
+    trendyolEnabled: false,
+    trendyolSupplierId: "",
+    trendyolApiKey: "",
+    trendyolApiSecret: "",
+    trendyolPriceMarkupPct: 0,
   },
   seo: {
     title: "Arena Dedektör | Minelab, XP, Nokta Dedektör Modelleri ve Fiyatları",

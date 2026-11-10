@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { fail, type ActionResult } from "@/lib/action";
 import { audit } from "@/lib/audit";
-import { ADMIN_COOKIE, clearSessionCookie, setSessionCookie, signToken } from "@/lib/session";
+import { ADMIN_COOKIE, TWOFA_COOKIE, clearSessionCookie, setSessionCookie, signToken, verifyToken } from "@/lib/session";
 
 const attempts = new Map<string, { n: number; until: number }>();
 
@@ -26,9 +26,40 @@ export async function loginAction(_: ActionResult | null, fd: FormData): Promise
     return fail("E-posta veya şifre hatalı.");
   }
   attempts.delete(email);
-  await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
-  await setSessionCookie(ADMIN_COOKIE, await signToken({ sub: user.id, kind: "staff" }, 7), 7);
-  await audit(user.id, "login", "user", user.id, `${user.name} giriş yaptı`);
+  const dest = next.startsWith("/admin") ? next : "/admin";
+  if (user.totpEnabled) {
+    // Şifre doğru; 10 dakika içinde doğrulama uygulamasındaki kod istenir
+    await setSessionCookie(TWOFA_COOKIE, await signToken({ sub: user.id, kind: "staff-2fa" }, 0, "10m"), 0, 600);
+    redirect(`/admin/giris/dogrula?next=${encodeURIComponent(dest)}`);
+  }
+  await finishLogin(user.id, user.name);
+  redirect(dest);
+}
+
+async function finishLogin(id: string, name: string) {
+  await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, id));
+  await setSessionCookie(ADMIN_COOKIE, await signToken({ sub: id, kind: "staff" }, 7), 7);
+  await audit(id, "login", "user", id, `${name} giriş yaptı`);
+}
+
+/** İki adımlı doğrulamanın ikinci adımı: 6 haneli kod. */
+export async function verify2faAction(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const { cookies } = await import("next/headers");
+  const { allowIp } = await import("@/lib/guard");
+  const { openSecret, verifyTotp } = await import("@/lib/totp");
+  const jar = await cookies();
+  const p = await verifyToken(jar.get(TWOFA_COOKIE)?.value);
+  if (!p || p.kind !== "staff-2fa") return fail("Süre doldu. Lütfen e-posta ve şifrenle tekrar giriş yap.");
+  if (!(await allowIp("admin-2fa", 10, 15 * 60 * 1000)) || !(await allowIp(`admin-2fa:${p.sub}`, 8, 15 * 60 * 1000))) return fail("Çok fazla deneme. 15 dakika sonra tekrar deneyin.");
+  const user = await db.query.users.findFirst({ where: eq(users.id, p.sub) });
+  if (!user || !user.isActive || !user.totpEnabled) return fail("Hesap bulunamadı.");
+  const secret = openSecret(user.totpSecret);
+  const step = secret ? verifyTotp(secret, String(fd.get("code") ?? "")) : null;
+  if (step === null || (user.totpLastStep !== null && step <= user.totpLastStep)) return fail("Kod hatalı veya süresi geçmiş.");
+  await db.update(users).set({ totpLastStep: step }).where(eq(users.id, user.id));
+  await clearSessionCookie(TWOFA_COOKIE);
+  await finishLogin(user.id, user.name);
+  const next = String(fd.get("next") ?? "/admin");
   redirect(next.startsWith("/admin") ? next : "/admin");
 }
 

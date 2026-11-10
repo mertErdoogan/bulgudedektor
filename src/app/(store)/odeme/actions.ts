@@ -14,6 +14,7 @@ import { CUSTOMER_COOKIE, setSessionCookie, signToken } from "@/lib/session";
 import { getSettings } from "@/lib/settings";
 import { orderKey } from "@/lib/store";
 import { normalizePhone, str, strOrNull } from "@/lib/utils";
+import { validTckn } from "@/lib/tckn";
 
 export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
@@ -42,6 +43,8 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
     if (deliveryMethod === "PICKUP") Object.assign(address, { city: address.city || "Showroom", district: address.district || "—", line: address.line || "Showroom'dan teslim" });
     const invoiceType = str(fd.get("invoiceType")) === "CORPORATE" ? "CORPORATE" : "INDIVIDUAL";
     if (invoiceType === "CORPORATE" && (!str(fd.get("companyName")) || !str(fd.get("taxOffice")) || !/^\d{10,11}$/.test(str(fd.get("taxNumber"))))) return fail("Kurumsal fatura için unvan, vergi dairesi ve 10 haneli vergi no gerekli.");
+    const tckn = str(fd.get("tckn")).replace(/\D/g, "");
+    if (tckn && !validTckn(tckn)) return fail("TC kimlik numarası hatalı görünüyor. Boş bırakabilir ya da düzeltebilirsin.");
     if (!fd.get("terms")) return fail("Ön bilgilendirme formu ve mesafeli satış sözleşmesini onaylayın.");
 
     const me = await getCustomer();
@@ -131,12 +134,14 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
         price: q.subtotal + q.shippingTotal,
         paidPrice: q.total,
         callbackUrl: `${base}/api/odeme/iyzico?o=${orderId}`,
-        buyer: { id: customerId, name: fullName, email, phone, city: address.city, address: `${address.line} ${address.district}/${address.city}`, ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() || "85.34.78.112" },
+        buyer: { id: customerId, name: fullName, email, phone, identityNumber: tckn || undefined, city: address.city, address: `${address.line} ${address.district}/${address.city}`, ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() || "85.34.78.112" },
         // iyzico: kalem toplamı "price" olmalı; indirim "paidPrice"ta yansır, kargo ayrı kalem.
         items: [
           ...q.lines.map((l) => ({ id: l.productId, name: l.name, category: "Dedektör", price: l.total })),
           ...(q.shippingTotal > 0 ? [{ id: "kargo", name: "Kargo", category: "Kargo", price: q.shippingTotal }] : []),
         ],
+        // Kayıtlı kartlar yalnızca oturum açmış hesabın kendi siparişinde gösterilir (misafir siparişte asla)
+        cardUserKey: me && me.id === customerId ? me.cardUserKey : null,
         enabledInstallments: Array.from({ length: Math.max(1, s.payment.maxInstallment) }, (_, i) => i + 1).filter((n) => [1, 2, 3, 6, 9, 12].includes(n)),
       });
       await db.update(orders).set({ paymentToken: form.token }).where(eq(orders.id, orderId));

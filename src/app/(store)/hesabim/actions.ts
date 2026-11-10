@@ -1,7 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { and, eq, ne, or } from "drizzle-orm";
+import { and, eq, inArray, ne, or } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
@@ -64,7 +64,9 @@ export async function customerRegister(_: ActionResult | null, fd: FormData): Pr
       [{ id }] = await db.insert(customers).values({ name, email, phone, passwordHash: await bcrypt.hash(password, 10), marketingConsent: marketing, consentAt: marketing ? new Date() : null }).returning({ id: customers.id });
     }
     await setSessionCookie(CUSTOMER_COOKIE, await signToken({ sub: id, kind: "customer" }, 30), 30);
-    return ok("Hesabın oluşturuldu.", { redirect: "/hesabim" });
+    const { sendVerification } = await import("@/lib/account");
+    void sendVerification({ name, email });
+    return ok("Hesabın oluşturuldu. E-posta adresine doğrulama bağlantısı gönderdik.", { redirect: "/hesabim" });
   });
 }
 
@@ -96,9 +98,26 @@ export async function updateProfile(_: ActionResult | null, fd: FormData): Promi
     }
     await db
       .update(customers)
-      .set({ name, email, phone, marketingConsent: marketing, consentAt: marketing && !c.marketingConsent ? new Date() : c.consentAt, ...(pw ? { passwordHash: await bcrypt.hash(pw, 10) } : {}) })
+      .set({
+        name,
+        email,
+        phone,
+        marketingConsent: marketing,
+        consentAt: marketing && !c.marketingConsent ? new Date() : c.consentAt,
+        ...(pw ? { passwordHash: await bcrypt.hash(pw, 10) } : {}),
+        ...(email !== c.email ? { emailVerifiedAt: null } : {}),
+      })
       .where(eq(customers.id, c.id));
+    if (!marketing && c.marketingConsent && c.email) {
+      const { revokeMarketing } = await import("@/lib/store");
+      await revokeMarketing(c.email);
+    }
     revalidatePath("/hesabim");
+    if (email !== c.email) {
+      const { sendVerification } = await import("@/lib/account");
+      await sendVerification({ name, email });
+      return ok("Bilgilerin güncellendi. Yeni e-posta adresine doğrulama bağlantısı gönderdik.");
+    }
     return ok("Bilgilerin güncellendi.");
   });
 }
@@ -183,4 +202,35 @@ export async function customerResetPassword(_: ActionResult | null, fd: FormData
     await setSessionCookie(CUSTOMER_COOKIE, await signToken({ sub: id, kind: "customer" }, 30), 30);
     return ok("Şifren güncellendi, giriş yaptın.", { redirect: "/hesabim" });
   });
+}
+
+export async function resendVerification(): Promise<ActionResult> {
+  return safe(async () => {
+    const c = await me();
+    if (c.emailVerifiedAt) return ok("E-posta adresin zaten doğrulanmış.");
+    const { allow } = await import("@/lib/guard");
+    if (!(await allow(`verify:${c.id}`, 3, 60 * 60 * 1000))) return fail("Çok fazla istek. Bir saat sonra tekrar dene.");
+    const { sendVerification } = await import("@/lib/account");
+    const r = await sendVerification(c);
+    if (r.devLink) return ok(`Geliştirme modu (e-posta ayarı yok): ${r.devLink}`);
+    return r.sent ? ok("Doğrulama e-postası gönderildi. Gelen kutunu (ve gereksiz klasörünü) kontrol et.") : fail("E-posta gönderilemedi, lütfen bize yaz.");
+  });
+}
+
+/** KVKK: müşteri hesabını kendisi siler (şifre onayıyla). Sipariş kayıtları yasal süre boyunca anonim olarak kalır. */
+export async function deleteMyAccount(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const res = await safe(async () => {
+    const c = await me();
+    if (c.passwordHash && !(await bcrypt.compare(str(fd.get("password")), c.passwordHash))) return fail("Şifre hatalı.");
+    if (str(fd.get("confirm")).toLocaleUpperCase("tr") !== "SİL") return fail('Onay için kutuya "SİL" yaz.');
+    const open = await db.query.orders.findFirst({ where: and(eq(orders.customerId, c.id), inArray(orders.status, ["PAID", "PREPARING", "SHIPPED"])) });
+    if (open) return fail("Devam eden siparişin var. Teslim edildikten sonra hesabını silebilirsin.");
+    const { anonymizeCustomer } = await import("@/lib/account");
+    await anonymizeCustomer(c.id);
+    await clearSessionCookie(CUSTOMER_COOKIE);
+    return ok("Hesabın silindi.");
+  });
+  // Oturum kapandığı için Hesabım sayfası yeniden çizilemez; doğrudan ana sayfaya yönlendir
+  if (res.ok) redirect("/?hesap=silindi");
+  return res;
 }

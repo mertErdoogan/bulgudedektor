@@ -226,6 +226,11 @@ export function orderKey(orderId: string) {
   return createHmac("sha256", process.env.AUTH_SECRET || "dev-secret").update(`order:${orderId}`).digest("hex").slice(0, 24);
 }
 
+/** E-posta listesinden çıkış bağlantısı için imza (e-postayı bilen herkes başkasını listeden çıkaramasın diye). */
+export function unsubKey(email: string) {
+  return createHmac("sha256", process.env.AUTH_SECRET || "dev-secret").update(`unsub:${email.toLowerCase()}`).digest("hex").slice(0, 24);
+}
+
 export function installmentText(price: number, n: number) {
   return `${n} × ${Math.round(price / n).toLocaleString("tr-TR")} TL`;
 }
@@ -291,3 +296,12 @@ export const getBrandGroups = cache(async (): Promise<BrandGroup[]> => {
     })
     .filter((b) => b.total > 0);
 });
+
+/** Ticari ileti iznini tüm kanallarda geri alır (bülten, müşteri izni, sepet hatırlatma). */
+export async function revokeMarketing(email: string) {
+  const { cartSnapshots, customers, newsletterSubscribers } = await import("@/db/schema");
+  const e = email.toLowerCase();
+  await db.update(newsletterSubscribers).set({ isActive: false }).where(eq(newsletterSubscribers.email, e));
+  await db.update(customers).set({ marketingConsent: false }).where(eq(customers.email, e));
+  await db.update(cartSnapshots).set({ consent: false }).where(eq(cartSnapshots.email, e));
+}
