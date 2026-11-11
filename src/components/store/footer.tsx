@@ -39,7 +39,7 @@ export async function StoreFooter() {
             </p>
           ) : null}
         </div>
-        {groups.map((g) => (
+        {groups.filter((g) => g.links.length).map((g) => (
           <div key={g.title} className="flex flex-col gap-2 text-sm">
             <p className="mb-1 font-bold">{g.title}</p>
             {g.links.map((l) => (
@@ -53,7 +53,7 @@ export async function StoreFooter() {
       <div className="border-t border-white/10">
         <div className="container-x flex flex-wrap items-center justify-between gap-2 py-4 text-xs opacity-60">
           <span>© {new Date().getFullYear()} {s.store.name}. Tüm hakları saklıdır. · <ConsentLink className="underline hover:text-white" /></span>
-          <span>Ödemeler iyzico güvencesiyle 3D Secure · Kart bilgisi saklanmaz</span>
+          <span>Ödemeler {s.payment.provider === "paytr" ? "PayTR" : "iyzico"} güvencesiyle 3D Secure · Kart bilgisi saklanmaz</span>
         </div>
       </div>
     </footer>

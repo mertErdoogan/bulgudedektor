@@ -68,8 +68,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <Stat
               label="Son 30 gün ciro"
               value={formatTL(s30.revenue)}
-              sub={`${change >= 0 ? "▲" : "▼"} %${Math.abs(change).toFixed(1)} önceki 30 güne göre`}
-              tone={change >= 0 ? "ok" : "danger"}
+              sub={sPrev.revenue ? `${change >= 0 ? "▲" : "▼"} %${Math.abs(change).toFixed(1)} önceki 30 güne göre` : "Önceki 30 günde satış yok"}
+              tone={!sPrev.revenue ? undefined : change >= 0 ? "ok" : "danger"}
             />
             <Stat label="Ortalama sepet" value={formatTL(s30.aov)} sub={`${s30.orders} sipariş · ${s30.units} ürün`} />
             <Stat label="Brüt kâr (30 gün)" value={formatTL(s30.grossProfit)} sub={s30.revenue ? `Marj %${((s30.grossProfit / s30.revenue) * 100).toFixed(1)}` : "—"} />

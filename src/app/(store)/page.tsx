@@ -62,6 +62,7 @@ export default async function Home() {
             </section>
           );
         case "CATEGORY_TILES":
+          if (!nav.categories.some((c) => !c.parentId)) return null;
           return (
             <section key={sec.id} className="container-x mt-10">
               <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -170,6 +171,7 @@ export default async function Home() {
 
   return (
     <>
+      {hero.length || side.length ? (
       <section className="bg-soft py-4 md:py-5">
         <div className="container-x grid gap-3 md:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)] md:gap-4">
           <HeroSlider slides={hero} />
@@ -190,6 +192,7 @@ export default async function Home() {
           ) : null}
         </div>
       </section>
+      ) : null}
       {strip ? (
         <Link href={strip.linkUrl || "#"} className="container-x mt-4 block">
           {/* eslint-disable-next-line @next/next/no-img-element */}
