@@ -88,6 +88,8 @@ export const users = pgTable("users", {
   /** Son kabul edilen TOTP adımı: aynı kodun ikinci kez kullanılmasını engeller */
   totpLastStep: integer("totp_last_step"),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+  /** Panel bildirimlerini en son gördüğü an; bundan sonrakiler okunmamış sayılır */
+  notificationsSeenAt: timestamp("notifications_seen_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
 
@@ -415,6 +417,8 @@ export const orders = pgTable(
     /** Satış kanalı: WEB (site), TRENDYOL, MANUAL (panelden). Pazaryeri siparişlerinde externalRef = paket no */
     channel: text("channel").notNull().default("WEB"),
     externalRef: text("external_ref").unique(),
+    /** Siparişle ilgilenen ekip üyesi (iş listesi ataması) */
+    assigneeId: text("assignee_id").references(() => users.id, { onDelete: "set null" }),
     paymentMeta: jsonb("payment_meta").$type<{ paymentId?: string; transactions?: { itemId: string; transactionId: string; price: number }[]; raw?: unknown; transferNotice?: { sender: string; note?: string; receiptUrl?: string | null; at: string } }>(),
     installments: integer("installments").notNull().default(1),
     subtotal: money("subtotal").notNull(),
@@ -435,6 +439,8 @@ export const orders = pgTable(
     invoicedAt: timestamp("invoiced_at", { withTimezone: true }),
     carrier: text("carrier"),
     trackingNumber: text("tracking_number"),
+    /** Ödemenin onaylandığı an (kart: anında, havale: panelden onaylanınca); hazırlık süresi buradan sayılır */
+    paidAt: timestamp("paid_at", { withTimezone: true }),
     shippedAt: timestamp("shipped_at", { withTimezone: true }),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     reviewRequestedAt: timestamp("review_requested_at", { withTimezone: true }),
@@ -672,6 +678,7 @@ export const alertsRelations = relations(stockAlerts, ({ one }) => ({
 }));
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   customer: one(customers, { fields: [orders.customerId], references: [customers.id] }),
+  assignee: one(users, { fields: [orders.assigneeId], references: [users.id] }),
   campaign: one(campaigns, { fields: [orders.campaignId], references: [campaigns.id] }),
   items: many(orderItems),
   events: many(orderEvents),
@@ -773,4 +780,33 @@ export const rateHits = pgTable(
     count: integer("count").notNull().default(1),
   },
   (t) => [primaryKey({ columns: [t.key, t.windowStart] })],
+);
+
+/** Hazır yanıt şablonları: {ad}, {siparis_no}, {tutar}, {kargo_takip} gibi değişkenler gönderimde doldurulur */
+export const replyTemplates = pgTable("reply_templates", {
+  id: id(),
+  title: text("title").notNull(),
+  /** Hangi durumda kullanıldığı: siparis, havale, kargo, servis, iade, genel */
+  category: text("category").notNull().default("genel"),
+  subject: text("subject"),
+  body: text("body").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: createdAt(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Panel bildirimleri. userId boşsa `perm` yetkisine sahip herkese gösterilir. */
+export const staffNotifications = pgTable(
+  "staff_notifications",
+  {
+    id: id(),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+    perm: text("perm"),
+    kind: text("kind").notNull(),
+    title: text("title").notNull(),
+    body: text("body"),
+    href: text("href"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("staff_notifications_created_idx").on(t.createdAt)],
 );

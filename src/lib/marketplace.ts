@@ -55,6 +55,7 @@ export async function importMarketOrders(list: MarketOrder[]) {
           phone: m.phone.replace(/\D/g, "") || "-",
           status: "PAID",
           paymentStatus: "PAID",
+          paidAt: m.date,
           paymentMethod: "CARD",
           paymentRef: m.orderNumber,
           channel: m.channel,
@@ -73,6 +74,10 @@ export async function importMarketOrders(list: MarketOrder[]) {
       await addOrderEvent(tx, o.id, "created", `${LABEL[m.channel]}'dan aktarıldı.`, null, false);
     });
     created++;
+  }
+  if (created) {
+    const { notifyStaff } = await import("./notify");
+    await notifyStaff({ perm: "orders.view", kind: "order", title: `${created} yeni ${LABEL[fresh[0].channel]} siparişi`, href: "/admin/siparisler?durum=PAID" });
   }
   return { created, unmatched: [...new Set(unmatched)] };
 }

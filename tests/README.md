@@ -26,6 +26,7 @@ export DATABASE_URL=postgresql://...   # .env'deki ile aynı
 | `ux_e2e.py` | Son bakılanlar, favoriler, teslimat rozetleri, sosyal kanıt, şifre sıfırlama, çerez onayı |
 | `smart_e2e.py` | Akıllı arama (yazım hatası, Türkçe karakter), öneriler, Hemen al |
 | `features_e2e.py` | Eski adres yönlendirmeleri, yasal metinler, taksit tablosu, varyantlar, 2FA, e-posta doğrulama, KVKK döküm/silme, fatura, müşteri CSV, İYS, tek tıkla çıkış |
+| `team_e2e.py` | İş listesi ve atama, toplu kargo/atama, toplama listesi ve etiket, takip no içe aktarma, hazır yanıtlar, panel bildirimleri |
 | `mobile_overflow.py <yol>` | 390 px genişlikte yatay taşma kontrolü |
 
 Her dosya bağımsızdır; demo veriyi değiştirdikleri için aralarında `npm run db:seed` çalıştırın. Ortam değişkenleri: `BASE_URL`, `DATABASE_URL`, `CHROME`.

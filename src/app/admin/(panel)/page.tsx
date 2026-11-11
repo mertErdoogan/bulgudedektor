@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
-import { AlertTriangle, ArrowRight, MessageCircle, Package, ShoppingBag, Star, Undo2, Wrench } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { db } from "@/db";
-import { conversations, orders, productQuestions, products, returnRequests, reviews, serviceRecords } from "@/db/schema";
+import { orders, products, users } from "@/db/schema";
 import { SalesChart } from "@/components/admin/charts";
+import { WorkList } from "@/components/admin/worklist";
+import { getWorklist, WORK_GROUPS } from "@/lib/worklist";
 import { PageHeader } from "@/components/admin/shell";
 import { OrderStatusBadge } from "@/components/admin/status";
 import { Badge, Card, CardHeader, Stat, Table, Td, Th } from "@/components/ui";
@@ -28,54 +30,36 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const d60 = new Date(today.getTime() - 59 * 86400000);
 
   const n = sql<number>`count(*)::int`;
-  const [sToday, s30, sPrev, series, top, recent, toPrepare, toShip, lowStock, openConv, returns, service, pendingRev, pendingQ] = await Promise.all([
+  const [sToday, s30, sPrev, series, top, recent, lowStock] = await Promise.all([
     salesSummary(today, now),
     salesSummary(d30, now),
     salesSummary(d60, d30),
     dailySeries(d30, now),
     topProducts(d30, now, 5),
     db.query.orders.findMany({ orderBy: desc(orders.createdAt), limit: 8 }),
-    db.select({ n }).from(orders).where(eq(orders.status, "PAID")),
-    db.select({ n }).from(orders).where(eq(orders.status, "PREPARING")),
     db.query.products.findMany({ where: and(eq(products.status, "ACTIVE"), lte(products.stock, products.lowStockThreshold)), orderBy: products.stock, limit: 6 }),
-    db.select({ n }).from(conversations).where(eq(conversations.status, "OPEN")),
-    db.select({ n }).from(returnRequests).where(eq(returnRequests.status, "REQUESTED")),
-    db.select({ n }).from(serviceRecords).where(inArray(serviceRecords.status, ["RECEIVED", "AWAITING_DEVICE", "IN_REPAIR", "WAITING_PART", "READY"])),
-    db.select({ n }).from(reviews).where(eq(reviews.isApproved, false)),
-    db.select({ n }).from(productQuestions).where(sql`${productQuestions.answer} is null`),
   ]);
 
   const change = sPrev.revenue ? ((s30.revenue - sPrev.revenue) / sPrev.revenue) * 100 : 0;
-  const tasks = [
-    { show: can(staff.permissions, "orders.manage"), n: toPrepare[0].n, label: "Hazırlanacak sipariş", href: "/admin/siparisler?durum=PAID", icon: ShoppingBag },
-    { show: can(staff.permissions, "orders.manage"), n: toShip[0].n, label: "Kargoya verilecek", href: "/admin/siparisler?durum=PREPARING", icon: Package },
-    { show: can(staff.permissions, "inbox.manage"), n: openConv[0].n, label: "Yanıt bekleyen mesaj", href: "/admin/mesajlar", icon: MessageCircle },
-    { show: can(staff.permissions, "orders.view"), n: returns[0].n, label: "İade talebi", href: "/admin/iadeler", icon: Undo2 },
-    { show: can(staff.permissions, "service.manage"), n: service[0].n, label: "Açık servis kaydı", href: "/admin/servis", icon: Wrench },
-    { show: can(staff.permissions, "reviews.manage"), n: pendingRev[0].n + pendingQ[0].n, label: "Onay bekleyen yorum / soru", href: "/admin/yorumlar", icon: Star },
-  ].filter((t) => t.show);
+  const [work, team] = await Promise.all([getWorklist(staff.permissions), db.select({ id: users.id, name: users.name }).from(users).where(eq(users.isActive, true))]);
+  const late = work.filter((w) => w.late).length;
 
   return (
     <>
       {yetki === "yok" ? (
         <div className="mb-4 rounded-lg border border-warn/30 bg-warn-bg px-4 py-3 text-sm font-semibold text-warn">Bu sayfaya erişim yetkin yok. Gerekirse yöneticinden iste.</div>
       ) : null}
-      <PageHeader title={`Merhaba ${staff.name.split(" ")[0]}`} description={`${tasks.reduce((a, t) => a + t.n, 0)} iş seni bekliyor · ${formatDate(now)}`} />
+      <PageHeader title={`Merhaba ${staff.name.split(" ")[0]}`} description={`${work.length} iş bekliyor${late ? `, ${late} tanesi gecikmiş` : ""} · ${formatDate(now)}`} />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {tasks.map((t) => (
-          <Link key={t.label} href={t.href} className="group flex items-center gap-3 rounded-xl border border-line bg-white p-4 hover:border-brand">
-            <span className={`grid h-11 w-11 place-items-center rounded-lg ${t.n ? "bg-pop text-on-pop" : "bg-soft text-mute"}`}>
-              <t.icon size={20} />
-            </span>
-            <span className="flex-1">
-              <span className="font-display block text-2xl leading-none font-extrabold">{t.n}</span>
-              <span className="text-sm text-mute">{t.label}</span>
-            </span>
-            <ArrowRight size={18} className="text-mute group-hover:text-brand" />
+      <Card className="p-4">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-lg font-extrabold">Bugün yapılacaklar</h2>
+          <Link href="/admin/isler" className="text-sm font-bold text-link">
+            Tüm iş listesi →
           </Link>
-        ))}
-      </div>
+        </div>
+        <WorkList items={work.map((w) => ({ ...w, at: w.at.toISOString() }))} groups={WORK_GROUPS} me={staff.id} staff={team} compact />
+      </Card>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {finance ? (
@@ -100,7 +84,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         )}
       </div>
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3 [&>*]:min-w-0">
         <Card className="xl:col-span-2">
           <CardHeader title={finance ? "Son 30 gün satış" : "Son 30 gün sipariş"} action={finance ? <Link href="/admin/raporlar" className="text-sm font-bold text-link">Raporlar →</Link> : null} />
           <div className="p-4">
@@ -125,7 +109,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </Card>
       </div>
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3 [&>*]:min-w-0">
         {can(staff.permissions, "orders.view") ? (
           <Card className="xl:col-span-2">
             <CardHeader title="Son siparişler" action={<Link href="/admin/siparisler" className="text-sm font-bold text-link">Tümü →</Link>} />

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { and, desc, eq, gte, ilike, lte, or, sql, type SQL } from "drizzle-orm";
 import { Download, Plus } from "lucide-react";
 import { db } from "@/db";
-import { orders } from "@/db/schema";
+import { orders, users } from "@/db/schema";
 import { Pagination } from "@/components/admin/pagination";
 import { PageHeader } from "@/components/admin/shell";
 import { Button, Card, Input, Select } from "@/components/ui";
@@ -10,6 +10,8 @@ import { requireStaff } from "@/lib/auth";
 import { expireStalePendingOrders } from "@/lib/orders";
 import { can } from "@/lib/permissions";
 import { ORDER_STATUS_LABEL } from "@/lib/utils";
+import { getSettings } from "@/lib/settings";
+import { ImportTracking } from "./import-tracking";
 import { OrderTable } from "./order-table";
 
 export const metadata = { title: "Siparişler" };
@@ -40,10 +42,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
     );
   }
   const where = conds.length ? and(...conds) : undefined;
-  const [rows, [{ total }], counts] = await Promise.all([
-    db.query.orders.findMany({ where, orderBy: desc(orders.createdAt), limit: PER, offset: (page - 1) * PER, with: { items: { columns: { name: true, quantity: true } } } }),
+  const [rows, [{ total }], counts, team, settings] = await Promise.all([
+    db.query.orders.findMany({ where, orderBy: desc(orders.createdAt), limit: PER, offset: (page - 1) * PER, with: { items: { columns: { name: true, quantity: true } }, assignee: { columns: { name: true } } } }),
     db.select({ total: sql<number>`count(*)::int` }).from(orders).where(where),
     db.select({ status: orders.status, n: sql<number>`count(*)::int` }).from(orders).groupBy(orders.status),
+    db.select({ id: users.id, name: users.name }).from(users).where(eq(users.isActive, true)),
+    getSettings(),
   ]);
   const cnt = (s: string) => (s ? counts.find((c) => c.status === s)?.n ?? 0 : counts.reduce((a, c) => a + c.n, 0));
   const base = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && k !== "s" && k !== "durum") as [string, string][]);
@@ -61,6 +65,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                 </a>
               </Button>
             ) : null}
+            {can(staff.permissions, "orders.manage") ? <ImportTracking carriers={settings.shipping.carriers} /> : null}
             {can(staff.permissions, "orders.manage") ? (
               <Button asChild>
                 <Link href="/admin/siparisler/yeni">
@@ -104,7 +109,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
           </Button>
         </form>
       </Card>
-      <OrderTable rows={rows} canManage={can(staff.permissions, "orders.manage")} />
+      <OrderTable rows={rows} canManage={can(staff.permissions, "orders.manage")} team={team} me={staff.id} carriers={settings.shipping.carriers} />
       <Pagination page={page} per={PER} total={total} />
     </>
   );

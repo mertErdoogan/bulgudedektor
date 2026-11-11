@@ -155,6 +155,8 @@ export async function requestReturn(_: ActionResult | null, fd: FormData): Promi
     if (!reason) return fail("İade sebebini seç.");
     await db.insert(returnRequests).values({ orderId, customerId: c.id, reason, details: strOrNull(fd.get("details")) });
     await addOrderEvent(db, orderId, "return", "İade talebin alındı. Onaylanınca ücretsiz kargo kodu göndereceğiz.");
+    const { notifyStaff } = await import("@/lib/notify");
+    await notifyStaff({ perm: "orders.view", kind: "return", title: `İade talebi · ${c.name}`, body: reason, href: "/admin/iadeler" });
     revalidatePath("/hesabim");
     return ok("İade talebin alındı. 1 iş günü içinde ücretsiz kargo kodunu ileteceğiz.", { redirect: "/hesabim?t=siparisler" });
   });
@@ -171,6 +173,8 @@ export async function requestService(_: ActionResult | null, fd: FormData): Prom
       .insert(serviceRecords)
       .values({ customerId: c.id, contactName: c.name, contact: c.phone ?? c.email ?? "", productName, serial, issue, status: "AWAITING_DEVICE", history: [{ status: "RECEIVED", at: new Date().toISOString() }, { status: "AWAITING_DEVICE", at: new Date().toISOString(), note: "Ücretsiz kargo kodun hazırlanıyor." }] })
       .returning();
+    const { notifyStaff } = await import("@/lib/notify");
+    await notifyStaff({ perm: "service.manage", kind: "service", title: `Servis talebi #${r.number} · ${productName}`, body: `${c.name}: ${issue.slice(0, 140)}`, href: `/admin/servis?id=${r.id}` });
     revalidatePath("/hesabim");
     return ok(`Servis kaydın açıldı (#${r.number}). Ücretsiz kargo kodunu SMS ile göndereceğiz.`, { redirect: "/hesabim?t=servis" });
   });

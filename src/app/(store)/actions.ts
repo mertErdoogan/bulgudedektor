@@ -31,6 +31,8 @@ export async function askQuestion(_: ActionResult | null, fd: FormData): Promise
     await db.insert(productQuestions).values({ productId, name, contact, question });
     const [c] = await db.insert(conversations).values({ contactName: name, contact, subject: `Ürün sorusu: ${p.name}`, channel: "WEB", productId }).returning();
     await db.insert(messages).values({ conversationId: c.id, body: question });
+    const { notifyStaff } = await import("@/lib/notify");
+    await notifyStaff({ perm: "inbox.manage", kind: "message", title: `Ürün sorusu: ${p.name}`, body: `${name}: ${question.slice(0, 140)}`, href: `/admin/mesajlar?id=${c.id}` });
     return ok("Sorun alındı. Uzmanımız en kısa sürede yanıtlayacak.");
   });
 }
@@ -80,6 +82,8 @@ export async function contactForm(_: ActionResult | null, fd: FormData): Promise
     const cust = await db.query.customers.findFirst({ where: contact.includes("@") ? eq(customers.email, contact) : eq(customers.phone, contact) });
     const [c] = await db.insert(conversations).values({ contactName: name, contact, subject, channel: "WEB", customerId: cust?.id ?? null }).returning();
     await db.insert(messages).values({ conversationId: c.id, body });
+    const { notifyStaff } = await import("@/lib/notify");
+    await notifyStaff({ perm: "inbox.manage", kind: "message", title: `Yeni mesaj: ${subject}`, body: `${name}: ${body.slice(0, 140)}`, href: `/admin/mesajlar?id=${c.id}` });
     return ok("Mesajın alındı. Çalışma saatlerinde en geç birkaç saat içinde dönüyoruz.");
   });
 }

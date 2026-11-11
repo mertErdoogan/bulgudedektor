@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { Printer } from "lucide-react";
 import { db } from "@/db";
-import { orderEvents, orders, serialNumbers } from "@/db/schema";
+import { orderEvents, orders, replyTemplates, serialNumbers, users } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { ActionButton } from "@/components/admin/delete-button";
 import { PageHeader } from "@/components/admin/shell";
@@ -13,9 +13,13 @@ import { requireStaff } from "@/lib/auth";
 import { ORDER_FLOW } from "@/lib/orders";
 import { can } from "@/lib/permissions";
 import { getSettings } from "@/lib/settings";
+import { AssignSelect } from "@/components/admin/worklist";
+import { TemplateComposer } from "@/components/admin/template-composer";
+import { orderVars } from "@/lib/templates";
+import { sendOrderMessage } from "../../sablonlar/actions";
 import { orderKey } from "@/lib/store";
 import { ORDER_STATUS_LABEL, formatDate, formatTL, orderNo } from "@/lib/utils";
-import { addCustomerMessage, assignSerials, changeStatus, saveInternalNote, saveInvoice, unassignSerial, updateShippingAddress } from "../actions";
+import { assignSerials, changeStatus, saveInternalNote, saveInvoice, unassignSerial, updateShippingAddress } from "../actions";
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
   const staff = await requireStaff("orders.view");
@@ -32,7 +36,20 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
   });
   if (!o) notFound();
   const tn = o.paymentMeta?.transferNotice;
-  const settings = await getSettings();
+  const [settings, team, templates] = await Promise.all([
+    getSettings(),
+    db.select({ id: users.id, name: users.name }).from(users).where(eq(users.isActive, true)),
+    db.select({ id: replyTemplates.id, title: replyTemplates.title, category: replyTemplates.category, subject: replyTemplates.subject, body: replyTemplates.body }).from(replyTemplates).orderBy(asc(replyTemplates.sortOrder), asc(replyTemplates.title)),
+  ]);
+  const tplVars = orderVars(o, {
+    store: settings.store,
+    banks: settings.payment.bankAccounts,
+    trackingTemplates: settings.shipping.trackingUrlTemplate,
+    orderLink: `${process.env.APP_URL || ""}/siparis/${o.id}?k=${orderKey(o.id)}`,
+    staffName: staff.name,
+    formatTL,
+    orderNo,
+  });
   const waNo = o.phone.replace(/\D/g, "").replace(/^0/, "90").replace(/^5/, "905");
   const trackLink = o.carrier && o.trackingNumber ? settings.shipping.trackingUrlTemplate[o.carrier]?.replace("{code}", o.trackingNumber) : null;
   const waText = [
@@ -62,6 +79,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
         description={
           <span className="flex flex-wrap items-center gap-2">
             <OrderStatusBadge status={o.status} /> <PaymentStatusBadge status={o.paymentStatus} /> {formatDate(o.createdAt, true)}
+            {manage ? <AssignSelect type="order" id={o.id} current={o.assigneeId} me={staff.id} staff={team} /> : null}
           </span>
         }
         actions={
@@ -187,8 +205,8 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             </Card>
           ) : null}
 
-          <Card>
-            <CardHeader title="Ürünler" />
+          <Card id="seri" className="scroll-mt-20">
+            <CardHeader title="Ürünler" description="Seri takipli cihazlar için seri numarasını buradan atayın." />
             <Table>
               <thead>
                 <tr>
@@ -291,11 +309,18 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               ))}
             </ol>
             {manage ? (
-              <ActionForm action={addCustomerMessage} resetOnSuccess className="flex gap-2 border-t border-line p-4">
-                <input type="hidden" name="orderId" value={o.id} />
-                <Input name="message" placeholder="Müşterinin takip sayfasına not ekle (ör. 'Faturanız e-postanıza gönderildi')" />
-                <SubmitButton variant="outline">Ekle</SubmitButton>
-              </ActionForm>
+              <div className="border-t border-line p-4" id="mesaj">
+                <p className="mb-2 text-sm font-bold">Müşteriye mesaj</p>
+                <TemplateComposer
+                  templates={templates}
+                  vars={tplVars}
+                  phone={o.phone}
+                  action={sendOrderMessage}
+                  hidden={{ orderId: o.id }}
+                  canEmail={!o.email.endsWith(".local")}
+                  suggest={o.status === "PENDING_PAYMENT" && o.paymentMethod === "TRANSFER" ? "havale" : o.status === "SHIPPED" ? "kargo" : o.status === "DELIVERED" ? "satis" : "siparis"}
+                />
+              </div>
             ) : null}
           </Card>
         </div>

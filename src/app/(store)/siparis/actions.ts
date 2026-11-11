@@ -39,6 +39,8 @@ export async function notifyTransfer(_: ActionResult | null, fd: FormData): Prom
       .where(eq(orders.id, o.id));
     await addOrderEvent(db, o.id, "transfer_notice", "Ödeme bildirimin alındı. Hesabımıza geçtiğini kontrol edip siparişini onaylayacağız.");
     await addOrderEvent(db, o.id, "transfer_notice", `Müşteri havale bildirdi · Gönderen: ${sender}${note ? ` · Not: ${note}` : ""}${receiptUrl ? ` · Dekont: ${receiptUrl}` : ""}`, null, false);
+    const { notifyStaff } = await import("@/lib/notify");
+    await notifyStaff({ perm: "orders.manage", kind: "transfer", title: `Havale bildirimi ${orderNo(o.number)} · ${formatTL(o.total)}`, body: `Gönderen: ${sender}${receiptUrl ? " · dekont yüklendi" : ""}`, href: `/admin/siparisler/${o.id}` });
     const s = await getSettings();
     if (s.integrations.notifyEmail)
       void sendMail(

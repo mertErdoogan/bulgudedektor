@@ -4,7 +4,13 @@ export type NavItem = { href: string; label: string; icon: string; perm: Permiss
 export type NavGroup = { label: string; items: NavItem[] };
 
 export const NAV: NavGroup[] = [
-  { label: "", items: [{ href: "/admin", label: "Pano", icon: "LayoutDashboard", perm: "dashboard.view" }] },
+  {
+    label: "",
+    items: [
+      { href: "/admin", label: "Pano", icon: "LayoutDashboard", perm: "dashboard.view" },
+      { href: "/admin/isler", label: "İş listesi", icon: "ListChecks", perm: "dashboard.view", badgeKey: "myWork" },
+    ],
+  },
   {
     label: "Satış",
     items: [
@@ -27,6 +33,7 @@ export const NAV: NavGroup[] = [
     items: [
       { href: "/admin/musteriler", label: "Müşteriler", icon: "Users", perm: "customers.view" },
       { href: "/admin/mesajlar", label: "Mesajlar", icon: "MessageCircle", perm: "inbox.manage", badgeKey: "openMessages" },
+      { href: "/admin/sablonlar", label: "Hazır yanıtlar", icon: "MessageSquareText", perm: "inbox.manage" },
       { href: "/admin/servis", label: "Servis", icon: "Wrench", perm: "service.manage", badgeKey: "openService" },
       { href: "/admin/yorumlar", label: "Yorum ve sorular", icon: "Star", perm: "reviews.manage", badgeKey: "pendingReviews" },
     ],

@@ -8,6 +8,7 @@ import { DEFAULT_ROLES } from "../src/lib/permissions";
 import { seedContent } from "./seed-content";
 import { LEGACY_REDIRECTS } from "./lib/arena-map";
 import { LEGAL_PAGES } from "./lib/legal-texts";
+import { DEFAULT_TEMPLATES } from "../src/lib/templates";
 
 const img = (f: string) => `/demo/${f}.jpg`;
 const daysAgo = (d: number, h = 12) => new Date(Date.now() - d * 86400000 - h * 3600000);
@@ -17,7 +18,7 @@ async function main() {
   console.log("Tablolar temizleniyor…");
   await db.execute(sql`TRUNCATE roles, users, audit_logs, brands, categories, products, product_images, serial_numbers, stock_movements,
     media_assets, customers, addresses, customer_notes, conversations, messages, service_records, reviews, product_questions, stock_alerts,
-    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects, search_queries, product_activity, favorites, cart_snapshots, password_resets RESTART IDENTITY CASCADE`);
+    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects, search_queries, product_activity, favorites, cart_snapshots, password_resets, reply_templates, staff_notifications, rate_hits RESTART IDENTITY CASCADE`);
 
   // Roller ve ekip
   const roleRows = await db.insert(t.roles).values(DEFAULT_ROLES.map((r) => ({ ...r, permissions: [...r.permissions], isSystem: r.key === "admin" }))).returning();
@@ -149,6 +150,9 @@ async function main() {
     { location: "FOOTER_HELP", label: "İletişim", url: "/iletisim", sortOrder: 4 },
   ]);
   await db.insert(t.pages).values(LEGAL_PAGES);
+  // Hazır yanıt şablonları (yalnızca hiç yoksa)
+  if (!(await db.select({ id: t.replyTemplates.id }).from(t.replyTemplates).limit(1)).length)
+    await db.insert(t.replyTemplates).values(DEFAULT_TEMPLATES.map((x, i) => ({ ...x, sortOrder: i })));
   // Demo varyant: aynı ailenin iki modeli ürün sayfasında seçenek olarak görünür
   await db.update(t.products).set({ variantGroup: "minelab-gp", variantLabel: "GPZ 8000 · ZVT" }).where(sql`${t.products.slug} = 'gpz-8000'`);
   await db.update(t.products).set({ variantGroup: "minelab-gp", variantLabel: "GPX 6000 · PI" }).where(sql`${t.products.slug} = 'gpx-6000'`);
@@ -180,8 +184,12 @@ async function main() {
     const second = Math.random() > 0.75 ? rand(prodRows.filter((x) => x.categoryId === cat("pointer") || x.categoryId === cat("baslik-ve-aksesuar"))) : null;
     const items = [{ p, qty }, ...(second && second.id !== p.id ? [{ p: second, qty: 1 }] : [])];
     const subtotal = items.reduce((s, x) => s + x.p.price * x.qty, 0);
-    const status = i < 4 ? rand(["PAID", "PREPARING"] as const) : rand(statuses);
-    const created = daysAgo(Math.floor(Math.random() * 60), Math.floor(Math.random() * 20));
+    // Açık (hazırlanacak/kargolanacak) siparişler son 2 güne düşer; eski tarihli açık sipariş gerçekçi olmaz
+    const status = i < 4 ? rand(["PAID", "PREPARING"] as const) : (() => {
+      const st = rand(statuses);
+      return st === "PAID" || st === "PREPARING" ? rand(["DELIVERED", "SHIPPED"] as const) : st;
+    })();
+    const created = status === "PAID" || status === "PREPARING" ? new Date(Date.now() - (2 + i * 9) * 3600_000) : status === "SHIPPED" ? daysAgo(1 + (i % 3), 0) : daysAgo(4 + Math.floor(Math.random() * 56), Math.floor(Math.random() * 20));
     const [o] = await db
       .insert(t.orders)
       .values({
@@ -190,6 +198,7 @@ async function main() {
         phone: c.phone!,
         status,
         paymentStatus: status === "CANCELLED" ? "FAILED" : "PAID",
+        paidAt: status === "CANCELLED" ? null : created,
         paymentMethod: Math.random() > 0.8 ? "TRANSFER" : "CARD",
         installments: rand([1, 1, 3, 3, 6]),
         subtotal,
@@ -198,6 +207,8 @@ async function main() {
         carrier: ["SHIPPED", "DELIVERED"].includes(status) ? "Yurtiçi Kargo" : null,
         trackingNumber: ["SHIPPED", "DELIVERED"].includes(status) ? String(700000000 + i * 137) : null,
         shippedAt: ["SHIPPED", "DELIVERED"].includes(status) ? new Date(created.getTime() + 86400000) : null,
+        // Teslim edilmiş eski siparişlerin çoğunun faturası eklenmiş olsun (iş listesinde birkaç eksik kalsın)
+        ...(status === "DELIVERED" && i % 6 ? { invoiceNo: `ARN2026${String(100000 + i)}`, invoiceUrl: "/demo/fatura-ornek.pdf", invoicedAt: new Date(created.getTime() + 86400000) } : {}),
         deliveredAt: status === "DELIVERED" ? new Date(created.getTime() + 3 * 86400000) : null,
         createdAt: created,
       })

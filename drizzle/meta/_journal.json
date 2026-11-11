@@ -92,6 +92,20 @@
       "when": 1794348790529,
       "tag": "0012_numerous_argent",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794426191110,
+      "tag": "0013_mysterious_firebrand",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794426274368,
+      "tag": "0014_parallel_vampiro",
+      "breakpoints": true
     }
   ]
 }

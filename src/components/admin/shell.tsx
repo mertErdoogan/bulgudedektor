@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import * as Icons from "lucide-react";
+import { NotificationBell } from "./notification-bell";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import { NAV } from "./nav";
@@ -91,6 +92,7 @@ export function AdminShell({ user, badges, setupPending, logout, children }: Pro
             <input name="q" placeholder="Sipariş no, müşteri, ürün, seri no…" className="h-10 w-full bg-transparent text-sm outline-none" />
           </form>
           <div className="ml-auto flex items-center gap-2">
+            <NotificationBell />
             <Link href="/" target="_blank" className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-soft sm:flex">
               <Icons.ExternalLink size={15} /> Mağazayı aç
             </Link>

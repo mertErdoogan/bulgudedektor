@@ -8,6 +8,7 @@ import * as t from "../src/db/schema";
 import { DEFAULT_ROLES } from "../src/lib/permissions";
 import { LEGACY_REDIRECTS } from "./lib/arena-map";
 import { LEGAL_PAGES } from "./lib/legal-texts";
+import { DEFAULT_TEMPLATES } from "../src/lib/templates";
 
 async function main() {
   for (const r of DEFAULT_ROLES) {
@@ -36,6 +37,9 @@ async function main() {
     ]);
   // Yasal sayfalar (şirket bilgileri ayarlardan otomatik dolar) ve eski site adres yönlendirmeleri
   for (const p of LEGAL_PAGES) await db.insert(t.pages).values(p).onConflictDoNothing();
+  // Hazır yanıt şablonları (yalnızca hiç yoksa)
+  if (!(await db.select({ id: t.replyTemplates.id }).from(t.replyTemplates).limit(1)).length)
+    await db.insert(t.replyTemplates).values(DEFAULT_TEMPLATES.map((x, i) => ({ ...x, sortOrder: i })));
   await db.insert(t.redirects).values(LEGACY_REDIRECTS.map(([fromPath, toPath]) => ({ fromPath, toPath }))).onConflictDoNothing();
   const [{ m }] = await db.select({ m: sql<number>`count(*)::int` }).from(t.menuItems);
   if (!m)

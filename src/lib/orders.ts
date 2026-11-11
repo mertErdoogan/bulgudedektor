@@ -52,6 +52,15 @@ async function notifyPlaced(orderId: string) {
   await mailOrderPlaced(o, link);
   const { smsOrderEvent } = await import("./sms");
   await smsOrderEvent("placed", { phone: o.phone, number: o.number, link });
+  const { notifyStaff } = await import("./notify");
+  const { formatTL, orderNo } = await import("./utils");
+  await notifyStaff({
+    perm: "orders.view",
+    kind: "order",
+    title: `Yeni sipariş ${orderNo(o.number)} · ${formatTL(o.total)}`,
+    body: `${o.shippingAddress?.fullName ?? o.email} · ${o.items.map((i) => `${i.quantity}× ${i.name}`).join(", ").slice(0, 120)}${o.paymentMethod === "TRANSFER" && o.paymentStatus !== "PAID" ? " · havale bekleniyor" : ""}`,
+    href: `/admin/siparisler/${o.id}`,
+  });
 }
 export { notifyPlaced };
 
@@ -73,7 +82,9 @@ async function markOrderPaidTx(orderId: string, meta: { paymentId?: string; tran
         paymentStatus: "PAID",
         status: o.status === "PENDING_PAYMENT" ? "PAID" : o.status,
         paymentRef: meta.paymentId ?? o.paymentRef,
-        paymentMeta: { paymentId: meta.paymentId, transactions: meta.transactions, raw: meta.raw },
+        // Havale bildirimi gibi önceki ödeme bilgileri korunur
+        paymentMeta: { ...(o.paymentMeta ?? {}), paymentId: meta.paymentId, transactions: meta.transactions, raw: meta.raw },
+        paidAt: new Date(),
         installments: meta.installments ?? o.installments,
       })
       .where(eq(orders.id, orderId))

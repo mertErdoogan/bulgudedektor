@@ -111,6 +111,9 @@ export async function GET(req: Request) {
     return 1;
   });
 
+  // Panel bildirimleri 30 günden eskiyse silinir
+  await run("notifications", async () => (await import("@/lib/notify")).pruneNotifications());
+
   // 6) Hepsiburada (ayarlarda açıksa)
   await run("hepsiburada", async () => {
     const { isHepsiburadaOn, hepsiburadaSync } = await import("@/lib/hepsiburada");

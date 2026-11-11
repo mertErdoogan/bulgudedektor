@@ -1,30 +1,26 @@
 import Link from "next/link";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { conversations, messages, users } from "@/db/schema";
+import { conversations, messages, replyTemplates, users } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { PageHeader } from "@/components/admin/shell";
 import { Badge, Card, CardHeader, EmptyState, Field, Input, Select, Textarea } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
+import { storeVars } from "@/lib/templates";
+import { TemplateInsert } from "@/components/admin/template-composer";
 import { CHANNEL_LABEL, formatDate } from "@/lib/utils";
 import { logConversation, reply, setConversation } from "./actions";
 
 export const metadata = { title: "Mesajlar" };
 const ST: Record<string, { label: string; tone: "gold" | "warn" | "ok" }> = { OPEN: { label: "Yanıt bekliyor", tone: "gold" }, PENDING: { label: "Müşteride", tone: "warn" }, CLOSED: { label: "Kapandı", tone: "ok" } };
 
-const TEMPLATES = [
-  "Merhaba, ilginiz için teşekkürler. Hangi bölgede ve ne aramayı düşünüyorsunuz? Size en uygun cihazı birlikte seçelim.",
-  "Siparişiniz kargoya verildi, takip numarası sipariş sayfanızda. Herhangi bir sorunda buradayız.",
-  "Cihazınızı ücretsiz kargo koduyla gönderebilirsiniz; servis kaydınızı hesabınızdan takip edebilirsiniz.",
-  "Görüntülü görüşme için uygun olduğunuz saati yazar mısınız? Cihazı kamerada gösterelim.",
-];
 
 export default async function InboxPage({ searchParams }: { searchParams: Promise<{ id?: string; durum?: string; yeni?: string }> }) {
   const staff = await requireStaff("inbox.manage");
   const sp = await searchParams;
   const status = (sp.durum ?? "OPEN") as "OPEN" | "PENDING" | "CLOSED" | "ALL";
-  const [list, team, settings] = await Promise.all([
+  const [list, team, settings, templates] = await Promise.all([
     db.query.conversations.findMany({
       where: status === "ALL" ? undefined : eq(conversations.status, status),
       orderBy: desc(conversations.updatedAt),
@@ -33,6 +29,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     }),
     db.select({ id: users.id, name: users.name }).from(users).where(eq(users.isActive, true)),
     getSettings(),
+    db.select({ id: replyTemplates.id, title: replyTemplates.title, category: replyTemplates.category, subject: replyTemplates.subject, body: replyTemplates.body }).from(replyTemplates).orderBy(asc(replyTemplates.sortOrder), asc(replyTemplates.title)),
   ]);
   const selId = sp.id ?? list[0]?.id;
   const sel = selId
@@ -128,10 +125,10 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
             <ActionForm action={reply} resetOnSuccess className="flex flex-col gap-2 border-t border-line p-4">
               <input type="hidden" name="conversationId" value={sel.id} />
               <Textarea name="body" placeholder="Yanıtını yaz… (WhatsApp/telefon konuşmalarında yanıtını buraya da not et)" required />
-              <details className="text-sm">
-                <summary className="cursor-pointer font-semibold text-link">Hazır yanıtlar</summary>
-                <ul className="mt-2 flex flex-col gap-1 text-mute">{TEMPLATES.map((t) => <li key={t} className="rounded bg-soft p-2 select-all">{t}</li>)}</ul>
-              </details>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <TemplateInsert templates={templates} vars={{ ...storeVars(settings.store, settings.payment.bankAccounts, staff.name), ad: sel.contactName.split(" ")[0], ad_soyad: sel.contactName }} />
+                <Link href="/admin/sablonlar" className="text-xs font-semibold text-link">Şablonları düzenle</Link>
+              </div>
               <div className="flex flex-wrap items-center justify-end gap-2">
                 {sel.contact.startsWith("+") && settings.store.whatsapp ? (
                   <a href={`https://wa.me/${sel.contact.replace(/\D/g, "")}`} target="_blank" className="mr-auto text-sm font-bold text-[#128c4a]">WhatsApp&apos;ta aç →</a>

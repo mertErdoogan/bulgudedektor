@@ -113,21 +113,75 @@ export async function bulkStatus(_: ActionResult | null, fd: FormData): Promise<
   return safe(async () => {
     const staff = await assertStaff("orders.manage");
     const ids = fd.getAll("ids").map(String);
-    const to = str(fd.get("to")) as Status;
+    const to = str(fd.get("to"));
     if (!ids.length) return fail("Sipariş seçin.");
-    if (!["PREPARING", "DELIVERED"].includes(to)) return fail("Toplu işlemde sadece 'Hazırlanıyor' ve 'Teslim edildi' kullanılabilir.");
+    // Atama da toplu işlem menüsünden yapılır
+    if (to === "ASSIGN_ME" || to.startsWith("ASSIGN:") || to === "UNASSIGN") {
+      const userId = to === "ASSIGN_ME" ? staff.id : to === "UNASSIGN" ? null : to.slice(7);
+      await db.update(orders).set({ assigneeId: userId }).where(inArray(orders.id, ids));
+      await audit(staff.id, "update", "order", null, `${ids.length} sipariş ${userId ? "atandı" : "atamadan çıkarıldı"}`);
+      if (userId && userId !== staff.id) {
+        const { notifyStaff } = await import("@/lib/notify");
+        await notifyStaff({ userId, kind: "assigned", title: `${staff.name} sana ${ids.length} sipariş atadı`, href: "/admin/isler" });
+      }
+      revalidatePath("/admin", "layout");
+      return ok(userId ? `${ids.length} sipariş atandı.` : "Atamalar kaldırıldı.");
+    }
+    if (!["PREPARING", "SHIPPED", "DELIVERED"].includes(to)) return fail("Geçersiz işlem.");
+    const carrier = strOrNull(fd.get("carrier"));
     let done = 0;
     const errors: string[] = [];
     for (const id of ids) {
       try {
-        await transition(id, to, staff);
+        await transition(id, to as Status, staff, to === "SHIPPED" ? { carrier, tracking: strOrNull(fd.get(`tracking_${id}`)) } : {});
         done++;
       } catch (e) {
         errors.push(e instanceof Error ? e.message : "hata");
       }
     }
     revalidatePath("/admin", "layout");
-    return done ? ok(`${done} sipariş güncellendi.${errors.length ? ` ${errors.length} sipariş atlandı (uygun durumda değil).` : ""}`) : fail(errors[0] ?? "Güncellenemedi.");
+    const skipped = errors.length ? ` ${errors.length} sipariş atlandı: ${[...new Set(errors)].slice(0, 2).join(" · ")}` : "";
+    return done ? ok(`${done} sipariş güncellendi.${skipped}`) : fail(errors[0] ?? "Güncellenemedi.");
+  });
+}
+
+/**
+ * Kargo firmasının günlük gönderi listesinden takip numaralarını toplu girer ve siparişleri "Kargoya verildi" yapar.
+ * Satır biçimi: sipariş no ; takip no [; kargo firması]   (ayırıcı ; , veya sekme; başlık satırı olabilir)
+ */
+export async function importTracking(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("orders.manage");
+    const file = fd.get("file");
+    const text = file instanceof File && file.size ? await file.text() : str(fd.get("text"));
+    if (!text.trim()) return fail("CSV dosyası seçin ya da satırları yapıştırın.");
+    const defCarrier = strOrNull(fd.get("carrier"));
+    const lines = text
+      .replace(/^\uFEFF/, "")
+      .split(/\r?\n/)
+      .map((l) => l.split(/[;,\t]/).map((x) => x.trim().replace(/^"|"$/g, "")))
+      .filter((c) => c.length >= 2 && /\d/.test(c[0]) && c[1]);
+    if (!lines.length) return fail("Okunabilir satır yok. Biçim: sipariş no ; takip no ; kargo firması");
+    let done = 0;
+    const errors: string[] = [];
+    for (const [no, tracking, carrier] of lines) {
+      const num = Number(no.replace(/\D/g, ""));
+      const o = num ? await db.query.orders.findFirst({ where: eq(orders.number, num), columns: { id: true } }) : null;
+      if (!o) {
+        errors.push(`${no}: sipariş bulunamadı`);
+        continue;
+      }
+      try {
+        await transition(o.id, "SHIPPED", staff, { carrier: carrier || defCarrier, tracking });
+        done++;
+      } catch (e) {
+        errors.push(`${no}: ${e instanceof Error ? e.message : "hata"}`);
+      }
+    }
+    revalidatePath("/admin", "layout");
+    const msg = `${done} sipariş kargoya verildi.`;
+    if (!done) return fail(errors.slice(0, 4).join(" · ") || "Hiçbir sipariş güncellenmedi.");
+    return ok(errors.length ? `${msg} Atlananlar: ${errors.slice(0, 4).join(" · ")}${errors.length > 4 ? ` (+${errors.length - 4})` : ""}` : msg);
   });
 }
 
