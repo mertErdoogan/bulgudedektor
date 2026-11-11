@@ -125,7 +125,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       .where(and(eq(productActivity.productId, p.id), sql`${productActivity.hour} > now() - interval '24 hours'`)),
   ]);
   const ctx = cardCtx(s);
-  const banks = s.payment.cardEnabled && p.price >= 1000 ? await installmentTable(p.price, s.payment.maxInstallment) : null;
+  const banks = s.payment.cardEnabled && s.payment.provider !== "paytr" && p.price >= 1000 ? await installmentTable(p.price, s.payment.maxInstallment) : null;
   const faqItems = [...toQA(dbFaq), ...autoFaq(p, s)];
 
   return (

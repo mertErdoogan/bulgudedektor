@@ -81,8 +81,22 @@ export async function savePayment(_: ActionResult | null, fd: FormData): Promise
     if (bankAccounts.some((b) => b.iban && !/^TR\d{2}[\d ]{20,30}$/.test(b.iban))) return fail("IBAN formatı TR ile başlamalı (TR00 0000 ...).");
     const transferEnabled = fd.get("transferEnabled") === "on";
     if (transferEnabled && !bankAccounts.length) return fail("Havale açık ise en az bir banka hesabı girin.");
+    const provider = str(fd.get("provider")) === "paytr" ? "paytr" : "iyzico";
+    const keepSecret = (name: "paytrMerchantKey" | "paytrMerchantSalt") => {
+      const v = str(fd.get(name));
+      return v && !v.includes("•") ? v : cur[name];
+    };
+    const paytr = { paytrMerchantId: str(fd.get("paytrMerchantId")).replace(/\D/g, ""), paytrMerchantKey: keepSecret("paytrMerchantKey"), paytrMerchantSalt: keepSecret("paytrMerchantSalt") };
+    const iyziOk = !!((apiKey && !apiKey.includes("•") ? apiKey : cur.iyzicoApiKey) && (secret && !secret.includes("•") ? secret : cur.iyzicoSecretKey));
+    const paytrOk = !!(paytr.paytrMerchantId && paytr.paytrMerchantKey && paytr.paytrMerchantSalt);
+    if (fd.get("cardEnabled") === "on" && provider === "paytr" && !paytrOk) return fail("PayTR'ı aktif yapmak için mağaza no, mağaza parolası (key) ve gizli anahtar (salt) gerekli.");
+    if (fd.get("cardEnabled") === "on" && provider === "iyzico" && !iyziOk && !process.env.IYZICO_API_KEY && process.env.PAYMENT_SIMULATION !== "1" && process.env.PAYMENT_SIMULATION !== "force-test-only")
+      return fail("iyzico'yu aktif yapmak için API ve gizli anahtar gerekli.");
     await saveSettings("payment", {
       cardEnabled: fd.get("cardEnabled") === "on",
+      provider,
+      ...paytr,
+      paytrTestMode: fd.get("paytrTestMode") === "on",
       iyzicoApiKey: apiKey && !apiKey.includes("•") ? apiKey : cur.iyzicoApiKey,
       iyzicoSecretKey: secret && !secret.includes("•") ? secret : cur.iyzicoSecretKey,
       iyzicoSandbox: fd.get("iyzicoSandbox") === "on",
@@ -99,6 +113,7 @@ export async function savePayment(_: ActionResult | null, fd: FormData): Promise
       transferDiscountPct: Math.max(0, Math.min(20, toNum(fd.get("transferDiscountPct"), 0))),
       bankAccounts,
     });
+    if (provider !== cur.provider) await audit(staff.id, "settings", "settings", "payment", `Kart ödeme kuruluşu değişti: ${cur.provider} → ${provider}`);
     return fin(staff.id, "payment");
   });
 }
@@ -110,6 +125,15 @@ export async function generateIndexNowKey(): Promise<ActionResult> {
     const key = crypto.randomUUID().replace(/-/g, "");
     await saveSettings("seo", { ...cur, indexNowKey: key });
     return fin(staff.id, "seo");
+  });
+}
+
+export async function testPaytr(): Promise<ActionResult> {
+  return safe(async () => {
+    await assertStaff("payments.manage");
+    const { testConnection: t } = await import("@/lib/paytr");
+    const r = await t();
+    return r.ok ? ok(r.message) : fail(r.message);
   });
 }
 

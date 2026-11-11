@@ -147,7 +147,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
             </Field>
           ) : null}
           {pay === "CARD" ? (
-            <p className="mt-3 flex items-center gap-2 rounded-lg bg-soft p-3 text-xs text-mute"><Lock size={14} /> &quot;Ödemeye geç&quot; dediğinde iyzico&apos;nun güvenli ödeme sayfası açılır. Kart bilgin sitemizde saklanmaz.</p>
+            <p className="mt-3 flex items-center gap-2 rounded-lg bg-soft p-3 text-xs text-mute"><Lock size={14} /> &quot;Ödemeye geç&quot; dediğinde lisanslı ödeme kuruluşunun güvenli ödeme sayfası açılır (3D Secure). Kart bilgin sitemizde saklanmaz.</p>
           ) : bankAccounts.length ? (
             <div className="mt-3 rounded-lg bg-soft p-3 text-xs">{bankAccounts.map((b) => <p key={b.iban}><b>{b.bank}</b> · {b.holder} · <span className="font-mono">{b.iban}</span></p>)}</div>
           ) : null}

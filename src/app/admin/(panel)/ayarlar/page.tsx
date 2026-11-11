@@ -6,7 +6,7 @@ import { Badge, Card, CardHeader, Checkbox, Field, Input, Select, Textarea } fro
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSettings } from "@/lib/settings";
-import { generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testSms, trendyolSyncNow } from "./actions";
+import { generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
 
 export const metadata = { title: "Ayarlar" };
 const mask = (v: string) => (v ? `${v.slice(0, 4)}••••••••${v.slice(-3)}` : "");
@@ -105,14 +105,43 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <Card>
             <CardHeader
               title="Ödeme"
-              description="Kart bilgisi sitenizde tutulmaz: ödeme iyzico'nun güvenli formunda alınır (3D Secure)."
-              action={s.payment.iyzicoApiKey ? <Badge tone="ok">iyzico bağlı</Badge> : <Badge tone="warn">iyzico anahtarı yok</Badge>}
+              description="Kart bilgisi sitenizde tutulmaz: ödeme seçilen kuruluşun güvenli formunda alınır (3D Secure)."
+              action={<Badge tone="ok">Aktif: {s.payment.provider === "paytr" ? "PayTR" : "iyzico"}</Badge>}
             />
             <ActionForm action={savePayment} className="grid gap-4 p-5 md:grid-cols-2">
-              <Checkbox name="cardEnabled" defaultChecked={s.payment.cardEnabled} label="Kredi / banka kartı ile ödeme (iyzico)" className="md:col-span-2" />
+              <Checkbox name="cardEnabled" defaultChecked={s.payment.cardEnabled} label="Kredi / banka kartı ile ödeme" className="md:col-span-2" />
+              <fieldset className="md:col-span-2">
+                <legend className="mb-2 text-sm font-bold">Kartla ödemeyi alacak kuruluş</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {(
+                    [
+                      ["iyzico", "iyzico", !!(s.payment.iyzicoApiKey && s.payment.iyzicoSecretKey)],
+                      ["paytr", "PayTR", !!(s.payment.paytrMerchantId && s.payment.paytrMerchantKey && s.payment.paytrMerchantSalt)],
+                    ] as const
+                  ).map(([v, label, ready]) => (
+                    <label key={v} className="flex cursor-pointer items-center gap-3 rounded-xl border border-line p-3 has-[:checked]:border-brand has-[:checked]:bg-tint">
+                      <input type="radio" name="provider" value={v} defaultChecked={s.payment.provider === v} className="accent-brand" />
+                      <span className="flex-1">
+                        <b>{label}</b>
+                        <span className="block text-xs text-mute">{ready ? "Anahtarlar girilmiş" : "Anahtar girilmemiş"}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-mute">Değiştirince yeni siparişler seçilen kuruluşa gider. Önceki siparişlerin iadesi, ödendikleri kuruluştan otomatik yapılır; o kuruluşun anahtarlarını silmeyin.</p>
+              </fieldset>
+              <p className="mt-2 font-bold md:col-span-2">iyzico</p>
               <Field label="iyzico API anahtarı"><Input name="iyzicoApiKey" defaultValue={mask(s.payment.iyzicoApiKey)} autoComplete="off" /></Field>
               <Field label="iyzico gizli anahtar"><Input name="iyzicoSecretKey" defaultValue={mask(s.payment.iyzicoSecretKey)} autoComplete="off" /></Field>
-              <Checkbox name="iyzicoSandbox" defaultChecked={s.payment.iyzicoSandbox} label="Test modu (sandbox) — canlıya geçerken kapat" className="md:col-span-2" />
+              <Checkbox name="iyzicoSandbox" defaultChecked={s.payment.iyzicoSandbox} label="iyzico test modu (sandbox) — canlıya geçerken kapat" className="md:col-span-2" />
+              <p className="mt-2 font-bold md:col-span-2">PayTR</p>
+              <Field label="Mağaza no (merchant_id)"><Input name="paytrMerchantId" inputMode="numeric" defaultValue={s.payment.paytrMerchantId} autoComplete="off" /></Field>
+              <Field label="Mağaza parolası (merchant_key)"><Input name="paytrMerchantKey" defaultValue={mask(s.payment.paytrMerchantKey)} autoComplete="off" /></Field>
+              <Field label="Mağaza gizli anahtarı (merchant_salt)"><Input name="paytrMerchantSalt" defaultValue={mask(s.payment.paytrMerchantSalt)} autoComplete="off" /></Field>
+              <Checkbox name="paytrTestMode" defaultChecked={s.payment.paytrTestMode} label="PayTR test modu (canlı mağazada deneme işlemi; para çekilmez)" />
+              <p className="rounded-lg bg-soft p-3 text-xs text-mute md:col-span-2">
+                PayTR Mağaza Paneli → Destek &amp; Kurulum → Entegrasyon Bilgileri&apos;ndeki üç değeri yapıştırın. Aynı sayfada <b>Bildirim URL</b> olarak <code className="select-all">{(process.env.APP_URL || "https://ALAN-ADINIZ").replace(/\/$/, "")}/api/odeme/paytr</code> adresini kaydedin; ödemeler ancak bu adrese gelen bildirimle onaylanır.
+              </p>
               <Field label="En fazla taksit"><Input name="maxInstallment" type="number" min={1} max={12} defaultValue={s.payment.maxInstallment} /></Field>
               <Field label="Vade farksız taksit sayısı" hint="Sitede '3 ay vade farksız' olarak gösterilir; iyzico panelinden de tanımlanmalı."><Input name="noInterestInstallments" type="number" min={1} max={12} defaultValue={s.payment.noInterestInstallments} /></Field>
               <Field label="Genel taksit farkları (%)" hint="iyzico'ya bağlanılamadığında ürün sayfasındaki tabloda kullanılır. Biçim: taksit:oran, örn. 4:7.34, 5:9.21, 6:11.08" className="md:col-span-2"><Input name="installmentRates" defaultValue={Object.entries(s.payment.installmentRates ?? {}).map(([n, r]) => `${n}:${r}`).join(", ")} /></Field>
@@ -124,7 +153,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               </Field>
               <div className="flex gap-2 md:col-span-2">
                 <SubmitButton>Kaydet</SubmitButton>
-                <ActionButton variant="outline" run={testIyzico}>Bağlantıyı test et</ActionButton>
+                <ActionButton variant="outline" run={testIyzico}>iyzico&apos;yu test et</ActionButton>
+                <ActionButton variant="outline" run={testPaytr}>PayTR&apos;ı test et</ActionButton>
               </div>
             </ActionForm>
           </Card>

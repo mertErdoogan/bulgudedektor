@@ -98,7 +98,7 @@ export function CartView({ inst, freeThreshold, flatRate }: { inst: number; free
               <Link href="/odeme">Siparişi tamamla</Link>
             </Button>
           </div>
-          <p className="flex items-center gap-2 text-xs text-mute"><ShieldCheck size={16} className="text-brand" /> iyzico güvencesi, 3D Secure. Kart bilgin bizde saklanmaz.</p>
+          <p className="flex items-center gap-2 text-xs text-mute"><ShieldCheck size={16} className="text-brand" /> Lisanslı ödeme kuruluşu güvencesi, 3D Secure. Kart bilgin bizde saklanmaz.</p>
         </div>
       </div>
       <CartUpsell className="mt-10 pb-24 lg:pb-0" />

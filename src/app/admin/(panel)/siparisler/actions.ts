@@ -25,6 +25,14 @@ async function clientIp() {
 async function doRefund(order: typeof orders.$inferSelect, amount: number, staff: StaffSession) {
   if (!can(staff.permissions, "orders.refund")) throw new Error("Ödemesi alınmış siparişi iptal/iade etme yetkin yok.");
   if (order.paymentMethod === "CARD" && order.paymentMeta && order.paymentMeta.raw !== "simulated") {
+    // İade, siparişin ödendiği kuruluştan yapılır (sağlayıcı sonradan değişmiş olsa bile)
+    if (order.paymentMeta.provider === "paytr") {
+      const { getPaytrConfig, refund } = await import("@/lib/paytr");
+      const cfg = await getPaytrConfig();
+      if (!cfg || !order.paymentToken) throw new Error("PayTR bilgileri eksik olduğu için otomatik iade yapılamadı. PayTR panelinden iade edin.");
+      await refund(cfg, order.paymentToken, amount);
+      return "Kart iadesi PayTR üzerinden yapıldı.";
+    }
     await refundPayment(order.paymentMeta, amount, await clientIp());
     return "Kart iadesi iyzico üzerinden yapıldı.";
   }

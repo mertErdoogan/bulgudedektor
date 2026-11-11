@@ -95,6 +95,7 @@ Bu servislerin entegrasyon kodu hazırdır; hesapları firma adına açıp anaht
 | Servis | Nerede | Not |
 |---|---|---|
 | iyzico | Ayarlar → Ödeme | Önce "Test modu" açıkken iyzico test kartlarıyla (ör. 5528 7900 0000 0008, son kullanma ileri tarih, CVC 123) sipariş verin, iadeyi deneyin; sonra canlı anahtarlarla test modunu kapatın. Kayıtlı kart özelliği için iyzico'dan "kart saklama" yetkisi isteyin. |
+| PayTR (iyzico yerine) | Ayarlar → Ödeme | Eski site PayTR kullanıyor. Kartla ödeme kuruluşu olarak PayTR seçilip mağaza no / parola / gizli anahtar girilir. PayTR panelinde **Bildirim URL** = `https://ALAN-ADI/api/odeme/paytr` olmalı. Sağlayıcı değişse de eski siparişlerin iadesi ödendiği kuruluştan yapılır. |
 | E-posta (SMTP) | Ayarlar → Entegrasyonlar | Yandex/Google Workspace/Zoho. SPF, DKIM ve DMARC kayıtlarını DNS'e ekleyin, yoksa e-postalar gereksiz klasörüne düşer. |
 | Netgsm SMS | Ayarlar → Entegrasyonlar | Netgsm panelinde API yetkili alt kullanıcı açın, gönderici başlığını onaylatın. Test SMS'i düğmesiyle deneyin. |
 | İYS | — | Ticari SMS/e-posta göndermeden önce İYS'ye kayıt olun. Panel → Müşteriler → "İYS listesi" ile izinleri toplu yükleyebileceğiniz dosyayı alın. |

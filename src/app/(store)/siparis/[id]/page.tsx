@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AutoRefresh } from "@/components/store/auto-refresh";
 import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 import { CheckCircle2, CircleAlert } from "lucide-react";
@@ -14,7 +15,7 @@ import { ORDER_STATUS_LABEL, formatDate, formatTL, orderNo } from "@/lib/utils";
 export const metadata = { title: "Sipariş", robots: { index: false } };
 const STEPS = ["PAID", "PREPARING", "SHIPPED", "DELIVERED"];
 
-export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string; yeni?: string; odeme?: string }> }) {
+export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string; yeni?: string; odeme?: string; bekle?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const [o, me, s] = await Promise.all([
@@ -30,6 +31,20 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   return (
     <div className="container-x max-w-3xl py-8">
       {sp.odeme === "hata" ? (
+        <div className="mb-5 flex gap-3 rounded-2xl bg-danger-bg p-5 text-danger">
+          <CircleAlert className="shrink-0" />
+          <div><b>Ödeme tamamlanamadı.</b><p className="text-sm">Kartından para çekilmedi. Tekrar deneyebilir, havale seçebilir veya bize yazabilirsin.</p><Link href="/sepet" className="mt-2 inline-block font-bold underline">Sepete dön</Link></div>
+        </div>
+      ) : sp.yeni && o.paymentMethod === "CARD" && o.status === "PENDING_PAYMENT" ? (
+        <div className="mb-5 flex gap-3 rounded-2xl bg-soft p-5" data-testid="payment-waiting">
+          <span className="mt-1 h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+          <div>
+            <b className="text-lg">Ödemen bankadan onaylanıyor…</b>
+            <p className="text-sm text-mute">Bu genelde birkaç saniye sürer, sayfa kendiliğinden güncellenecek. Lütfen tekrar ödeme yapma.</p>
+            <AutoRefresh />
+          </div>
+        </div>
+      ) : sp.yeni && o.paymentMethod === "CARD" && o.paymentStatus === "FAILED" ? (
         <div className="mb-5 flex gap-3 rounded-2xl bg-danger-bg p-5 text-danger">
           <CircleAlert className="shrink-0" />
           <div><b>Ödeme tamamlanamadı.</b><p className="text-sm">Kartından para çekilmedi. Tekrar deneyebilir, havale seçebilir veya bize yazabilirsin.</p><Link href="/sepet" className="mt-2 inline-block font-bold underline">Sepete dön</Link></div>

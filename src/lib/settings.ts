@@ -57,6 +57,13 @@ export type ShippingSettings = {
 
 export type PaymentSettings = {
   cardEnabled: boolean;
+  /** Kartla ödemeyi hangi kuruluş alır. Değiştirilince yeni siparişler o kuruluşa gider; eski siparişlerin iadesi kendi kuruluşundan yapılır. */
+  provider: "iyzico" | "paytr";
+  paytrMerchantId: string;
+  paytrMerchantKey: string;
+  paytrMerchantSalt: string;
+  /** PayTR mağazası canlıdayken deneme işlemi (gerçek para çekilmez) */
+  paytrTestMode: boolean;
   iyzicoApiKey: string;
   iyzicoSecretKey: string;
   iyzicoSandbox: boolean;
@@ -180,6 +187,11 @@ export const DEFAULT_SETTINGS: AllSettings = {
   },
   payment: {
     cardEnabled: true,
+    provider: "iyzico",
+    paytrMerchantId: "",
+    paytrMerchantKey: "",
+    paytrMerchantSalt: "",
+    paytrTestMode: false,
     iyzicoApiKey: "",
     iyzicoSecretKey: "",
     iyzicoSandbox: true,

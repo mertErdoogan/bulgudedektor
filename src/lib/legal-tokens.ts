@@ -15,7 +15,7 @@ type Store = {
   mersis: string;
   etbis: string;
 };
-type Payment = { bankAccounts: { bank: string; holder: string; iban: string }[]; maxInstallment: number; noInterestInstallments: number };
+type Payment = { provider?: "iyzico" | "paytr"; bankAccounts: { bank: string; holder: string; iban: string }[]; maxInstallment: number; noInterestInstallments: number };
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
@@ -35,6 +35,7 @@ export function legalTokens(store: Store, payment?: Payment, siteUrl = ""): Reco
     mersis: v(store.mersis),
     etbis: v(store.etbis),
     site: esc(/localhost|127\.0\.0\.1|\.local\b|\.test\b/.test(siteUrl) || !siteUrl ? "www.arenadedektor.com" : siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")),
+    odeme_kurulusu: payment?.provider === "paytr" ? "PayTR" : "iyzico",
     taksit: String(payment?.maxInstallment ?? 6),
     vade_farksiz: String(payment?.noInterestInstallments ?? 3),
     banka_hesaplari: payment?.bankAccounts?.length

@@ -8,6 +8,7 @@ import { addresses, customers, orderItems, orders, products, stockMovements } fr
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { getCustomer } from "@/lib/auth";
 import { initCheckoutForm, getIyzicoConfig, simulationAllowed } from "@/lib/iyzico";
+import { getPaytrConfig } from "@/lib/paytr";
 import { addOrderEvent, failOrderPayment, notifyPlaced } from "@/lib/orders";
 import { quoteCart, type CartInput } from "@/lib/pricing";
 import { CUSTOMER_COOKIE, setSessionCookie, signToken } from "@/lib/session";
@@ -120,13 +121,44 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
       return ok("Siparişin alındı.", { redirect: `/siparis/${orderId}?k=${key}&yeni=1` });
     }
 
-    const cfg = await getIyzicoConfig();
+    const provider = s.payment.provider === "paytr" ? "paytr" : "iyzico";
+    const cfg = provider === "paytr" ? await getPaytrConfig() : await getIyzicoConfig();
     if (!cfg) {
       if (simulationAllowed()) return ok(undefined, { redirect: `/odeme/simulasyon?o=${orderId}&k=${key}` });
       await failOrderPayment(orderId, "Ödeme altyapısı ayarlanmamış");
       return fail("Kartla ödeme şu an kullanılamıyor. Havale seçebilir veya bize WhatsApp'tan yazabilirsin.");
     }
     const h = await headers();
+    const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || "85.34.78.112";
+    if (provider === "paytr") {
+      // PayTR: kart formu PayTR iframe'inde açılır; sonuç sunucuya /api/odeme/paytr bildirimiyle gelir
+      try {
+        const { createIframeToken, merchantOid } = await import("@/lib/paytr");
+        const o = await db.query.orders.findFirst({ where: eq(orders.id, orderId), columns: { number: true } });
+        const oid = merchantOid(o!.number);
+        const token = await createIframeToken(cfg as NonNullable<Awaited<ReturnType<typeof getPaytrConfig>>>, {
+          oid,
+          ip,
+          email,
+          amount: q.total,
+          lines: [
+            ...q.lines.map((l) => ({ name: l.name, unitPrice: l.total / l.quantity, quantity: l.quantity })),
+            ...(q.shippingTotal > 0 ? [{ name: "Kargo", unitPrice: q.shippingTotal, quantity: 1 }] : []),
+          ],
+          maxInstallment: s.payment.maxInstallment,
+          name: fullName,
+          address: `${address.line} ${address.district}/${address.city}`,
+          phone,
+          okUrl: `${base}/siparis/${orderId}?k=${key}&yeni=1&bekle=1`,
+          failUrl: `${base}/siparis/${orderId}?k=${key}&odeme=hata`,
+        });
+        await db.update(orders).set({ paymentToken: oid, paymentMeta: { provider: "paytr" } }).where(eq(orders.id, orderId));
+        return ok(undefined, { redirect: `/odeme/paytr?o=${orderId}&k=${key}&t=${encodeURIComponent(token)}` });
+      } catch (e) {
+        await failOrderPayment(orderId, e instanceof Error ? e.message : "PayTR hatası");
+        return fail(e instanceof Error ? e.message.replace(/^PayTR: /, "Ödeme başlatılamadı: ") : "Ödeme başlatılamadı, lütfen tekrar dene.");
+      }
+    }
     try {
       const form = await initCheckoutForm({
         conversationId: orderId,
@@ -134,7 +166,7 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
         price: q.subtotal + q.shippingTotal,
         paidPrice: q.total,
         callbackUrl: `${base}/api/odeme/iyzico?o=${orderId}`,
-        buyer: { id: customerId, name: fullName, email, phone, identityNumber: tckn || undefined, city: address.city, address: `${address.line} ${address.district}/${address.city}`, ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() || "85.34.78.112" },
+        buyer: { id: customerId, name: fullName, email, phone, identityNumber: tckn || undefined, city: address.city, address: `${address.line} ${address.district}/${address.city}`, ip },
         // iyzico: kalem toplamı "price" olmalı; indirim "paidPrice"ta yansır, kargo ayrı kalem.
         items: [
           ...q.lines.map((l) => ({ id: l.productId, name: l.name, category: "Dedektör", price: l.total })),
@@ -144,7 +176,7 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
         cardUserKey: me && me.id === customerId ? me.cardUserKey : null,
         enabledInstallments: Array.from({ length: Math.max(1, s.payment.maxInstallment) }, (_, i) => i + 1).filter((n) => [1, 2, 3, 6, 9, 12].includes(n)),
       });
-      await db.update(orders).set({ paymentToken: form.token }).where(eq(orders.id, orderId));
+      await db.update(orders).set({ paymentToken: form.token, paymentMeta: { provider: "iyzico" } }).where(eq(orders.id, orderId));
       return ok(undefined, { redirect: form.paymentPageUrl });
     } catch (e) {
       await failOrderPayment(orderId, e instanceof Error ? e.message : "iyzico hatası");

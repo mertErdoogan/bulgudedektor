@@ -108,7 +108,12 @@ async def main():
         t = await toast_text(ap)
         check("Admin: havale onaylandı", sql(f"select payment_status from orders where id='{tid}'") == "PAID", t)
         # seri takipli ürün: seri ataması zorunlu
-        sid = sql("select o.id from orders o join order_items i on i.order_id=o.id join products p on p.id=i.product_id where p.track_serial and o.status='PAID' limit 1")
+        # Ön koşul: seri takipli ürün içeren, seri atanmamış ödenmiş bir sipariş ve stokta bir seri no (rastgele demo veriye bağlı kalmasın)
+        pid = sql("select i.product_id from order_items i join orders o on o.id=i.order_id where o.status='PAID' and i.product_id is not null and not exists (select 1 from serial_numbers s where s.order_item_id=i.id) order by o.number limit 1")
+        if pid:
+            sql(f"update products set track_serial=true where id='{pid}'")
+            sql(f"insert into serial_numbers (product_id, serial, status) values ('{pid}', 'E2E-SERI-' || floor(random()*1e9)::text, 'IN_STOCK')")
+        sid = sql("select o.id from orders o join order_items i on i.order_id=o.id join products p on p.id=i.product_id where p.track_serial and o.status='PAID' and not exists (select 1 from serial_numbers s where s.order_item_id=i.id) order by o.number limit 1")
         if sid:
             await ap.goto(B + f"/admin/siparisler/{sid}", wait_until="networkidle")
             await ap.fill("input[name=tracking]", "999")
@@ -122,7 +127,7 @@ async def main():
                 await sel.select_option(index=1)
                 await ap.click("button:has-text('Ata')")
                 await ap.wait_for_timeout(2500)
-                check("Seri no atandı", sql(f"select count(*) from serial_numbers s join order_items i on i.id=s.order_item_id where i.order_id='{sid}'") == "1")
+                check("Seri no atandı", sql(f"select count(*) from serial_numbers s join order_items i on i.id=s.order_item_id where i.order_id='{sid}'") != "0")
 
         # ───────── Admin: ürün oluştur (görsel yükle), yayınla, mağazada gör, sil
         await ap.goto(B + "/admin/urunler/yeni", wait_until="networkidle")

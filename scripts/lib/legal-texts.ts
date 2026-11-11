@@ -29,7 +29,7 @@ export const LEGAL_PAGES: { slug: string; title: string; footerGroup?: string; s
 
 <h2>3. Ürün, fiyat ve ödeme</h2>
 <p>Ürünün türü, markası, modeli, adedi ve vergiler dahil satış fiyatı ürün sayfasında ve sipariş özetinde gösterildiği gibidir. Fiyatlara KDV dahildir. Kargo ücreti varsa ödeme adımında ayrıca gösterilir.</p>
-<p>Ödeme; kredi/banka kartı (iyzico güvenli ödeme altyapısıyla, 3D Secure), havale/EFT veya mağazada ödeme yöntemlerinden biriyle yapılır. Taksitli ödemelerde vade farkı bankanın uyguladığı oranlara göre ödeme adımında gösterilir. Kart bilgileri Satıcı tarafından görülmez ve saklanmaz.</p>
+<p>Ödeme; kredi/banka kartı ({{odeme_kurulusu}} güvenli ödeme altyapısıyla, 3D Secure), havale/EFT veya mağazada ödeme yöntemlerinden biriyle yapılır. Taksitli ödemelerde vade farkı bankanın uyguladığı oranlara göre ödeme adımında gösterilir. Kart bilgileri Satıcı tarafından görülmez ve saklanmaz.</p>
 <p>Havale/EFT ile ödemelerde sipariş, ödemenin Satıcı hesabına geçmesiyle işleme alınır. 3 iş günü içinde ödemesi yapılmayan siparişler iptal edilebilir.</p>
 
 <h2>4. Teslimat</h2>
@@ -105,7 +105,7 @@ export const LEGAL_PAGES: { slug: string; title: string; footerGroup?: string; s
 <li><strong>Kimlik:</strong> ad, soyad; fatura için gerekirse T.C. kimlik numarası</li>
 <li><strong>İletişim:</strong> e-posta, telefon, teslimat ve fatura adresi</li>
 <li><strong>Müşteri işlem:</strong> sipariş, iade, servis ve talep kayıtları, sepet ve favoriler</li>
-<li><strong>Finans:</strong> ödeme ve iade kayıtları (kart bilgileri ödeme kuruluşu iyzico tarafından işlenir, Şirket tarafından saklanmaz)</li>
+<li><strong>Finans:</strong> ödeme ve iade kayıtları (kart bilgileri ödeme kuruluşu {{odeme_kurulusu}} tarafından işlenir, Şirket tarafından saklanmaz)</li>
 <li><strong>İşlem güvenliği:</strong> IP adresi, giriş kayıtları, tarayıcı bilgileri</li>
 <li><strong>Pazarlama:</strong> açık rızanız varsa ticari elektronik ileti tercihleri, gezinme ve alışveriş tercihleri</li>
 </ul>
@@ -117,7 +117,7 @@ export const LEGAL_PAGES: { slug: string; title: string; footerGroup?: string; s
 <li>Kampanya, bülten ve kişiselleştirilmiş öneriler — <em>açık rıza (m.5/1)</em></li>
 </ul>
 <h2>3. Aktarım</h2>
-<p>Kişisel verileriniz yalnızca yukarıdaki amaçlarla sınırlı olarak; kargo şirketlerine (teslimat), ödeme kuruluşuna (iyzico), e-fatura entegratörüne, muhasebe ve hukuk danışmanlarına, barındırma/e-posta hizmet sağlayıcılarına ve talep halinde yetkili kamu kurumlarına aktarılabilir. Yurt dışında bulunan hizmet sağlayıcılara aktarım KVKK m.9 hükümlerine uygun şekilde yapılır.</p>
+<p>Kişisel verileriniz yalnızca yukarıdaki amaçlarla sınırlı olarak; kargo şirketlerine (teslimat), ödeme kuruluşuna ({{odeme_kurulusu}}), e-fatura entegratörüne, muhasebe ve hukuk danışmanlarına, barındırma/e-posta hizmet sağlayıcılarına ve talep halinde yetkili kamu kurumlarına aktarılabilir. Yurt dışında bulunan hizmet sağlayıcılara aktarım KVKK m.9 hükümlerine uygun şekilde yapılır.</p>
 <h2>4. Toplama yöntemi</h2>
 <p>Verileriniz internet sitemiz, telefon, WhatsApp, e-posta ve mağazamız aracılığıyla elektronik veya fiziki ortamda toplanır.</p>
 <h2>5. Saklama süresi</h2>
@@ -172,7 +172,7 @@ export const LEGAL_PAGES: { slug: string; title: string; footerGroup?: string; s
     title: "Gizlilik ve güvenlik",
     footerGroup: "Yasal",
     content: `<h2>Ödeme güvenliği</h2>
-<p>Kartlı ödemeler BDDK lisanslı ödeme kuruluşu <strong>iyzico</strong> altyapısıyla ve 3D Secure doğrulamasıyla alınır. Kart bilgileriniz sitemizde saklanmaz, bizim tarafımızdan görülmez. Tüm sayfalar SSL (https) ile şifrelenir.</p>
+<p>Kartlı ödemeler lisanslı ödeme kuruluşu <strong>{{odeme_kurulusu}}</strong> altyapısıyla ve 3D Secure doğrulamasıyla alınır. Kart bilgileriniz sitemizde saklanmaz, bizim tarafımızdan görülmez. Tüm sayfalar SSL (https) ile şifrelenir.</p>
 <h2>Hesap güvenliği</h2>
 <p>Şifreniz geri döndürülemez şekilde (bcrypt) saklanır. Tekrarlanan hatalı girişler geçici olarak engellenir. Şifrenizi unutursanız e-posta adresinize tek kullanımlık sıfırlama bağlantısı gönderilir.</p>
 <h2>Kişisel verileriniz</h2>

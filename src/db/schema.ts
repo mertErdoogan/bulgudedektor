@@ -419,7 +419,7 @@ export const orders = pgTable(
     externalRef: text("external_ref").unique(),
     /** Siparişle ilgilenen ekip üyesi (iş listesi ataması) */
     assigneeId: text("assignee_id").references(() => users.id, { onDelete: "set null" }),
-    paymentMeta: jsonb("payment_meta").$type<{ paymentId?: string; transactions?: { itemId: string; transactionId: string; price: number }[]; raw?: unknown; transferNotice?: { sender: string; note?: string; receiptUrl?: string | null; at: string } }>(),
+    paymentMeta: jsonb("payment_meta").$type<{ provider?: "iyzico" | "paytr"; paymentId?: string; transactions?: { itemId: string; transactionId: string; price: number }[]; raw?: unknown; transferNotice?: { sender: string; note?: string; receiptUrl?: string | null; at: string } }>(),
     installments: integer("installments").notNull().default(1),
     subtotal: money("subtotal").notNull(),
     discountTotal: money("discount_total").notNull().default(0),

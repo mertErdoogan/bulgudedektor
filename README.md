@@ -115,6 +115,7 @@ Canlıya alma (Docker + Caddy), arenadedektor.com'dan ürün/blog/müşteri akta
 | e-Arşiv fatura | PDF/bağlantı siparişe eklenir, müşteriye e-postayla gider; fatura entegratörde kesilir |
 | İYS | İzinli liste İYS toplu yükleme biçiminde dışa aktarılır; ticari iletilerde tek tıkla çıkış |
 | iyzico kayıtlı kart | Kod hazır; iyzico'dan kart saklama yetkisi gerekir |
+| PayTR (iFrame API: ödeme, bildirim, iade) | Kod hazır, sahte PayTR sunucusuyla test edildi; Ayarlar → Ödeme'den iyzico ↔ PayTR seçilir |
 | Kargo API (otomatik barkod) | Yok; takip no elle girilir, takip bağlantıları otomatik |
 | WhatsApp Business API | Yok; panelden `wa.me` ile hazır mesajlı bildirim |
 

@@ -24,7 +24,7 @@ export default async function SimPage({ searchParams }: { searchParams: Promise<
   return (
     <div className="container-x max-w-md py-12">
       <div className="rounded-2xl border-2 border-dashed border-warn p-6">
-        <p className="text-xs font-bold text-warn">TEST — iyzico anahtarı girilmediği için ödeme simülasyonu</p>
+        <p className="text-xs font-bold text-warn">TEST — ödeme kuruluşu anahtarı girilmediği için ödeme simülasyonu</p>
         <h1 className="mt-2 text-xl font-extrabold">{orderNo(order.number)} · {formatTL(order.total)}</h1>
         <form action={pay} className="mt-5 flex flex-col gap-3">
           <select name="n" className="h-11 rounded-lg border border-line px-3"><option value="1">Tek çekim</option><option value="3">3 taksit</option><option value="6">6 taksit</option></select>
