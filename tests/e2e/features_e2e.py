@@ -220,6 +220,7 @@ async def main():
         await pg.fill("input[name=confirm]", "SİL")
         await pg.get_by_role("button", name="Hesabımı kalıcı olarak sil").click()
         await pg.wait_for_url(re.compile(r".*hesap=silindi.*"), timeout=30000, wait_until="commit")
+        check("silme sonrası bildirim", "Hesabın silindi" in (await toast(pg, "Hesabın silindi")))
         check("hesap silindi ve anonimleşti", sql(f"select count(*) from customers where email='{mail}'") == "0" and sql("select count(*) from customers where name='Silinmiş müşteri' and deleted_at is not null") != "0")
         await ctx.close()
         await br.close()

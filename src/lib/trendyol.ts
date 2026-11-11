@@ -1,8 +1,8 @@
 import "server-only";
-import { inArray, isNotNull } from "drizzle-orm";
+import { isNotNull } from "drizzle-orm";
 import { db } from "@/db";
-import { orderItems, orders, products } from "@/db/schema";
-import { addOrderEvent, adjustStock } from "./orders";
+import { products } from "@/db/schema";
+import { importMarketOrders, marketPrice } from "./marketplace";
 import { getSettings, type IntegrationSettings } from "./settings";
 
 /**
@@ -32,13 +32,11 @@ export async function pushPriceAndStock() {
     .select({ barcode: products.barcode, price: products.price, compareAtPrice: products.compareAtPrice, stock: products.stock, status: products.status })
     .from(products)
     .where(isNotNull(products.barcode));
-  const k = 1 + (i.trendyolPriceMarkupPct || 0) / 100;
-  const r2 = (n: number) => Math.round(n * 100) / 100;
   const items = rows
     .filter((r) => r.barcode)
     .map((r) => {
-      const sale = r2(r.price * k);
-      const list = r2(Math.max(sale, (r.compareAtPrice ?? 0) * k));
+      const sale = marketPrice(r.price, i.trendyolPriceMarkupPct);
+      const list = Math.max(sale, marketPrice(r.compareAtPrice ?? 0, i.trendyolPriceMarkupPct));
       return { barcode: r.barcode!, quantity: r.status === "ACTIVE" ? Math.max(0, Math.min(20000, r.stock)) : 0, salePrice: sale, listPrice: list };
     });
   if (!items.length) return { ok: true, message: "Barkodu olan ürün yok; gönderilecek bir şey bulunamadı." };
@@ -91,60 +89,32 @@ export async function importOrders() {
   }
   if (!pkgs.length) return { ok: true, message: "Yeni Trendyol siparişi yok." };
 
-  const refs = pkgs.map((p) => `TY-${p.shipmentPackageId ?? p.id}`);
-  const known = new Set((await db.select({ r: orders.externalRef }).from(orders).where(inArray(orders.externalRef, refs))).map((x) => x.r));
-  const barcodes = [...new Set(pkgs.flatMap((p) => (p.lines ?? []).map((l) => l.barcode).filter(Boolean) as string[]))];
-  const prods = barcodes.length ? await db.select().from(products).where(inArray(products.barcode, barcodes)) : [];
-  const byBarcode = new Map(prods.map((p) => [p.barcode!, p]));
-  let created = 0;
-  const unmatched: string[] = [];
-  for (const p of pkgs) {
-    const ref = `TY-${p.shipmentPackageId ?? p.id}`;
-    if (known.has(ref)) continue;
-    const a = p.shipmentAddress ?? {};
-    const lines = (p.lines ?? []).map((l) => {
-      const prod = l.barcode ? byBarcode.get(l.barcode) : undefined;
-      if (!prod) unmatched.push(l.barcode ?? l.productName ?? "?");
-      const qty = l.quantity ?? 1;
-      const unit = l.price ?? l.amount ?? 0;
-      return { prod, name: prod?.name ?? l.productName ?? "Trendyol ürünü", sku: prod?.sku ?? l.merchantSku ?? l.stockCode ?? l.barcode ?? "-", qty, unit, total: unit * qty };
-    });
-    const subtotal = lines.reduce((x, l) => x + l.total, 0);
-    await db.transaction(async (tx) => {
-      const [o] = await tx
-        .insert(orders)
-        .values({
-          email: p.customerEmail || "trendyol@pazaryeri.local",
-          phone: String(a.phone ?? "").replace(/\D/g, "") || "-",
-          status: "PAID",
-          paymentStatus: "PAID",
-          paymentMethod: "CARD",
-          paymentRef: p.orderNumber ?? null,
-          channel: "TRENDYOL",
-          externalRef: ref,
-          subtotal,
-          total: p.totalPrice ?? subtotal,
-          shippingAddress: {
-            fullName: a.fullName || [a.firstName, a.lastName].filter(Boolean).join(" ") || [p.customerFirstName, p.customerLastName].filter(Boolean).join(" ") || "Trendyol müşterisi",
-            phone: String(a.phone ?? ""),
-            city: a.city ?? "",
-            district: a.district ?? "",
-            line: a.fullAddress || a.address1 || "",
-            zip: a.postalCode ?? undefined,
-          },
-          carrier: p.cargoProviderName ?? null,
-          trackingNumber: p.cargoTrackingNumber ? String(p.cargoTrackingNumber) : null,
-          internalNote: `Trendyol sipariş no ${p.orderNumber ?? "-"} · paket ${p.shipmentPackageId ?? p.id}. Kargo etiketi ve durum güncellemesi Trendyol panelinden yapılır.`,
-          createdAt: p.orderDate ? new Date(p.orderDate) : new Date(),
-        })
-        .returning({ id: orders.id });
-      await tx.insert(orderItems).values(lines.map((l) => ({ orderId: o.id, productId: l.prod?.id ?? null, name: l.name, sku: l.sku, imageUrl: null, unitPrice: l.unit, unitCost: l.prod?.costPrice ?? null, quantity: l.qty, total: l.total })));
-      for (const l of lines) if (l.prod) await adjustStock(tx, l.prod.id, -l.qty, "SALE", null, `Trendyol ${p.orderNumber ?? ""}`);
-      await addOrderEvent(tx, o.id, "created", "Trendyol'dan aktarıldı.", null, false);
-    });
-    created++;
-  }
-  const extra = unmatched.length ? ` Eşleşmeyen barkodlar (stok düşülmedi): ${[...new Set(unmatched)].slice(0, 10).join(", ")}.` : "";
+  const { created, unmatched } = await importMarketOrders(
+    pkgs.map((p) => {
+      const a = p.shipmentAddress ?? {};
+      return {
+        channel: "TRENDYOL" as const,
+        ref: `TY-${p.shipmentPackageId ?? p.id}`,
+        orderNumber: p.orderNumber ?? String(p.id ?? ""),
+        date: p.orderDate ? new Date(p.orderDate) : new Date(),
+        email: p.customerEmail ?? null,
+        phone: String(a.phone ?? ""),
+        total: p.totalPrice ?? null,
+        carrier: p.cargoProviderName ?? null,
+        tracking: p.cargoTrackingNumber ? String(p.cargoTrackingNumber) : null,
+        address: {
+          fullName: a.fullName || [a.firstName, a.lastName].filter(Boolean).join(" ") || [p.customerFirstName, p.customerLastName].filter(Boolean).join(" ") || "Trendyol müşterisi",
+          phone: String(a.phone ?? ""),
+          city: a.city ?? "",
+          district: a.district ?? "",
+          line: a.fullAddress || a.address1 || "",
+          zip: a.postalCode ?? undefined,
+        },
+        lines: (p.lines ?? []).map((l) => ({ barcode: l.barcode ?? null, sku: l.merchantSku ?? l.stockCode ?? null, name: l.productName ?? "Trendyol ürünü", quantity: l.quantity ?? 1, unitPrice: l.price ?? l.amount ?? 0 })),
+      };
+    }),
+  );
+  const extra = unmatched.length ? ` Eşleşmeyen ürünler (stok düşülmedi): ${unmatched.slice(0, 10).join(", ")}.` : "";
   return { ok: true, message: `${created} yeni Trendyol siparişi aktarıldı.${extra}` };
 }
 

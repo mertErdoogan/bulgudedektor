@@ -16,6 +16,7 @@ import { Head } from "@/components/store/home-lists";
 import { FaqSection } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PostCards } from "@/components/store/post-cards";
+import { QueryToast } from "@/components/store/query-toast";
 import { getFaqs, getPublishedPosts, toQA } from "@/lib/content";
 import { graph, pageMeta, storeLd } from "@/lib/seo";
 import type { Metadata } from "next";
@@ -222,6 +223,7 @@ export default async function Home() {
         </div>
       ) : null}
       <JsonLd data={graph(storeLd(s))} />
+      <QueryToast />
     </>
   );
 }

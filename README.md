@@ -110,7 +110,8 @@ Canlıya alma (Docker + Caddy), arenadedektor.com'dan ürün/blog/müşteri akta
 |---|---|
 | Eski siteden aktarım (`npm run import:arena`) | Hazır; ürün/blog adresleri korunur, eski kategori/sayfa adresleri 301 |
 | Netgsm SMS (sipariş alındı / kargoda / teslim) | Kod hazır, gerçek hesapla test edilmedi |
-| Trendyol fiyat-stok senkronu ve sipariş aktarımı | Kod hazır (Order V2), gerçek hesapla test edilmedi |
+| Trendyol fiyat-stok senkronu ve sipariş aktarımı | Kod hazır (Order V2), sahte API ile test edildi, gerçek hesapla denenmedi |
+| Hepsiburada fiyat-stok senkronu ve sipariş aktarımı | Kod hazır (SKU eşleşmesi), sahte API ile test edildi, gerçek hesapla denenmedi |
 | e-Arşiv fatura | PDF/bağlantı siparişe eklenir, müşteriye e-postayla gider; fatura entegratörde kesilir |
 | İYS | İzinli liste İYS toplu yükleme biçiminde dışa aktarılır; ticari iletilerde tek tıkla çıkış |
 | iyzico kayıtlı kart | Kod hazır; iyzico'dan kart saklama yetkisi gerekir |

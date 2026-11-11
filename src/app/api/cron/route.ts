@@ -111,5 +111,14 @@ export async function GET(req: Request) {
     return 1;
   });
 
+  // 6) Hepsiburada (ayarlarda açıksa)
+  await run("hepsiburada", async () => {
+    const { isHepsiburadaOn, hepsiburadaSync } = await import("@/lib/hepsiburada");
+    if (!(await isHepsiburadaOn())) return 0;
+    const r = await hepsiburadaSync();
+    if (!r.ok) throw new Error(r.message);
+    return 1;
+  });
+
   return NextResponse.json({ ok: true, at: new Date().toISOString(), ...out });
 }

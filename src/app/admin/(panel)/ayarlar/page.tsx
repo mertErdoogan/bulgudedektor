@@ -6,7 +6,7 @@ import { Badge, Card, CardHeader, Checkbox, Field, Input, Select, Textarea } fro
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSettings } from "@/lib/settings";
-import { generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, testIyzico, testSms, trendyolSyncNow } from "./actions";
+import { generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testSms, trendyolSyncNow } from "./actions";
 
 export const metadata = { title: "Ayarlar" };
 const mask = (v: string) => (v ? `${v.slice(0, 4)}••••••••${v.slice(-3)}` : "");
@@ -163,6 +163,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <Field label="Fiyat farkı %" hint="Komisyon için Trendyol fiyatı site fiyatından bu kadar yüksek gönderilir."><Input name="trendyolPriceMarkupPct" inputMode="decimal" defaultValue={s.integrations.trendyolPriceMarkupPct} /></Field>
               <Field label="API key"><Input name="trendyolApiKey" defaultValue={mask(s.integrations.trendyolApiKey)} autoComplete="off" /></Field>
               <Field label="API secret"><Input name="trendyolApiSecret" defaultValue={mask(s.integrations.trendyolApiSecret)} autoComplete="off" /></Field>
+              <p className="mt-2 font-bold md:col-span-2">Hepsiburada pazaryeri</p>
+              <Checkbox name="hbEnabled" defaultChecked={s.integrations.hbEnabled} label="Fiyat/stok senkronu ve sipariş aktarımı açık (15 dakikada bir)" className="md:col-span-2" />
+              <Field label="Merchant ID" hint="Hepsiburada satıcı panelindeki mağaza kimliği (GUID)"><Input name="hbMerchantId" defaultValue={s.integrations.hbMerchantId} /></Field>
+              <Field label="Fiyat farkı %"><Input name="hbPriceMarkupPct" inputMode="decimal" defaultValue={s.integrations.hbPriceMarkupPct} /></Field>
+              <Field label="API kullanıcı adı"><Input name="hbUser" defaultValue={s.integrations.hbUser} autoComplete="off" /></Field>
+              <Field label="API şifresi"><Input name="hbPass" defaultValue={mask(s.integrations.hbPass)} autoComplete="off" /></Field>
               <p className="mt-2 font-bold md:col-span-2">Diğer</p>
               <Field label="WhatsApp Business API token"><Input name="whatsappApiToken" defaultValue={mask(s.integrations.whatsappApiToken)} autoComplete="off" /></Field>
               <Field label="Kargo entegrasyonu API anahtarı"><Input name="cargoApiKey" defaultValue={mask(s.integrations.cargoApiKey)} autoComplete="off" /></Field>
@@ -175,6 +181,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <Field label="Test SMS'i gönder"><Input name="phone" placeholder="05XX XXX XX XX" /></Field>
                 <SubmitButton variant="outline">Gönder</SubmitButton>
               </ActionForm>
+            ) : null}
+            {s.integrations.hbEnabled ? (
+              <div className="flex flex-wrap items-center gap-2 border-t border-line p-5 text-sm">
+                <span className="flex-1 text-mute">Hepsiburada&apos;da ürünler <b>stok kodu (SKU)</b> ile eşleşir: Hepsiburada&apos;daki satıcı stok kodu sitedeki SKU ile aynı olmalı.</span>
+                <ActionButton run={hepsiburadaSyncNow} variant="outline">Şimdi senkronla</ActionButton>
+              </div>
             ) : null}
             {s.integrations.trendyolEnabled ? (
               <div className="flex flex-wrap items-center gap-2 border-t border-line p-5 text-sm">

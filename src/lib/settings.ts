@@ -96,6 +96,12 @@ export type IntegrationSettings = {
   trendyolApiSecret: string;
   /** Trendyol'da fiyat site fiyatından % kaç farklı olsun (komisyon için, örn. 8) */
   trendyolPriceMarkupPct: number;
+  /** Hepsiburada pazaryeri */
+  hbEnabled: boolean;
+  hbMerchantId: string;
+  hbUser: string;
+  hbPass: string;
+  hbPriceMarkupPct: number;
 };
 
 export type SeoSettings = {
@@ -211,6 +217,11 @@ export const DEFAULT_SETTINGS: AllSettings = {
     trendyolApiKey: "",
     trendyolApiSecret: "",
     trendyolPriceMarkupPct: 0,
+    hbEnabled: false,
+    hbMerchantId: "",
+    hbUser: "",
+    hbPass: "",
+    hbPriceMarkupPct: 0,
   },
   seo: {
     title: "Arena Dedektör | Minelab, XP, Nokta Dedektör Modelleri ve Fiyatları",

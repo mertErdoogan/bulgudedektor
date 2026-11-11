@@ -154,6 +154,11 @@ export async function saveIntegrations(_: ActionResult | null, fd: FormData): Pr
       trendyolApiKey: keep("trendyolApiKey"),
       trendyolApiSecret: keep("trendyolApiSecret"),
       trendyolPriceMarkupPct: Math.max(-50, Math.min(100, toNum(fd.get("trendyolPriceMarkupPct"), 0))),
+      hbEnabled: fd.get("hbEnabled") === "on",
+      hbMerchantId: str(fd.get("hbMerchantId")),
+      hbUser: str(fd.get("hbUser")),
+      hbPass: keep("hbPass"),
+      hbPriceMarkupPct: Math.max(-50, Math.min(100, toNum(fd.get("hbPriceMarkupPct"), 0))),
     });
     return fin(staff.id, "integrations");
   });
@@ -203,6 +208,16 @@ export async function trendyolSyncNow(): Promise<ActionResult> {
     const { trendyolSync } = await import("@/lib/trendyol");
     const r = await trendyolSync();
     await audit(staff.id, "settings", "settings", "integrations", `Trendyol senkronu: ${r.message}`);
+    return r.ok ? ok(r.message) : fail(r.message);
+  });
+}
+
+export async function hepsiburadaSyncNow(): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("settings.manage");
+    const { hepsiburadaSync } = await import("@/lib/hepsiburada");
+    const r = await hepsiburadaSync();
+    await audit(staff.id, "settings", "settings", "integrations", `Hepsiburada senkronu: ${r.message}`);
     return r.ok ? ok(r.message) : fail(r.message);
   });
 }

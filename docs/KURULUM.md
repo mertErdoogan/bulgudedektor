@@ -100,6 +100,7 @@ Bu servislerin entegrasyon kodu hazırdır; hesapları firma adına açıp anaht
 | İYS | — | Ticari SMS/e-posta göndermeden önce İYS'ye kayıt olun. Panel → Müşteriler → "İYS listesi" ile izinleri toplu yükleyebileceğiniz dosyayı alın. |
 | e-Arşiv fatura | Sipariş detayı → Fatura ekle | Faturayı entegratörünüzde (Paraşüt, Uyumsoft, Logo vb.) kesip PDF'ini siparişe yükleyin; müşteriye otomatik e-posta gider. |
 | Trendyol | Ayarlar → Entegrasyonlar | Satıcı panelinden API bilgilerini alın. Ürünler barkodla eşleşir; ürün kartlarını önce Trendyol panelinde açın. Siparişler her 15 dakikada siteye düşer ve stoktan düşülür. |
+| Hepsiburada | Ayarlar → Entegrasyonlar | Satıcı panelinden (HMS) API kullanıcı adı/şifresi ve Merchant ID alın. Ürünler **satıcı stok kodu = sitedeki SKU** ile eşleşir. Test ortamı için `.env`'e `HB_SANDBOX=1` yazın. |
 | Google Analytics / Meta Pixel | Ayarlar → Entegrasyonlar | Çerez onayı verildikten sonra çalışır. Meta katalog akışı: `/feed/meta.xml`, Google Merchant: `/feed/google.xml`. |
 
 ## 5. Güvenlik kontrol listesi
