@@ -249,8 +249,27 @@ export const DEFAULT_SETTINGS: AllSettings = {
   setup: { completed: false, completedSteps: [] },
 };
 
+/**
+ * Gizli alanlar veritabanında AES-256-GCM ile şifreli tutulur (anahtar AUTH_SECRET'tan türetilir).
+ * Veritabanı yedeği sızsa bile ödeme/SMS/pazaryeri parolaları okunamaz. Eski düz metin kayıtlar okunmaya devam eder,
+ * ilk kaydetmede şifrelenir.
+ */
+const SECRET_FIELDS: Partial<Record<keyof AllSettings, string[]>> = {
+  payment: ["iyzicoSecretKey", "paytrMerchantKey", "paytrMerchantSalt"],
+  integrations: ["smtpPass", "netgsmPass", "trendyolApiSecret", "hbPass", "eInvoiceApiKey", "cargoApiKey"],
+};
+
+function mapSecrets(key: string, value: Record<string, unknown>, fn: (v: string) => string) {
+  const fields = SECRET_FIELDS[key as keyof AllSettings];
+  if (!fields) return value;
+  const out = { ...value };
+  for (const f of fields) if (typeof out[f] === "string" && out[f]) out[f] = fn(out[f] as string);
+  return out;
+}
+
 export const getSettings = cache(async (): Promise<AllSettings> => {
-  const rows = await db.select().from(settings);
+  const { openSecret } = await import("./totp");
+  const rows = (await db.select().from(settings)).map((r) => ({ ...r, value: mapSecrets(r.key, r.value as Record<string, unknown>, (v) => (v.startsWith("v1.") ? (openSecret(v) ?? "") : v)) }));
   const out = structuredClone(DEFAULT_SETTINGS) as AllSettings;
   for (const r of rows) {
     const k = r.key as keyof AllSettings;
@@ -262,10 +281,12 @@ export const getSettings = cache(async (): Promise<AllSettings> => {
 export async function saveSettings<K extends keyof AllSettings>(key: K, value: Partial<AllSettings[K]>) {
   const current = (await getSettings())[key];
   const merged = { ...current, ...value };
+  const { sealSecret } = await import("./totp");
+  const stored = mapSecrets(key, merged as Record<string, unknown>, (v) => sealSecret(v));
   await db
     .insert(settings)
-    .values({ key, value: merged })
-    .onConflictDoUpdate({ target: settings.key, set: { value: merged, updatedAt: new Date() } });
+    .values({ key, value: stored })
+    .onConflictDoUpdate({ target: settings.key, set: { value: stored, updatedAt: new Date() } });
   return merged;
 }
 

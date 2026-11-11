@@ -1,3 +1,20 @@
+import sanitize from "sanitize-html";
+
+/**
+ * Panelden girilen ya da eski siteden aktarılan HTML içerik için beyaz liste temizleyici:
+ * script, iframe, form, olay öznitelikleri (onclick…), javascript: bağlantıları ve stil enjeksiyonu atılır.
+ */
+export function sanitizeHtml(html: string) {
+  return sanitize(html, {
+    allowedTags: ["h2", "h3", "h4", "p", "br", "hr", "strong", "b", "em", "i", "u", "s", "small", "sub", "sup", "blockquote", "code", "pre", "ul", "ol", "li", "a", "img", "table", "thead", "tbody", "tr", "th", "td", "figure", "figcaption", "span", "div", "details", "summary", "mark"],
+    allowedAttributes: { a: ["href", "title", "target", "rel"], img: ["src", "alt", "width", "height", "loading"], th: ["colspan", "rowspan"], td: ["colspan", "rowspan"], "*": ["id"] },
+    allowedSchemes: ["http", "https", "mailto", "tel"],
+    allowedSchemesByTag: { img: ["http", "https"] },
+    allowProtocolRelative: false,
+    transformTags: { a: sanitize.simpleTransform("a", { rel: "noopener noreferrer" }, true) },
+  });
+}
+
 // Küçük, güvenli Markdown dönüştürücü (başlık, kalın, italik, link, liste, paragraf).
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -108,6 +125,6 @@ export function markdownToHtml(src: string | null | undefined) {
 export function renderContent(src: string | null | undefined) {
   if (!src) return "";
   const t = src.trim();
-  if (t.startsWith("<")) return t.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/\son\w+="[^"]*"/gi, "");
+  if (t.startsWith("<")) return sanitizeHtml(t);
   return markdownToHtml(t);
 }

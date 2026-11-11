@@ -6,6 +6,7 @@
 npx tsx tests/unit/arena-parse.test.ts   # eski site ayrıştırıcısı (tests/fixtures/arena)
 npx tsx tests/unit/csv.test.ts           # CSV okuma/yazma
 npx tsx tests/unit/totp.test.ts          # iki adımlı doğrulama (RFC 6238 vektörleri)
+npx tsx tests/unit/sanitize.test.ts      # içerik HTML'inde XSS temizliği
 npx tsx tests/unit/marketplace.test.ts   # Trendyol/Hepsiburada adaptörleri, sahte API ile (demo veritabanı gerekir)
 ```
 

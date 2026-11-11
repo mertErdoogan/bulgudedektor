@@ -30,7 +30,7 @@ nano .env
 | `DOMAIN` | `www.arenadedektor.com` |
 | `APP_URL` | `https://www.arenadedektor.com` |
 | `POSTGRES_PASSWORD` | `openssl rand -hex 24` çıktısı |
-| `AUTH_SECRET` | `openssl rand -base64 48` çıktısı (değiştirirseniz herkesin oturumu kapanır, 2FA anahtarları geçersizleşir) |
+| `AUTH_SECRET` | `openssl rand -base64 48` çıktısı. **Bir kez belirleyip değiştirmeyin:** değişirse herkesin oturumu kapanır, 2FA anahtarları geçersizleşir ve panelde şifreli saklanan ödeme/SMS/pazaryeri parolalarının yeniden girilmesi gerekir. |
 | `CRON_SECRET` | `openssl rand -hex 24` çıktısı |
 
 ```bash

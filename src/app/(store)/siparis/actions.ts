@@ -30,7 +30,7 @@ export async function notifyTransfer(_: ActionResult | null, fd: FormData): Prom
     if (file instanceof File && file.size > 0) {
       if (!["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(file.type)) return fail("Dekont JPG, PNG veya PDF olmalı.");
       if (file.size > 5 * 1024 * 1024) return fail("Dekont 5 MB'tan büyük olamaz.");
-      receiptUrl = (await saveUpload(file)).url;
+      receiptUrl = (await saveUpload(file, { private: true })).url;
     }
     const note = str(fd.get("note")).slice(0, 300);
     await db

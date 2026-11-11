@@ -308,6 +308,7 @@ export async function quickUpdate(_: ActionResult | null, fd: FormData): Promise
 }
 
 export async function hasSerials(productId: string) {
+  await assertStaff("products.view");
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(serialNumbers).where(eq(serialNumbers.productId, productId));
   return n;
 }

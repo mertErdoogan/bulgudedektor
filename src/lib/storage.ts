@@ -59,17 +59,22 @@ async function optimize(buf: Buffer, mime: string): Promise<{ buf: Buffer; mime:
   }
 }
 
-export async function saveUpload(file: File) {
+/**
+ * private: true → dosya "private/" altına yazılır ve yalnızca yetkili personel /media/private/... üzerinden açabilir
+ * (havale dekontu gibi kişisel veriler). S3'te de genel adres verilmez, sunucu üzerinden okunur.
+ */
+export async function saveUpload(file: File, opts: { private?: boolean } = {}) {
   if (!ALLOWED[file.type]) throw new Error("Desteklenmeyen dosya türü. JPG, PNG, WEBP, AVIF, GIF, SVG veya PDF yükleyin.");
   if (file.size > MAX_UPLOAD_BYTES) throw new Error("Dosya 8 MB'tan büyük olamaz.");
   const o = await optimize(Buffer.from(await file.arrayBuffer()), file.type);
   const now = new Date();
-  const dir = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const name = `${randomUUID().slice(0, 12)}.${o.ext}`;
+  const dir = `${opts.private ? "private/" : ""}${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const name = `${opts.private ? randomUUID() : randomUUID().slice(0, 12)}.${o.ext}`;
   const key = `${dir}/${name}`;
   if (isS3()) {
     const { PutObjectCommand } = await import("@aws-sdk/client-s3");
-    await (await s3()).send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key, Body: o.buf, ContentType: o.mime, CacheControl: "public, max-age=31536000, immutable" }));
+    await (await s3()).send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key, Body: o.buf, ContentType: o.mime, CacheControl: opts.private ? "private, no-store" : "public, max-age=31536000, immutable" }));
+    if (opts.private) return { url: `/media/${key}`, filename: file.name, mime: o.mime, size: o.buf.length };
     return { url: `${publicBase()}/${key}`, filename: file.name, mime: o.mime, size: o.buf.length };
   }
   await mkdir(path.join(UPLOAD_DIR, dir), { recursive: true });
@@ -78,6 +83,11 @@ export async function saveUpload(file: File) {
 }
 
 export async function readUpload(rel: string) {
+  if (isS3() && rel.startsWith("private/")) {
+    const { GetObjectCommand } = await import("@aws-sdk/client-s3");
+    const r = await (await s3()).send(new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: rel }));
+    return Buffer.from(await r.Body!.transformToByteArray());
+  }
   const full = path.resolve(UPLOAD_DIR, rel);
   if (!full.startsWith(UPLOAD_DIR + path.sep)) throw new Error("invalid path");
   return readFile(full);
