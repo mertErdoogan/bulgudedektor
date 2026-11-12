@@ -62,7 +62,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         description={<span className="space-x-1">{c.tags.map((t) => <Badge key={t} tone="gold">{t}</Badge>)} <span>Müşteri {formatDate(c.createdAt)} tarihinden beri</span></span>}
         actions={
           <>
-            {c.phone ? <a className="rounded-lg bg-[#25D366] px-4 py-2 text-sm font-bold text-white" href={`https://wa.me/${c.phone.replace(/\D/g, "")}`} target="_blank">WhatsApp</a> : null}
+            {c.phone ? <a className="rounded-lg bg-[#15803d] px-4 py-2 text-sm font-bold text-white" href={`https://wa.me/${c.phone.replace(/\D/g, "")}`} target="_blank">WhatsApp</a> : null}
             <Link href="/admin/musteriler" className="px-2 py-2 text-sm font-bold text-link">← Müşteriler</Link>
           </>
         }

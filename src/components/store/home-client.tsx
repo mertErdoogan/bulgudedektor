@@ -1,5 +1,7 @@
 "use client";
 
+import { imgProps } from "@/lib/img";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -29,9 +31,10 @@ export function HeroSlider({ slides }: { slides: B[] }) {
             tabIndex={k === i ? 0 : -1}
           >
             <picture>
-              {s.mobileImageUrl ? <source media="(max-width: 767px)" srcSet={s.mobileImageUrl} /> : null}
+              {s.mobileImageUrl ? <source media="(max-width: 767px)" srcSet={imgProps(s.mobileImageUrl, [640, 828, 1080], "100vw").srcSet ?? s.mobileImageUrl} sizes="100vw" /> : null}
+              {/* İlk slayt LCP görselidir: öncelikli; diğerleri tembel yüklenir */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.imageUrl} alt={s.title} className={cn("h-full w-full", wide ? (!s.showText && !s.mobileImageUrl ? "object-contain md:object-cover" : "object-cover") : "object-contain bg-white p-6 md:pl-[45%]")} />
+              <img {...imgProps(s.imageUrl, [640, 1080, 1600, 1920], "(min-width: 1280px) 1240px, 100vw", 80)} loading={k === 0 ? "eager" : "lazy"} fetchPriority={k === 0 ? "high" : "low"} alt={s.title} className={cn("h-full w-full", wide ? (!s.showText && !s.mobileImageUrl ? "object-contain md:object-cover" : "object-cover") : "object-contain bg-white p-6 md:pl-[45%]")} />
             </picture>
             {s.showText ? (
               <span className={cn("absolute inset-y-0 left-0 flex max-w-[60%] flex-col justify-end gap-1 p-5 md:justify-center md:p-10", wide ? "bg-gradient-to-r from-black/55 to-transparent text-white" : "text-deep")}>
@@ -54,7 +57,10 @@ export function HeroSlider({ slides }: { slides: B[] }) {
           </button>
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
             {slides.map((s, k) => (
-              <button key={s.id} onClick={() => setI(k)} aria-label={`${k + 1}. slayt`} className={cn("h-2 rounded-full transition-all", k === i ? "w-6 bg-brand" : "w-2 bg-white/70")} />
+              <button key={s.id} onClick={() => setI(k)} aria-label={`${k + 1}. slayt`} aria-current={k === i} className="grid h-6 min-w-6 place-items-center">
+                {/* Görünen nokta küçük, dokunma alanı 24×24 (erişilebilirlik) */}
+                <span className={cn("block h-2 rounded-full transition-all", k === i ? "w-6 bg-brand" : "w-2 bg-white/70")} />
+              </button>
             ))}
           </div>
         </>

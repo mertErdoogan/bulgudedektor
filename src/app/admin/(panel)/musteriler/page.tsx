@@ -1,3 +1,4 @@
+import { q } from "@/db/q";
 import Link from "next/link";
 import { and, desc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 import { Download } from "lucide-react";
@@ -18,10 +19,10 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const staff = await requireStaff("customers.view");
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.s) || 1);
-  const paid = sql`${orders.paymentStatus} = 'PAID'`;
-  const ltv = sql<number>`coalesce((select sum(${orders.total}) from ${orders} where ${orders.customerId} = ${customers.id} and ${paid}),0)::float`;
-  const cnt = sql<number>`(select count(*)::int from ${orders} where ${orders.customerId} = ${customers.id} and ${paid})`;
-  const last = sql<Date | null>`(select max(${orders.createdAt}) from ${orders} where ${orders.customerId} = ${customers.id})`;
+  const paid = sql`${q(orders.paymentStatus)} = 'PAID'`;
+  const ltv = sql<number>`coalesce((select sum(${q(orders.total)}) from ${orders} where ${q(orders.customerId)} = ${q(customers.id)} and ${paid}),0)::float`;
+  const cnt = sql<number>`(select count(*)::int from ${orders} where ${q(orders.customerId)} = ${q(customers.id)} and ${paid})`;
+  const last = sql<Date | null>`(select max(${q(orders.createdAt)}) from ${orders} where ${q(orders.customerId)} = ${q(customers.id)})`;
   const conds: SQL[] = [];
   if (sp.q) conds.push(or(ilike(customers.name, `%${sp.q}%`), ilike(customers.email, `%${sp.q}%`), ilike(customers.phone, `%${sp.q.replace(/\s/g, "")}%`))!);
   if (sp.segment === "izinli") conds.push(eq(customers.marketingConsent, true));

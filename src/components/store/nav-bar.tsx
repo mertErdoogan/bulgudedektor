@@ -1,5 +1,6 @@
 "use client";
 
+import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -77,7 +78,7 @@ export function NavBar({ items, categories, brands, brandGroups }: { items: Item
                 {m.image ? (
                   <span className="hidden h-8 w-8 shrink-0 place-items-center rounded-full bg-soft ring-1 ring-line transition group-hover:bg-tint group-hover:ring-[#f3d6d1] 2xl:grid">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={m.image} alt="" className="h-6 w-6 object-contain mix-blend-multiply" />
+                    <img src={imgUrl(m.image, 64)} alt="" className="h-6 w-6 object-contain mix-blend-multiply" />
                   </span>
                 ) : null}
                 {m.label}

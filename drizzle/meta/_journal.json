@@ -106,6 +106,20 @@
       "when": 1794426274368,
       "tag": "0014_parallel_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794511199696,
+      "tag": "0015_polite_zzzax",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794511673606,
+      "tag": "0016_tough_stick",
+      "breakpoints": true
     }
   ]
 }

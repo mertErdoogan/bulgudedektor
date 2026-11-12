@@ -32,6 +32,9 @@ nano .env
 | `POSTGRES_PASSWORD` | `openssl rand -hex 24` çıktısı |
 | `AUTH_SECRET` | `openssl rand -base64 48` çıktısı. **Bir kez belirleyip değiştirmeyin:** değişirse herkesin oturumu kapanır, 2FA anahtarları geçersizleşir ve panelde şifreli saklanan ödeme/SMS/pazaryeri parolalarının yeniden girilmesi gerekir. |
 | `CRON_SECRET` | `openssl rand -hex 24` çıktısı |
+| `S3_PUBLIC_URL` | Yalnızca görselleri S3/R2'de tutacaksanız. Derleme anında da gerekir (görsel küçültme izni), `docker compose` bunu otomatik geçirir. |
+
+Saat dilimi imajda `TZ=Europe/Istanbul` olarak ayarlıdır; "bugünkü satış", günlük rapor ve kargo kesim saati İstanbul saatine göre hesaplanır. Docker dışında kurarsanız sunucuda da `TZ=Europe/Istanbul` tanımlayın.
 
 ```bash
 docker compose up -d --build
@@ -85,7 +88,7 @@ Efortek yönetim panelinden üye listesini Excel olarak indirin, **Farklı kayde
 1. Yeni siteyi geçici bir alt alan adında (ör. `yeni.arenadedektor.com`) kurup aktarımı yapın, kontrol edin.
 2. `.env`'de `DOMAIN` ve `APP_URL`'i asıl adrese çevirin, `docker compose up -d`.
 3. DNS'te `www` ve `@` kayıtlarını yeni sunucuya yönlendirin (TTL'i bir gün önceden 300'e düşürün).
-4. Google Search Console'da site haritasını (`/sitemap.xml`) yeniden gönderin; Panel → SEO → Yönlendirmeler'de 404 alan eski adresleri takip edin.
+4. Google Search Console'da site haritasını (`/sitemap.xml`) yeniden gönderin; Panel → Yönlendirmeler sayfasının üstündeki **Bulunamayan adresler (404)** listesini ilk iki hafta her gün kontrol edin; çok denenenlere yeni adres yazıp kaydedin.
 5. Aynı gün son bir `npm run import:arena -- --dry` alın; fiyat değişiklikleri için `npm run import:arena -- --from data/arena-snapshot.json` (stoklara dokunmaz).
 
 ## 4. Dış servisler (hesap açılması gerekenler)
@@ -102,7 +105,11 @@ Bu servislerin entegrasyon kodu hazırdır; hesapları firma adına açıp anaht
 | e-Arşiv fatura | Sipariş detayı → Fatura ekle | Faturayı entegratörünüzde (Paraşüt, Uyumsoft, Logo vb.) kesip PDF'ini siparişe yükleyin; müşteriye otomatik e-posta gider. |
 | Trendyol | Ayarlar → Entegrasyonlar | Satıcı panelinden API bilgilerini alın. Ürünler barkodla eşleşir; ürün kartlarını önce Trendyol panelinde açın. Siparişler her 15 dakikada siteye düşer ve stoktan düşülür. |
 | Hepsiburada | Ayarlar → Entegrasyonlar | Satıcı panelinden (HMS) API kullanıcı adı/şifresi ve Merchant ID alın. Ürünler **satıcı stok kodu = sitedeki SKU** ile eşleşir. Test ortamı için `.env`'e `HB_SANDBOX=1` yazın. |
-| Google Analytics / Meta Pixel | Ayarlar → Entegrasyonlar | Çerez onayı verildikten sonra çalışır. Meta katalog akışı: `/feed/meta.xml`, Google Merchant: `/feed/google.xml`. |
+| Google Analytics 4 | Ayarlar → Entegrasyonlar | Eski sitedeki ölçüm kimliği: `G-N5PGQ4LSCD` (aynı mülk kullanılırsa geçmiş veriler korunur). E-ticaret olayları otomatik gider: `view_item`, `add_to_cart`, `begin_checkout`, `purchase`, `search`, `contact` (WhatsApp/telefon tıklaması). GA4 → Yönetici → Etkinlikler'de `purchase` ve `contact` olaylarını **anahtar etkinlik** yapın. |
+| Google Ads | Ayarlar → Entegrasyonlar | Eski sitede `AW-17112368707` ve `AW-17135302190` var. Kimlikleri ve Google Ads → Hedefler → Dönüşümler'deki satın alma dönüşümünün **etiketini** (`AW-…/…`) girin; satış değeri ve sipariş no ile gider (mükerrer sayılmaz). WhatsApp tıklamasını da dönüşüm saymak için GA4'teki `contact` anahtar etkinliğini Google Ads'e içe aktarın. Consent Mode v2 sinyalleri çerez tercihine göre otomatik gönderilir. |
+| Meta Pixel + Conversions API | Ayarlar → Entegrasyonlar | Pixel ID ve (önerilir) Conversions API anahtarı: Events Manager → Veri kaynakları → Ayarlar → "Erişim anahtarı oluştur". Satın alma hem tarayıcıdan hem sunucudan aynı olay kimliğiyle gider; Meta tek sayar. Test için `.env`'e `META_TEST_EVENT_CODE=TEST…` yazıp Events Manager → Test olayları'nda izleyin. |
+| Google Merchant Center / Meta katalog | — | Ürün akışları: `/feed/google.xml`, `/feed/meta.xml`. Merchant Center'da "Planlanmış getirme" ile günlük çekin. |
+| Google Search Console | Ayarlar → SEO | Doğrulama kodunu girin; site haritası `/sitemap.xml` (ürün görselleri dahil). |
 
 ## 5. Güvenlik kontrol listesi
 

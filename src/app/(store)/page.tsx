@@ -1,3 +1,4 @@
+import { imgProps, imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { ArrowRight, Compass, FileText, MessageCircle, RotateCcw, ShieldCheck, Store, Video } from "lucide-react";
 import { HeroSlider } from "@/components/store/home-client";
@@ -75,7 +76,7 @@ export default async function Home() {
                 {nav.categories.filter((c) => !c.parentId).map((c) => (
                   <Link key={c.id} href={`/kategori/${c.slug}`} className="group relative flex flex-col overflow-hidden rounded-xl bg-tint transition hover:-translate-y-0.5 hover:shadow-lg">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <span className="block h-[110px] px-3 pt-3 md:h-[160px]">{c.imageUrl ? <img src={c.imageUrl} alt="" className="h-full w-full object-contain mix-blend-multiply" /> : null}</span>
+                    <span className="block h-[110px] px-3 pt-3 md:h-[160px]">{c.imageUrl ? <img {...imgProps(c.imageUrl, [256, 384], "(min-width: 768px) 200px, 45vw")} alt="" className="h-full w-full object-contain mix-blend-multiply" /> : null}</span>
                     <span className="flex flex-col px-3.5 pt-2 pb-3.5">
                       <b className="truncate text-[15px]">{c.name}</b>
                       <span className="truncate text-[13px] text-mute">{c.shortText}</span>
@@ -133,7 +134,7 @@ export default async function Home() {
                   <p className="text-sm opacity-80">{s.store.workingHours} · {sec.subtitle ?? "ortalama yanıt birkaç dakika"}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <a href={wa} target="_blank" className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 font-extrabold"><MessageCircle size={18} /> WhatsApp&apos;tan yaz</a>
+                  <a href={wa} target="_blank" className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#15803d] px-5 font-extrabold"><MessageCircle size={18} /> WhatsApp&apos;tan yaz</a>
                   <Link href="/iletisim?konu=goruntulu" className="flex h-12 items-center justify-center gap-2 rounded-lg bg-white px-5 font-extrabold text-deep"><Video size={18} /> Görüntülü randevu</Link>
                 </div>
               </div>
@@ -185,7 +186,7 @@ export default async function Home() {
                     {b.subtitle ? <span className="mt-1 block text-sm font-bold text-link">{b.subtitle} →</span> : null}
                   </span>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={b.imageUrl} alt="" className="h-20 w-20 shrink-0 object-contain mix-blend-multiply md:h-28 md:w-28" />
+                  <img src={imgUrl(b.imageUrl, 256)} alt="" className="h-20 w-20 shrink-0 object-contain mix-blend-multiply md:h-28 md:w-28" />
                 </Link>
               ))}
             </div>
@@ -196,7 +197,7 @@ export default async function Home() {
       {strip ? (
         <Link href={strip.linkUrl || "#"} className="container-x mt-4 block">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={strip.imageUrl} alt={strip.title} className="w-full rounded-xl" />
+          <img {...imgProps(strip.imageUrl, [640, 1080, 1600], "100vw")} loading="lazy" alt={strip.title} className="w-full rounded-xl" />
         </Link>
       ) : null}
       <div className="container-x mt-4">

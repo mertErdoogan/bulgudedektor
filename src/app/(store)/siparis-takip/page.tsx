@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/seo";
 import { allowIp } from "@/lib/guard";
 import { redirect } from "next/navigation";
 import { and, eq, or } from "drizzle-orm";
@@ -6,7 +7,7 @@ import { orders } from "@/db/schema";
 import { orderKey } from "@/lib/store";
 import { normalizePhone } from "@/lib/utils";
 
-export const metadata = { title: "Sipariş takibi" };
+export const metadata = pageMeta({ title: "Sipariş Takibi — Kargom Nerede?", description: "Sipariş numaranız ve e-posta ya da telefonunuzla siparişinizin ve kargonuzun durumunu anında sorgulayın.", path: "/siparis-takip" });
 
 export default async function TrackPage({ searchParams }: { searchParams: Promise<{ no?: string; iletisim?: string }> }) {
   const sp = await searchParams;

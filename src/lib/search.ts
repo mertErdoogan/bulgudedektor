@@ -1,3 +1,4 @@
+import { q as qc } from "@/db/q";
 import "server-only";
 import { and, desc, eq, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
@@ -47,7 +48,7 @@ export function tokenize(q: string) {
 }
 
 /** Ürünün aranabilir metni (ad + marka + kod + kategori + kullanım amaçları), normalleştirilmiş. */
-const doc = sql`arena_norm(${products.name} || ' ' || coalesce(${brands.name}, '') || ' ' || ${products.sku} || ' ' || coalesce((select ${categories.name} from ${categories} where ${categories.id} = ${products.categoryId}), '') || ' ' || array_to_string(${products.useCases}, ' '))`;
+const doc = sql`arena_norm(${qc(products.name)} || ' ' || coalesce(${qc(brands.name)}, '') || ' ' || ${qc(products.sku)} || ' ' || coalesce((select ${qc(categories.name)} from ${categories} where ${qc(categories.id)} = ${qc(products.categoryId)}), '') || ' ' || array_to_string(${qc(products.useCases)}, ' '))`;
 const nameDoc = sql`arena_norm(${products.name} || ' ' || coalesce(${brands.name}, ''))`;
 
 /** Sorgu için WHERE koşulu ve alaka puanı. Anlamlı kelime yoksa null (filtre uygulanmaz). */
@@ -84,7 +85,7 @@ export async function suggest(q: string) {
         slug: products.slug,
         price: products.price,
         brand: brands.name,
-        image: sql<string | null>`(select url from product_images pi where pi.product_id = ${products.id} order by pi.sort_order limit 1)`,
+        image: sql<string | null>`(select url from product_images pi where pi.product_id = ${qc(products.id)} order by pi.sort_order limit 1)`,
       })
       .from(products)
       .leftJoin(brands, eq(brands.id, products.brandId))

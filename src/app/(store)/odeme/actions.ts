@@ -9,6 +9,7 @@ import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { getCustomer } from "@/lib/auth";
 import { initCheckoutForm, getIyzicoConfig, simulationAllowed } from "@/lib/iyzico";
 import { getPaytrConfig } from "@/lib/paytr";
+import { readOrderAttribution } from "@/lib/attribution";
 import { addOrderEvent, failOrderPayment, notifyPlaced } from "@/lib/orders";
 import { quoteCart, type CartInput } from "@/lib/pricing";
 import { CUSTOMER_COOKIE, setSessionCookie, signToken } from "@/lib/session";
@@ -55,6 +56,7 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
     if (q.couponError) return fail(q.couponError);
     const installments = paymentMethod === "CARD" ? 1 : 1;
     const marketing = fd.get("marketing") === "on";
+    const attribution = await readOrderAttribution(fd.get("attr"));
     const password = str(fd.get("password"));
     if (password && password.length < 8) return fail("Şifre en az 8 karakter olmalı.");
 
@@ -96,6 +98,7 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
           taxOffice: strOrNull(fd.get("taxOffice")),
           taxNumber: strOrNull(fd.get("taxNumber")),
           customerNote: strOrNull(fd.get("note")),
+          attribution,
         })
         .returning();
       await tx.insert(orderItems).values(q.lines.map((l) => ({ orderId: o.id, productId: l.productId, name: l.name, sku: l.sku, imageUrl: l.imageUrl, unitPrice: l.unitPrice, unitCost: l.unitCost, quantity: l.quantity, total: l.total })));

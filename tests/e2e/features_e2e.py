@@ -150,7 +150,7 @@ async def main():
         sql("delete from customers where email='veli.eski@ornek.com'")
         await pg.goto(B + "/admin/musteriler")
         await pg.get_by_role("button", name="İçe aktar").click()
-        csv = "﻿Adı;Soyadı;E-Posta;GSM;İl;İlçe;Adres;Bülten\nVeli;Eski;veli.eski@ornek.com;0532 111 22 33;Ankara;Çankaya;Atatürk Blv. 1;Evet\nKayıt;Var;musteri2@ornek.com;;;;;\nBozuk;;bozuk-eposta;;;;;\n"
+        csv = "﻿Adı;Soyadı;E-Posta;GSM;İl;İlçe;Adres;Bülten\nVeli;Eski;veli.eski@ornek.com;0533 987 65 41;Ankara;Çankaya;Atatürk Blv. 1;Evet\nKayıt;Var;musteri2@ornek.com;;;;;\nBozuk;;bozuk-eposta;;;;;\n"
         f = tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf8")
         f.write(csv)
         f.close()

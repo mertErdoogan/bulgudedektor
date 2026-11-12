@@ -6,6 +6,8 @@ res=[]
 def chk(n,c): res.append((n,c)); print(('PASS' if c else 'FAIL'),n)
 def sql(q): return subprocess.run(['psql', os.environ.get('DATABASE_URL', 'postgresql://postgres@localhost/bulgu'), '-tAc', q],capture_output=True,text=True).stdout.strip()
 async def main():
+  sql("update users set totp_enabled=false, totp_secret=null, totp_last_step=null")  # features testi 2FA açar; giriş testleri sıfırdan başlar
+  sql("delete from rate_hits")
   sql("delete from rate_hits")  # DB tabanlı hız sınırı testler arasında sıfırlanır
   async with async_playwright() as p:
     b=await p.chromium.launch(executable_path=os.environ.get("CHROME", "/usr/bin/google-chrome"))

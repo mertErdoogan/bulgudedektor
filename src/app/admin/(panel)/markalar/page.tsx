@@ -1,3 +1,4 @@
+import { q } from "@/db/q";
 import Link from "next/link";
 import { asc, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -16,7 +17,7 @@ export default async function BrandsPage({ searchParams }: { searchParams: Promi
   await requireStaff("catalog.manage");
   const { id } = await searchParams;
   const rows = await db
-    .select({ b: brands, n: sql<number>`(select count(*)::int from ${products} where ${products.brandId} = ${brands.id})` })
+    .select({ b: brands, n: sql<number>`(select count(*)::int from ${products} where ${q(products.brandId)} = ${q(brands.id)})` })
     .from(brands)
     .orderBy(asc(brands.sortOrder), asc(brands.name));
   const edit = id ? rows.find((r) => r.b.id === id)?.b : undefined;

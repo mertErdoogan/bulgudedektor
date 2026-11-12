@@ -1,7 +1,8 @@
+import { q as qc } from "@/db/q";
 import { NextResponse } from "next/server";
 import { and, eq, gt, inArray, isNull, lt, ne, notInArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { cartSnapshots, customers, orders, passwordResets, productActivity, rateHits, productImages, products } from "@/db/schema";
+import { cartSnapshots, customers, orders, passwordResets, productActivity, rateHits, productImages, products, notFoundLogs } from "@/db/schema";
 import { mailCartReminder, mailReviewRequest } from "@/lib/mail";
 import { expireStalePendingOrders } from "@/lib/orders";
 
@@ -81,7 +82,7 @@ export async function GET(req: Request) {
               name: products.name,
               slug: products.slug,
               price: products.price,
-              image: sql<string | null>`(select ${productImages.url} from ${productImages} where ${productImages.productId} = ${products.id} order by ${productImages.sortOrder} limit 1)`,
+              image: sql<string | null>`(select ${qc(productImages.url)} from ${productImages} where ${qc(productImages.productId)} = ${qc(products.id)} order by ${qc(productImages.sortOrder)} limit 1)`,
             })
             .from(products)
             .where(and(inArray(products.id, ids), eq(products.status, "ACTIVE")))
@@ -99,6 +100,8 @@ export async function GET(req: Request) {
     const a = await db.delete(productActivity).where(lt(productActivity.hour, new Date(Date.now() - 30 * 24 * H))).returning({ p: productActivity.productId });
     const b = await db.delete(passwordResets).where(lt(passwordResets.expiresAt, new Date(Date.now() - 7 * 24 * H))).returning({ id: passwordResets.id });
     await db.delete(rateHits).where(lt(rateHits.windowStart, new Date(Date.now() - 24 * H)));
+    // 90 gündür tekrar denenmeyen 404 kayıtları
+    await db.delete(notFoundLogs).where(lt(notFoundLogs.lastAt, new Date(Date.now() - 90 * 24 * H)));
     return a.length + b.length;
   });
 

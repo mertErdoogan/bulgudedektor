@@ -1,3 +1,4 @@
+import { imgUrl } from "@/lib/img";
 import { CityDistrict } from "@/components/city-district";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -83,7 +84,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 <article key={d.id} className="rounded-2xl border border-line p-4">
                   <div className="flex gap-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {image ? <img src={image} alt="" className="h-20 w-24 object-contain" /> : null}
+                    {image ? <img src={imgUrl(image, 256)} alt="" className="h-20 w-24 object-contain" /> : null}
                     <div className="text-sm">
                       <b className="text-base">{name}</b>
                       <p className="text-mute">Seri no <span className="font-mono">{d.serial}</span></p>

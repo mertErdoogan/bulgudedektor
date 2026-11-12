@@ -49,6 +49,8 @@ async function notifyPlaced(orderId: string) {
   const o = await db.query.orders.findFirst({ where: eq(orders.id, orderId), with: { items: true } });
   if (!o) return;
   const link = `${process.env.APP_URL || ""}/siparis/${o.id}?k=${orderKey(o.id)}`;
+  const { sendMetaPurchase } = await import("./meta-capi");
+  await sendMetaPurchase(o.id).catch((e) => console.error("[meta-capi]", e));
   await mailOrderPlaced(o, link);
   const { smsOrderEvent } = await import("./sms");
   await smsOrderEvent("placed", { phone: o.phone, number: o.number, link });

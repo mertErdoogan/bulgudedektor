@@ -41,7 +41,7 @@ PAYMENT_SIMULATION=1 npm run dev
 
 **Güvenlik:** Giriş, kayıt, şifre sıfırlama ve sorgu sayfalarında deneme sınırı vardır (sunucu belleğinde; birden fazla sunucuya ölçeklenirse Redis'e taşınmalı). Formlarda Cloudflare Turnstile, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` girilince otomatik açılır.
 
-**Çerezler (KVKK):** Google Analytics ve Meta Pixel yalnızca ziyaretçi çerez bandında onay verirse yüklenir. Sepete ekleme, ödemeye geçiş ve satın alma olayları GA4/Pixel'e gönderilir.
+**Çerezler ve reklam ölçümü (KVKK):** Google etiketi (GA4 + Google Ads) ve Meta Pixel yalnızca ziyaretçi çerez bandında onay verirse yüklenir; Consent Mode v2 sinyalleri tercihe göre gider. Ürün görüntüleme, sepete ekleme, ödemeye geçiş, satın alma, site içi arama ve WhatsApp/telefon tıklaması ölçülür. Olaylar betik yüklenene kadar kuyrukta bekler (kaybolmaz). Satın alma Google Ads'e dönüşüm olarak, Meta'ya hem tarayıcıdan hem Conversions API ile (tek sayılır) gider. Her siparişin kaynağı (Google Ads/gclid, utm kampanyası, Instagram, organik…) kaydedilir; panelde sipariş detayında ve Raporlar → Satış kaynağı'nda görünür.
 
 ### iyzico canlıya geçiş
 1. iyzico üye işyeri panelinden **canlı** API ve gizli anahtarı al.
@@ -67,7 +67,7 @@ PAYMENT_SIMULATION=1 npm run dev
 | Yorum ve sorular | Onay, mağaza yanıtı, doğrulanmış alıcı işareti |
 | Vitrin | Duyuru şeridi, banner (zamanlı, mobil görsel), ana sayfa bölümleri sırala/aç-kapa/başlık; sayfalar (Markdown/HTML); menüler; medya kütüphanesi |
 | Raporlar | Dönem karşılaştırmalı ciro, sipariş, sepet, brüt kâr, indirim, iptal; marka/kategori, ürün kârlılığı, taksit dağılımı, iller, stok değeri, tekrar alma oranı; CSV |
-| Ayarlar | Mağaza (ETBİS, MERSİS), kargo (ücret kuralı, firmalar, takip linkleri, showroom), ödeme (iyzico, taksit, havale + IBAN), entegrasyonlar (GA4, Meta Pixel, SMTP, e-fatura/kargo anahtarları), SEO |
+| Ayarlar | Mağaza (ETBİS, MERSİS), kargo (ücret kuralı, firmalar, takip linkleri, showroom), ödeme (iyzico, taksit, havale + IBAN), entegrasyonlar (GA4, Google Ads dönüşümü, GTM, Meta Pixel + Conversions API, SMTP, e-fatura/kargo anahtarları), SEO |
 | Ekip ve yetkiler | Kişi ekle/pasifleştir/şifre sıfırla, satış indirim limiti; rol bazlı 22 yetki, özel rol oluşturma; en az bir yönetici koruması |
 | İşlem kayıtları | Kim, ne zaman, neyi değiştirdi (silinemez) |
 | Kurulum | İlk girişte 7 adımlı kontrol listesi |

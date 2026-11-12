@@ -1,3 +1,4 @@
+import { q } from "@/db/q";
 import type { MetadataRoute } from "next";
 import { and, asc, eq, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -13,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .select({
         slug: products.slug,
         u: products.updatedAt,
-        imgs: sql<string[]>`coalesce((select array_agg(${productImages.url} order by ${productImages.sortOrder}) from ${productImages} where ${productImages.productId} = ${products.id}), '{}')`,
+        imgs: sql<string[]>`coalesce((select array_agg(${q(productImages.url)} order by ${q(productImages.sortOrder)}) from ${productImages} where ${q(productImages.productId)} = ${q(products.id)}), '{}')`,
       })
       .from(products)
       .where(eq(products.status, "ACTIVE")),

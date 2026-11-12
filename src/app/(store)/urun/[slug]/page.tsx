@@ -23,7 +23,7 @@ import { AnswerBox, Breadcrumbs, FaqSection } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PostCards } from "@/components/store/post-cards";
 import { getFaqs, relatedPosts, toQA } from "@/lib/content";
-import { graph, pageMeta, productLd } from "@/lib/seo";
+import { graph, metaDesc, pageMeta, productLd } from "@/lib/seo";
 import type { AllSettings } from "@/lib/settings";
 
 async function getProduct(slug: string) {
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const full = fullName(p);
   return pageMeta({
     title: p.seoTitle || `${full} Fiyatı ve Özellikleri`,
-    description: p.seoDescription || p.shortDescription || `${full}: orijinal, faturalı, ${p.warrantyMonths} ay garantili. Teknik özellikler, kimler için uygun, yorumlar ve uzman desteği.`,
+    description: metaDesc([p.seoDescription, p.shortDescription], `${full}: orijinal, faturalı, ${p.warrantyMonths} ay garantili. Teknik özellikler, taksit seçenekleri ve uzman desteği.`),
     path: `/urun/${p.slug}`,
     image: p.images[0]?.url,
     noindex: p.status === "ARCHIVED",
@@ -213,7 +213,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} amount={p.price} brand={p.brand?.name} />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <a href={wa} target="_blank" className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#25D366] text-sm font-extrabold text-white"><MessageCircle size={18} /> Bu ürünü sor</a>
+            <a href={wa} target="_blank" className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#15803d] text-sm font-extrabold text-white"><MessageCircle size={18} /> Bu ürünü sor</a>
             <Link href={`/iletisim?konu=goruntulu&urun=${encodeURIComponent(p.name)}`} className="flex h-12 items-center justify-center gap-2 rounded-lg border border-deep text-sm font-extrabold"><Video size={18} /> Kamerada göster</Link>
           </div>
 

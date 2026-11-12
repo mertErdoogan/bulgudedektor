@@ -10,13 +10,17 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Görseller S3/R2'de tutulacaksa genel adres derlemede bilinmeli (görsel küçültme izni). Yerel diskte boş kalır.
+ARG S3_PUBLIC_URL=""
+ENV S3_PUBLIC_URL=${S3_PUBLIC_URL}
 # Derleme sırasında veritabanına bağlanılmaz; gerçek değerler çalışma anında gelir
 RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" AUTH_SECRET="build-only" \
     NODE_OPTIONS=--max-old-space-size=3072 npx next build
 
 FROM node:22-bookworm-slim AS run
 WORKDIR /app
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 UPLOAD_DIR=/data/uploads
+# TZ: "bugün", günlük rapor, kargo kesim saati İstanbul saatine göre hesaplanır (sunucular varsayılan UTC'dir)
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 UPLOAD_DIR=/data/uploads TZ=Europe/Istanbul
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /data/uploads && chown -R node:node /data
 # tsx/drizzle-kit (göç ve içe aktarma betikleri) için node_modules olduğu gibi taşınır

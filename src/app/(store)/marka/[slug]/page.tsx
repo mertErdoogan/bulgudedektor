@@ -6,7 +6,7 @@ import { brands } from "@/db/schema";
 import { Catalog, type SP } from "@/components/store/catalog";
 import { AnswerBox } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
-import { abs, graph, pageMeta } from "@/lib/seo";
+import { abs, graph, metaDesc, pageMeta } from "@/lib/seo";
 import { catalogStats, getBrandGroups } from "@/lib/store";
 import { formatTL } from "@/lib/utils";
 
@@ -17,7 +17,7 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
   if (!b || !b.isActive) return {};
   return pageMeta({
     title: `${b.name} Dedektör Modelleri ve Fiyatları`,
-    description: b.description || `Orijinal ${b.name} metal dedektörleri: tüm modeller, güncel fiyatlar, teknik karşılaştırma. Faturalı, distribütör garantili, uzman desteğiyle.`,
+    description: metaDesc([b.description], `Orijinal ${b.name} metal dedektörleri: tüm modeller, güncel fiyatlar, teknik karşılaştırma. Faturalı, distribütör garantili, uzman desteğiyle.`),
     path: `/marka/${b.slug}`,
     image: b.logoUrl,
     noindex: Object.keys(await searchParams).length > 0,

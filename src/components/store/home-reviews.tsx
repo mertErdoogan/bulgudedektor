@@ -1,3 +1,5 @@
+import { imgUrl } from "@/lib/img";
+import { q } from "@/db/q";
 import Link from "next/link";
 import { BadgeCheck, Star } from "lucide-react";
 import { desc, eq, sql } from "drizzle-orm";
@@ -22,7 +24,7 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
         createdAt: reviews.createdAt,
         productName: products.name,
         productSlug: products.slug,
-        image: sql<string | null>`(select ${productImages.url} from ${productImages} where ${productImages.productId} = ${products.id} order by ${productImages.sortOrder} limit 1)`,
+        image: sql<string | null>`(select ${q(productImages.url)} from ${productImages} where ${q(productImages.productId)} = ${q(products.id)} order by ${q(productImages.sortOrder)} limit 1)`,
       })
       .from(reviews)
       .innerJoin(products, eq(products.id, reviews.productId))
@@ -63,7 +65,7 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
             </p>
             <Link href={`/urun/${r.productSlug}#yorumlar`} className="mt-3 flex items-center gap-2.5 rounded-xl bg-soft p-2 hover:bg-tint">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              {r.image ? <img src={r.image} alt="" loading="lazy" className="h-10 w-10 shrink-0 object-contain mix-blend-multiply" /> : null}
+              {r.image ? <img src={imgUrl(r.image, 96)} alt="" loading="lazy" className="h-10 w-10 shrink-0 object-contain mix-blend-multiply" /> : null}
               <span className="min-w-0 truncate text-[13px] font-bold">{r.productName}</span>
             </Link>
           </article>

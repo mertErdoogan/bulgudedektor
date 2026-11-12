@@ -1,3 +1,4 @@
+import { q } from "@/db/q";
 import "server-only";
 import { and, desc, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -25,7 +26,7 @@ export async function boughtTogether(ids: string[], limit = 4): Promise<ProductC
     .where(
       and(
         sql`${orders.status} not in ('CANCELLED','REFUNDED','PENDING_PAYMENT')`,
-        sql`${orderItems.orderId} in (select oi.order_id from order_items oi where oi.product_id in (${sql.join(ids.map((i) => sql`${i}`), sql`, `)}))`,
+        sql`${q(orderItems.orderId)} in (select oi.order_id from order_items oi where oi.product_id in (${sql.join(ids.map((i) => sql`${i}`), sql`, `)}))`,
         notInArray(orderItems.productId, ids),
       ),
     )

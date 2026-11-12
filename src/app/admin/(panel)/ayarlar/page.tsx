@@ -165,7 +165,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <ActionForm action={saveIntegrations} className="grid gap-4 p-5 md:grid-cols-2">
               <p className="font-bold md:col-span-2">Analitik ve reklam</p>
               <Field label="Google Analytics 4 ölçüm kimliği"><Input name="gaMeasurementId" defaultValue={s.integrations.gaMeasurementId} placeholder="G-XXXXXXX" /></Field>
+              <Field label="Google Ads kimlikleri (virgülle)" hint="Eski sitede: AW-17112368707, AW-17135302190"><Input name="googleAdsIds" defaultValue={s.integrations.googleAdsIds} placeholder="AW-123456789" /></Field>
+              <Field label="Satın alma dönüşüm etiketleri (virgülle)" hint="Google Ads → Hedefler → Dönüşümler → etiket kurulumu: AW-123/AbCd"><Input name="adsPurchaseLabels" defaultValue={s.integrations.adsPurchaseLabels} placeholder="AW-123456789/AbCdEfGh" /></Field>
+              <Field label="Google Tag Manager (isteğe bağlı)" hint="Ajans GTM kullanıyorsa. Boşsa doğrudan gtag kullanılır."><Input name="gtmId" defaultValue={s.integrations.gtmId} placeholder="GTM-XXXXXXX" /></Field>
               <Field label="Meta Pixel ID"><Input name="metaPixelId" defaultValue={s.integrations.metaPixelId} /></Field>
+              <Field label="Meta Conversions API anahtarı" hint="Satın almayı sunucudan da bildirir; reklam engelleyicide kaybolan dönüşümleri kurtarır." className="md:col-span-2"><Input name="metaCapiToken" defaultValue={mask(s.integrations.metaCapiToken)} autoComplete="off" /></Field>
               <p className="mt-2 font-bold md:col-span-2">Bildirim e-postası (SMTP)</p>
               <Field label="SMTP sunucusu"><Input name="smtpHost" defaultValue={s.integrations.smtpHost} placeholder="smtp.yandex.com:465" /></Field>
               <Field label="Gönderen adres"><Input name="smtpFrom" defaultValue={s.integrations.smtpFrom} /></Field>

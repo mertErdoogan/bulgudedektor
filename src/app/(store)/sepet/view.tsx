@@ -1,5 +1,6 @@
 "use client";
 
+import { imgUrl } from "@/lib/img";
 import { CartUpsell } from "@/components/store/rails";
 
 import Link from "next/link";
@@ -59,7 +60,7 @@ export function CartView({ inst, freeThreshold, flatRate }: { inst: number; free
             <div key={l.productId} className="flex gap-3 rounded-xl border border-line p-3">
               <Link href={`/urun/${l.slug}`} className="grid h-24 w-24 shrink-0 place-items-center rounded-lg bg-white">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                {l.imageUrl ? <img src={l.imageUrl} alt="" className="h-full w-full object-contain p-1" /> : null}
+                {l.imageUrl ? <img src={imgUrl(l.imageUrl, 256)} alt="" className="h-full w-full object-contain p-1" /> : null}
               </Link>
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <Link href={`/urun/${l.slug}`} className="font-bold hover:text-link">{l.name}</Link>

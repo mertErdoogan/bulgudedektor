@@ -1,3 +1,4 @@
+import { sourceLabel } from "@/lib/attribution";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq } from "drizzle-orm";
@@ -381,7 +382,13 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               <p>
                 {o.paymentMethod === "CARD" ? "Kredi / banka kartı" : "Havale / EFT"} · {o.installments > 1 ? `${o.installments} taksit` : "Tek çekim"}
               </p>
-              {o.paymentRef ? <p className="text-xs text-mute">iyzico ödeme no: {o.paymentRef}</p> : null}
+              {o.paymentRef ? <p className="text-xs text-mute">{(o.paymentMeta as { provider?: string } | null)?.provider === "paytr" ? "PayTR" : "iyzico"} ödeme no: {o.paymentRef}</p> : null}
+              <p className="text-xs text-mute">
+                Kaynak: <b className="text-deep">{sourceLabel(o.attribution, o.channel)}</b>
+                {o.attribution?.campaign ? ` · kampanya: ${o.attribution.campaign}` : ""}
+                {o.attribution?.landing ? ` · giriş: ${o.attribution.landing}` : ""}
+                {o.attribution?.capiSent ? " · Meta'ya bildirildi" : ""}
+              </p>
               <p className="mt-2">
                 {o.invoiceType === "CORPORATE" ? (
                   <>

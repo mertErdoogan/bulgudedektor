@@ -30,7 +30,7 @@ export function Breadcrumbs({ items, className = "mb-3" }: { items: { name: stri
 export function AnswerBox({ title = "Kısa cevap", children, updated }: { title?: string; children: React.ReactNode; updated?: string }) {
   return (
     <div className="answer-box rounded-2xl border-l-4 border-brand bg-tint p-4 md:p-5">
-      <p className="mb-1.5 flex items-center gap-1.5 text-[14px] font-extrabold text-brand">
+      <p className="mb-1.5 flex items-center gap-1.5 text-[14px] font-extrabold text-link">
         <Sparkles size={14} /> {title}
       </p>
       <div className="text-[15.5px] leading-relaxed text-deep">{children}</div>

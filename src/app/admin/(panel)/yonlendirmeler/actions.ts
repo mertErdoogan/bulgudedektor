@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { redirects } from "@/db/schema";
+import { notFoundLogs, redirects } from "@/db/schema";
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { audit } from "@/lib/audit";
 import { assertStaff } from "@/lib/auth";
@@ -28,6 +28,7 @@ export async function saveRedirect(_: ActionResult | null, fd: FormData): Promis
     if (fromPath === toPath) return fail("Kaynak ve hedef aynı olamaz.");
     if (/^\/(admin|api|media|_next)\b/.test(fromPath)) return fail("Sistem adresleri yönlendirilemez.");
     await db.insert(redirects).values({ fromPath, toPath }).onConflictDoUpdate({ target: redirects.fromPath, set: { toPath } });
+    await db.delete(notFoundLogs).where(eq(notFoundLogs.path, fromPath));
     await audit(staff.id, "create", "redirect", null, `${fromPath} → ${toPath}`);
     revalidatePath("/admin/yonlendirmeler");
     return ok("Yönlendirme kaydedildi.");
@@ -41,5 +42,14 @@ export async function deleteRedirect(id: string): Promise<ActionResult> {
     await audit(staff.id, "delete", "redirect", id, "Yönlendirme silindi");
     revalidatePath("/admin/yonlendirmeler");
     return ok("Silindi.");
+  });
+}
+
+export async function dismiss404(id: string): Promise<ActionResult> {
+  return safe(async () => {
+    await assertStaff("cms.manage");
+    await db.delete(notFoundLogs).where(eq(notFoundLogs.id, id));
+    revalidatePath("/admin/yonlendirmeler");
+    return ok("Listeden kaldırıldı.");
   });
 }

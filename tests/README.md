@@ -29,6 +29,7 @@ export DATABASE_URL=postgresql://...   # .env'deki ile aynı
 | `features_e2e.py` | Eski adres yönlendirmeleri, yasal metinler, taksit tablosu, varyantlar, 2FA, e-posta doğrulama, KVKK döküm/silme, fatura, müşteri CSV, İYS, tek tıkla çıkış |
 | `team_e2e.py` | İş listesi ve atama, toplu kargo/atama, toplama listesi ve etiket, takip no içe aktarma, hazır yanıtlar, panel bildirimleri |
 | `paytr_e2e.py` | PayTR: ayar, bağlantı testi, iframe, imzalar, bildirim (sahte imza, idempotent, başarısız, geç ödeme uyarısı), sağlayıcı değiştirme, PayTR iadesi. Sunucu `PAYTR_BASE_URL=http://127.0.0.1:4010` ile başlatılmalı. |
+| `ads_e2e.py` | Reklam ölçümü: onaysız ziyaretçide etiket yok, Consent Mode v2, olay kuyruğu (betik geç yüklense de olay kaybolmaz), GA4 e-ticaret olayları, Google Ads satın alma dönüşümü, Meta Pixel + Conversions API (aynı eventID), sipariş kaynağı (gclid/utm), panelde kaynak ve rapor, 404 kaydı → tek tıkla yönlendirme. Sunucu `META_GRAPH_URL=http://127.0.0.1:4011` ile başlatılmalı. |
 | `mobile_overflow.py <yol>` | 390 px genişlikte yatay taşma kontrolü |
 
 Her dosya bağımsızdır; demo veriyi değiştirdikleri için aralarında `npm run db:seed` çalıştırın. Ortam değişkenleri: `BASE_URL`, `DATABASE_URL`, `CHROME`.

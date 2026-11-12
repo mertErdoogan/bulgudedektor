@@ -401,6 +401,29 @@ export const campaigns = pgTable("campaigns", {
   createdAt: createdAt(),
 });
 
+export type OrderAttribution = {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  term?: string;
+  content?: string;
+  gclid?: string;
+  gbraid?: string;
+  wbraid?: string;
+  fbclid?: string;
+  referrer?: string;
+  landing?: string;
+  at?: string;
+  /** Sipariş anındaki çerez onayı */
+  analytics?: boolean;
+  marketing?: boolean;
+  fbp?: string;
+  fbc?: string;
+  ip?: string;
+  ua?: string;
+  capiSent?: boolean;
+};
+
 export const orders = pgTable(
   "orders",
   {
@@ -441,6 +464,8 @@ export const orders = pgTable(
     trackingNumber: text("tracking_number"),
     /** Ödemenin onaylandığı an (kart: anında, havale: panelden onaylanınca); hazırlık süresi buradan sayılır */
     paidAt: timestamp("paid_at", { withTimezone: true }),
+    /** Siparişin kaynağı (utm/gclid/fbclid/referrer) ve reklam ölçümü için onay bilgisi */
+    attribution: jsonb("attribution").$type<OrderAttribution>(),
     shippedAt: timestamp("shipped_at", { withTimezone: true }),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     reviewRequestedAt: timestamp("review_requested_at", { withTimezone: true }),
@@ -606,6 +631,16 @@ export const redirects = pgTable("redirects", {
   toPath: text("to_path").notNull(),
   hits: integer("hits").notNull().default(0),
   createdAt: createdAt(),
+});
+
+/** Bulunamayan adresler (404): taşınmadan sonra kırık eski linkleri bulup yönlendirme eklemek için */
+export const notFoundLogs = pgTable("not_found_logs", {
+  id: id(),
+  path: text("path").notNull().unique(),
+  hits: integer("hits").notNull().default(1),
+  referrer: text("referrer"),
+  firstAt: timestamp("first_at", { withTimezone: true }).notNull().defaultNow(),
+  lastAt: timestamp("last_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ───────────────────────────── Relations

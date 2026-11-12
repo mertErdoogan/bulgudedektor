@@ -1,3 +1,4 @@
+import { imgProps } from "@/lib/img";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import type { CardCtx } from "@/lib/card-ctx";
@@ -60,7 +61,7 @@ export function NewArrivals({ items, ctx }: { items: P[]; ctx: CardCtx }) {
           <Link href={`/urun/${lead.slug}`} className="group relative hidden flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-white to-[#f1f1f1] p-6 text-deep lg:flex">
             <span className="w-fit rounded-md bg-accent px-2 py-0.5 text-xs font-extrabold text-white">Öne çıkan yeni</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {lead.image ? <img src={lead.image} alt={lead.name} className="my-4 h-[230px] w-full object-contain transition duration-300 group-hover:scale-105" /> : null}
+            {lead.image ? <img {...imgProps(lead.image, [384, 640], "(min-width: 768px) 400px, 90vw")} alt={lead.name} className="my-4 h-[230px] w-full object-contain transition duration-300 group-hover:scale-105" /> : null}
             <span className="mt-auto text-xs font-extrabold tracking-wider text-mute">{lead.brand?.toLocaleUpperCase("en-US")}</span>
             <b className="font-display text-xl leading-tight">{lead.name}</b>
             <span className="mt-1 text-lg font-extrabold">{formatTL(lead.price)}</span>

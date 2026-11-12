@@ -1,5 +1,6 @@
 "use client";
 
+import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { ArrowLeft, MessageCircle } from "lucide-react";
@@ -46,7 +47,7 @@ export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsa
                 <div className={cn("px-4 py-2 text-xs font-extrabold tracking-wide", i === 0 ? "bg-brand text-white" : "text-link")}>{x.label}</div>
                 <Link href={`/urun/${x.p.slug}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {x.p.image ? <img src={x.p.image} alt={x.p.name} className="h-48 w-full object-contain p-4" /> : null}
+                  {x.p.image ? <img src={imgUrl(x.p.image, 384)} alt={x.p.name} className="h-48 w-full object-contain p-4" /> : null}
                 </Link>
                 <div className="flex flex-1 flex-col gap-2 px-4 pb-4 text-sm">
                   <Link href={`/urun/${x.p.slug}`} className="text-lg font-extrabold hover:text-link">{x.p.name}</Link>
@@ -65,7 +66,7 @@ export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsa
           <p className="mt-6 rounded-xl bg-soft p-6">Bu seçimlere tam uyan cihaz bulamadık. Bir uzmanla konuşalım; seçeneklerini birlikte netleştirelim.</p>
         )}
         <div className="mt-6 flex flex-wrap gap-2">
-          {whatsapp ? <a href={`https://wa.me/${whatsapp}?text=${waText}`} target="_blank" className="flex h-12 items-center gap-2 rounded-lg bg-[#25D366] px-5 font-extrabold text-white"><MessageCircle size={18} /> Sonucu uzmana gönder</a> : null}
+          {whatsapp ? <a href={`https://wa.me/${whatsapp}?text=${waText}`} target="_blank" className="flex h-12 items-center gap-2 rounded-lg bg-[#15803d] px-5 font-extrabold text-white"><MessageCircle size={18} /> Sonucu uzmana gönder</a> : null}
           <Link href={`/urunler?amac=${a.amac}`} className="flex h-12 items-center rounded-lg border border-deep px-5 font-extrabold">Tüm uygun cihazlar ({res.total})</Link>
         </div>
       </div>

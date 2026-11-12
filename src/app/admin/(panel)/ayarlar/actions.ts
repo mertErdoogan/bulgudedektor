@@ -156,7 +156,11 @@ export async function saveIntegrations(_: ActionResult | null, fd: FormData): Pr
     };
     await saveSettings("integrations", {
       gaMeasurementId: str(fd.get("gaMeasurementId")),
+      googleAdsIds: str(fd.get("googleAdsIds")).replace(/\s+/g, ""),
+      adsPurchaseLabels: str(fd.get("adsPurchaseLabels")).replace(/\s+/g, ""),
+      gtmId: str(fd.get("gtmId")),
       metaPixelId: str(fd.get("metaPixelId")),
+      metaCapiToken: keep("metaCapiToken"),
       whatsappApiToken: keep("whatsappApiToken"),
       smtpHost: str(fd.get("smtpHost")),
       smtpUser: str(fd.get("smtpUser")),

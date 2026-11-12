@@ -5,6 +5,7 @@ import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Cookie } from "lucide-react";
+import { pageView } from "@/lib/track";
 
 /**
  * KVKK çerez onayı. Analitik (GA4) ve pazarlama (Meta Pixel) çerezleri yalnızca açık onaydan sonra yüklenir.
@@ -28,7 +29,9 @@ export function openConsent() {
   window.dispatchEvent(new Event("arena-consent-open"));
 }
 
-export function ConsentAndAnalytics({ ga, px }: { ga?: string; px?: string }) {
+type Tags = { ga?: string; ads?: string[]; labels?: string[]; gtm?: string; px?: string };
+
+export function ConsentAndAnalytics({ ga, ads = [], labels = [], gtm, px }: Tags) {
   const [choice, setChoice] = useState<Choice | null>(null);
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState(false);
@@ -48,11 +51,10 @@ export function ConsentAndAnalytics({ ga, px }: { ga?: string; px?: string }) {
     return () => window.removeEventListener("arena-consent-open", reopen);
   }, []);
 
-  // Sayfa değişiminde GA'ya sayfa görüntüleme bildir (SPA geçişleri)
+  // Sayfa değişiminde sayfa görüntüleme (SPA geçişleri). Betik henüz yüklenmediyse olay kuyruğa girer.
   useEffect(() => {
-    const w = window as Window & { gtag?: (...a: unknown[]) => void; fbq?: (...a: unknown[]) => void };
-    if (choice?.analytics && ga) w.gtag?.("event", "page_view", { page_path: path });
-    if (choice?.marketing && px) w.fbq?.("track", "PageView");
+    if (!choice) return;
+    pageView(path, { ga: !!(choice.analytics && ga), px: !!(choice.marketing && px) });
   }, [path, choice, ga, px]);
 
   const decide = (c: Choice) => {
@@ -66,18 +68,35 @@ export function ConsentAndAnalytics({ ga, px }: { ga?: string; px?: string }) {
     }
   };
 
-  const gaId = ga?.replace(/[^A-Z0-9-]/gi, "");
+  const clean = (v: string) => v.replace(/[^A-Za-z0-9_/-]/g, "");
+  const gaId = ga ? clean(ga) : "";
+  const adIds = ads.map(clean).filter((x) => /^AW-\d+$/.test(x));
+  const adLabels = labels.map(clean).filter((x) => /^AW-\d+\/[\w-]+$/.test(x));
+  const gtmId = gtm ? clean(gtm) : "";
   const pxId = px?.replace(/\D/g, "");
+  const a = !!choice?.analytics;
+  const m = !!choice?.marketing;
+  // Google etiketi: analitik onayıyla GA4, pazarlama onayıyla Google Ads. Consent Mode v2 sinyalleri her zaman ilk komut.
+  const gIds = [...(a && gaId ? [gaId] : []), ...(m ? adIds : [])];
+  const gBoot =
+    "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;" +
+    `gtag('consent','default',{analytics_storage:'${a ? "granted" : "denied"}',ad_storage:'${m ? "granted" : "denied"}',ad_user_data:'${m ? "granted" : "denied"}',ad_personalization:'${m ? "granted" : "denied"}'});` +
+    "gtag('js',new Date());" +
+    gIds.map((id) => `gtag('config','${id}',{send_page_view:false});`).join("") +
+    `window.__arenaAds=${JSON.stringify(m ? adLabels : [])};window.dispatchEvent(new Event('arena-tags'));`;
   return (
     <>
-      {choice?.analytics && gaId ? (
+      {choice && (gIds.length || gtmId) ? (
         <>
-          <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
-          <Script id="ga" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;gtag('js',new Date());gtag('config','${gaId}',{send_page_view:false});`}</Script>
+          <Script id="gtag-boot" strategy="afterInteractive">{gBoot}</Script>
+          {gIds.length ? <Script src={`https://www.googletagmanager.com/gtag/js?id=${gIds[0]}`} strategy="afterInteractive" /> : null}
+          {gtmId ? (
+            <Script id="gtm" strategy="afterInteractive">{`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');`}</Script>
+          ) : null}
         </>
       ) : null}
-      {choice?.marketing && pxId ? (
-        <Script id="px" strategy="afterInteractive">{`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${pxId}');`}</Script>
+      {m && pxId ? (
+        <Script id="px" strategy="afterInteractive">{`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${pxId}');window.dispatchEvent(new Event('arena-tags'));`}</Script>
       ) : null}
       {open ? (
         <div role="dialog" aria-label="Çerez tercihleri" className="fixed inset-x-3 bottom-[76px] z-[60] mx-auto max-w-3xl rounded-2xl border border-line bg-white p-4 text-deep shadow-2xl md:bottom-4 md:p-5">

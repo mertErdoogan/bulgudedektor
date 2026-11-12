@@ -4,7 +4,13 @@ from playwright.async_api import async_playwright
 B = os.environ.get("BASE_URL", "http://localhost:3000")
 res=[]
 def chk(n,c): res.append((n,c)); print(('PASS' if c else 'FAIL'),n)
+def _sql(q):
+  import subprocess
+  return subprocess.run(['psql', os.environ.get('DATABASE_URL', 'postgresql://postgres@localhost/bulgu'), '-tAc', q], capture_output=True, text=True).stdout.strip()
 async def main():
+  _sql("update users set totp_enabled=false, totp_secret=null, totp_last_step=null")  # features testi 2FA açar; giriş testleri sıfırdan başlar
+  _sql("delete from rate_hits")
+  _sql("delete from rate_hits")  # DB tabanlı giriş hız sınırı testler arasında sıfırlanır
   async with async_playwright() as p:
     b=await p.chromium.launch(executable_path=os.environ.get("CHROME", "/usr/bin/google-chrome")); pg=await (await b.new_context()).new_page()
     await pg.goto(B+'/admin/giris'); await pg.fill('input[name=email]','admin@arenadedektor.local'); await pg.fill('input[name=password]','Arena123!')
@@ -38,7 +44,8 @@ async def main():
     await pg.goto(B+'/sss'); chk('SSS sitede', 'Dedektör yağmurda kullanılır mı?' in await pg.content())
     # Yönlendirme elle
     await pg.goto(B+'/admin/yonlendirmeler', wait_until='networkidle')
-    await pg.fill('input[name=fromPath]','https://eskisite.com/urunler/ace-250.html'); await pg.fill('input[name=toPath]','/urun/ace-250')
+    nf=pg.locator('form:has(input[name=fromPath]:visible)')  # 404 listesindeki satır formları gizli fromPath taşır
+    await nf.locator('input[name=fromPath]').fill('https://eskisite.com/urunler/ace-250.html'); await nf.locator('input[name=toPath]').fill('/urun/ace-250')
     await pg.click('button:has-text("Ekle")'); await pg.wait_for_timeout(1500)
     r=await pg.goto(B+'/urunler/ace-250.html'); chk('Elle eklenen yönlendirme', r.url.endswith('/urun/ace-250'))
     # ayarlar seo kaydet

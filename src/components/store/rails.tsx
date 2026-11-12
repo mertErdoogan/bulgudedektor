@@ -1,5 +1,6 @@
 "use client";
 
+import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Clock3, Heart, X } from "lucide-react";
@@ -205,7 +206,7 @@ export function QuickLists() {
                 <li key={p.id}>
                   <Link href={`/urun/${p.slug}`} onClick={() => setOpen(null)} className="flex items-center gap-3 rounded-xl p-2 hover:bg-soft">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {p.image ? <img src={p.image} alt="" className="h-12 w-12 shrink-0 object-contain" /> : <span className="h-12 w-12 shrink-0 rounded bg-soft" />}
+                    {p.image ? <img src={imgUrl(p.image, 96)} alt="" className="h-12 w-12 shrink-0 object-contain" /> : <span className="h-12 w-12 shrink-0 rounded bg-soft" />}
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-bold">{p.name}</span>
                       <span className="text-sm text-mute">{formatTL(p.price)}</span>

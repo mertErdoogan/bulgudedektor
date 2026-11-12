@@ -38,7 +38,7 @@ export default async function FaqPage() {
       <div className="mt-10 flex flex-col items-start gap-3 rounded-2xl bg-tint p-5 md:flex-row md:items-center md:justify-between">
         <span><b>Sorunun cevabı yok mu?</b><br /><span className="text-sm text-mute">Cihaz seçimi, sipariş, servis — uzmana sor.</span></span>
         <span className="flex gap-2">
-          <a href={wa} target="_blank" className="flex h-11 items-center gap-2 rounded-lg bg-[#25D366] px-4 text-sm font-extrabold text-white"><MessageCircle size={17} /> WhatsApp</a>
+          <a href={wa} target="_blank" className="flex h-11 items-center gap-2 rounded-lg bg-[#15803d] px-4 text-sm font-extrabold text-white"><MessageCircle size={17} /> WhatsApp</a>
           <Link href="/sozluk" className="flex h-11 items-center rounded-lg border border-deep px-4 text-sm font-extrabold">Dedektör sözlüğü</Link>
         </span>
       </div>

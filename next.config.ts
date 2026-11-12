@@ -1,9 +1,28 @@
 import type { NextConfig } from "next";
 
+// S3/R2 kullanılıyorsa görsellerin genel adresi derleme anında bilinmeli (Docker: build-arg S3_PUBLIC_URL)
+const s3 = (process.env.S3_PUBLIC_URL || "").replace(/\/$/, "");
+let s3Pattern: { protocol: "https" | "http"; hostname: string; pathname: string } | null = null;
+try {
+  if (s3) {
+    const u = new URL(s3);
+    s3Pattern = { protocol: u.protocol === "http:" ? "http" : "https", hostname: u.hostname, pathname: `${u.pathname.replace(/\/$/, "")}/**` };
+  }
+} catch {}
+
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_IMG_REMOTE: s3 },
   // iyzipay kaynaklarını çalışma anında dosya sisteminden yükler; paketlenmemeli.
   serverExternalPackages: ["iyzipay", "sharp"],
-  images: { unoptimized: true },
+  images: {
+    // Ürün görselleri ekran boyutuna göre küçültülüp WebP sunulur (src/lib/img.ts). Adresler değişmez (hash'li), uzun önbellek güvenli.
+    formats: ["image/webp"],
+    minimumCacheTTL: 31536000,
+    imageSizes: [64, 96, 128, 256, 384],
+    deviceSizes: [640, 828, 1080, 1600, 1920],
+    remotePatterns: s3Pattern ? [s3Pattern] : [],
+    localPatterns: [{ pathname: "/media/**", search: "" }, { pathname: "/demo/**", search: "" }],
+  },
   experimental: { serverActions: { bodySizeLimit: "10mb" } },
   poweredByHeader: false,
   // Geliştirme modunda sol alttaki Next.js göstergesini gizle (canlıda zaten çıkmaz)
@@ -23,6 +42,7 @@ const nextConfig: NextConfig = {
         ],
       },
       { source: "/:file(demo|brand)/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=2592000" }] },
+      { source: "/fonts/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
     ];
   },
 };

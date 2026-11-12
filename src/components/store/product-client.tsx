@@ -1,5 +1,6 @@
 "use client";
 
+import { imgProps, imgUrl } from "@/lib/img";
 import { countActivity, emit, pushRecent } from "@/lib/track";
 import { useEffect, useState } from "react";
 import { Minus, Plus, Zap } from "lucide-react";
@@ -15,7 +16,7 @@ export function Gallery({ images, name, badge }: { images: { url: string; alt: s
     <div>
       <div className="relative grid aspect-square place-items-center overflow-hidden rounded-2xl border border-line bg-white">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {cur ? <img src={cur.url} alt={cur.alt ?? name} className="h-full w-full object-contain p-6" /> : <span className="text-mute">Görsel yok</span>}
+        {cur ? <img {...imgProps(cur.url, [640, 828, 1080, 1600], "(min-width: 1024px) 50vw, 100vw", 80)} alt={cur.alt ?? name} className="h-full w-full object-contain p-6" /> : <span className="text-mute">Görsel yok</span>}
         {badge ? <span className="absolute top-4 left-4 rounded-md bg-pop px-2.5 py-1 text-xs font-extrabold text-on-pop">{badge}</span> : null}
         {images.length > 1 ? <span className="absolute right-4 bottom-4 rounded-full bg-deep/80 px-2.5 py-1 text-xs font-bold text-white">{i + 1} / {images.length}</span> : null}
       </div>
@@ -24,7 +25,7 @@ export function Gallery({ images, name, badge }: { images: { url: string; alt: s
           {images.map((im, k) => (
             <button key={im.url + k} onClick={() => setI(k)} className={cn("h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-white", k === i ? "border-brand" : "border-line")} aria-label={`Görsel ${k + 1}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={im.url} alt="" className="h-full w-full object-contain p-1" />
+              <img src={imgUrl(im.url, 128)} alt="" className="h-full w-full object-contain p-1" />
             </button>
           ))}
         </div>

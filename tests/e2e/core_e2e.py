@@ -27,6 +27,8 @@ async def admin_login(pg, email="admin@arenadedektor.local"):
     await pg.wait_for_url(re.compile(r".*/admin(\?.*)?$"), timeout=60000)
 
 async def main():
+    sql("update users set totp_enabled=false, totp_secret=null, totp_last_step=null")  # features testi 2FA açar; giriş testleri sıfırdan başlar
+    sql("delete from rate_hits")
     sql("delete from rate_hits")  # DB tabanlı hız sınırı testler arasında sıfırlanır
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path=os.environ.get("CHROME", "/usr/bin/google-chrome"))
@@ -37,7 +39,7 @@ async def main():
         pg.on("pageerror", lambda e: errs.append(str(e)))
         stock_before = int(sql("select stock from products where slug='ace-250'"))
         await pg.goto(B + "/urun/ace-250", wait_until="networkidle")
-        await pg.locator("main >> text=Sepete ekle").first.click()
+        await pg.get_by_role("button", name="Sepete ekle", exact=True).first.click()
         await pg.wait_for_timeout(500)
         await pg.goto(B + "/sepet", wait_until="networkidle")
         await pg.fill("input[placeholder='Kupon kodu']", "HOSGELDIN")
@@ -68,7 +70,7 @@ async def main():
 
         # ───────── Havale siparişi
         await pg.goto(B + "/urun/findx-pro", wait_until="networkidle")
-        await pg.locator("main >> text=Sepete ekle").first.click()
+        await pg.get_by_role("button", name="Sepete ekle", exact=True).first.click()
         await pg.goto(B + "/odeme", wait_until="networkidle")
         await pg.fill("input[name=phone]", "05321234567")
         await pg.fill("input[name=email]", "e2e.test@ornek.com")
@@ -109,12 +111,15 @@ async def main():
         check("Admin: havale onaylandı", sql(f"select payment_status from orders where id='{tid}'") == "PAID", t)
         # seri takipli ürün: seri ataması zorunlu
         # Ön koşul: seri takipli ürün içeren, seri atanmamış ödenmiş bir sipariş ve stokta bir seri no (rastgele demo veriye bağlı kalmasın)
-        pid = sql("select i.product_id from order_items i join orders o on o.id=i.order_id where o.status='PAID' and i.product_id is not null and not exists (select 1 from serial_numbers s where s.order_item_id=i.id) order by o.number limit 1")
+        pid = sql("select i.product_id from order_items i join orders o on o.id=i.order_id where o.status='PAID' and o.delivery_method='CARGO' and i.product_id is not null and not exists (select 1 from serial_numbers s where s.order_item_id=i.id) order by o.number limit 1")
         if pid:
             sql(f"update products set track_serial=true where id='{pid}'")
-            sql(f"insert into serial_numbers (product_id, serial, status) values ('{pid}', 'E2E-SERI-' || floor(random()*1e9)::text, 'IN_STOCK')")
-        sid = sql("select o.id from orders o join order_items i on i.order_id=o.id join products p on p.id=i.product_id where p.track_serial and o.status='PAID' and not exists (select 1 from serial_numbers s where s.order_item_id=i.id) order by o.number limit 1")
+            sql(f"insert into serial_numbers (id, product_id, serial, status) values (gen_random_uuid()::text, '{pid}', 'E2E-SERI-' || floor(random()*1e9)::text, 'IN_STOCK')")
+        sid = sql("select o.id from orders o join order_items i on i.order_id=o.id join products p on p.id=i.product_id where p.track_serial and o.status='PAID' and o.delivery_method='CARGO' and not exists (select 1 from serial_numbers s where s.order_item_id=i.id) order by o.number limit 1")
+        check("Seri takipli ödenmiş sipariş bulundu (ön koşul)", bool(sid))
         if sid:
+            # Seçilen siparişteki seri takipli ürün için stokta en az bir seri no olsun (atama seçeneği garanti)
+            sql(f"insert into serial_numbers (id, product_id, serial, status) select gen_random_uuid()::text, i.product_id, 'E2E-SERI-' || floor(random()*1e9)::text || '-' || row_number() over (), 'IN_STOCK' from order_items i join products p on p.id=i.product_id where i.order_id='{sid}' and p.track_serial")
             await ap.goto(B + f"/admin/siparisler/{sid}", wait_until="networkidle")
             await ap.fill("input[name=tracking]", "999")
             await ap.click("button:has-text('Kargoya verildi')")
@@ -123,6 +128,7 @@ async def main():
             await ap.goto(B + f"/admin/siparisler/{sid}", wait_until="networkidle")
             sel = ap.locator("select[name=serialIds]").first
             opts = await sel.locator("option").all_inner_texts()
+            check("Seri no seçenekleri listelendi", len(opts) > 1, opts)
             if len(opts) > 1:
                 await sel.select_option(index=1)
                 await ap.click("button:has-text('Ata')")

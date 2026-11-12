@@ -1,3 +1,4 @@
+import { q } from "@/db/q";
 import Link from "next/link";
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 import { Download } from "lucide-react";
@@ -7,7 +8,7 @@ import { BarList, SalesChart } from "@/components/admin/charts";
 import { PageHeader } from "@/components/admin/shell";
 import { Button, Card, CardHeader, Input, Stat, Table, Td, Th } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
-import { cityBreakdown, dailySeries, paymentBreakdown, rangeFromParam, salesByGroup, salesSummary, topProducts } from "@/lib/reports";
+import { cityBreakdown, dailySeries, paymentBreakdown, rangeFromParam, salesByGroup, salesSummary, sourceBreakdown, topProducts } from "@/lib/reports";
 import { formatTL } from "@/lib/utils";
 
 export const metadata = { title: "Raporlar" };
@@ -19,7 +20,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const { start, end } = rangeFromParam(sp.r, sp.bas, sp.bit);
   const span = end.getTime() - start.getTime();
   const prevStart = new Date(start.getTime() - span);
-  const [sum, prev, series, top, byBrand, byCat, pay, cities, [newCust], [repeat], [stockVal]] = await Promise.all([
+  const [sum, prev, series, top, byBrand, byCat, pay, cities, [newCust], [repeat], [stockVal], sources] = await Promise.all([
     salesSummary(start, end),
     salesSummary(prevStart, start),
     dailySeries(start, end),
@@ -32,8 +33,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     db.select({
       buyers: sql<number>`count(distinct ${orders.customerId})::int`,
       repeaters: sql<number>`count(*) filter (where c > 1)::int`,
-    }).from(sql`(select ${orders.customerId}, count(*) c from ${orders} where ${orders.paymentStatus} = 'PAID' group by 1) t`),
+    }).from(sql`(select ${q(orders.customerId)}, count(*) c from ${orders} where ${q(orders.paymentStatus)} = 'PAID' group by 1) t`),
     db.select({ cost: sql<number>`coalesce(sum(${products.stock} * coalesce(${products.costPrice},0)),0)::float`, retail: sql<number>`coalesce(sum(${products.stock} * ${products.price}),0)::float`, units: sql<number>`coalesce(sum(${products.stock}),0)::int` }).from(products).where(eq(products.status, "ACTIVE")),
+    sourceBreakdown(start, end),
   ]);
   const pct = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
   const delta = (a: number, b: number) => {
@@ -116,6 +118,13 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             </tbody>
           </Table>
           <p className="px-5 py-3 text-xs text-mute">Taksitli satış oranı: %{cardInst.length ? ((cardInst.filter((p) => p.installments > 1).reduce((s, p) => s + p.n, 0) / Math.max(1, cardInst.reduce((s, p) => s + p.n, 0))) * 100).toFixed(0) : 0}</p>
+        </Card>
+        <Card>
+          <CardHeader title="Satış kaynağı" description="Siparişin geldiği reklam / kanal (son tıklama)" />
+          <Table>
+            <thead><tr><Th>Kaynak</Th><Th className="text-right">Sipariş</Th><Th className="text-right">Tutar</Th></tr></thead>
+            <tbody>{sources.length ? sources.map((c) => <tr key={c.label}><Td>{c.label}</Td><Td className="text-right">{c.n}</Td><Td className="text-right">{formatTL(c.value)}</Td></tr>) : <tr><Td colSpan={3} className="text-mute">Bu dönemde satış yok</Td></tr>}</tbody>
+          </Table>
         </Card>
         <Card>
           <CardHeader title="İllere göre" />

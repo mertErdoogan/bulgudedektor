@@ -1,3 +1,4 @@
+import { imgProps } from "@/lib/img";
 import { cardCtx } from "@/lib/card-ctx";
 import { redirectOrNotFound } from "@/lib/redirects";
 import Link from "next/link";
@@ -59,7 +60,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           </header>
           {p.coverImage ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.coverImage} alt={p.title} className="mt-5 aspect-[16/9] w-full rounded-2xl object-cover" />
+            <img {...imgProps(p.coverImage, [640, 1080, 1600], "(min-width: 1024px) 800px, 100vw")} alt={p.title} className="mt-5 aspect-[16/9] w-full rounded-2xl object-cover" />
           ) : null}
           {p.answer ? <div className="mt-6"><AnswerBox>{p.answer}</AnswerBox></div> : null}
           {toc.length > 2 ? (

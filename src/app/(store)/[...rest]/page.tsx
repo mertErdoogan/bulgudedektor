@@ -1,5 +1,5 @@
 import { notFound, permanentRedirect } from "next/navigation";
-import { findRedirect } from "@/lib/redirects";
+import { findRedirect, log404 } from "@/lib/redirects";
 
 /** Eşleşmeyen her adres: önce yönlendirme tablosuna bak (301), yoksa 404. */
 export default async function CatchAll({ params, searchParams }: { params: Promise<{ rest: string[] }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -11,5 +11,6 @@ export default async function CatchAll({ params, searchParams }: { params: Promi
   if ((path === "/kategori" || path === "/arama") && typeof q === "string" && q.trim()) permanentRedirect(`/ara?q=${encodeURIComponent(q.trim())}`);
   const to = await findRedirect(path.replace(/\/$/, ""));
   if (to) permanentRedirect(to);
+  await log404(path).catch(() => {});
   notFound();
 }

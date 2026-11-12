@@ -26,11 +26,36 @@ export function sameAs(s: AllSettings) {
 }
 
 /** Sayfa başına metadata: canonical, Open Graph, Twitter. */
+/**
+ * Meta açıklama seçimi: ilk dolu aday yeterince uzunsa (≥70 karakter) o, kısaysa sonuna genel cümle eklenir.
+ * İçe aktarılan ürünlerde "Minelab Equinox 900" gibi tek satırlık kısa açıklamalar arama sonucunda zayıf durur.
+ */
+export function metaDesc(candidates: (string | null | undefined)[], fallback: string) {
+  const first = candidates.map((c) => (c ?? "").replace(/\s+/g, " ").trim()).find(Boolean);
+  if (!first) return fallback;
+  if (first.length >= 70) return first;
+  return `${first.replace(/[.\s]+$/, "")}. ${fallback}`;
+}
+
+/** Markdown/HTML içerikten düz metin özet (yasal sayfalar gibi açıklaması girilmemiş sayfalar için) */
+export function excerpt(md: string | null | undefined, n = 160) {
+  const t = (md ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\{\{[^}]+\}\}/g, "")
+    .replace(/^#+\s.*$/gm, " ")
+    .replace(/[*_>`|#[\]()-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return t.length > n ? `${t.slice(0, n - 1).replace(/\s+\S*$/, "")}…` : t;
+}
+
 export function pageMeta(o: { title?: string; description?: string | null; path: string; image?: string | null; type?: "website" | "article"; noindex?: boolean; publishedTime?: Date | null; modifiedTime?: Date | null; absoluteTitle?: boolean }): Metadata {
   const url = abs(o.path)!;
-  const images = o.image ? [{ url: abs(o.image)!, width: 1200, height: 630 }] : undefined;
+  // Kendi görseli olmayan sayfa: varsayılan paylaşım görseli (boş WhatsApp/Facebook kartı olmasın)
+  const images = [o.image ? { url: abs(o.image)! } : { url: abs("/og-default")!, width: 1200, height: 630 }];
   return {
-    ...(o.title ? { title: o.absoluteTitle ? { absolute: o.title } : o.title } : {}),
+    // Uzun başlıkta " · Mağaza adı" eki atılır: Google ~60 karakterden sonrasını keser
+    ...(o.title ? { title: o.absoluteTitle || o.title.length > 46 ? { absolute: o.title } : o.title } : {}),
     ...(o.description ? { description: o.description.slice(0, 300) } : {}),
     alternates: { canonical: url },
     openGraph: {
@@ -39,10 +64,10 @@ export function pageMeta(o: { title?: string; description?: string | null; path:
       locale: "tr_TR",
       ...(o.title ? { title: o.title } : {}),
       ...(o.description ? { description: o.description.slice(0, 300) } : {}),
-      ...(images ? { images } : {}),
+      images,
       ...(o.type === "article" && o.publishedTime ? { publishedTime: o.publishedTime.toISOString(), modifiedTime: (o.modifiedTime ?? o.publishedTime).toISOString() } : {}),
     },
-    twitter: { card: "summary_large_image", ...(o.title ? { title: o.title } : {}), ...(o.description ? { description: o.description.slice(0, 200) } : {}), ...(images ? { images: images.map((i) => i.url) } : {}) },
+    twitter: { card: "summary_large_image", ...(o.title ? { title: o.title } : {}), ...(o.description ? { description: o.description.slice(0, 200) } : {}), images: images.map((i) => i.url) },
     ...(o.noindex ? { robots: { index: false, follow: true } } : {}),
   };
 }

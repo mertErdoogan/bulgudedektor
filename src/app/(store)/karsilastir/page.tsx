@@ -1,3 +1,4 @@
+import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { asc, inArray } from "drizzle-orm";
 import { db } from "@/db";
@@ -26,7 +27,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
                 {rows.map((r) => (
                   <th key={r.id} className="px-3 pb-4 text-left align-top">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {r.images[0] ? <img src={r.images[0].url} alt="" className="h-36 w-full object-contain" /> : null}
+                    {r.images[0] ? <img src={imgUrl(r.images[0].url, 384)} alt="" className="h-36 w-full object-contain" /> : null}
                     <Link href={`/urun/${r.slug}`} className="mt-2 block font-extrabold hover:text-link">{r.name}</Link>
                     <span className="block text-lg font-extrabold">{formatTL(r.price)}</span>
                     <div className="mt-2"><AddToCart productId={r.id} name={r.name} disabled={r.stock <= 0 && !r.allowBackorder} /></div>

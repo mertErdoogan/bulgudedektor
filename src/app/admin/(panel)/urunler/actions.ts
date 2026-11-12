@@ -1,5 +1,6 @@
 "use server";
 
+import { q } from "@/db/q";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -190,7 +191,7 @@ export async function bulkProducts(_: ActionResult | null, fd: FormData): Promis
       const noImage = await db
         .select({ id: products.id })
         .from(products)
-        .where(and(inArray(products.id, ids), sql`not exists (select 1 from product_images pi where pi.product_id = ${products.id})`));
+        .where(and(inArray(products.id, ids), sql`not exists (select 1 from product_images pi where pi.product_id = ${q(products.id)})`));
       if (noImage.length) return fail(`${noImage.length} ürünün görseli yok; görsel eklemeden yayına alınamaz.`);
     }
     if (op === "ACTIVE" || op === "DRAFT" || op === "ARCHIVED") {

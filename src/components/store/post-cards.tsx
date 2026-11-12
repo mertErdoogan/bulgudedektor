@@ -1,3 +1,4 @@
+import { imgProps } from "@/lib/img";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import type { PostCard } from "@/lib/content";
@@ -11,7 +12,7 @@ export function PostCards({ posts, cols = 3 }: { posts: PostCard[]; cols?: 2 | 3
           <div className="aspect-[16/9] overflow-hidden bg-tint">
             {p.coverImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.coverImage} alt={p.title} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
+              <img {...imgProps(p.coverImage, [384, 640, 828], "(min-width: 768px) 33vw, 100vw")} alt={p.title} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
             ) : (
               <div className="grid h-full place-items-center text-brand"><BookOpen size={36} /></div>
             )}

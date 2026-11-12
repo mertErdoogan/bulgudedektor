@@ -78,7 +78,15 @@ export type PaymentSettings = {
 
 export type IntegrationSettings = {
   gaMeasurementId: string;
+  /** Google Ads hesap kimlikleri, virgülle: AW-111,AW-222 */
+  googleAdsIds: string;
+  /** Satın alma dönüşüm hedefleri, virgülle: AW-111/AbCdEf */
+  adsPurchaseLabels: string;
+  /** İsteğe bağlı Google Tag Manager kapsayıcısı: GTM-XXXX */
+  gtmId: string;
   metaPixelId: string;
+  /** Meta Conversions API erişim anahtarı (sunucu tarafı satın alma bildirimi) */
+  metaCapiToken: string;
   whatsappApiToken: string;
   smtpHost: string;
   smtpUser: string;
@@ -207,7 +215,11 @@ export const DEFAULT_SETTINGS: AllSettings = {
   },
   integrations: {
     gaMeasurementId: "",
+    googleAdsIds: "",
+    adsPurchaseLabels: "",
+    gtmId: "",
     metaPixelId: "",
+    metaCapiToken: "",
     whatsappApiToken: "",
     smtpHost: "",
     smtpUser: "",
@@ -256,7 +268,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
  */
 const SECRET_FIELDS: Partial<Record<keyof AllSettings, string[]>> = {
   payment: ["iyzicoSecretKey", "paytrMerchantKey", "paytrMerchantSalt"],
-  integrations: ["smtpPass", "netgsmPass", "trendyolApiSecret", "hbPass", "eInvoiceApiKey", "cargoApiKey"],
+  integrations: ["metaCapiToken", "smtpPass", "netgsmPass", "trendyolApiSecret", "hbPass", "eInvoiceApiKey", "cargoApiKey"],
 };
 
 function mapSecrets(key: string, value: Record<string, unknown>, fn: (v: string) => string) {
@@ -309,7 +321,13 @@ export function publicSettings(s: AllSettings) {
       transferEnabled: s.payment.transferEnabled,
       transferDiscountPct: s.payment.transferDiscountPct,
     },
-    integrations: { gaMeasurementId: s.integrations.gaMeasurementId, metaPixelId: s.integrations.metaPixelId },
+    integrations: {
+      gaMeasurementId: s.integrations.gaMeasurementId,
+      googleAdsIds: s.integrations.googleAdsIds,
+      adsPurchaseLabels: s.integrations.adsPurchaseLabels,
+      gtmId: s.integrations.gtmId,
+      metaPixelId: s.integrations.metaPixelId,
+    },
     seo: s.seo,
   };
 }

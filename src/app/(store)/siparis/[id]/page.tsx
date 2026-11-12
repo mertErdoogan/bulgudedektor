@@ -1,3 +1,4 @@
+import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { AutoRefresh } from "@/components/store/auto-refresh";
 import { notFound } from "next/navigation";
@@ -89,7 +90,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           {o.items.map((i) => (
             <li key={i.id} className="flex items-center gap-3 p-4 text-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              {i.imageUrl ? <img src={i.imageUrl} alt="" className="h-14 w-14 object-contain" /> : null}
+              {i.imageUrl ? <img src={imgUrl(i.imageUrl, 128)} alt="" className="h-14 w-14 object-contain" /> : null}
               <span className="flex-1"><b>{i.name}</b><span className="block text-xs text-mute">{i.quantity} adet{i.serials.length ? ` · seri no ${i.serials.map((x) => x.serial).join(", ")}` : ""}</span></span>
               <b>{formatTL(i.total)}</b>
             </li>
@@ -110,7 +111,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         {o.invoiceUrl ? <a href={o.invoiceUrl} target="_blank" rel="noopener" className="rounded-lg border border-deep px-4 py-2.5 text-sm font-bold">Faturayı indir{o.invoiceNo ? ` · ${o.invoiceNo}` : ""}</a> : null}
         {canReturn ? <Link href={`/hesabim?iade=${o.id}`} className="rounded-lg border border-deep px-4 py-2.5 text-sm font-bold">İade talebi oluştur</Link> : null}
         <Link href="/hesabim" className="rounded-lg bg-soft px-4 py-2.5 text-sm font-bold">Hesabıma git</Link>
-        {s.store.whatsapp ? <a href={`https://wa.me/${s.store.whatsapp}?text=${encodeURIComponent(`Merhaba, ${orderNo(o.number)} numaralı siparişim hakkında`)}`} target="_blank" className="rounded-lg bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white">WhatsApp&apos;tan sor</a> : null}
+        {s.store.whatsapp ? <a href={`https://wa.me/${s.store.whatsapp}?text=${encodeURIComponent(`Merhaba, ${orderNo(o.number)} numaralı siparişim hakkında`)}`} target="_blank" className="rounded-lg bg-[#15803d] px-4 py-2.5 text-sm font-bold text-white">WhatsApp&apos;tan sor</a> : null}
       </div>
     </div>
   );

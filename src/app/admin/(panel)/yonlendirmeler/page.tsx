@@ -1,22 +1,51 @@
 import { desc } from "drizzle-orm";
 import { db } from "@/db";
-import { redirects } from "@/db/schema";
+import { notFoundLogs, redirects } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { PageHeader } from "@/components/admin/shell";
 import { Card, CardHeader, Field, Input, Table, Td, Th } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/utils";
-import { deleteRedirect, saveRedirect } from "./actions";
+import { deleteRedirect, dismiss404, saveRedirect } from "./actions";
 
 export const metadata = { title: "Yönlendirmeler (301)" };
 
 export default async function RedirectsPage() {
   await requireStaff("cms.manage");
-  const rows = await db.select().from(redirects).orderBy(desc(redirects.createdAt));
+  const [rows, missing] = await Promise.all([
+    db.select().from(redirects).orderBy(desc(redirects.createdAt)),
+    db.select().from(notFoundLogs).orderBy(desc(notFoundLogs.hits), desc(notFoundLogs.lastAt)).limit(50),
+  ]);
   return (
     <>
       <PageHeader title="Yönlendirmeler (301)" description="Ürün, kategori, marka veya yazı adresi değişince eski adres otomatik buraya eklenir. Eski sitenden gelen adresleri de elle ekleyebilirsin; Google sıralaması korunur." />
+      {missing.length ? (
+        <Card className="mb-5">
+          <CardHeader title="Bulunamayan adresler (404)" description="Ziyaretçilerin ve Google'ın açmaya çalışıp bulamadığı adresler. Çok tıklananlara yeni adres yazıp yönlendir; önemsizleri listeden kaldır." />
+          <Table>
+            <thead><tr><Th>Adres</Th><Th>Deneme</Th><Th>Son</Th><Th>Nereden</Th><Th>Yönlendir</Th><Th /></tr></thead>
+            <tbody>
+              {missing.map((m) => (
+                <tr key={m.id} className="hover:bg-soft/60">
+                  <Td className="max-w-[280px] truncate font-mono text-[12px]" title={m.path}>{m.path}</Td>
+                  <Td><b>{m.hits}</b></Td>
+                  <Td className="whitespace-nowrap text-mute">{formatDate(m.lastAt)}</Td>
+                  <Td className="max-w-[180px] truncate text-xs text-mute" title={m.referrer ?? ""}>{m.referrer ? m.referrer.replace(/^https?:\/\//, "") : "—"}</Td>
+                  <Td>
+                    <ActionForm action={saveRedirect} className="flex items-center gap-2">
+                      <input type="hidden" name="fromPath" value={m.path} />
+                      <Input name="toPath" required placeholder="/urun/yeni-adres" className="h-9 w-56 font-mono text-[12px]" aria-label={`${m.path} için yeni adres`} />
+                      <SubmitButton size="sm">Kaydet</SubmitButton>
+                    </ActionForm>
+                  </Td>
+                  <Td className="text-right"><DeleteButton run={dismiss404.bind(null, m.id)} confirmText="Bu adres listeden kaldırılsın mı?" /></Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card>
+      ) : null}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Card>
           <Table>

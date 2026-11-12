@@ -1,4 +1,4 @@
-import { pageMeta } from "@/lib/seo";
+import { excerpt, pageMeta } from "@/lib/seo";
 import { redirectOrNotFound } from "@/lib/redirects";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -14,7 +14,8 @@ async function get(slug: string) {
 }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const p = await get((await params).slug);
-  return p ? pageMeta({ title: p.title, description: p.seoDescription, path: `/sayfa/${p.slug}` }) : {};
+  if (!p) return {};
+  return pageMeta({ title: p.title, description: p.seoDescription || excerpt(fillLegal(p.content, await getSettings().then((st) => legalTokens(st.store, st.payment, siteUrl())))), path: `/sayfa/${p.slug}` });
 }
 export default async function ContentPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

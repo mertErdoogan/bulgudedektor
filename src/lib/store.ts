@@ -1,3 +1,4 @@
+import { q } from "@/db/q";
 import "server-only";
 import { cache } from "react";
 import { createHmac } from "node:crypto";
@@ -23,12 +24,12 @@ export const cardColumns = {
   waterproof: products.waterproof,
   technology: products.technology,
   brand: brands.name,
-  image: sql<string | null>`(select ${productImages.url} from ${productImages} where ${productImages.productId} = ${products.id} order by ${productImages.sortOrder} limit 1)`,
-  rating: sql<number | null>`(select avg(${reviews.rating})::float from ${reviews} where ${reviews.productId} = ${products.id} and ${reviews.isApproved})`,
-  reviewCount: sql<number>`(select count(*)::int from ${reviews} where ${reviews.productId} = ${products.id} and ${reviews.isApproved})`,
+  image: sql<string | null>`(select ${q(productImages.url)} from ${productImages} where ${q(productImages.productId)} = ${q(products.id)} order by ${q(productImages.sortOrder)} limit 1)`,
+  rating: sql<number | null>`(select avg(${q(reviews.rating)})::float from ${reviews} where ${q(reviews.productId)} = ${q(products.id)} and ${q(reviews.isApproved)})`,
+  reviewCount: sql<number>`(select count(*)::int from ${reviews} where ${q(reviews.productId)} = ${q(products.id)} and ${q(reviews.isApproved)})`,
   createdAt: products.createdAt,
-  views24: sql<number>`coalesce((select sum(${productActivity.views})::int from ${productActivity} where ${productActivity.productId} = ${products.id} and ${productActivity.hour} > now() - interval '24 hours'), 0)`,
-  carts24: sql<number>`coalesce((select sum(${productActivity.carts})::int from ${productActivity} where ${productActivity.productId} = ${products.id} and ${productActivity.hour} > now() - interval '24 hours'), 0)`,
+  views24: sql<number>`coalesce((select sum(${q(productActivity.views)})::int from ${productActivity} where ${q(productActivity.productId)} = ${q(products.id)} and ${q(productActivity.hour)} > now() - interval '24 hours'), 0)`,
+  carts24: sql<number>`coalesce((select sum(${q(productActivity.carts)})::int from ${productActivity} where ${q(productActivity.productId)} = ${q(products.id)} and ${q(productActivity.hour)} > now() - interval '24 hours'), 0)`,
 };
 
 export type ProductCard = {
@@ -283,7 +284,7 @@ export const getBrandGroups = cache(async (): Promise<BrandGroup[]> => {
     db
       .selectDistinctOn([products.brandId], {
         brandId: products.brandId,
-        image: sql<string | null>`(select ${productImages.url} from ${productImages} where ${productImages.productId} = ${products.id} order by ${productImages.sortOrder} limit 1)`,
+        image: sql<string | null>`(select ${q(productImages.url)} from ${productImages} where ${q(productImages.productId)} = ${q(products.id)} order by ${q(productImages.sortOrder)} limit 1)`,
       })
       .from(products)
       .where(active)

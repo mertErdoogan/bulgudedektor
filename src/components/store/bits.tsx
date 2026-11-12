@@ -1,5 +1,6 @@
 "use client";
 
+import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -118,7 +119,7 @@ export function MegaMenu({ categories, brands }: { categories: Cat[]; brands: { 
                   className={cn("flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm", i === cur ? "bg-white font-bold shadow-sm" : "hover:bg-white/60")}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {x.imageUrl ? <img src={x.imageUrl} alt="" className="h-8 w-8 object-contain mix-blend-multiply" /> : <span className="h-8 w-8" />}
+                  {x.imageUrl ? <img src={imgUrl(x.imageUrl, 64)} alt="" className="h-8 w-8 object-contain mix-blend-multiply" /> : <span className="h-8 w-8" />}
                   <span className="flex-1">
                     {x.name}
                     <span className="block text-xs font-normal text-mute">{x.shortText}</span>

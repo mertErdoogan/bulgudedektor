@@ -1,5 +1,6 @@
 "use client";
 
+import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -144,7 +145,7 @@ export function SearchBox({ defaultValue, className }: { defaultValue?: string; 
                 return (
                   <Link key={p.id} href={`/urun/${p.slug}`} onClick={() => setOpen(false)} className={row(hi === idx)}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {p.image ? <img src={p.image} alt="" className="h-11 w-11 shrink-0 rounded-md bg-[#f6f6f6] object-contain mix-blend-multiply" /> : <span className="h-11 w-11 shrink-0 rounded-md bg-soft" />}
+                    {p.image ? <img src={imgUrl(p.image, 96)} alt="" className="h-11 w-11 shrink-0 rounded-md bg-[#f6f6f6] object-contain mix-blend-multiply" /> : <span className="h-11 w-11 shrink-0 rounded-md bg-soft" />}
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-bold">{p.name}</span>
                       <span className="text-xs font-extrabold tracking-wider text-brand">{p.brand?.toLocaleUpperCase("en-US")}</span>

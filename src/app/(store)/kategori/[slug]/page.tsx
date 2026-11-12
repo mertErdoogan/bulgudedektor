@@ -8,7 +8,7 @@ import { PostCards } from "@/components/store/post-cards";
 import { AnswerBox, FaqSection } from "@/components/seo/blocks";
 import { getFaqs, relatedPosts, toQA } from "@/lib/content";
 import { markdownToHtml } from "@/lib/markdown";
-import { pageMeta } from "@/lib/seo";
+import { metaDesc, pageMeta } from "@/lib/seo";
 import { catalogStats } from "@/lib/store";
 import { formatTL } from "@/lib/utils";
 
@@ -23,7 +23,7 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
   const year = new Date().getFullYear();
   return pageMeta({
     title: c.seoTitle || `${c.name} Dedektörleri ve Fiyatları (${year})`,
-    description: c.seoDescription || c.description || `${c.name} için en iyi metal dedektörü modelleri, güncel fiyatlar ve uzman önerileri. Orijinal, faturalı, 2 yıl garantili.`,
+    description: metaDesc([c.seoDescription, c.description], `${c.name} için en iyi metal dedektörü modelleri, güncel fiyatlar ve uzman önerileri. Orijinal, faturalı, 2 yıl garantili.`),
     path: `/kategori/${c.slug}`,
     image: c.imageUrl,
     noindex: filtered,

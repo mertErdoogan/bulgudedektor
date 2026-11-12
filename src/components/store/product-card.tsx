@@ -1,3 +1,4 @@
+import { imgProps } from "@/lib/img";
 import Link from "next/link";
 import { Eye, Flame, Star, Truck } from "lucide-react";
 import type { ProductCard as P } from "@/lib/store";
@@ -27,7 +28,7 @@ export function DeliveryBadge({ p, ctx, className }: { p: Pick<P, "stock" | "all
       <Truck size={13} className="mt-px shrink-0" />
       <span className="min-w-0">
         <b className="block">{d.ship}</b>
-        {d.eta ? <span className="block opacity-85">{d.eta}</span> : null}
+        {d.eta ? <span className="block">{d.eta}</span> : null}
       </span>
     </span>
   );
@@ -63,7 +64,7 @@ export function ProductCard({ p, ctx, compare = false, className, rank }: { p: P
       <Link href={`/urun/${p.slug}`} className="relative m-2 mb-0 block overflow-hidden rounded-xl bg-[#f6f6f6]">
         <span className="block aspect-[5/4]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {p.image ? <img src={p.image} alt={`${p.brand ?? ""} ${p.name}`.trim()} loading="lazy" decoding="async" className="h-full w-full object-contain p-3 mix-blend-multiply transition duration-300 group-hover:scale-[1.05]" /> : null}
+          {p.image ? <img {...imgProps(p.image, [256, 384, 640], "(min-width: 1280px) 280px, (min-width: 768px) 30vw, 50vw")} alt={`${p.brand ?? ""} ${p.name}`.trim()} loading="lazy" decoding="async" className="h-full w-full object-contain p-3 mix-blend-multiply transition duration-300 group-hover:scale-[1.05]" /> : null}
         </span>
         <span className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1 pr-10">
           {rank ? <span className={cn("grid h-7 min-w-7 place-items-center rounded-full px-1.5 text-[13px] font-black text-white", rank <= 3 ? "bg-accent" : "bg-deep")}>{rank}</span> : null}

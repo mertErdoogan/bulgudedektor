@@ -1,3 +1,4 @@
+import { q } from "@/db/q";
 import Link from "next/link";
 import { and, asc, desc, eq, ilike, lte, or, sql, type SQL } from "drizzle-orm";
 import { Download, Plus } from "lucide-react";
@@ -44,7 +45,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         isFeatured: products.isFeatured,
         brand: brands.name,
         category: categories.name,
-        image: sql<string | null>`(select ${productImages.url} from ${productImages} where ${productImages.productId} = ${products.id} order by ${productImages.sortOrder} limit 1)`,
+        image: sql<string | null>`(select ${q(productImages.url)} from ${productImages} where ${q(productImages.productId)} = ${q(products.id)} order by ${q(productImages.sortOrder)} limit 1)`,
       })
       .from(products)
       .leftJoin(brands, eq(brands.id, products.brandId))

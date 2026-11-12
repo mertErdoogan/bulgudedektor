@@ -15,7 +15,7 @@ export const buttonVariants = cva(
         soft: "bg-soft text-deep hover:bg-tint",
         danger: "bg-danger text-white hover:opacity-90",
         "danger-ghost": "text-danger hover:bg-danger-bg",
-        whatsapp: "bg-[#25D366] text-white hover:bg-[#1fb257]",
+        whatsapp: "bg-[#15803d] text-white hover:bg-[#166534]",
         link: "text-link underline-offset-4 hover:underline px-0 h-auto",
       },
       size: {

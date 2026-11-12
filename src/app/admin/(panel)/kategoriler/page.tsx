@@ -1,3 +1,4 @@
+import { q } from "@/db/q";
 import Link from "next/link";
 import { asc, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -16,7 +17,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
   await requireStaff("catalog.manage");
   const { id } = await searchParams;
   const rows = await db
-    .select({ c: categories, n: sql<number>`(select count(*)::int from ${products} where ${products.categoryId} = ${categories.id})` })
+    .select({ c: categories, n: sql<number>`(select count(*)::int from ${products} where ${q(products.categoryId)} = ${q(categories.id)})` })
     .from(categories)
     .orderBy(asc(categories.sortOrder), asc(categories.name));
   const edit = id ? rows.find((r) => r.c.id === id)?.c : undefined;

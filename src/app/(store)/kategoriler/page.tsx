@@ -1,3 +1,4 @@
+import { imgProps } from "@/lib/img";
 import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { getBrandGroups, getNav } from "@/lib/store";
@@ -14,7 +15,7 @@ export default async function CategoriesPage() {
         {nav.categories.map((c) => (
           <Link key={c.id} href={`/kategori/${c.slug}`} className="overflow-hidden rounded-xl bg-tint">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {c.imageUrl ? <img src={c.imageUrl} alt="" className="h-28 w-full object-contain p-3 mix-blend-multiply" /> : null}
+            {c.imageUrl ? <img {...imgProps(c.imageUrl, [256, 384], "(min-width: 768px) 25vw, 50vw")} alt="" className="h-28 w-full object-contain p-3 mix-blend-multiply" /> : null}
             <span className="block px-3 pb-3"><b>{c.name}</b><span className="block text-xs text-mute">{c.shortText}</span></span>
           </Link>
         ))}

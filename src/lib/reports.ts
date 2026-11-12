@@ -131,3 +131,21 @@ export async function cityBreakdown(start: Date, end: Date) {
     .orderBy(desc(sql.raw("3")))
     .limit(10);
 }
+
+/** Satış kaynağı: Google Ads, Meta reklam, organik, doğrudan, pazaryerleri… (siparişteki attribution alanından) */
+export async function sourceBreakdown(start: Date, end: Date) {
+  const { sourceLabel } = await import("./attribution");
+  const rows = await db
+    .select({ a: orders.attribution, ch: orders.channel, total: orders.total })
+    .from(orders)
+    .where(and(gte(orders.createdAt, start), lt(orders.createdAt, end), inArray(orders.status, [...PAID_STATUSES])));
+  const m = new Map<string, { n: number; value: number }>();
+  for (const r of rows) {
+    const k = sourceLabel(r.a, r.ch);
+    const e = m.get(k) ?? { n: 0, value: 0 };
+    e.n++;
+    e.value += r.total;
+    m.set(k, e);
+  }
+  return [...m.entries()].map(([label, v]) => ({ label, ...v })).sort((x, y) => y.value - x.value);
+}

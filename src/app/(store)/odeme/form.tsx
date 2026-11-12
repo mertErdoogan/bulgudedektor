@@ -1,11 +1,13 @@
 "use client";
 
+import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { emit } from "@/lib/track";
 import { CityDistrict } from "@/components/city-district";
 import { Building2, CreditCard, Lock, Store, Truck } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { readAttribution } from "@/components/store/attribution";
 import { useCart } from "@/components/store/cart";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui";
 import type { publicSettings } from "@/lib/settings";
@@ -44,11 +46,14 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
   const [pay, setPay] = useState<"CARD" | "TRANSFER">(s.payment.cardEnabled ? "CARD" : "TRANSFER");
   const [invoice, setInvoice] = useState<"INDIVIDUAL" | "CORPORATE">("INDIVIDUAL");
   const [coupon, setCoupon] = useState<string | null>(null);
+  const [attr, setAttr] = useState("");
   const [q, setQ] = useState<Quote | null>(null);
   const [, start] = useTransition();
   useEffect(() => {
     try {
       setCoupon(sessionStorage.getItem("bulgu_coupon"));
+      const a = readAttribution();
+      if (a) setAttr(JSON.stringify(a));
     } catch {}
   }, []);
   useEffect(() => {
@@ -87,6 +92,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
       <input type="hidden" name="deliveryMethod" value={delivery} />
       <input type="hidden" name="paymentMethod" value={pay} />
       <input type="hidden" name="invoiceType" value={invoice} />
+      <input type="hidden" name="attr" value={attr} />
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="font-display text-2xl font-extrabold">Siparişi tamamla</h1>
@@ -166,7 +172,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
             {(q?.lines ?? []).map((l) => (
               <li key={l.productId} className="flex items-center gap-3 text-sm">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                {l.imageUrl ? <img src={l.imageUrl} alt="" className="h-14 w-14 rounded-lg bg-white object-contain p-1" /> : null}
+                {l.imageUrl ? <img src={imgUrl(l.imageUrl, 128)} alt="" className="h-14 w-14 rounded-lg bg-white object-contain p-1" /> : null}
                 <span className="flex-1"><b>{l.name}</b><span className="block text-xs text-mute">{l.quantity} adet</span></span>
                 <b>{formatTL(l.total)}</b>
               </li>

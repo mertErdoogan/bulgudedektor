@@ -1,3 +1,4 @@
+import { q } from "@/db/q";
 import Link from "next/link";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -26,7 +27,7 @@ export default async function CampaignsPage({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const [rows, b, c, p] = await Promise.all([
     db
-      .select({ c: campaigns, revenue: sql<number>`(select coalesce(sum(${orders.total}),0)::float from ${orders} where ${orders.campaignId} = ${campaigns.id} and ${orders.paymentStatus} = 'PAID')` })
+      .select({ c: campaigns, revenue: sql<number>`(select coalesce(sum(${q(orders.total)}),0)::float from ${orders} where ${q(orders.campaignId)} = ${q(campaigns.id)} and ${q(orders.paymentStatus)} = 'PAID')` })
       .from(campaigns)
       .orderBy(desc(campaigns.createdAt)),
     db.select({ id: brands.id, name: brands.name }).from(brands).orderBy(asc(brands.name)),

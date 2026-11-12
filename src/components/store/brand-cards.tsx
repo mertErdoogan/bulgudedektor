@@ -1,3 +1,4 @@
+import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { BrandGroup } from "@/lib/store";
@@ -18,7 +19,7 @@ export function BrandCard({ b, className }: { b: BrandGroup; className?: string 
           <span className="mt-1.5 block text-[13px] text-mute">{b.total} ürün</span>
         </span>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {b.image ? <img src={b.image} alt="" loading="lazy" className="hidden h-[84px] w-[110px] shrink-0 object-contain sm:block mix-blend-multiply transition duration-300 group-hover:scale-105" /> : null}
+        {b.image ? <img src={imgUrl(b.image, 256)} alt="" loading="lazy" className="hidden h-[84px] w-[110px] shrink-0 object-contain sm:block mix-blend-multiply transition duration-300 group-hover:scale-105" /> : null}
       </Link>
       <ul className="flex flex-1 flex-col p-2">
         {b.categories.map((c) => (
