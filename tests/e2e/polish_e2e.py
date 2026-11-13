@@ -95,6 +95,21 @@ async def main():
         chk("Hareketi azalt: animasyon yok, her şey görünür", await rp.evaluate("getComputedStyle(document.querySelector('[data-testid=explore]')).opacity") == "1")
         await rm.close()
 
+        # ── Sayfa geçişi: sunucu yavaşken tıklar tıklamaz iskelet + çubuk, sayfa gelince kalkar
+        await pg.goto(B + "/kategori/define-ve-sikke", wait_until="networkidle")
+        async def slow(route):
+            if route.request.headers.get("rsc") == "1" and "next-router-prefetch" not in route.request.headers:
+                await asyncio.sleep(1.2)
+            await route.continue_()
+        await pg.route("**/*", slow)
+        await pg.locator("main article a[href='/urun/x-terra-pro']").first.click(); await pg.wait_for_timeout(300)
+        chk("Tıklayınca ürün iskeleti hemen", await pg.locator("[data-testid=route-skeleton]").count() == 1)
+        await pg.wait_for_url("**/urun/x-terra-pro"); await pg.wait_for_timeout(500)
+        chk("Sayfa gelince iskelet kalkıyor", await pg.locator("[data-testid=route-skeleton]").count() == 0)
+        await pg.unroute("**/*")
+        r = await pg.request.get(B + "/uye/giris", max_redirects=0)
+        chk("Eski adres yönlendirmesi hâlâ 308", r.status in (301, 308), r.status)
+
         # ── Mobil: kategori ilk ekranında ürün, banner başlığı
         m = await b.new_context(user_agent=UA, viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True); mp = await m.new_page()
         mp.on("pageerror", lambda e: errs.append(mp.url + " :: " + str(e)[:90]))

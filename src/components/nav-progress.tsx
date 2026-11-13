@@ -5,8 +5,9 @@ import { Suspense, useEffect, useRef, useState } from "react";
 
 /**
  * Sayfa geçişlerinde üstte ince ilerleme çubuğu.
- * Bir iç bağlantıya tıklanınca başlar, yeni sayfa geldiğinde tamamlanır; böylece
- * "tıkladım ama bir şey olmadı" hissi oluşmaz. Geçiş 120 ms'den kısaysa hiç görünmez.
+ * Bir iç bağlantıya tıklanınca hemen başlar (ilk 80 ms'de %30'a fırlar), yeni sayfa geldiğinde tamamlanır;
+ * böylece "tıkladım ama bir şey olmadı" hissi oluşmaz. Beklerken fare imleci de "yükleniyor" olur.
+ * Çoğu sayfada tıklama anında ayrıca iskelet (loading.tsx) gösterilir; çubuk ek bir işarettir.
  */
 function Bar() {
   const path = usePathname();
@@ -23,12 +24,13 @@ function Bar() {
     if (active.current) return;
     active.current = true;
     clear();
+    document.documentElement.style.cursor = "progress";
     timers.current.push(
-      setTimeout(() => setW(18), 120),
-      setTimeout(() => setW(45), 400),
-      setTimeout(() => setW(68), 1200),
-      setTimeout(() => setW(82), 3000),
-      setTimeout(() => setW(90), 7000),
+      setTimeout(() => setW(30), 0),
+      setTimeout(() => setW(55), 450),
+      setTimeout(() => setW(72), 1300),
+      setTimeout(() => setW(85), 3000),
+      setTimeout(() => setW(92), 7000),
       // Geçiş hiç tamamlanmazsa (indirme, iptal) takılı kalmasın
       setTimeout(() => done(), 15000),
     );
@@ -36,6 +38,7 @@ function Bar() {
   const done = () => {
     if (!active.current) return;
     active.current = false;
+    document.documentElement.style.cursor = "";
     clear();
     setW((cur) => (cur ? 100 : 0));
     timers.current.push(setTimeout(() => setW(0), 280));
@@ -63,11 +66,19 @@ function Bar() {
       if (url.origin !== location.origin) return;
       if (url.pathname === location.pathname && url.search === location.search) return; // aynı sayfa / yalnızca #
       start();
+      // Mağaza tarafı hedef sayfanın iskeletini gösterebilsin (components/store/route-skeleton.tsx)
+      window.dispatchEvent(new CustomEvent("arena-nav-to", { detail: url.pathname }));
     };
     const onSubmit = (e: SubmitEvent) => {
       // GET formları (arama, filtre, sorgu) da sayfa geçişidir
       const f = e.target as HTMLFormElement | null;
-      if (f && (f.method || "get").toLowerCase() === "get" && !e.defaultPrevented) start();
+      if (f && (f.method || "get").toLowerCase() === "get" && !e.defaultPrevented) {
+        start();
+        try {
+          const to = new URL(f.action || location.href, location.href).pathname;
+          if (to !== location.pathname) window.dispatchEvent(new CustomEvent("arena-nav-to", { detail: to }));
+        } catch {}
+      }
     };
     const onStart = () => start();
     // Yakalama aşamasında dinle: next/link tıklamayı preventDefault ettiği için kabarcık aşamasında göremeyiz.
@@ -89,7 +100,7 @@ function Bar() {
     <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px]" style={{ opacity: w ? 1 : 0, transition: "opacity .25s" }}>
       <div
         className="h-full bg-brand shadow-[0_0_10px_var(--color-brand)]"
-        style={{ width: `${w}%`, transition: w === 0 ? "none" : w === 100 ? "width .2s ease-out" : "width .8s cubic-bezier(.2,.7,.2,1)" }}
+        style={{ width: `${w}%`, transition: w === 0 ? "none" : w === 100 ? "width .2s ease-out" : w === 30 ? "width .08s ease-out" : "width .8s cubic-bezier(.2,.7,.2,1)" }}
       />
     </div>
   );

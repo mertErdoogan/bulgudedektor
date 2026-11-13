@@ -1,5 +1,6 @@
 import { cardCtx } from "@/lib/card-ctx";
 import Link from "next/link";
+import { Suspense } from "react";
 import { redirectOrNotFound } from "@/lib/redirects";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { Check, MessageCircle, Phone, Play, Star, Truck } from "lucide-react";
@@ -97,17 +98,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const out = archived || (p.stock <= 0 && !p.allowBackorder);
   const inst = s.payment.noInterestInstallments;
   const rating = p.reviews.length ? p.reviews.reduce((a, r) => a + r.rating, 0) / p.reviews.length : null;
-  const [related, together, variants] = await Promise.all([
-    similarTo(p, 4),
-    boughtTogether([p.id], 4),
-    p.variantGroup
-      ? db
-          .select({ id: products.id, slug: products.slug, name: products.name, label: products.variantLabel, price: products.price, stock: products.stock, allowBackorder: products.allowBackorder })
-          .from(products)
-          .where(and(eq(products.variantGroup, p.variantGroup), eq(products.status, "ACTIVE")))
-          .orderBy(asc(products.price))
-      : Promise.resolve([]),
-  ]);
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}?text=${encodeURIComponent(`Merhaba, ${p.name} hakkında bilgi almak istiyorum.`)}` : "/iletisim";
   const discount = p.compareAtPrice && p.compareAtPrice > p.price ? p.compareAtPrice - p.price : 0;
   const vid = ytId(p.videoUrl);
@@ -117,18 +107,27 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     p.waterproof ? { k: "Su geçirmezlik", v: WATERPROOF_LABEL[p.waterproof] } : null,
     p.experience ? { k: "Kimin için", v: EXPERIENCE_LABEL[p.experience] } : null,
   ].filter(Boolean) as { k: string; v: string }[];
-  const [dbFaq, guides, [act]] = await Promise.all([
+  const ctx = cardCtx(s);
+  // Sayfanın üst kısmı için gerekenler tek seferde, paralel: ardışık bekleme (şelale) yok.
+  // Benzer modeller, birlikte alınanlar ve rehberler aşağıda <Suspense> ile ayrıca akar: ürün, fiyat ve
+  // sepete ekle butonu onları beklemeden ekrana gelir.
+  const [variants, dbFaq, [act], deal, banks] = await Promise.all([
+    p.variantGroup
+      ? db
+          .select({ id: products.id, slug: products.slug, name: products.name, label: products.variantLabel, price: products.price, stock: products.stock, allowBackorder: products.allowBackorder })
+          .from(products)
+          .where(and(eq(products.variantGroup, p.variantGroup), eq(products.status, "ACTIVE")))
+          .orderBy(asc(products.price))
+      : Promise.resolve([]),
     getFaqs({ productId: p.id }),
-    relatedPosts({ productId: p.id, categoryId: p.categoryId, limit: 3 }),
     db
       .select({ views24: sql<number>`coalesce(sum(${productActivity.views}),0)::int`, carts24: sql<number>`coalesce(sum(${productActivity.carts}),0)::int` })
       .from(productActivity)
       .where(and(eq(productActivity.productId, p.id), sql`${productActivity.hour} > now() - interval '24 hours'`)),
+    // Otomatik kampanya sepette düşüyorsa ürün sayfasında da söyle: en güçlü satış argümanı saklı kalmasın
+    out || archived ? Promise.resolve(null) : autoDealFor({ id: p.id, price: p.price, brandId: p.brandId, categoryId: p.categoryId }),
+    s.payment.cardEnabled && s.payment.provider !== "paytr" && p.price >= 1000 ? installmentTable(p.price, s.payment.maxInstallment) : Promise.resolve(null),
   ]);
-  const ctx = cardCtx(s);
-  // Otomatik kampanya sepette düşüyorsa ürün sayfasında da söyle: en güçlü satış argümanı saklı kalmasın
-  const deal = out || archived ? null : await autoDealFor({ id: p.id, price: p.price, brandId: p.brandId, categoryId: p.categoryId });
-  const banks = s.payment.cardEnabled && s.payment.provider !== "paytr" && p.price >= 1000 ? await installmentTable(p.price, s.payment.maxInstallment) : null;
   const faqItems = [...toQA(dbFaq), ...autoFaq(p, s)];
 
   return (
@@ -367,6 +366,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </aside>
       </div>
 
+      <Suspense fallback={<ExtrasSkeleton />}>
+        <PdpExtras p={p} ctx={ctx} />
+      </Suspense>
+      <StickyBuy productId={p.id} name={p.name} price={formatTL(p.price)} inst={inst > 1 ? `${inst} × ${formatTL(Math.round(p.price / inst))}` : undefined} disabled={out} amount={p.price} brand={p.brand?.name} />
+    </div>
+  );
+}
+
+/** Ürün sayfasının alt kısmı (rehberler, birlikte alınanlar, son gezilenler, benzer modeller): ayrı akar. */
+async function PdpExtras({ p, ctx }: { p: NonNullable<Awaited<ReturnType<typeof getProduct>>>; ctx: ReturnType<typeof cardCtx> }) {
+  const [related, together, guides] = await Promise.all([similarTo(p, 4), boughtTogether([p.id], 4), relatedPosts({ productId: p.id, categoryId: p.categoryId, limit: 3 })]);
+  return (
+    <>
       {guides.length ? (
         <section className="mt-12">
           <h2 className="font-display mb-4 text-2xl font-extrabold">Uzman rehberleri</h2>
@@ -386,7 +398,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{related.map((r) => <ProductCard key={r.id} p={r} ctx={ctx} />)}</div>
         </section>
       ) : null}
-      <StickyBuy productId={p.id} name={p.name} price={formatTL(p.price)} inst={inst > 1 ? `${inst} × ${formatTL(Math.round(p.price / inst))}` : undefined} disabled={out} amount={p.price} brand={p.brand?.name} />
-    </div>
+    </>
+  );
+}
+
+function ExtrasSkeleton() {
+  return (
+    <section className="mt-12" aria-hidden>
+      <div className="skel mb-4 h-7 w-64 rounded-lg" />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        {Array.from({ length: 4 }, (_, i) => <div key={i} className="skel h-[340px] rounded-2xl" />)}
+      </div>
+    </section>
   );
 }

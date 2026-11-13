@@ -1,3 +1,4 @@
+import { RouteSkeleton } from "@/components/store/route-skeleton";
 import { CartProvider } from "@/components/store/cart";
 import { CompareBar, MobileTabBar } from "@/components/store/bits";
 import { StoreFooter } from "@/components/store/footer";
@@ -33,6 +34,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
       <JsonLd data={graph(organizationLd(s), websiteLd(s))} />
       <StoreHeader />
       <main className="min-h-[50vh]">{children}</main>
+      <RouteSkeleton />
       <StoreFooter />
       <CompareBar />
       <MobileTabBar />

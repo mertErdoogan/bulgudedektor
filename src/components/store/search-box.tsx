@@ -150,6 +150,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
     setOpen(false);
     input.current?.blur();
     window.dispatchEvent(new Event("arena-nav-start"));
+    window.dispatchEvent(new CustomEvent("arena-nav-to", { detail: href.split("?")[0] }));
     router.push(href);
   };
   const pick = () => {
