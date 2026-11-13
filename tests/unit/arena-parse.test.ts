@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { displayName, guessSpecs, parseCategoryPage, parseProduct, parseSitemap, parseTL } from "../../scripts/lib/arena-parse";
+import { displayName, guessSpecs, parseCategoryPage, parseProduct, parseSitemap, parseTL, mapLegacyLink, parseHomeBanners } from "../../scripts/lib/arena-parse";
 
 const fx = (f: string) => readFileSync(join(__dirname, "../fixtures/arena", f), "utf8");
 const B = "https://www.arenadedektor.com";
@@ -41,5 +41,14 @@ assert.deepEqual(parseSitemap(fx("sitemap.xml")), ["/urun/minelab-vanquish-460-d
 
 assert.equal(displayName("Minelab Vanquish 460 Dedektör", "Minelab"), "Vanquish 460");
 assert.equal(guessSpecs("Multi-IQ IP68 tam su geçirmez", false).waterproof, "FULL");
+
+// Ana sayfa banner'ları: tembel yüklenen (data-src) görsel, eski arama bağlantısı, tekrar eden slayt
+const banners = parseHomeBanners(fx("home-banners.html"), "https://www.arenadedektor.com");
+assert.equal(banners.length, 3, "aynı görsel iki kez alınmamalı, banner olmayan görsel atlanmalı");
+assert.deepEqual(banners[0], { image: "https://www.arenadedektor.com/Images/Banner/10112026141137.webp", title: "Minelab Manticore Kasım Kampanyası", link: "/urun/minelab-manticore" });
+assert.equal(banners[1].image, "https://www.arenadedektor.com/Images/Banner/10112026141702.webp");
+assert.equal(banners[1].link, "/ara?q=X-Terra%20Elite");
+assert.equal(banners[2].link, "/urun/minelab-gpz-8000-altin-dedektoru");
+assert.equal(mapLegacyLink("https://www.youtube.com/watch?v=1", "https://www.arenadedektor.com"), "https://www.youtube.com/watch?v=1");
 
 console.log("arena-parse: tüm testler geçti");

@@ -7,6 +7,8 @@
  *   npm run import:arena -- --hotlink    # görselleri indirmez, eski sitedeki adresini kullanır (geçici)
  *   npm run import:arena -- --limit 5    # deneme: ilk 5 ürün
  *   npm run import:arena -- --archive-demo   # demo ürünleri arşive alır (siparişler etkilenmez)
+ *   npm run import:arena -- --banners-only   # yalnızca ana sayfa slider banner'larını aktarır
+ *                                            # (eski banner'lar pasife alınır, görseller indirilip renk paleti hesaplanır)
  *
  * Tekrar çalıştırılabilir: ürünler adresine (slug) göre güncellenir, yeni olanlar eklenir.
  * Fiyat her çalıştırmada güncellenir; stok yalnızca ilk eklemede ya da --update-stock ile yazılır
@@ -17,9 +19,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { db } from "../src/db";
 import * as t from "../src/db/schema";
+import { paletteFromUrl } from "../src/lib/palette-core";
 import { putObject } from "../src/lib/storage-core";
 import { CATEGORY_PRIORITY, CATEGORY_TREE, CATEGORY_USE_CASE, LEGACY_REDIRECTS, OLD_BRAND_CATEGORY, OLD_CATEGORY_TO_NEW } from "./lib/arena-map";
-import { displayName, guessSpecs, parseCategoryPage, parsePost, parseProduct, parseSitemap, type ArenaPost, type ArenaProduct } from "./lib/arena-parse";
+import { displayName, guessSpecs, parseCategoryPage, parsePost, parseProduct, parseSitemap, type ArenaPost, type ArenaProduct, parseHomeBanners, type ArenaBanner } from "./lib/arena-parse";
 
 const args = process.argv.slice(2);
 const flag = (n: string) => args.includes(`--${n}`);
@@ -31,7 +34,7 @@ const BASE = (opt("base") ?? "https://www.arenadedektor.com").replace(/\/$/, "")
 const LIMIT = Number(opt("limit") ?? 0) || Infinity;
 const UA = "Mozilla/5.0 (compatible; ArenaImporter/1.0; +site-migration)";
 
-type Snapshot = { takenAt: string; base: string; products: (ArenaProduct & { oldCategories: string[] })[]; posts: ArenaPost[] };
+type Snapshot = { takenAt: string; base: string; products: (ArenaProduct & { oldCategories: string[] })[]; posts: ArenaPost[]; banners?: ArenaBanner[] };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function get(url: string, tries = 3): Promise<string> {
@@ -60,7 +63,15 @@ async function pool<T, R>(items: T[], n: number, fn: (x: T, i: number) => Promis
   return out;
 }
 
+async function crawlBanners(): Promise<ArenaBanner[]> {
+  console.log(`→ ${BASE}/ ana sayfa banner'ları okunuyor`);
+  const b = parseHomeBanners(await get(`${BASE}/`), BASE);
+  console.log(`  ${b.length} banner bulundu`);
+  return b;
+}
+
 async function crawl(): Promise<Snapshot> {
+  const banners = await crawlBanners();
   console.log(`→ ${BASE}/sitemap.xml okunuyor`);
   const locs = parseSitemap(await get(`${BASE}/sitemap.xml`));
   const productPaths = locs.filter((l) => l.startsWith("/urun/")).slice(0, LIMIT);
@@ -91,7 +102,30 @@ async function crawl(): Promise<Snapshot> {
 
   console.log(`→ ${postPaths.length} blog yazısı okunuyor`);
   const posts = (await pool(postPaths, 3, async (path) => parsePost(await get(`${BASE}${path}`), path, BASE))).filter((x): x is ArenaPost => !!x);
-  return { takenAt: new Date().toISOString(), base: BASE, products, posts };
+  return { takenAt: new Date().toISOString(), base: BASE, products, posts, banners };
+}
+
+/** Ana sayfa banner'ları: aynı başlıklı banner güncellenir, diğer büyük slider banner'ları pasife alınır. */
+async function importBanners(list: ArenaBanner[]) {
+  if (!list.length) return console.log("  ! banner bulunamadı, mevcutlar korunuyor");
+  const existing = await db.select().from(t.banners).where(eq(t.banners.placement, "HERO"));
+  const keep: string[] = [];
+  for (const [i, b] of list.entries()) {
+    const imageUrl = await storeImage(b.image);
+    const palette = await paletteFromUrl(imageUrl);
+    const values = { title: b.title, imageUrl, linkUrl: b.link, showText: false, placement: "HERO" as const, sortOrder: i, isActive: true, palette };
+    const same = existing.find((e) => e.title === b.title);
+    if (same) {
+      await db.update(t.banners).set(values).where(eq(t.banners.id, same.id));
+      keep.push(same.id);
+    } else {
+      const [row] = await db.insert(t.banners).values(values).returning({ id: t.banners.id });
+      keep.push(row.id);
+    }
+  }
+  const off = existing.filter((e) => !keep.includes(e.id) && e.isActive);
+  if (off.length) await db.update(t.banners).set({ isActive: false }).where(inArray(t.banners.id, off.map((e) => e.id)));
+  console.log(`✓ Banner: ${list.length} aktarıldı${off.length ? `, ${off.length} eski banner pasife alındı (panelden silinebilir)` : ""}`);
 }
 
 const slugify = (s: string) =>
@@ -137,6 +171,11 @@ function pickCategory(p: ArenaProduct & { oldCategories: string[] }) {
 }
 
 async function run() {
+  if (flag("banners-only")) {
+    const list = await crawlBanners();
+    if (flag("dry")) return console.log(JSON.stringify(list, null, 1));
+    return importBanners(list);
+  }
   let snap: Snapshot;
   const from = opt("from");
   if (from) snap = JSON.parse(await readFile(from, "utf8"));
@@ -262,7 +301,10 @@ async function run() {
   // 5) Eski adres yönlendirmeleri
   if (LEGACY_REDIRECTS.length) await db.insert(t.redirects).values(LEGACY_REDIRECTS.map(([fromPath, toPath]) => ({ fromPath, toPath }))).onConflictDoNothing();
 
-  // 6) Demo ürünleri arşive al (isteğe bağlı)
+  // 6) Ana sayfa banner'ları
+  if (snap.banners) await importBanners(snap.banners);
+
+  // 7) Demo ürünleri arşive al (isteğe bağlı)
   if (flag("archive-demo")) {
     const keep = snap.products.map((p) => p.slug);
     const r = await db.update(t.products).set({ status: "ARCHIVED" }).where(and(notInArray(t.products.slug, keep), eq(t.products.status, "ACTIVE"))).returning({ id: t.products.id });

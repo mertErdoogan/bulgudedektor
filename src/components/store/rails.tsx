@@ -181,7 +181,7 @@ export function QuickLists() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
-  const btn = "relative grid h-11 w-11 place-items-center rounded-full hover:bg-soft";
+  const btn = "relative grid h-10 w-10 place-items-center rounded-full transition hover:bg-soft";
   return (
     <div ref={box} className="relative hidden items-center md:flex">
       <button type="button" className={btn} aria-label="Son gezdiklerin" onClick={() => setOpen(open === "recent" ? null : "recent")}>

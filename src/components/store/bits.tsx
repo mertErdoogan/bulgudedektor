@@ -20,7 +20,7 @@ export function CartButton({ compact }: { compact?: boolean }) {
       </Link>
     );
   return (
-    <Link href="/sepet" className="flex h-11 items-center gap-2 rounded-lg bg-deep px-4 text-sm font-extrabold text-white">
+    <Link href="/sepet" className="flex h-10 items-center gap-2 rounded-full bg-deep px-4 text-[13.5px] font-extrabold text-white transition hover:bg-black">
       <ShoppingCart size={19} /> Sepet
       {ready && count ? <span className="rounded-md bg-pop px-2 text-xs text-on-pop">{count}</span> : null}
     </Link>
@@ -104,7 +104,7 @@ export function MegaMenu({ categories, brands }: { categories: Cat[]; brands: { 
         onClick={() => setOpen((o) => !o)}
         onMouseEnter={() => setOpen(true)}
         aria-expanded={open}
-        className="flex h-[40px] items-center gap-2 rounded-full bg-deep px-4 text-sm font-extrabold text-white hover:bg-black"
+        className="mr-1 flex h-9 items-center gap-2 rounded-full bg-deep px-4 text-[13.5px] font-bold text-white transition hover:bg-black"
       >
         <Menu size={16} /> Tüm kategoriler
       </button>

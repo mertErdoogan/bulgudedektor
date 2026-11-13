@@ -1,4 +1,5 @@
 /* Demo verisi: npm run db:seed  (mevcut veriyi SİLER, sadece kurulumda kullanın) */
+import { paletteFromUrl } from "../src/lib/palette-core";
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { sql } from "drizzle-orm";
@@ -119,9 +120,20 @@ async function main() {
   }
 
   // Vitrin
+  const ARENA = "https://www.arenadedektor.com/Images/Banner";
+  const warm = (a: [number, number, number], b: [number, number, number], lum: number) => ({ a, b, lum });
+  const ARENA_BANNERS = [
+    { title: "Minelab Manticore Kasım Kampanyası", imageUrl: `${ARENA}/10112026141137.webp`, linkUrl: "/urun/manticore", palette: warm([176, 42, 37], [182, 117, 57], 0.307) },
+    { title: "Minelab X-Terra Elite Kasım Kampanyası", imageUrl: `${ARENA}/10112026141702.webp`, linkUrl: "/ara?q=X-Terra", palette: warm([172, 47, 42], [182, 122, 66], 0.297) },
+    { title: "Minelab Vanquish 60 Serisi Kasım Kampanyası", imageUrl: `${ARENA}/10112026141924.webp`, linkUrl: "/ara?q=Vanquish", palette: warm([174, 43, 38], [192, 120, 49], 0.308) },
+    { title: "Minelab Equinox 900 Kasım Kampanyası", imageUrl: `${ARENA}/10112026142254.webp`, linkUrl: "/urun/equinox-900", palette: warm([169, 44, 42], [175, 112, 61], 0.309) },
+    { title: "Minelab GPZ 8000 Dedektör", imageUrl: img("banner-gpz8000-clean"), linkUrl: "/urun/gpz-8000", palette: (await paletteFromUrl(img("banner-gpz8000-clean"))) ?? warm([58, 104, 143], [179, 37, 40], 0.224) },
+  ];
   await db.insert(t.banners).values([
-    { title: "Derinliğin ötesine geçin", eyebrow: "MINELAB GPZ 8000", subtitle: "ZVT teknolojisi ile en zorlu topraklarda kesin sonuç.", imageUrl: img("banner-gpz8000-clean"), linkUrl: "/urun/gpz-8000", placement: "HERO", sortOrder: 0, ctaLabel: "İncele", showText: false },
-    { title: "Vanquish 560 Pro-Pack", eyebrow: "İLK CİHAZ İÇİN", subtitle: "Aç ve ara. 3 ay vade farksız.", imageUrl: img("vanquish-560-pro"), linkUrl: "/urun/vanquish-560-pro-pack", placement: "HERO", sortOrder: 1, ctaLabel: "Fiyatı gör" },
+    // arenadedektor.com ana sayfasındaki güncel kampanya banner'ları (13.11.2026). Kasım banner'ları eski
+    // sitedeki adresinden yüklenir (gerçek kurulumda `npm run import:arena -- --banners-only` indirip depoya koyar);
+    // GPZ 8000 banner'ı yerelde. Paletler görsellerden hesaplandı (aurora ışıması ve kenar rengi).
+    ...ARENA_BANNERS.map((b, i) => ({ ...b, placement: "HERO" as const, sortOrder: i, showText: false })),
     { title: "Vanquish 560 Pro-Pack", eyebrow: "YENİ · MINELAB", subtitle: "49.588 TL'den", imageUrl: img("vanquish-560-pro"), linkUrl: "/urun/vanquish-560-pro-pack", placement: "SIDE", sortOrder: 0 },
     { title: "Equinox 900, 3 taksit", eyebrow: "VADE FARKSIZ · MINELAB", subtitle: "3 × 33.227 TL", imageUrl: img("equinox-900"), linkUrl: "/urun/equinox-900", placement: "SIDE", sortOrder: 1 },
     { title: "Kazıda hedefi saniyede bul", eyebrow: "POINTER · GARRETT", subtitle: "12.751 TL'den", imageUrl: img("garrett-pro-pointer-at"), linkUrl: "/kategori/pointer", placement: "SIDE", sortOrder: 2 },

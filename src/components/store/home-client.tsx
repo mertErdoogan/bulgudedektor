@@ -7,7 +7,18 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatTL } from "@/lib/utils";
 
-type B = { id: string; showText: boolean; title: string; subtitle: string | null; eyebrow: string | null; ctaLabel: string | null; imageUrl: string; mobileImageUrl: string | null; linkUrl: string | null };
+type Pal = { a: [number, number, number]; b: [number, number, number]; lum: number };
+type B = { id: string; showText: boolean; title: string; subtitle: string | null; eyebrow: string | null; ctaLabel: string | null; imageUrl: string; mobileImageUrl: string | null; linkUrl: string | null; palette?: Pal | null };
+
+const DEFAULT_PAL: Pal = { a: [212, 46, 30], b: [47, 86, 200], lum: 0.5 };
+const rgb = (c: [number, number, number]) => c.join(",");
+/** Aurora: beyaz zemin üzerinde banner'ın iki canlı renginden yumuşak haleler (gri yok, kenarları kendiliğinden erir) */
+const aurora = (p: Pal) =>
+  [
+    `radial-gradient(42% 58% at 16% 46%, rgba(${rgb(p.a)},.34) 0%, rgba(${rgb(p.a)},0) 72%)`,
+    `radial-gradient(40% 56% at 86% 38%, rgba(${rgb(p.b)},.30) 0%, rgba(${rgb(p.b)},0) 72%)`,
+    `radial-gradient(70% 34% at 50% 0%, rgba(${rgb(p.a)},.08) 0%, rgba(${rgb(p.a)},0) 80%)`,
+  ].join(",");
 
 /** Banner altı kart: öncelikli markanın yeni cihazı ya da paneldeki kampanya kartı */
 export type HeroCard = { id: string; href: string; eyebrow: string; title: string; line?: string | null; price?: number | null; oldPrice?: number | null; image: string | null; isNew?: boolean };
@@ -32,12 +43,10 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
   if (!n && !cards.length) return null;
   return (
     <section className="relative isolate pt-4 pb-2 md:pt-7 md:pb-16" data-testid="hero-stage">
-      {/* Ambiyans: 64 px'lik kopya, CSS ile bulanıklaştırılır (ek yük ~2 KB). Bölümün altına kadar
-          yumuşakça şeffaflaşır; kenarları yatayda taşar ama sayfayı kaydırmaz. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" style={{ maskImage: "linear-gradient(to bottom, #000 0%, #000 38%, rgba(0,0,0,.45) 66%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 38%, rgba(0,0,0,.45) 66%, transparent 100%)" }}>
-        {slides.map((s, k) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={s.id} src={imgUrl(s.imageUrl, 64, 50)} alt="" className={cn("absolute inset-x-[-10%] top-[-15%] h-[85%] w-[120%] object-cover blur-[70px] saturate-150 transition-opacity duration-1000", k === i ? "opacity-60" : "opacity-0")} />
+      {/* Aurora: aktif banner'ın paletinden iki renkli hale; slayt değişince yumuşakça geçer */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        {(n ? slides : [{ id: "x", palette: null } as unknown as B]).map((s, k) => (
+          <div key={s.id} className={cn("absolute inset-0 transition-opacity duration-1000", k === i ? "opacity-100" : "opacity-0")} style={{ background: aurora(s.palette ?? DEFAULT_PAL) }} />
         ))}
       </div>
       {n ? (
@@ -49,11 +58,12 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
             onFocus={() => setPaused(true)}
             onBlur={() => setPaused(false)}
             data-testid="hero-banner"
+            style={{ ["--ha" as string]: rgb((slides[i]?.palette ?? DEFAULT_PAL).a), ["--hb" as string]: rgb((slides[i]?.palette ?? DEFAULT_PAL).b) } as React.CSSProperties}
           >
             {/* Renkli parıltı + dönen renkli kenar: banner'ı arka plandan ayırır, sahneye hareket katar */}
-            <div aria-hidden className="hero-ring hero-glow absolute inset-x-6 top-6 -bottom-3 rounded-[30px]" />
-            <div className="hero-ring relative rounded-[20px] p-[3px] shadow-[0_30px_60px_-28px_rgba(0,0,0,.6)] md:rounded-[28px] md:p-1">
-              <div className={cn("relative overflow-hidden rounded-[17px] bg-[#262626] md:aspect-[1520/580] md:rounded-[24px]", hasMobile ? "aspect-[16/9]" : "aspect-[1520/580]")}>
+            <div aria-hidden className="hero-ring hero-glow absolute inset-x-10 top-8 -bottom-4 rounded-[30px]" />
+            <div className="hero-ring relative rounded-[20px] p-[2px] shadow-[0_40px_80px_-36px_rgba(0,0,0,.65)] md:rounded-[26px]">
+              <div className={cn("relative overflow-hidden rounded-[18px] bg-[#1b1b1e] md:aspect-[1520/580] md:rounded-[24px]", hasMobile ? "aspect-[16/9]" : "aspect-[1520/580]")}>
                 {slides.map((s, k) => {
                   const wide = !s.showText || s.imageUrl.includes("banner");
                   return (
@@ -86,16 +96,16 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
                     </button>
                     {/* Hikâye tarzı ilerleme: dolan çubuk bitince sonraki slayt (otomatik geçişi CSS animasyonu sürer,
                         fare üstündeyken durur; "hareketi azalt" tercihinde otomatik geçiş yok) */}
-                    <div className="absolute bottom-2.5 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/30 px-3 py-1.5 backdrop-blur-sm md:bottom-4">
+                    <div className="absolute bottom-1.5 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/25 px-2 py-0.5 backdrop-blur-[2px] md:bottom-4 md:gap-2 md:px-3 md:py-1.5">
                       {slides.map((s, k) => (
-                        <button key={s.id} onClick={() => setI(k)} aria-label={`${k + 1}. slayt`} aria-current={k === i} className="grid h-5 place-items-center">
-                          <span className="block h-1 w-7 overflow-hidden rounded-full bg-white/35 md:w-10">
+                        <button key={s.id} onClick={() => setI(k)} aria-label={`${k + 1}. slayt`} aria-current={k === i} className="grid h-4 place-items-center md:h-5">
+                          <span className="block h-[3px] w-5 md:h-1 overflow-hidden rounded-full bg-white/35 md:w-10">
                             {k < i ? <span className="block h-full w-full bg-white" /> : null}
                             {k === i ? <span key={`bar-${i}`} className="hero-bar block h-full w-full bg-white" onAnimationEnd={() => setI((x) => (x + 1) % n)} /> : null}
                           </span>
                         </button>
                       ))}
-                      <span className="ml-1 text-[11px] font-bold text-white tabular-nums">{String(i + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}</span>
+                      <span className="ml-1 hidden whitespace-nowrap text-[11px] font-bold text-white tabular-nums md:inline">{String(i + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}</span>
                     </div>
                   </>
                 ) : null}

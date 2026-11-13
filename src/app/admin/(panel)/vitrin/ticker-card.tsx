@@ -5,6 +5,7 @@ import { getSettings } from "@/lib/settings";
 import { saveTicker } from "./actions";
 
 const THEMES = [
+  ["soft", "Açık", "bg-[#fbf8f7]"],
   ["brand", "Kırmızı", "bg-brand"],
   ["dark", "Siyah", "bg-deep"],
   ["gold", "Sarı", "bg-[#ffcf3d]"],
@@ -47,7 +48,7 @@ export async function TickerCard() {
         <div className="grid gap-4 md:grid-cols-3">
           <fieldset><legend className="mb-2 text-sm font-bold">Yön</legend><div className="grid grid-cols-2 gap-2">{radio("direction", "ltr", "Soldan sağa →", t.direction === "ltr")}{radio("direction", "rtl", "← Sağdan sola", t.direction === "rtl")}</div></fieldset>
           <fieldset><legend className="mb-2 text-sm font-bold">Hız</legend><div className="grid grid-cols-3 gap-2">{radio("speed", "slow", "Yavaş", t.speed === "slow")}{radio("speed", "normal", "Normal", t.speed === "normal")}{radio("speed", "fast", "Hızlı", t.speed === "fast")}</div></fieldset>
-          <fieldset><legend className="mb-2 text-sm font-bold">Renk</legend><div className="grid grid-cols-3 gap-2">{THEMES.map(([v, l, c]) => radio("theme", v, <><span className={`h-3.5 w-3.5 rounded-full ring-1 ring-black/10 ${c}`} />{l}</>, t.theme === v))}</div></fieldset>
+          <fieldset><legend className="mb-2 text-sm font-bold">Renk</legend><div className="grid grid-cols-2 gap-2 xl:grid-cols-4">{THEMES.map(([v, l, c]) => radio("theme", v, <><span className={`h-3.5 w-3.5 rounded-full ring-1 ring-black/10 ${c}`} />{l}</>, t.theme === v))}</div></fieldset>
         </div>
         <SubmitButton className="self-start">Kaydet</SubmitButton>
       </ActionForm>

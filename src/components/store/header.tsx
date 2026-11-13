@@ -15,32 +15,33 @@ export async function StoreHeader() {
   return (
     <header className="sticky top-0 z-30 bg-white md:static">
       {s.store.announcement ? (
-        <div className="scrollbar-none overflow-x-auto bg-deep px-4 py-2 text-center text-[12.5px] font-bold whitespace-nowrap text-white">
+        <div className="scrollbar-none overflow-x-auto bg-deep px-4 py-2 text-center text-[12px] font-semibold tracking-wide whitespace-nowrap text-white/85">
           {s.store.announcement.split("·").map((t, i) => (
             <span key={i}>
-              {i ? <span className="mx-3 text-accent">✦</span> : null}
+              {i ? <span className="mx-4 text-white/30">•</span> : null}
               {t.trim()}
             </span>
           ))}
         </div>
       ) : null}
       <div className="border-b border-line">
-        <div className="container-x flex items-center gap-4 py-3 md:py-4">
+        <div className="container-x flex items-center gap-4 py-3 md:gap-8 md:py-5">
           <Link href="/" aria-label={`${s.store.name} ana sayfa`} className="shrink-0">
             <Logo size={30} />
           </Link>
-          <SearchBox className="hidden flex-1 md:flex" />
-          <div className="ml-auto flex items-center gap-1.5 md:ml-0">
-            <a href={wa} target="_blank" className="hidden h-11 items-center gap-2 rounded-lg bg-[#e9f9ef] px-3.5 text-sm font-extrabold text-[#11643a] lg:flex">
-              <MessageCircle size={18} /> Uzmana sor
+          <SearchBox className="hidden max-w-[560px] flex-1 md:flex" />
+          <div className="ml-auto flex items-center gap-1">
+            <a href={wa} target="_blank" className="mr-1 hidden h-10 items-center gap-2 rounded-full px-3 text-[13.5px] font-bold text-[#11643a] transition hover:bg-[#e9f9ef] lg:flex">
+              <MessageCircle size={17} /> Uzmana sor
             </a>
             <a href={wa} target="_blank" aria-label="WhatsApp ile uzmana sor" className="grid h-11 w-11 place-items-center rounded-full bg-[#e9f9ef] text-[#11643a] lg:hidden">
               <MessageCircle size={20} />
             </a>
             <QuickLists />
-            <Link href="/hesabim" className="hidden h-11 items-center gap-2 rounded-full px-3 text-sm font-bold hover:bg-soft md:flex" aria-label="Hesabım">
-              <User size={19} /> <span className="hidden xl:inline">{customer ? customer.name.split(" ")[0] : "Giriş yap"}</span>
+            <Link href="/hesabim" className="hidden h-10 items-center gap-2 rounded-full px-3 text-[13.5px] font-bold transition hover:bg-soft md:flex" aria-label="Hesabım">
+              <User size={18} /> <span className="hidden xl:inline">{customer ? customer.name.split(" ")[0] : "Giriş yap"}</span>
             </Link>
+            <span className="mx-1 hidden h-6 w-px bg-line md:block" />
             <span className="hidden md:block">
               <CartButton />
             </span>

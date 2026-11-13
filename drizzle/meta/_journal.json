@@ -120,6 +120,13 @@
       "when": 1794511673606,
       "tag": "0016_tough_stick",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794569061708,
+      "tag": "0017_light_frightful_four",
+      "breakpoints": true
     }
   ]
 }

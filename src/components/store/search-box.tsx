@@ -74,7 +74,7 @@ export function SearchBox({ defaultValue, className }: { defaultValue?: string; 
       ref={box}
       action="/ara"
       role="search"
-      className={cn("relative flex h-12 items-center gap-2 rounded-xl bg-soft pr-1.5 pl-4 focus-within:ring-2 focus-within:ring-brand/25", className)}
+      className={cn("relative flex h-11 items-center gap-2 rounded-full border border-line bg-[#fafafa] pr-1.5 pl-4 transition focus-within:border-deep/30 focus-within:bg-white focus-within:shadow-[0_8px_24px_-12px_rgba(0,0,0,.25)]", className)}
       onSubmit={(e) => {
         if (hi >= 0 && links[hi]) {
           e.preventDefault();
@@ -116,7 +116,7 @@ export function SearchBox({ defaultValue, className }: { defaultValue?: string; 
           <X size={16} />
         </button>
       ) : null}
-      <button className="hidden h-10 shrink-0 rounded-lg bg-brand px-5 text-sm font-extrabold text-white sm:block">Ara</button>
+      <button aria-label="Ara" className="hidden h-8 w-8 shrink-0 place-items-center rounded-full bg-deep text-white transition hover:bg-brand sm:grid"><Search size={15} /></button>
 
       {open && (typed || res.popular.length) ? (
         <div id="arama-onerileri" role="listbox" className="absolute top-full right-0 left-0 z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-white p-2 text-deep shadow-2xl">

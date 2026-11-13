@@ -154,11 +154,12 @@
 @keyframes hero-spin { to { --hero-angle: 360deg; } }
 @keyframes hero-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes hero-zoom { from { transform: scale(1); } to { transform: scale(1.045); } }
+/* Kenar: banner paletinin iki rengi + beyaz parıltı, yavaş döner (renkler HeroStage'den --ha/--hb ile gelir) */
 .hero-ring {
-  background: conic-gradient(from var(--hero-angle), #e2402e, #ffb020, #2f56c8, #7d150b, #e2402e);
-  animation: hero-spin 9s linear infinite;
+  background: conic-gradient(from var(--hero-angle), rgb(var(--ha, 212,46,30)), rgba(255,255,255,.95) 18%, rgb(var(--hb, 47,86,200)) 38%, rgba(255,255,255,.35) 55%, rgb(var(--ha, 212,46,30)) 75%, rgba(255,255,255,.95) 88%, rgb(var(--ha, 212,46,30)));
+  animation: hero-spin 16s linear infinite;
 }
-.hero-glow { filter: blur(28px); opacity: 0.38; }
+.hero-glow { filter: blur(34px); opacity: 0.32; }
 .hero-paused .hero-ring, .hero-paused .hero-bar, .hero-paused .hero-zoom { animation-play-state: paused; }
 .hero-bar { transform-origin: left; animation: hero-progress var(--hero-dur, 6.5s) linear forwards; }
 .hero-zoom { animation: hero-zoom var(--hero-dur, 6.5s) ease-out forwards; }

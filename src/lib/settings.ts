@@ -155,7 +155,7 @@ export type TickerSettings = {
   /** ltr: soldan sağa, rtl: sağdan sola */
   direction: "ltr" | "rtl";
   speed: "slow" | "normal" | "fast";
-  theme: "brand" | "dark" | "gold";
+  theme: "soft" | "brand" | "dark" | "gold";
 };
 
 export type AllSettings = {
@@ -299,7 +299,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     ],
     direction: "ltr",
     speed: "normal",
-    theme: "brand",
+    theme: "soft",
   },
 };
 

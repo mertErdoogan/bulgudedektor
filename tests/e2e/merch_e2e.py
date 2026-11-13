@@ -55,7 +55,7 @@ async def main():
             tk = pg.locator("[data-testid=ticker]")
             chk("Kayan şerit görünür, soldan sağa", await tk.count() == 1 and await tk.get_attribute("data-dir") == "ltr")
             chk("Kayan şerit maddeleri", "Seri numaranla orijinallik sorgula" in await tk.inner_text())
-            chk("Sahne: ambiyans katmanı (banner'ın küçük kopyası)", await pg.locator("[data-testid=hero-stage] > div[aria-hidden] img").count() >= 1)
+            chk("Sahne: banner paletinden aurora katmanı", await pg.locator("[data-testid=hero-stage] > div[aria-hidden] > div[style*=radial-gradient]").count() >= 1)
             chk("Marka ızgarası: Minelab ilk ve notlu", "Türkiye distribütörü" in (await pg.inner_text("main")))
 
             # ── Ürün sayfası rozeti

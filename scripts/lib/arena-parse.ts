@@ -199,3 +199,39 @@ export function guessSpecs(text: string, isAccessory: boolean) {
   const waterproof = /dalış|ip68|\d+\s*m(etre)?ye? kadar su|su altı|tamamen su geçirmez|tam su geçirmez/.test(t) ? ("FULL" as const) : /başlık su geçirmez|su geçirmez başlık/.test(t) ? ("COIL_ONLY" as const) : null;
   return { technology, waterproof };
 }
+
+export type ArenaBanner = { image: string; title: string; link: string | null };
+
+/**
+ * Ana sayfa slider'ı (Swiper): .swiper-slide içindeki görsel, alt metni ve bağlantısı.
+ * Bağlantılar yeni siteye göre yola çevrilir: /urun/x aynen kalır (ürünler aynı adresle aktarılır),
+ * eski arama sayfası /kategori?ara=… yeni aramaya (/ara?q=…) gider, dış bağlantılar olduğu gibi kalır.
+ */
+export function parseHomeBanners(html: string, base: string): ArenaBanner[] {
+  const $ = cheerio.load(html);
+  const out: ArenaBanner[] = [];
+  const seen = new Set<string>();
+  $(".swiper-slide img, .slider img, [class*=banner] .swiper-slide img").each((_, el) => {
+    const img = $(el);
+    const src = img.attr("data-src") || img.attr("src") || "";
+    if (!src || !/\/Images\/Banner\//i.test(src)) return;
+    const image = new URL(src, base).toString();
+    if (seen.has(image)) return;
+    seen.add(image);
+    const href = img.closest("a").attr("href");
+    out.push({ image, title: (img.attr("alt") || "").trim() || "Kampanya", link: href ? mapLegacyLink(href, base) : null });
+  });
+  return out;
+}
+
+export function mapLegacyLink(href: string, base: string): string {
+  let u: URL;
+  try {
+    u = new URL(href, base);
+  } catch {
+    return href;
+  }
+  if (u.host.replace(/^www\./, "") !== new URL(base).host.replace(/^www\./, "")) return u.toString();
+  if (u.pathname === "/kategori" && u.searchParams.get("ara")) return `/ara?q=${encodeURIComponent(u.searchParams.get("ara")!.trim())}`;
+  return u.pathname + (u.search || "");
+}

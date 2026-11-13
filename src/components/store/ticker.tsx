@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import type { TickerSettings } from "@/lib/settings";
 
 const THEME = {
+  soft: { bar: "border-b border-line bg-[#fbf8f7] text-deep", hl: "bg-brand text-white", sep: "text-brand/50" },
   brand: { bar: "bg-brand text-white", hl: "bg-white text-brand", sep: "text-white/60" },
   dark: { bar: "bg-deep text-white", hl: "bg-brand text-white", sep: "text-brand" },
   gold: { bar: "bg-[#ffcf3d] text-deep", hl: "bg-deep text-white", sep: "text-deep/50" },

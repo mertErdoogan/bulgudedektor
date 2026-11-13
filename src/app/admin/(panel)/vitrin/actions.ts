@@ -41,8 +41,11 @@ export async function saveBanner(_: ActionResult | null, fd: FormData): Promise<
       startsAt: s ? new Date(s) : null,
       endsAt: e ? new Date(e) : null,
     };
-    if (id) await db.update(banners).set(values).where(eq(banners.id, id));
-    else await db.insert(banners).values(values);
+    // Aurora ışıması için baskın renkler (görsel değişince yeniden hesaplanır; okunamazsa varsayılan renkler)
+    const { paletteFromUrl } = await import("@/lib/palette-core");
+    const palette = await paletteFromUrl(imageUrl);
+    if (id) await db.update(banners).set({ ...values, palette }).where(eq(banners.id, id));
+    else await db.insert(banners).values({ ...values, palette });
     await audit(staff.id, id ? "update" : "create", "banner", id, `Banner: ${title}`);
     return done("Banner kaydedildi.", "/admin/vitrin");
   });
@@ -230,7 +233,7 @@ export async function saveTicker(_: ActionResult | null, fd: FormData): Promise<
       items,
       direction: pick(fd.get("direction"), ["ltr", "rtl"] as const, "ltr"),
       speed: pick(fd.get("speed"), ["slow", "normal", "fast"] as const, "normal"),
-      theme: pick(fd.get("theme"), ["brand", "dark", "gold"] as const, "brand"),
+      theme: pick(fd.get("theme"), ["soft", "brand", "dark", "gold"] as const, "soft"),
     });
     await audit(staff.id, "settings", "ticker", null, `Kayan şerit: ${items.length} madde`);
     return done("Kayan şerit kaydedildi.");
