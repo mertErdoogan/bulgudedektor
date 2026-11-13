@@ -23,16 +23,7 @@ export async function StoreHeader() {
     <>
       <header data-site-header="" className="sticky top-0 z-30 bg-white md:static">
         {notes.length ? (
-          <div className="bg-deep text-white/85">
-            {/* Mobil: tek satır, kaydırılabilir */}
-            <div className="scrollbar-none overflow-x-auto px-4 py-2 text-center text-[12px] font-semibold whitespace-nowrap md:hidden">
-              {notes.map((t, i) => (
-                <span key={i}>
-                  {i ? <span className="mx-3 text-white/30">•</span> : null}
-                  {t}
-                </span>
-              ))}
-            </div>
+          <div className="hidden bg-deep text-white/85 md:block">
             {/* Masaüstü: solda güven notları, sağda kargo + sipariş takibi + telefon */}
             <div className="container-x hidden h-[34px] items-center justify-between gap-6 text-[12.5px] font-semibold md:flex">
               <div className="flex min-w-0 items-center gap-2.5 truncate">
@@ -63,7 +54,7 @@ export async function StoreHeader() {
         <div className="border-b border-line">
           <div className="container-x flex items-center gap-3 py-2.5 md:h-20 md:gap-10 md:py-0">
             <Link href="/" aria-label={`${s.store.name} ana sayfa`} className="shrink-0">
-              <Logo size={30} className="md:hidden" />
+              <Logo size={19} className="md:hidden" />
               <Logo size={25} className="hidden md:block" />
             </Link>
             <SearchBox hotkey className="hidden max-w-[640px] flex-1 md:flex" placeholder="Marka, model veya ürün ara — ör. Manticore" />

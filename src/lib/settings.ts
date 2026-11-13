@@ -186,7 +186,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     legalName: "Arena Dedektör Teknolojileri Elektronik San. ve Tic. Ltd. Şti.",
     phone: "0212 275 94 94",
     whatsapp: "905436796968",
-    email: "admin@arenadedektor.com",
+    email: "info@arenadedektor.com",
     address: "Fulya Mah. Büyükdere Cad. Altınova Apt. No: 54 Kat: 3 D: 3, Şişli / İstanbul",
     taxOffice: "",
     taxNumber: "",

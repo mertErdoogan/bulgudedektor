@@ -59,9 +59,9 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
         <div className="max-w-3xl">
           <h1 className="font-display text-[26px] font-extrabold md:text-[32px]">{title}</h1>
           {intro ? <div className="mt-2 text-[15px] leading-relaxed text-[#3f3f46]">{intro}</div> : null}
-          {top ? <div className="mt-3">{top}</div> : null}
+          {top ? <div className="mt-3 hidden md:block">{top}</div> : null}
         </div>
-        <Link href="/sihirbaz" className="flex shrink-0 items-center gap-3 rounded-xl bg-tint px-4 py-3 text-sm">
+        <Link href="/sihirbaz" className="hidden shrink-0 items-center gap-3 rounded-xl border border-line px-4 py-3 text-sm transition hover:border-deep md:flex">
           <Compass className="text-brand" />
           <span><b>Hâlâ kararsız mısın?</b><br /><span className="text-mute">6 soruda sana özel 3 öneri</span></span>
         </Link>

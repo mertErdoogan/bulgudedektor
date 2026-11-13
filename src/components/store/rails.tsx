@@ -134,7 +134,7 @@ export function PersonalPicks({ className }: { className?: string }) {
   if (items.length < 3 || !ctx) return null;
   return (
     <section className={className}>
-      <div className="mb-5 border-l-4 border-brand pl-3.5">
+      <div className="mb-5">
         <h2 className="font-display text-[23px] leading-tight font-extrabold md:text-[30px]">Sana özel öneriler</h2>
         <p className="mt-0.5 text-sm text-mute">İncelediğin cihazlara benzer modeller</p>
       </div>

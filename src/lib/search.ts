@@ -50,6 +50,8 @@ export function tokenize(q: string) {
 /** Ürünün aranabilir metni (ad + marka + kod + kategori + kullanım amaçları), normalleştirilmiş. */
 const doc = sql`arena_norm(${qc(products.name)} || ' ' || coalesce(${qc(brands.name)}, '') || ' ' || ${qc(products.sku)} || ' ' || coalesce((select ${qc(categories.name)} from ${categories} where ${qc(categories.id)} = ${qc(products.categoryId)}), '') || ' ' || array_to_string(${qc(products.useCases)}, ' '))`;
 const nameDoc = sql`arena_norm(${products.name} || ' ' || coalesce(${brands.name}, ''))`;
+/** Ürünün ana kategorisi: "altın dedektörü" aramasında asıl altın cihazları (kategorisi Doğal altın olanlar) öne çıksın. */
+const catDoc = sql`arena_norm(coalesce((select ${qc(categories.name)} from ${categories} where ${qc(categories.id)} = ${qc(products.categoryId)}), ''))`;
 
 /** Sorgu için WHERE koşulu ve alaka puanı. Anlamlı kelime yoksa null (filtre uygulanmaz). */
 export function productSearch(q: string): { where: SQL; score: SQL } | null {
@@ -63,6 +65,7 @@ export function productSearch(q: string): { where: SQL; score: SQL } | null {
     const likes = sql.join(alts.map((a) => sql`${doc} like ${"%" + a + "%"}`), sql` or `);
     conds.push(sql`(${likes}${fuzzy} or arena_norm(coalesce(${products.shortDescription}, '')) like ${"%" + t + "%"})`);
     scores.push(sql`(case when ${nameDoc} like ${"%" + t + "%"} then 1.0 when ${doc} like ${"%" + t + "%"} then 0.7 else word_similarity(${t}, ${nameDoc}) * 0.8 end)`);
+    scores.push(sql`(case when ${catDoc} like ${"%" + t + "%"} then 0.6 else 0 end)`);
   }
   const full = trNorm(q).trim();
   return {

@@ -8,6 +8,7 @@ import { productImages, productQuestions, products, reviews } from "@/db/schema"
 import { ProductCard } from "@/components/store/product-card";
 import { BuyBox, Gallery, ProductViewTracker, StickyBuy } from "@/components/store/product-client";
 import { DeliveryBadge, SocialProof } from "@/components/store/product-card";
+import { autoDealFor } from "@/lib/pricing";
 import { FavoriteButton } from "@/components/store/bits";
 import { RecentlyViewed } from "@/components/store/rails";
 import { productActivity } from "@/db/schema";
@@ -125,6 +126,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       .where(and(eq(productActivity.productId, p.id), sql`${productActivity.hour} > now() - interval '24 hours'`)),
   ]);
   const ctx = cardCtx(s);
+  // Otomatik kampanya sepette düşüyorsa ürün sayfasında da söyle: en güçlü satış argümanı saklı kalmasın
+  const deal = out || archived ? null : await autoDealFor({ id: p.id, price: p.price, brandId: p.brandId, categoryId: p.categoryId });
   const banks = s.payment.cardEnabled && s.payment.provider !== "paytr" && p.price >= 1000 ? await installmentTable(p.price, s.payment.maxInstallment) : null;
   const faqItems = [...toQA(dbFaq), ...autoFaq(p, s)];
 
@@ -134,7 +137,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <ProductViewTracker id={p.id} name={p.name} price={p.price} brand={p.brand?.name} />
       <Breadcrumbs items={[...(p.category ? [{ name: p.category.name, path: `/kategori/${p.category.slug}` }] : []), ...(p.brand ? [{ name: p.brand.name, path: `/marka/${p.brand.slug}` }] : []), { name: p.name, path: `/urun/${p.slug}` }]} />
       <div className="grid gap-6 md:grid-cols-2 lg:gap-10">
-        <Gallery images={p.images} name={p.name} badge={p.badges[0]} />
+        <Gallery images={p.images} name={p.name} badge={p.badges[0]} brand={p.brand?.name} />
         <div className="flex flex-col gap-3">
           <p className="text-[13px] font-semibold text-mute">
             {p.brand ? <Link href={`/marka/${p.brand.slug}`} className="font-extrabold text-link">{p.brand.name}</Link> : null} · Kod {p.sku}
@@ -180,13 +183,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               {discount ? <s className="text-mute">{formatTL(p.compareAtPrice)}</s> : null}
               {discount ? <span className="rounded bg-accent px-2 py-0.5 text-xs font-extrabold text-white">{formatTL(discount)} indirim</span> : null}
             </div>
+            {deal ? (
+              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-white px-3 py-2 text-sm ring-1 ring-[#cfe9d8]" data-testid="pdp-deal">
+                <span className="font-semibold text-ok">Sepette</span>
+                <b className="font-display text-[19px] text-ok">{formatTL(Math.round((p.price - deal.amount) * 100) / 100)}</b>
+                <span className="text-mute">· {deal.name} ile {formatTL(deal.amount)} otomatik düşer</span>
+              </p>
+            ) : null}
             {inst > 1 ? (
-              <p className="mt-1 text-sm">
+              <p className="mt-2 text-sm">
                 {inst} ay vade farksız <b>{formatTL(Math.round(p.price / inst))}</b> × {inst} · en fazla {s.payment.maxInstallment} taksit
               </p>
             ) : null}
             {s.payment.transferEnabled && s.payment.transferDiscountPct ? (
-              <p className="mt-0.5 text-sm font-bold text-link">Havale ile öde: %{s.payment.transferDiscountPct} indirim ({formatTL((p.price * s.payment.transferDiscountPct) / 100)})</p>
+              <p className="mt-0.5 text-sm font-semibold text-deep">Havale ile öde: %{s.payment.transferDiscountPct} indirim ({formatTL((p.price * s.payment.transferDiscountPct) / 100)})</p>
             ) : null}
             {s.merch.badge && p.brand && p.brand.slug === s.merch.focusBrand ? (
               <p className="mt-2.5 flex flex-wrap gap-1.5" data-testid="focus-badge">
@@ -218,9 +228,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="hidden md:block">
             <BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} amount={p.price} brand={p.brand?.name} />
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <a href={wa} target="_blank" className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#15803d] text-sm font-extrabold text-white"><MessageCircle size={18} /> Bu ürünü sor</a>
-            <Link href={`/iletisim?konu=goruntulu&urun=${encodeURIComponent(p.name)}`} className="flex h-12 items-center justify-center gap-2 rounded-lg border border-deep text-sm font-extrabold"><Video size={18} /> Kamerada göster</Link>
+          {/* Uzman desteği: satın alma butonlarıyla yarışmasın diye sakin bir satır */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line px-4 py-3 text-sm">
+            <span className="text-mute">Sorunuz mu var?</span>
+            <a href={wa} target="_blank" className="inline-flex items-center gap-1.5 font-bold text-[#11643a] hover:underline"><MessageCircle size={17} /> WhatsApp&apos;tan sor</a>
+            <Link href={`/iletisim?konu=goruntulu&urun=${encodeURIComponent(p.name)}`} className="inline-flex items-center gap-1.5 font-bold hover:underline"><Video size={17} /> Kamerada göster</Link>
           </div>
 
           <ul className="mt-1 flex flex-col gap-2 text-sm">
@@ -230,22 +242,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <><b>14 gün koşulsuz iade</b> · ücretsiz kargo kodu</>,
               <>Şirket adına e-fatura, hesabında</>,
             ].map((t, i) => (
-              <li key={i} className="flex items-start gap-2.5"><span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-pop text-brand"><Check size={12} strokeWidth={3} /></span><span>{t}</span></li>
+              <li key={i} className="flex items-start gap-2.5"><span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-soft text-deep"><Check size={12} strokeWidth={3} /></span><span>{t}</span></li>
             ))}
           </ul>
 
           {p.trialRentalPrice ? (
-            <div className="rounded-xl border border-dashed border-brand bg-tint p-4 text-sm">
-              <b>Önce denemek ister misin?</b>
-              <p className="mt-1">3 günlük deneme kiralaması {formatTL(p.trialRentalPrice)}. 30 gün içinde satın alırsan tamamı fiyattan düşülür. <Link href={`/iletisim?konu=kiralama&urun=${encodeURIComponent(p.name)}`} className="font-bold text-link">Talep et →</Link></p>
-            </div>
+            <p className="text-sm text-mute">
+              <b className="text-deep">Önce dene:</b> 3 günlük kiralama {formatTL(p.trialRentalPrice)}, 30 gün içinde alırsan fiyattan düşülür.{" "}
+              <Link href={`/iletisim?konu=kiralama&urun=${encodeURIComponent(p.name)}`} className="font-bold text-deep underline-offset-2 hover:underline">Talep et →</Link>
+            </p>
           ) : null}
           {out && !archived ? <ProductForms productId={p.id} mode="alert" /> : null}
         </div>
       </div>
 
       <nav className="scrollbar-none sticky top-[132px] z-20 -mx-4 mt-8 flex gap-2 overflow-x-auto border-y border-line bg-white px-4 py-2.5 md:top-0" aria-label="Ürün bölümleri">
-        {[["neden", "Kimler için"], ["ozellikler", "Teknik özellikler"], ...(vid ? [["video", "Video"]] : []), ["garanti", "Garanti ve servis"], ["sss", "SSS"], ["yorumlar", `Yorumlar (${p.reviews.length})`], ["sorular", `Sorular (${p.questions.length})`]].map(([id, l]) => (
+        {[["neden", "Kimler için"], ["ozellikler", "Teknik özellikler"], ...(vid ? [["video", "Video"]] : []), ["garanti", "Garanti ve servis"], ["sss", "SSS"], ["yorumlar", p.reviews.length ? `Yorumlar (${p.reviews.length})` : "Yorumlar"], ["sorular", p.questions.length ? `Sorular (${p.questions.length})` : "Sorular"]].map(([id, l]) => (
           <a key={id} href={`#${id}`} className="shrink-0 rounded-full border border-line px-4 py-1.5 text-sm font-bold hover:bg-soft">{l}</a>
         ))}
       </nav>

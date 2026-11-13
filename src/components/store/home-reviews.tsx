@@ -37,7 +37,7 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
   return (
     <section className="container-x mt-12" aria-labelledby="yorumlar-baslik">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div className="border-l-4 border-brand pl-3.5">
+        <div>
           <h2 id="yorumlar-baslik" className="font-display text-[23px] leading-tight font-extrabold md:text-[30px]">Müşterilerimiz ne diyor?</h2>
           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-mute">
             <Star size={14} className="fill-gold text-gold" />

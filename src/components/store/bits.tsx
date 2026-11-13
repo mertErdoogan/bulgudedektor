@@ -27,8 +27,20 @@ export function CartButton({ compact }: { compact?: boolean }) {
   );
 }
 
-export function AddToCart({ productId, name, disabled, size = "md", className, label = "Sepete ekle", price, brand }: { productId: string; name: string; disabled?: boolean; size?: "md" | "lg"; className?: string; label?: string; price?: number; brand?: string | null }) {
+export function AddToCart({ productId, name, disabled, size = "md", className, label = "Sepete ekle", price, brand, variant }: { productId: string; name: string; disabled?: boolean; size?: "md" | "lg"; className?: string; label?: string; price?: number; brand?: string | null; variant?: "card" }) {
   const { add } = useCart();
+  if (variant === "card")
+    // Kartlarda sakin, ikincil görünümlü buton: kırmızı her kartta bağırmasın; üzerine gelince dolar.
+    return (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => add(productId, 1, name, { price, brand })}
+        className={cn("flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[#dcdce0] bg-white text-[13.5px] font-bold text-deep transition hover:border-deep hover:bg-deep hover:text-white disabled:opacity-50", className)}
+      >
+        <ShoppingCart size={16} /> {disabled ? "Stokta yok" : label}
+      </button>
+    );
   return (
     <Button type="button" size={size} disabled={disabled} className={cn("w-full", className)} onClick={() => add(productId, 1, name, { price, brand })}>
       {disabled ? "Stokta yok" : label}

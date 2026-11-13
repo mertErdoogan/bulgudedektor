@@ -44,7 +44,8 @@ async def main():
             cards = await pg.evaluate("() => [...document.querySelectorAll('[data-testid=hero-cards] > a')].map(a => a.getAttribute('href'))")
             chk("Banner altı: 3 kart, hepsi Minelab cihazı (en yeni)", len(cards) == 3 and share(cards) == 3, cards)
             chk("Banner altı: aksesuar yok", "/urun/eqx-11-baslik" not in cards, cards)
-            chk("Banner altı: 'YENİ' etiketi", (await pg.locator("[data-testid=hero-cards] >> text=YENİ").count()) == 3)
+            # "YENİ" yalnızca panelde Yeni rozeti verilen üründe (demo: Manticore)
+            chk("Banner altı: 'YENİ' etiketi sadece rozetli üründe", (await pg.locator("[data-testid=hero-cards] >> text=YENİ").count()) == 1)
             # Oklar yalnızca banner'ın üstüne gelince görünür
             await pg.mouse.move(5, 5); await pg.wait_for_timeout(400)
             op0 = await pg.evaluate("() => getComputedStyle(document.querySelector('[data-testid=hero-next]')).opacity")

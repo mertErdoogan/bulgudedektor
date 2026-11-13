@@ -111,6 +111,13 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
                 ) : null}
               </div>
             </div>
+            {/* Mobilde banner'daki yazılar küçülüp okunmaz; mobil görseli olmayan banner'ın başlığı altta düz yazıyla da verilir */}
+            {slides[i] && !slides[i].mobileImageUrl && !slides[i].showText ? (
+              <Link href={slides[i].linkUrl || "#"} className="mt-2.5 flex items-center justify-between gap-3 px-1 text-[14px] font-bold md:hidden" data-testid="hero-caption">
+                <span className="truncate">{slides[i].title}</span>
+                <span className="shrink-0 text-brand">İncele →</span>
+              </Link>
+            ) : null}
           </div>
         </div>
       ) : null}

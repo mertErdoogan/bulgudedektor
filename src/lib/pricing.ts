@@ -185,3 +185,18 @@ export async function quoteCart(
     errors,
   };
 }
+
+/**
+ * Ürün sayfası için: bu ürün tek başına sepete eklenince otomatik (kodsuz) kampanyalardan düşecek en yüksek indirim.
+ * Sepet hesabıyla (quoteCart) aynı kuralları kullanır; böylece ürün sayfasında yazan fiyat sepette birebir çıkar.
+ */
+export async function autoDealFor(p: { id: string; price: number; brandId: string | null; categoryId: string | null }) {
+  const autos = await db.query.campaigns.findMany({ where: and(isNull(campaigns.code), eq(campaigns.isActive, true)) });
+  const line: PricedLine = { productId: p.id, name: "", sku: "", slug: "", imageUrl: null, unitPrice: p.price, unitCost: null, quantity: 1, total: p.price, brandId: p.brandId, categoryId: p.categoryId, available: 1 };
+  let best: { amount: number; name: string } | null = null;
+  for (const c of autos.filter((x) => campaignLive(x) && x.type !== "FREE_SHIPPING")) {
+    const d = discountFor(c, [line], p.price, 0);
+    if (d.amount > 0 && (!best || d.amount > best.amount)) best = { amount: d.amount, name: c.name };
+  }
+  return best;
+}

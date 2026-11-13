@@ -8,15 +8,16 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui";
 import { useCart } from "./cart";
+import { NoImage } from "./product-card";
 
-export function Gallery({ images, name, badge }: { images: { url: string; alt: string | null }[]; name: string; badge?: string }) {
+export function Gallery({ images, name, badge, brand }: { images: { url: string; alt: string | null }[]; name: string; badge?: string; brand?: string | null }) {
   const [i, setI] = useState(0);
   const cur = images[i];
   return (
     <div>
       <div className="relative grid aspect-square place-items-center overflow-hidden rounded-2xl border border-line bg-white">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {cur ? <img {...imgProps(cur.url, [640, 828, 1080, 1600], "(min-width: 1024px) 50vw, 100vw", 80)} alt={cur.alt ?? name} className="h-full w-full object-contain p-6" /> : <span className="text-mute">Görsel yok</span>}
+        {cur ? <img {...imgProps(cur.url, [640, 828, 1080, 1600], "(min-width: 1024px) 50vw, 100vw", 80)} alt={cur.alt ?? name} className="h-full w-full object-contain p-6" /> : <NoImage brand={brand} />}
         {badge ? <span className="absolute top-4 left-4 rounded-md bg-pop px-2.5 py-1 text-xs font-extrabold text-on-pop">{badge}</span> : null}
         {images.length > 1 ? <span className="absolute right-4 bottom-4 rounded-full bg-deep/80 px-2.5 py-1 text-xs font-bold text-white">{i + 1} / {images.length}</span> : null}
       </div>
@@ -56,9 +57,9 @@ export function BuyBox({ productId, name, max, disabled, amount, brand }: { prod
             window.dispatchEvent(new Event("arena-nav-start"));
             router.push("/odeme");
           }}
-          className="flex h-12 items-center justify-center gap-2 rounded-lg bg-deep text-sm font-extrabold text-white hover:bg-black"
+          className="flex h-12 items-center justify-center gap-2 rounded-lg border border-deep bg-white text-sm font-extrabold text-deep transition hover:bg-deep hover:text-white"
         >
-          <Zap size={17} /> Hemen al
+          <Zap size={17} /> Hemen al (tek adımda öde)
         </button>
       ) : null}
     </div>

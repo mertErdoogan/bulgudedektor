@@ -7,13 +7,14 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { Ticker } from "@/components/store/ticker";
-import { BestSellers, CategoryRail, Deals, NewArrivals, SameDay } from "@/components/store/home-lists";
+import { BestSellers, CategoryRail, Deals, NewArrivals } from "@/components/store/home-lists";
 import { PersonalPicks, RecentlyViewed } from "@/components/store/rails";
 import { HomeReviews } from "@/components/store/home-reviews";
 import { cardCtx } from "@/lib/card-ctx";
-import { msToCutoff } from "@/lib/delivery";
 import { getSettings } from "@/lib/settings";
-import { bestSellers, categoryRail, getActiveBrands, getBrandGroups, getHome, getNav, productsFor } from "@/lib/store";
+import { bestSellers, categoryRail, getActiveBrands, getBrandGroups, getHome, getNav, productsFor, type ProductCard as ProductCardT } from "@/lib/store";
+
+const unseen = <T extends { id: string }>(list: T[], seen: Set<string>) => list.filter((p) => !seen.has(p.id));
 import { BrandGrid } from "@/components/store/brand-cards";
 import { focusThumbs as focusThumbs4, getMerch, latestFocus } from "@/lib/merch";
 import { Head } from "@/components/store/home-lists";
@@ -50,7 +51,7 @@ export default async function Home() {
       price: p.price,
       oldPrice: p.compareAtPrice,
       image: p.image,
-      isNew: true,
+      isNew: p.badges.some((b) => /^yeni/i.test(b)),
     })),
     ...side.map((b) => ({ id: b.id, href: b.linkUrl || "#", eyebrow: b.eyebrow ?? "KAMPANYA", title: b.title, line: b.subtitle, image: b.imageUrl })),
   ].slice(0, 3);
@@ -58,6 +59,20 @@ export default async function Home() {
   const ctx = cardCtx(s);
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}` : "/iletisim";
 
+  // Ana sayfa üst rafları bir kez hesaplanır; alttaki raflar bunlarda görünen ürünleri tekrar etmez.
+  let top: Promise<{ best: ProductCardT[]; fresh: ProductCardT[]; deals: ProductCardT[]; seen: Set<string> }> | null = null;
+  const topLists = () =>
+    (top ??= (async () => {
+      const hasTabs = sections.some((x) => x.type === "PRODUCT_TABS");
+      if (!hasTabs) return { best: [], fresh: [], deals: [], seen: new Set<string>() };
+      const [best, fresh0, deals0] = await Promise.all([bestSellers(8), productsFor("new", 22), productsFor("deals", 20)]);
+      const seen = new Set(best.map((p) => p.id));
+      const fresh = unseen(fresh0, seen).slice(0, 10);
+      fresh.forEach((p) => seen.add(p.id));
+      const deals = unseen(deals0, seen).slice(0, 10);
+      deals.forEach((p) => seen.add(p.id));
+      return { best, fresh, deals, seen };
+    })());
   const rendered = await Promise.all(
     sections.map(async (sec) => {
       const limit = Number(sec.config.limit) || 10;
@@ -65,9 +80,9 @@ export default async function Home() {
         case "WIZARD_BAND":
           return (
             <section key={sec.id} className="container-x mt-6">
-              <div className="flex flex-col gap-4 rounded-2xl border-[1.5px] border-brand bg-tint p-4 md:flex-row md:items-center md:p-5">
+              <div className="flex flex-col gap-4 rounded-2xl border border-line bg-[#fafafa] p-4 md:flex-row md:items-center md:p-5">
                 <div className="flex flex-1 items-start gap-3">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand text-white"><Compass size={22} /></span>
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-deep text-white"><Compass size={22} /></span>
                   <span>
                     <b className="text-[17px]">{sec.title}</b>
                     <span className="block text-sm text-mute">{sec.subtitle}</span>
@@ -76,9 +91,9 @@ export default async function Home() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="hidden text-sm font-bold text-mute lg:inline">Ne arayacaksın?</span>
                   {[["define", "Sikke ve define"], ["altin", "Doğal altın"], ["sahil", "Sahil ve su altı"]].map(([k, l]) => (
-                    <Link key={k} href={`/sihirbaz?amac=${k}`} className="rounded-lg border border-line bg-white px-3.5 py-2 text-sm font-bold hover:border-brand">{l}</Link>
+                    <Link key={k} href={`/sihirbaz?amac=${k}`} className="rounded-full border border-line bg-white px-3.5 py-2 text-sm font-bold hover:border-deep">{l}</Link>
                   ))}
-                  <Link href="/sihirbaz" className="rounded-lg bg-brand px-4 py-2 text-sm font-extrabold text-white">Başla →</Link>
+                  <Link href="/sihirbaz" className="rounded-full bg-deep px-5 py-2 text-sm font-extrabold text-white hover:bg-black">Başla →</Link>
                 </div>
               </div>
             </section>
@@ -93,21 +108,21 @@ export default async function Home() {
         }
         case "PRODUCT_TABS": {
           // Eski "sekmeli" bölüm artık alt alta listeler: çok satanlar, yeni gelenler, fırsatlar, aynı gün kargo
-          const n = Math.max(limit, 10);
-          // Çok satanlar rafı 8 ürün gösterir; ağırlık görünen ürün sayısına göre hesaplanır
-          const [best, fresh, deals, sameday] = await Promise.all([bestSellers(8), productsFor("new", n + 1), productsFor("deals", 12), productsFor("sameday", 12)]);
+          // Raflar arası tekrar yok: bir ürün yukarıdaki rafta göründüyse aşağıdakinde tekrar çıkmaz.
+          // "Aynı gün kargo" ayrı raf değil; her kartta kargo satırı zaten yazıyor.
+          const { best, fresh, deals } = await topLists();
           return (
             <div key={sec.id}>
               <BestSellers items={best} ctx={ctx} />
-              <NewArrivals items={fresh} ctx={ctx} />
-              <Deals items={deals} ctx={ctx} />
-              <SameDay items={sameday} ctx={ctx} ms={msToCutoff(s.shipping)} cutoff={s.shipping.sameDayCutoff} />
+              {fresh.length >= 3 ? <NewArrivals items={fresh} ctx={ctx} /> : null}
+              {deals.length >= 3 ? <Deals items={deals} ctx={ctx} /> : null}
             </div>
           );
         }
         case "PRODUCT_ROW": {
-          const items = await productsFor("pro", Math.max(limit, 10));
-          return <CategoryRail key={sec.id} title={sec.title || "Profesyonel seçim"} href="/kategori/derin-arama" items={items} ctx={ctx} />;
+          const seen = (await topLists()).seen;
+          const items = unseen(await productsFor("pro", Math.max(limit, 10) + seen.size), seen);
+          return items.length >= 4 ? <CategoryRail key={sec.id} title={sec.title || "Profesyonel seçim"} href="/kategori/derin-arama" items={items} ctx={ctx} /> : null;
         }
         case "BRANDS": {
           const [groups, m] = await Promise.all([getBrandGroups(), getMerch()]);
@@ -122,12 +137,12 @@ export default async function Home() {
         }
         case "CATEGORY_RAILS": {
           const cats = nav.categories.filter((c) => !c.parentId).slice(0, Number(sec.config.count) || 4);
-          const rails = await Promise.all(cats.map((c) => categoryRail(c.id, 12)));
+          const seen = (await topLists()).seen;
+          const rails = (await Promise.all(cats.map((c) => categoryRail(c.id, 12 + seen.size)))).map((r) => unseen(r, seen).slice(0, 12));
+          // Yukarıdaki raflarda zaten görünenler çıkınca 4'ten az ürün kalan kategori rafı gösterilmez (sayfa kısa ve tekrarsız kalsın)
           return (
             <div key={sec.id}>
-              {cats.map((c, i) => (
-                <CategoryRail key={c.id} title={c.name} href={`/kategori/${c.slug}`} items={rails[i]} ctx={ctx} />
-              ))}
+              {cats.map((c, i) => (rails[i].length >= 4 ? <CategoryRail key={c.id} title={c.name} href={`/kategori/${c.slug}`} items={rails[i]} ctx={ctx} /> : null))}
             </div>
           );
         }
@@ -149,13 +164,13 @@ export default async function Home() {
         case "TRUST":
           return (
             <section key={sec.id} className="container-x mt-10 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1.7fr_1fr_1fr_1fr]">
-              <form action="/seri-no" className="flex min-w-0 items-center gap-3 rounded-xl border border-[#f3d6d1] bg-tint p-4">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand text-white"><ShieldCheck size={24} /></span>
+              <form action="/seri-no" className="flex min-w-0 items-center gap-3 rounded-xl border border-line bg-white p-4">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-deep text-white"><ShieldCheck size={24} /></span>
                 <span className="flex min-w-0 flex-1 flex-col gap-2">
                   <span><b>Cihazın orijinal mi?</b> <span className="text-[13px] text-mute">Seri numarasıyla distribütör kaydını kontrol et</span></span>
                   <span className="flex gap-2">
                     <input name="no" required placeholder="Seri no" className="h-11 min-w-0 flex-1 rounded-lg border border-[#d6d6d9] bg-white px-3" />
-                    <button className="h-11 shrink-0 rounded-lg bg-brand px-4 text-sm font-extrabold text-white">Sorgula</button>
+                    <button className="h-11 shrink-0 rounded-lg bg-deep px-4 text-sm font-extrabold text-white hover:bg-black">Sorgula</button>
                   </span>
                 </span>
               </form>
@@ -163,7 +178,7 @@ export default async function Home() {
                 const Icon = I as typeof FileText;
                 return (
                   <div key={t as string} className="flex items-center gap-3 rounded-xl bg-soft p-4">
-                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-pop text-on-pop"><Icon size={22} /></span>
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white text-deep ring-1 ring-line"><Icon size={22} /></span>
                     <span><b className="block">{t as string}</b><span className="text-sm text-mute">{d as string}</span></span>
                   </div>
                 );
@@ -187,7 +202,7 @@ export default async function Home() {
         </Link>
       ) : null}
       <div className="container-x mt-4">
-        <h1 className="text-[13.5px] font-bold text-mute">{s.store.name} · Metal dedektörü ve define dedektörü modelleri — orijinal, faturalı, garantili</h1>
+        <h1 className="sr-only">{s.store.name} · Metal dedektörü ve define dedektörü modelleri — orijinal, faturalı, garantili</h1>
       </div>
       <RecentlyViewed className="container-x mt-8" />
       <PersonalPicks className="container-x mt-10" />

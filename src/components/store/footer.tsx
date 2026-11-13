@@ -25,7 +25,7 @@ export async function StoreFooter() {
             {s.store.phone}
             {s.store.whatsapp ? ` · WhatsApp +${s.store.whatsapp}` : ""}
           </p>
-          <p className="opacity-80">{s.store.email}</p>
+          <a href={`mailto:${s.store.email}`} className="block opacity-80 hover:opacity-100">{s.store.email}</a>
           <p className="opacity-60">
             {s.store.taxNumber ? `Vergi no: ${s.store.taxNumber} · ` : ""}
             {s.store.mersis ? `MERSİS: ${s.store.mersis} · ` : ""}

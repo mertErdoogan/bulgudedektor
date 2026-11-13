@@ -31,6 +31,8 @@ export const cardColumns = {
   createdAt: products.createdAt,
   views24: sql<number>`coalesce((select sum(${q(productActivity.views)})::int from ${productActivity} where ${q(productActivity.productId)} = ${q(products.id)} and ${q(productActivity.hour)} > now() - interval '24 hours'), 0)`,
   carts24: sql<number>`coalesce((select sum(${q(productActivity.carts)})::int from ${productActivity} where ${q(productActivity.productId)} = ${q(products.id)} and ${q(productActivity.hour)} > now() - interval '24 hours'), 0)`,
+  /** Kodsuz (otomatik) kampanyaların bu ürüne tek başına sepette sağladığı en yüksek indirim (TL). Sepet hesabıyla aynı kural. */
+  cartDeal: sql<number>`coalesce((select max(least(coalesce(c.max_discount, 1e12), case when c.type = 'PERCENT' then ${q(products.price)} * c.value / 100 else least(c.value, ${q(products.price)}) end)) from campaigns c where c.code is null and c.is_active and c.type <> 'FREE_SHIPPING' and (c.starts_at is null or c.starts_at <= now()) and (c.ends_at is null or c.ends_at >= now()) and (c.usage_limit is null or c.usage_count < c.usage_limit) and ${q(products.price)} >= c.min_subtotal and (c.scope = 'ALL' or (c.scope = 'BRAND' and ${q(products.brandId)} = any(c.target_ids)) or (c.scope = 'CATEGORY' and ${q(products.categoryId)} = any(c.target_ids)) or (c.scope = 'PRODUCT' and ${q(products.id)} = any(c.target_ids)))), 0)::float`,
 };
 
 export type ProductCard = {
@@ -57,6 +59,8 @@ export type ProductCard = {
   createdAt: Date | string;
   views24: number;
   carts24: number;
+  /** Sepette otomatik düşen kampanya indirimi (TL, 0 = yok) */
+  cartDeal?: number;
 };
 
 const active = eq(products.status, "ACTIVE");

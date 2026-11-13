@@ -31,7 +31,7 @@ export function resolveShortcuts(list: Shortcut[], cats: CatLite[], brands: Bran
 export function Shortcuts({ title, items }: { title: string; items: ReturnType<typeof resolveShortcuts> }) {
   if (!items.length) return null;
   return (
-    <section className="container-x mt-10 md:mt-14" data-testid="shortcuts">
+    <section className="container-x mt-2 md:mt-14" data-testid="shortcuts">
       <div className="mb-4 flex items-baseline justify-between gap-3 md:mb-6">
         <h2 className="font-display text-[22px] font-extrabold tracking-tight md:text-[28px]">{title}</h2>
         <Link href="/kategoriler" className="flex items-center gap-1.5 text-sm font-bold hover:text-brand">

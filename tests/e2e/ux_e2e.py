@@ -20,9 +20,11 @@ async def main():
     await pg.reload(wait_until='networkidle'); chk('Seçim hatırlanıyor', await pg.locator('text=Çerez tercihlerin').count()==0)
     # ana sayfa bölümleri alt alta
     h=await pg.content()
-    chk('Bölümler alt alta', all(t in h for t in ['Çok satanlar','Rafa yeni giren cihazlar','Fırsatlar','Aynı gün kargo']))
-    chk('Kargo rozeti var', 'kargoda' in h and 'kapında' in h)
-    chk('Sosyal kanıt var', 'kişi inceledi' in h or 'sepete ekledi' in h)
+    chk('Bölümler alt alta', all(t in h for t in ['Çok satanlar','Rafa yeni giren cihazlar']))
+    dup = await pg.evaluate("""() => { const ids = [...document.querySelectorAll('section h2')].filter(h => ['Çok satanlar','Rafa yeni giren cihazlar','Fırsatlar'].includes(h.innerText.trim())).flatMap(h => [...new Set([...h.closest('section').querySelectorAll('a[href^="/urun/"]')].map(a => a.getAttribute('href')))]); return ids.length - new Set(ids).size; }""")
+    chk('Üst raflarda ürün tekrarı yok', dup == 0)
+    chk('Kargo rozeti var', 'kargoda' in h)
+    chk('Kartlarda aciliyet yazısı yok', 'kişi inceledi' not in h and 'sepete ekledi' not in h)
     # görüntüleme sayacı + son gezilenler
     pid=sql("select id from products where slug='x-terra-pro'")
     before=int(sql(f"select coalesce(sum(views),0) from product_activity where product_id='{pid}'"))

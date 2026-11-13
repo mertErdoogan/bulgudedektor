@@ -11,7 +11,7 @@ import { Rail } from "./rails";
 export function Head({ title, sub, href, cta = "Tümünü gör", extra }: { icon?: React.ReactNode; title: string; sub?: React.ReactNode; href?: string; cta?: string; extra?: React.ReactNode }) {
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-      <div className="border-l-4 border-brand pl-3.5">
+      <div>
         <h2 className="font-display text-[23px] leading-tight font-extrabold md:text-[30px]">{title}</h2>
         {sub ? <p className="mt-0.5 text-sm text-mute">{sub}</p> : null}
       </div>
@@ -66,14 +66,14 @@ export function NewArrivals({ items, ctx }: { items: P[]; ctx: CardCtx }) {
           <Link href={`/urun/${lead.slug}`} className="group relative hidden flex-col overflow-hidden rounded-[22px] bg-gradient-to-br from-[#2f56c8] via-[#1f3b8f] to-[#0c1838] p-6 text-white shadow-[0_22px_44px_-20px_rgba(15,30,80,.6)] transition duration-300 hover:-translate-y-1 lg:flex" data-testid="new-lead">
             <span aria-hidden className="absolute -right-14 -bottom-16 h-52 w-52 rounded-full bg-white/10 transition duration-500 group-hover:scale-110" />
             <span aria-hidden className="card-shine pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-            <span className="relative w-fit rounded-full bg-white px-2.5 py-1 text-[11px] font-extrabold tracking-wider text-deep">ÖNE ÇIKAN YENİ</span>
+            <span className="relative w-fit rounded-full bg-white px-2.5 py-1 text-[11px] font-extrabold tracking-wider text-deep">SON EKLENEN</span>
             {/* Beyaz ürün sahnesi + YENİ etiketi */}
             <span className="relative mx-auto my-5 grid h-[210px] w-[210px] place-items-center rounded-full bg-white shadow-[0_16px_34px_-12px_rgba(0,0,0,.5)] ring-8 ring-white/15 transition duration-500 group-hover:scale-105">
               <span className="grid h-full w-full place-items-center overflow-hidden rounded-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {lead.image ? <img {...imgProps(lead.image, [256, 384], "210px")} alt={lead.name} className="h-[78%] w-[78%] object-contain mix-blend-multiply transition duration-500 group-hover:-rotate-6" /> : null}
               </span>
-              <span className="absolute top-1 right-1 grid h-12 w-12 rotate-12 place-items-center rounded-full bg-[#ffcf3d] text-[11px] font-black text-deep shadow-md transition group-hover:rotate-0">YENİ</span>
+              {lead.badges.some((b) => /^yeni/i.test(b)) ? <span className="absolute top-1 right-1 grid h-12 w-12 rotate-12 place-items-center rounded-full bg-[#ffcf3d] text-[11px] font-black text-deep shadow-md transition group-hover:rotate-0">YENİ</span> : null}
             </span>
             <span className="relative mt-auto text-xs font-extrabold tracking-wider text-white/75">{lead.brand?.toLocaleUpperCase("en-US")}</span>
             <b className="font-display relative text-xl leading-tight">{lead.name}</b>
@@ -97,8 +97,8 @@ export function Deals({ items, ctx }: { items: P[]; ctx: CardCtx }) {
   const maxPct = Math.max(...items.map((p) => (p.compareAtPrice ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100) : 0)));
   return (
     <section className="container-x mt-12">
-      <div className="rounded-3xl bg-gradient-to-br from-[#fff1ee] to-white p-4 ring-1 ring-[#f6d9d3] md:p-6">
-        <Head title="Fırsatlar" sub={maxPct > 0 ? <>Seçili modellerde <b className="text-accent">%{maxPct}&apos;e varan</b> indirim</> : "İndirimli modeller"} href="/kampanyalar" cta="Tüm fırsatlar" />
+      <div className="rounded-3xl bg-[#fafafa] p-4 ring-1 ring-line md:p-6">
+        <Head title="Fırsatlar" sub={maxPct > 0 ? <>Seçili modellerde <b className="text-deep">%{maxPct}&apos;e varan</b> indirim</> : "İndirimli modeller"} href="/kampanyalar" cta="Tüm fırsatlar" />
         <Rail>
           {items.map((p) => (
             <ProductCard key={p.id} p={p} ctx={ctx} className="h-full" />
