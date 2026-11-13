@@ -37,7 +37,6 @@ export function NavBar({ items, categories, brands, focus, cats }: { items: Item
 
   const main = items.filter((i) => !i.highlight && !INFO.test(i.url));
   const hot = items.filter((i) => i.highlight);
-  const info = items.filter((i) => !i.highlight && INFO.test(i.url));
 
   const drop = (key: string, href: string, label: React.ReactNode, panel: React.ReactNode, on: boolean) => (
     <div className="flex h-full" onMouseEnter={() => later(key, open ? 0 : 120)} onMouseLeave={() => later(null, 160)}>
@@ -69,7 +68,7 @@ export function NavBar({ items, categories, brands, focus, cats }: { items: Item
     <nav className="relative hidden border-b border-line bg-white md:block" aria-label="Ana menü">
       <div className="container-x flex h-[52px] items-stretch">
         <MegaMenu categories={categories} brands={brands} />
-        <div className="ml-2 flex min-w-0 items-stretch">
+        <div className="scrollbar-none ml-2 flex min-w-0 items-stretch overflow-x-auto">
           {focus
             ? drop(
                 "focus",
@@ -103,13 +102,6 @@ export function NavBar({ items, categories, brands, focus, cats }: { items: Item
           {hot.map((m) => (
             <Link key={m.id} href={m.url} className="flex items-center gap-1.5 px-3 text-[14.5px] font-bold whitespace-nowrap text-brand transition hover:text-brand-dark">
               <Flame size={16} /> {m.label}
-            </Link>
-          ))}
-        </div>
-        <div className="ml-auto hidden items-stretch pl-4 2xl:flex">
-          {info.map((m) => (
-            <Link key={m.id} href={m.url} className={cn("flex items-center px-2.5 text-[13.5px] font-semibold whitespace-nowrap transition hover:text-deep", isActive(m.url) ? "text-deep" : "text-mute")}>
-              {m.label}
             </Link>
           ))}
         </div>

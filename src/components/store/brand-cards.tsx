@@ -2,7 +2,7 @@ import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { BrandGroup } from "@/lib/store";
-import { cn } from "@/lib/utils";
+import { cn, formatTL } from "@/lib/utils";
 
 /** Marka kartı: marka adı (veya logosu), temsilî ürün görseli ve o markanın kategorileri. */
 export function BrandCard({ b, className, thumbs, note }: { b: BrandGroup; className?: string; thumbs?: string[]; note?: string }) {
@@ -65,6 +65,81 @@ export function BrandGrid({ brands, focus }: { brands: BrandGroup[]; focus?: { s
           ))}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+type Model = { id: string; name: string; slug: string; image: string | null; price: number };
+
+/**
+ * Ana sayfa "Markaya göre": öncelikli marka (Minelab) koyu, büyük bir vitrinde — kategorileri ve öne çıkan
+ * 4 modeliyle; diğer markalar yanında sade karolar halinde (görünür ama ikinci planda).
+ */
+export function BrandShowcase({ focus, models, note, rest }: { focus: BrandGroup; models: Model[]; note?: string; rest: BrandGroup[] }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.75fr_1fr]" data-testid="brand-showcase">
+      <div className="relative isolate overflow-hidden rounded-[28px] bg-[#141416] p-5 text-white md:p-8">
+        <span aria-hidden className="absolute -top-28 -right-16 -z-10 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(212,46,30,.5),transparent_65%)] blur-2xl" />
+        <span aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(rgba(255,255,255,.07)_1px,transparent_1px)] [mask-image:linear-gradient(180deg,#000,transparent_70%)] bg-[size:22px_22px]" />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-extrabold tracking-[.14em] text-white/85 ring-1 ring-white/15">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" /> TÜRKİYE YETKİLİ DİSTRİBÜTÖRÜ
+            </span>
+            <Link href={`/marka/${focus.slug}`} className="font-display mt-3 block text-[38px] leading-none font-black tracking-tight md:text-[54px]">
+              {focus.name.toLocaleUpperCase("en-US")}
+            </Link>
+            <p className="mt-2 text-[14px] text-white/65">{note ? <b className="text-white">{note} · </b> : null}{focus.total} ürün, orijinal ve faturalı</p>
+          </div>
+          <Link href={`/marka/${focus.slug}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-[14px] font-extrabold text-deep transition hover:-translate-y-0.5">
+            Tüm {focus.name} <ArrowRight size={16} />
+          </Link>
+        </div>
+        <div className="scrollbar-none -mx-5 mt-5 flex gap-2 overflow-x-auto px-5 md:mx-0 md:flex-wrap md:px-0">
+          {focus.categories.map((c) => (
+            <Link key={c.slug} href={`/marka/${focus.slug}?kategori=${c.slug}`} className="shrink-0 rounded-full bg-white/[.08] px-3.5 py-1.5 text-[13px] font-semibold ring-1 ring-white/10 transition hover:bg-white hover:text-deep">
+              {c.name} <span className="opacity-55">{c.count}</span>
+            </Link>
+          ))}
+        </div>
+        {models.length ? (
+          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {models.slice(0, 4).map((p, i) => (
+              <Link key={p.id} href={`/urun/${p.slug}`} className="group flex flex-col overflow-hidden rounded-2xl bg-white text-deep transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,.8)]">
+                <span className="relative grid h-[120px] place-items-center bg-[radial-gradient(circle_at_50%_60%,#fff_0%,#f1f1f2_75%)] md:h-[140px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {p.image ? <img src={imgUrl(p.image, 256)} alt="" loading="lazy" style={{ transitionDelay: `${i * 40}ms` }} className="h-[84%] w-[84%] object-contain mix-blend-multiply transition duration-500 group-hover:-translate-y-1 group-hover:scale-105" /> : null}
+                </span>
+                <span className="flex flex-col px-3 py-2.5">
+                  <b className="truncate text-[13.5px]">{p.name}</b>
+                  <span className="text-[12.5px] text-mute">{formatTL(p.price)}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      <div className="flex flex-col gap-3">
+        <span className="px-1 text-[11.5px] font-extrabold tracking-[.14em] text-mute">DİĞER MARKALAR</span>
+        <div className="grid grid-cols-2 content-start gap-3">
+          {rest.slice(0, 6).map((b) => (
+            <Link key={b.id} href={`/marka/${b.slug}`} className="group relative isolate flex min-h-[96px] flex-col justify-between overflow-hidden rounded-2xl border border-line bg-white p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#d6d6db] hover:shadow-[0_16px_30px_-20px_rgba(20,20,22,.4)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {b.image ? <img src={imgUrl(b.image, 128)} alt="" loading="lazy" className="absolute -right-2 -bottom-2 -z-10 h-[70px] w-[90px] object-contain opacity-80 mix-blend-multiply transition duration-500 group-hover:-translate-y-1 group-hover:opacity-100" /> : null}
+              {b.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={b.logoUrl} alt={b.name} className="h-6 max-w-[110px] object-contain object-left mix-blend-multiply" />
+              ) : (
+                <b className="font-display text-[17px] font-black tracking-tight">{b.name.toLocaleUpperCase("en-US")}</b>
+              )}
+              <span className="text-[12.5px] text-mute">{b.total} ürün</span>
+            </Link>
+          ))}
+          <Link href="/markalar" className="flex min-h-[96px] flex-col justify-between rounded-2xl bg-soft p-4 text-[14px] font-bold transition hover:bg-[#ececee]">
+            Tüm markalar <ArrowRight size={18} />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

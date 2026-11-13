@@ -2,7 +2,7 @@ import { cardCtx } from "@/lib/card-ctx";
 import Link from "next/link";
 import { redirectOrNotFound } from "@/lib/redirects";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
-import { Check, MessageCircle, Play, Star, Truck, Video } from "lucide-react";
+import { Check, MessageCircle, Phone, Play, Star, Truck } from "lucide-react";
 import { db } from "@/db";
 import { productImages, productQuestions, products, reviews } from "@/db/schema";
 import { ProductCard } from "@/components/store/product-card";
@@ -232,7 +232,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line px-4 py-3 text-sm">
             <span className="text-mute">Sorunuz mu var?</span>
             <a href={wa} target="_blank" className="inline-flex items-center gap-1.5 font-bold text-[#11643a] hover:underline"><MessageCircle size={17} /> WhatsApp&apos;tan sor</a>
-            <Link href={`/iletisim?konu=goruntulu&urun=${encodeURIComponent(p.name)}`} className="inline-flex items-center gap-1.5 font-bold hover:underline"><Video size={17} /> Kamerada göster</Link>
+            {s.store.phone ? <a href={`tel:${s.store.phone.replace(/[^\d+]/g, "")}`} className="inline-flex items-center gap-1.5 font-bold hover:underline"><Phone size={16} /> {s.store.phone}</a> : null}
           </div>
 
           <ul className="mt-1 flex flex-col gap-2 text-sm">

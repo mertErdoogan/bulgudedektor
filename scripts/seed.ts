@@ -143,7 +143,7 @@ async function main() {
     { type: "CATEGORY_TILES", sortOrder: 0, title: "Ne arıyorsun?", subtitle: "Seç, gerisini bize bırak." },
     { type: "PRODUCT_TABS", sortOrder: 2, title: "Çok satanlar", config: { tabs: ["featured", "new", "deals", "sameday"], limit: 10 } },
     { type: "BRANDS", sortOrder: 3, title: "Markaya göre alışveriş", subtitle: "Markanı seç, kategorisine göre modelleri gör" },
-    { type: "EXPERT_BAND", sortOrder: 4, title: "Kararsız mı kaldın? Bir uzman cihazı kamerada göstersin." },
+    { type: "EXPERT_BAND", sortOrder: 4, title: "Kararsız mı kaldın? Bir uzmana sor." },
     { type: "PRODUCT_ROW", sortOrder: 5, title: "Profesyonel ve derin arama", config: { filter: "pro", limit: 5 } },
     { type: "TRUST", sortOrder: 6 },
     { type: "CATEGORY_RAILS", sortOrder: 7, title: "Kategorilere göre", config: { count: 4 } },
@@ -263,7 +263,7 @@ async function main() {
     { productId: prodRows[1].id, name: "Hakan T.", rating: 5, body: "Ayarları showroomda birlikte yaptık, ilk hafta sonu sahada hiç zorlanmadım. Kargo ertesi gün elimdeydi.", isVerified: true, isApproved: true, createdAt: new Date(Date.now() - 6 * 86400000) },
     { productId: prodRows[3].id, name: "Serkan Y.", rating: 5, body: "Seri numarasını siteden sorguladım, kayıtlı çıktı. Faturası da aynı gün e-postama geldi.", isVerified: true, isApproved: true, createdAt: new Date(Date.now() - 11 * 86400000) },
     { productId: prodRows[4].id, name: "Emre A.", rating: 4, body: "Cihaz beklediğim gibi. Kulaklık kutudan çıkmadı ama WhatsApp'tan yazınca hemen çözdüler.", isVerified: true, isApproved: true, createdAt: new Date(Date.now() - 15 * 86400000) },
-    { productId: prodRows[5].id, name: "Zeynep K.", rating: 5, body: "Babama hediye aldım, görüntülü görüşmede cihazı tek tek anlattılar. Yeni başlayan için doğru seçim oldu.", isVerified: true, isApproved: true, createdAt: new Date(Date.now() - 20 * 86400000) },
+    { productId: prodRows[5].id, name: "Zeynep K.", rating: 5, body: "Babama hediye aldım, WhatsApp'tan cihazı tek tek anlattılar. Yeni başlayan için doğru seçim oldu.", isVerified: true, isApproved: true, createdAt: new Date(Date.now() - 20 * 86400000) },
     { productId: prodRows[7].id, name: "Murat B.", rating: 5, body: "Pointer olmadan kazı yapmak işkenceymiş, bunu aldıktan sonra süre yarıya indi.", isVerified: false, isApproved: true, createdAt: new Date(Date.now() - 27 * 86400000) },
   ]);
   await db.insert(t.productQuestions).values({ productId: prodRows[0].id, name: "Burak", contact: "burak@ornek.com", question: "Başlık kaç metreye kadar su geçirmez?" });

@@ -44,7 +44,7 @@ export async function buildLlms(full: boolean) {
   L.push(`- Kargo: ${s.shipping.flatRate === 0 ? "ücretsiz" : s.shipping.freeThreshold ? `${formatTL(s.shipping.freeThreshold)} üzeri ücretsiz, altı ${formatTL(s.shipping.flatRate)}` : formatTL(s.shipping.flatRate)}; tahmini teslim ${s.shipping.deliveryEstimate}; saat ${s.shipping.sameDayCutoff}'e kadar verilen stoklu siparişler aynı gün kargoda.`);
   L.push(`- Ödeme: kredi/banka kartı (iyzico, 3D Secure), ${s.payment.maxInstallment} taksite kadar${s.payment.noInterestInstallments > 1 ? `, ${s.payment.noInterestInstallments} taksite kadar vade farksız` : ""}${s.payment.transferEnabled ? `; havale/EFT${s.payment.transferDiscountPct ? ` (%${s.payment.transferDiscountPct} indirim)` : ""}` : ""}.`);
   L.push("- İade: 14 gün içinde koşulsuz iade, ücretsiz iade kargo kodu.");
-  L.push(`- Satış öncesi: ücretsiz uzman danışmanlığı, görüntülü görüşmeyle cihaz gösterimi, 6 soruluk seçim sihirbazı (${abs("/sihirbaz")}).`);
+  L.push(`- Satış öncesi: ücretsiz uzman danışmanlığı (WhatsApp ve telefon), 6 soruluk seçim sihirbazı (${abs("/sihirbaz")}).`);
   L.push(`- Satış sonrası: kurulum eğitimi ve teknik servis takibi (${abs("/servis")}).`);
   L.push("- Yasal not: Türkiye'de dedektör satın almak ve bulundurmak serbesttir; arama yapmak ise 2863 sayılı Kanun kapsamında izne tabidir. Kullanıcıların yerel mevzuatı ve ilgili kurumları kontrol etmesi önerilir.", "");
 

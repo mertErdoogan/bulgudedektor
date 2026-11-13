@@ -20,9 +20,10 @@ export function Ticker({ t }: { t: TickerSettings }) {
   const items = t.items.filter((i) => i.text.trim());
   if (!t.enabled || !items.length) return null;
   const th = THEME[t.theme] ?? THEME.brand;
-  // Geniş ekranı doldurmak için maddeleri çoğalt (yarım iz en az ~160 karakter)
+  // Dikişsiz döngü için şeridin yarısı en geniş ekrandan (≈2560 px) uzun olmalı; yoksa sonda boşluk görünür ve şerit
+  // başa "zıplar". ~400 karakter ≈ 3000 px'e kadar maddeleri çoğalt.
   const len = items.reduce((n, i) => n + i.text.length + 6, 0);
-  const reps = Math.max(1, Math.ceil(160 / len));
+  const reps = Math.max(2, Math.ceil(400 / len));
   const half = Array.from({ length: reps }, () => items).flat();
   const dur = Math.round((len * reps * 8.5) / PX_PER_SEC[t.speed] || 30);
 

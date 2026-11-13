@@ -14,7 +14,7 @@ import { StickyBar } from "./sticky-bar";
 export async function StoreHeader() {
   const [s, nav, brands, customer, hd] = await Promise.all([getSettings(), getNav(), getActiveBrands(), getCustomer(), getHeaderData()]);
   const header = nav.menu.filter((m) => m.location === "HEADER");
-  // Kurumsal sayfalar (Hakkımızda, İletişim…): geniş ekranda menünün sağında, daha dar ekranda üst şeritte
+  // Kurumsal sayfalar (Hakkımızda, İletişim…) üst şeritte: menü yalnız alışverişe ayrılır, ekran genişliği ne olursa olsun çakışmaz
   const info = header.filter((m) => !m.highlight && INFO_LINK.test(m.url));
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}` : "/iletisim";
   const notes = s.store.announcement.split("·").map((t) => t.trim()).filter(Boolean);
@@ -39,9 +39,9 @@ export async function StoreHeader() {
               </div>
               <div className="flex shrink-0 items-center gap-5">
                 {info.map((m) => (
-                  <Link key={m.id} href={m.url} className="hidden hover:text-white lg:block 2xl:hidden">{m.label}</Link>
+                  <Link key={m.id} href={m.url} className="hidden hover:text-white lg:block">{m.label}</Link>
                 ))}
-                {info.length ? <span className="hidden h-3.5 w-px bg-white/25 lg:block 2xl:hidden" /> : null}
+                {info.length ? <span className="hidden h-3.5 w-px bg-white/25 lg:block" /> : null}
                 {s.shipping.sameDayCutoff ? (
                   <span className="hidden items-center gap-1.5 2xl:flex"><Truck size={15} /> Bugün {s.shipping.sameDayCutoff}&apos;e kadar siparişler kargoda</span>
                 ) : null}

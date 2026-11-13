@@ -61,6 +61,24 @@ async def main():
             url, so = row.rsplit("|", 1)
             sql(f"insert into product_images (id, product_id, url, sort_order) values (gen_random_uuid()::text, '{pid}', '{url}', {so})")
 
+        # ── Ana sayfa bölümleri
+        await pg.goto(B + "/", wait_until="networkidle")
+        half = await pg.evaluate("() => document.querySelector('.ticker-track')?.scrollWidth / 2")
+        chk("Şerit dikişsiz (yarısı ≥ 2560 px)", half and half >= 2560, half)
+        chk("Nav'da kurumsal link yok (üst şeritte)", await pg.locator("nav[aria-label='Ana menü'] a[href='/sayfa/hakkimizda']").count() == 0 and await pg.locator("header a[href='/sayfa/hakkimizda']").count() == 1)
+        chk("Test bandı: ilk soru cevapları", await pg.locator("[data-testid=wizard-band] a[href='/sihirbaz?amac=altin']").count() == 1)
+        ex = pg.locator("[data-testid=explore]")
+        chk("Amacına göre keşfet: sekmeler", await ex.get_by_role("tab").count() >= 4)
+        await ex.get_by_role("tab", name="Doğal altın").click(); await pg.wait_for_timeout(400)
+        hrefs = await ex.locator("[role=tabpanel] a[href^='/urun/']").evaluate_all("els => [...new Set(els.map(e => e.getAttribute('href')))]")
+        chk("Sekme değişince altın cihazları", "/urun/gpx-6000" in hrefs and "/urun/ace-250" not in hrefs, hrefs)
+        chk("Marka vitrini: Minelab büyük + diğer markalar", await pg.locator("[data-testid=brand-showcase] a[href='/marka/garrett']").count() == 1 and await pg.locator("[data-testid=brand-showcase] a[href^='/urun/']").count() == 4)
+        eb = await pg.locator("[data-testid=expert-band]").inner_text()
+        chk("Uzman bandı: kamera/görüntülü yok", "kamera" not in eb.lower() and "görüntülü" not in eb.lower() and "WhatsApp" in eb)
+        chk("Güven bandı: seri no formu", await pg.locator("[data-testid=trust-band] form[action='/seri-no'] input[name=no]").count() == 1)
+        chk("Yorumlar: puan dağılımı", await pg.locator("[data-testid=home-reviews] >> text=onaylı yorum").count() == 1)
+        chk("Rehber vitrini: 3 yazı + okuma süresi", await pg.locator("[data-testid=blog-showcase] a[href^='/blog/']").count() == 3 and await pg.locator("[data-testid=blog-showcase] >> text=/dk okuma/").count() == 1)
+
         # ── Mobil: kategori ilk ekranında ürün, banner başlığı
         m = await b.new_context(user_agent=UA, viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True); mp = await m.new_page()
         mp.on("pageerror", lambda e: errs.append(mp.url + " :: " + str(e)[:90]))

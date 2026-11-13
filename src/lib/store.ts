@@ -172,6 +172,14 @@ export async function categoryRail(categoryId: string, limit = 12): Promise<Prod
   return weighed((n) => cardQuery().where(where).orderBy(...order).limit(n), (cond, n) => cardQuery().where(and(where, cond)).orderBy(...order).limit(n), limit);
 }
 
+/** Koşula uyan ürünlerin rafı (ana sayfa "Amacına göre keşfet" sekmeleri): stokta olanlar önce, vitrin önceliğiyle */
+export async function railWhere(cond: SQL, limit = 8): Promise<ProductCard[]> {
+  const { weighed } = await import("./merch");
+  const where = and(active, cond)!;
+  const order = [sql`(${products.stock} > 0) desc`, desc(products.isFeatured), asc(products.sortOrder)];
+  return weighed((n) => cardQuery().where(where).orderBy(...order).limit(n), (c, n) => cardQuery().where(and(where, c)).orderBy(...order).limit(n), limit);
+}
+
 export type CatalogFilter = {
   q?: string;
   category?: string;

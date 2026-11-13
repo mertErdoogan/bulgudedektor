@@ -138,10 +138,10 @@
 }
 
 /* Kayan şerit (components/store/ticker.tsx) */
-@keyframes ticker-rtl { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@keyframes ticker-ltr { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@keyframes ticker-rtl { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+@keyframes ticker-ltr { from { transform: translate3d(-50%, 0, 0); } to { transform: translate3d(0, 0, 0); } }
 .ticker { mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent); }
-.ticker-track { animation: ticker-rtl var(--ticker-dur, 40s) linear infinite; }
+.ticker-track { animation: ticker-rtl var(--ticker-dur, 40s) linear infinite; will-change: transform; backface-visibility: hidden; }
 .ticker[data-dir="ltr"] .ticker-track { animation-name: ticker-ltr; }
 .ticker:hover .ticker-track, .ticker:focus-within .ticker-track { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) {
@@ -178,3 +178,10 @@
 body.arena-search-open [data-site-header] {
   z-index: 90;
 }
+
+/* "Amacına göre keşfet" sekme geçişi */
+@keyframes explore-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.explore-in > * { animation: explore-in .45s cubic-bezier(.2,.7,.2,1) both; }
+.explore-in > *:nth-child(2) { animation-delay: 40ms; } .explore-in > *:nth-child(3) { animation-delay: 80ms; } .explore-in > *:nth-child(4) { animation-delay: 120ms; }
+.explore-in > *:nth-child(n+5) { animation-delay: 160ms; }
+@media (prefers-reduced-motion: reduce) { .explore-in > * { animation: none; } }

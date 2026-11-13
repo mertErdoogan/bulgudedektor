@@ -72,7 +72,7 @@ export const DEFAULT_TEMPLATES: { title: string; category: string; subject?: str
   {
     title: "Teslim sonrası kurulum desteği",
     category: "satis",
-    body: "Merhaba {ad}, cihazın eline ulaştı mı? İlk kurulum, başlık değişimi ya da ayarlar konusunda takıldığın bir yer olursa yazman yeterli; görüntülü görüşmeyle de yardımcı olabiliriz. İyi aramalar dileriz!\n{personel} · {magaza}",
+    body: "Merhaba {ad}, cihazın eline ulaştı mı? İlk kurulum, başlık değişimi ya da ayarlar konusunda takıldığın bir yer olursa yazman yeterli; telefonla da yardımcı olabiliriz. İyi aramalar dileriz!\n{personel} · {magaza}",
   },
   {
     title: "Servis: cihaz ulaştı",

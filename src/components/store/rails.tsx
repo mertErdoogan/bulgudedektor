@@ -86,10 +86,39 @@ function useRecentIds(exclude?: string) {
 }
 
 /** "Son gezdiklerin" şeridi — yalnızca bu tarayıcıda tutulur, giriş gerekmez. */
-export function RecentlyViewed({ exclude, title = "Son gezdiklerin", className }: { exclude?: string; title?: string; className?: string }) {
+export function RecentlyViewed({ exclude, title = "Son gezdiklerin", className, compact }: { exclude?: string; title?: string; className?: string; compact?: boolean }) {
   const ids = useRecentIds(exclude);
-  const { items, ctx } = useCards(ids.slice(0, 12));
+  const { items, ctx } = useCards(ids.slice(0, compact ? 8 : 12));
   if (!items.length || !ctx) return null;
+  if (compact)
+    // Ana sayfada banner altı: tam kart rafı yerine tek satırlık ince şerit ("kaldığın yerden devam et")
+    return (
+      <section className={className} aria-label={title} data-testid="recent-strip">
+        <div className="flex items-center gap-3 rounded-2xl border border-line bg-white py-2 pr-2 pl-4">
+          <span className="hidden shrink-0 items-center gap-2 text-[13px] font-extrabold md:flex">
+            <Clock3 size={16} className="text-mute" /> Kaldığın yerden devam et
+          </span>
+          <Clock3 size={16} className="shrink-0 text-mute md:hidden" aria-hidden />
+          <div className="scrollbar-none flex min-w-0 flex-1 gap-2 overflow-x-auto">
+            {items.map((p) => (
+              <Link key={p.id} href={`/urun/${p.slug}`} className="flex shrink-0 items-center gap-2.5 rounded-xl bg-soft py-1.5 pr-3.5 pl-1.5 transition hover:bg-[#ececee]">
+                <span className="grid h-10 w-10 place-items-center rounded-lg bg-white">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {p.image ? <img src={imgUrl(p.image, 96)} alt="" className="h-9 w-9 object-contain mix-blend-multiply" /> : null}
+                </span>
+                <span className="flex flex-col leading-tight">
+                  <span className="max-w-[150px] truncate text-[13px] font-bold">{p.name}</span>
+                  <span className="text-[12px] text-mute">{formatTL(p.price)}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+          <button type="button" onClick={clearRecent} aria-label="Son gezdiklerini temizle" className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-mute hover:bg-soft hover:text-deep">
+            <X size={16} />
+          </button>
+        </div>
+      </section>
+    );
   return (
     <section className={className}>
       <div className="mb-3 flex items-end justify-between gap-3">

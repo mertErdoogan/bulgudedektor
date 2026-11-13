@@ -1,26 +1,35 @@
 import { imgProps } from "@/lib/img";
 import Link from "next/link";
-import { ArrowRight, Compass, FileText, MessageCircle, RotateCcw, ShieldCheck, Store, Video } from "lucide-react";
 import { HeroStage, type HeroCard } from "@/components/store/home-client";
 import { resolveShortcuts, Shortcuts } from "@/components/store/shortcuts";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { categories } from "@/db/schema";
+import { categories, products } from "@/db/schema";
 import { Ticker } from "@/components/store/ticker";
 import { BestSellers, CategoryRail, Deals, NewArrivals } from "@/components/store/home-lists";
 import { PersonalPicks, RecentlyViewed } from "@/components/store/rails";
 import { HomeReviews } from "@/components/store/home-reviews";
 import { cardCtx } from "@/lib/card-ctx";
 import { getSettings } from "@/lib/settings";
-import { bestSellers, categoryRail, getActiveBrands, getBrandGroups, getHome, getNav, productsFor, type ProductCard as ProductCardT } from "@/lib/store";
+import { bestSellers, categoryRail, getActiveBrands, getBrandGroups, getHome, getNav, productsFor, railWhere, type ProductCard as ProductCardT } from "@/lib/store";
+import { BlogShowcase, ExpertBand, TrustBand, WizardBand } from "@/components/store/home-sections";
+import { ExploreTabs } from "@/components/store/explore-tabs";
+
+/** Ana sayfa "Amacına göre keşfet" sekmeleri */
+const EXPLORE = [
+  { k: "define", l: "Define ve sikke", d: "Tarla, bağ, harabe: sikke ve takı için iyi ayrım yapan cihazlar.", href: "/urunler?amac=define", cond: sql`'define' = any(${products.useCases})` },
+  { k: "altin", l: "Doğal altın", d: "Mineralli toprakta küçük nugget'ı kaçırmayan altın cihazları.", href: "/urunler?amac=altin", cond: sql`'altin' = any(${products.useCases})` },
+  { k: "sahil", l: "Sahil ve su altı", d: "Islak kumda, tuzlu suda ve dalışta çalışan su geçirmez modeller.", href: "/urunler?amac=sahil", cond: sql`'sahil' = any(${products.useCases})` },
+  { k: "baslangic", l: "İlk cihazım", d: "Kurulumu kolay, hazır modlu, bütçe dostu başlangıç cihazları.", href: "/urunler?seviye=BEGINNER", cond: sql`${products.experience} = 'BEGINNER'` },
+  { k: "pro", l: "Profesyonel", d: "Derin arama, görüntüleme ve uzman ayarları olan üst seviye cihazlar.", href: "/kategori/derin-arama", cond: sql`${products.isPro}` },
+];
 
 const unseen = <T extends { id: string }>(list: T[], seen: Set<string>) => list.filter((p) => !seen.has(p.id));
-import { BrandGrid } from "@/components/store/brand-cards";
-import { focusThumbs as focusThumbs4, getMerch, latestFocus } from "@/lib/merch";
+import { BrandGrid, BrandShowcase } from "@/components/store/brand-cards";
+import { getMerch, latestFocus } from "@/lib/merch";
 import { Head } from "@/components/store/home-lists";
 import { FaqSection } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
-import { PostCards } from "@/components/store/post-cards";
 import { QueryToast } from "@/components/store/query-toast";
 import { getFaqs, getPublishedPosts, toQA } from "@/lib/content";
 import { graph, pageMeta, storeLd } from "@/lib/seo";
@@ -78,26 +87,7 @@ export default async function Home() {
       const limit = Number(sec.config.limit) || 10;
       switch (sec.type) {
         case "WIZARD_BAND":
-          return (
-            <section key={sec.id} className="container-x mt-6">
-              <div className="flex flex-col gap-4 rounded-2xl border border-line bg-[#fafafa] p-4 md:flex-row md:items-center md:p-5">
-                <div className="flex flex-1 items-start gap-3">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-deep text-white"><Compass size={22} /></span>
-                  <span>
-                    <b className="text-[17px]">{sec.title}</b>
-                    <span className="block text-sm text-mute">{sec.subtitle}</span>
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="hidden text-sm font-bold text-mute lg:inline">Ne arayacaksın?</span>
-                  {[["define", "Sikke ve define"], ["altin", "Doğal altın"], ["sahil", "Sahil ve su altı"]].map(([k, l]) => (
-                    <Link key={k} href={`/sihirbaz?amac=${k}`} className="rounded-full border border-line bg-white px-3.5 py-2 text-sm font-bold hover:border-deep">{l}</Link>
-                  ))}
-                  <Link href="/sihirbaz" className="rounded-full bg-deep px-5 py-2 text-sm font-extrabold text-white hover:bg-black">Başla →</Link>
-                </div>
-              </div>
-            </section>
-          );
+          return <WizardBand key={sec.id} title={sec.title} subtitle={sec.subtitle} />;
         case "CATEGORY_TILES": {
           // "Ne arıyorsun?": paneldeki yuvarlak kısayollar (kategori kutuları /kategoriler sayfasında)
           const [allCats, allBrands] = await Promise.all([
@@ -111,10 +101,15 @@ export default async function Home() {
           // Raflar arası tekrar yok: bir ürün yukarıdaki rafta göründüyse aşağıdakinde tekrar çıkmaz.
           // "Aynı gün kargo" ayrı raf değil; her kartta kargo satırı zaten yazıyor.
           const { best, fresh, deals } = await topLists();
+          // "Amacına göre keşfet": aynı katalog, müşterinin amacına göre sekmeli (tekrar değil, farklı bir bakış)
+          const explore = await Promise.all(
+            EXPLORE.map(async (t) => ({ k: t.k, l: t.l, d: t.d, href: t.href, items: await railWhere(t.cond, 8) })),
+          );
           return (
             <div key={sec.id}>
               <BestSellers items={best} ctx={ctx} />
               {fresh.length >= 3 ? <NewArrivals items={fresh} ctx={ctx} /> : null}
+              <ExploreTabs tabs={explore} ctx={ctx} />
               {deals.length >= 3 ? <Deals items={deals} ctx={ctx} /> : null}
             </div>
           );
@@ -127,11 +122,16 @@ export default async function Home() {
         case "BRANDS": {
           const [groups, m] = await Promise.all([getBrandGroups(), getMerch()]);
           if (!groups.length) return null;
-          const focusThumbs = groups.some((g) => g.slug === m.focusBrand) ? await focusThumbs4(m) : [];
+          const f = groups.find((g) => g.slug === m.focusBrand);
+          const models = f ? await latestFocus(m, 4) : [];
           return (
-            <section key={sec.id} className="container-x mt-12">
+            <section key={sec.id} className="container-x mt-14">
               <Head title={sec.title || "Markaya göre alışveriş"} sub={sec.subtitle || "Markanı seç, kategorisine göre modelleri gör"} href="/markalar" cta="Tüm markalar" />
-              <BrandGrid brands={groups.slice(0, 8)} focus={focusThumbs.length ? { slug: m.focusBrand, thumbs: focusThumbs, note: m.focusNote || undefined } : undefined} />
+              {f ? (
+                <BrandShowcase focus={f} models={models} note={m.focusNote || undefined} rest={groups.filter((g) => g !== f)} />
+              ) : (
+                <BrandGrid brands={groups.slice(0, 8)} />
+              )}
             </section>
           );
         }
@@ -147,44 +147,9 @@ export default async function Home() {
           );
         }
         case "EXPERT_BAND":
-          return (
-            <section key={sec.id} className="container-x mt-10">
-              <div className="flex flex-col gap-4 rounded-2xl bg-deep p-6 text-white md:flex-row md:items-center">
-                <div className="flex-1">
-                  <b className="font-display text-xl md:text-2xl">{sec.title}</b>
-                  <p className="text-sm opacity-80">{s.store.workingHours} · {sec.subtitle ?? "ortalama yanıt birkaç dakika"}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <a href={wa} target="_blank" className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#15803d] px-5 font-extrabold"><MessageCircle size={18} /> WhatsApp&apos;tan yaz</a>
-                  <Link href="/iletisim?konu=goruntulu" className="flex h-12 items-center justify-center gap-2 rounded-lg bg-white px-5 font-extrabold text-deep"><Video size={18} /> Görüntülü randevu</Link>
-                </div>
-              </div>
-            </section>
-          );
+          return <ExpertBand key={sec.id} title={sec.title} wa={wa} phone={s.store.phone} hours={s.store.workingHours} />;
         case "TRUST":
-          return (
-            <section key={sec.id} className="container-x mt-10 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1.7fr_1fr_1fr_1fr]">
-              <form action="/seri-no" className="flex min-w-0 items-center gap-3 rounded-xl border border-line bg-white p-4">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-deep text-white"><ShieldCheck size={24} /></span>
-                <span className="flex min-w-0 flex-1 flex-col gap-2">
-                  <span><b>Cihazın orijinal mi?</b> <span className="text-[13px] text-mute">Seri numarasıyla distribütör kaydını kontrol et</span></span>
-                  <span className="flex gap-2">
-                    <input name="no" required placeholder="Seri no" className="h-11 min-w-0 flex-1 rounded-lg border border-[#d6d6d9] bg-white px-3" />
-                    <button className="h-11 shrink-0 rounded-lg bg-deep px-4 text-sm font-extrabold text-white hover:bg-black">Sorgula</button>
-                  </span>
-                </span>
-              </form>
-              {[[FileText, "Faturalı, 2 yıl garanti", "Distribütör garantisi"], [RotateCcw, "14 gün kolay iade", "Tek tıkla talep"], [Store, "Showroom'da dene", "Test alanında, elinde"]].map(([I, t, d]) => {
-                const Icon = I as typeof FileText;
-                return (
-                  <div key={t as string} className="flex items-center gap-3 rounded-xl bg-soft p-4">
-                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white text-deep ring-1 ring-line"><Icon size={22} /></span>
-                    <span><b className="block">{t as string}</b><span className="text-sm text-mute">{d as string}</span></span>
-                  </div>
-                );
-              })}
-            </section>
-          );
+          return <TrustBand key={sec.id} />;
         default:
           return null;
       }
@@ -204,19 +169,11 @@ export default async function Home() {
       <div className="container-x mt-4">
         <h1 className="sr-only">{s.store.name} · Metal dedektörü ve define dedektörü modelleri — orijinal, faturalı, garantili</h1>
       </div>
-      <RecentlyViewed className="container-x mt-8" />
-      <PersonalPicks className="container-x mt-10" />
+      <RecentlyViewed compact className="container-x mt-6" />
       {rendered}
+      <PersonalPicks className="container-x mt-12" />
       <HomeReviews googleReviewUrl={s.store.googleReviewUrl || undefined} />
-      {posts.length ? (
-        <section className="container-x mt-12">
-          <div className="mb-4 flex items-end justify-between gap-3">
-            <h2 className="font-display text-2xl font-extrabold md:text-[30px]">Dedektör rehberleri</h2>
-            <Link href="/blog" className="flex items-center gap-1 text-sm font-bold text-link">Tümü <ArrowRight size={16} /></Link>
-          </div>
-          <PostCards posts={posts.slice(0, 3)} />
-        </section>
-      ) : null}
+      <BlogShowcase posts={posts.slice(0, 3)} />
       <section className="container-x mt-12 max-w-4xl">
         <h2 className="font-display text-[22px] leading-tight font-extrabold md:text-[26px]">{s.store.name}: metal dedektörü ve define dedektörü, uzman desteğiyle</h2>
         <p className="mt-2 text-[15px] leading-relaxed text-[#3f3f46]">{s.seo.aboutForAi}</p>

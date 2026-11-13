@@ -34,7 +34,7 @@ async def main():
     await pg.reload(wait_until='networkidle'); await pg.wait_for_timeout(600)
     chk('Aynı kişi tekrar sayılmıyor', int(sql(f"select coalesce(sum(views),0) from product_activity where product_id='{pid}'"))==after)
     await pg.goto(B+'/', wait_until='networkidle'); await pg.wait_for_timeout(800)
-    chk('Son gezdiklerin ana sayfada', await pg.locator('h2:has-text("Son gezdiklerin")').count()==1)
+    chk('Son gezdiklerin ana sayfada (ince şerit)', await pg.locator('[data-testid=recent-strip] a[href="/urun/x-terra-pro"]').count()==1)
     # favori (misafir)
     await pg.goto(B+'/urun/x-terra-pro', wait_until='networkidle')
     await pg.click('button[aria-label="Favorilere ekle"] >> nth=0'); await pg.wait_for_timeout(400)

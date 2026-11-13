@@ -16,8 +16,10 @@ export const postCard = {
   publishedAt: posts.publishedAt,
   updatedAt: posts.updatedAt,
   authorName: posts.authorName,
+  /** Okuma süresi için kelime sayısı */
+  words: sql<number>`coalesce(array_length(regexp_split_to_array(trim(${posts.content}), '\\s+'), 1), 0)`,
 };
-export type PostCard = { id: string; title: string; slug: string; excerpt: string | null; coverImage: string | null; category: string; publishedAt: Date | null; updatedAt: Date; authorName: string };
+export type PostCard = { id: string; title: string; slug: string; excerpt: string | null; coverImage: string | null; category: string; publishedAt: Date | null; updatedAt: Date; authorName: string; words?: number };
 
 export const getPublishedPosts = cache(async (category?: string) =>
   db.select(postCard).from(posts).where(category ? and(live(), eq(posts.category, category)) : live()).orderBy(desc(posts.publishedAt)),
