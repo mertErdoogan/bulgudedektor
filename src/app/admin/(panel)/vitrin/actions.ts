@@ -1,18 +1,19 @@
 "use server";
 
 import { and, asc, eq, gt, lt, desc } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { db } from "@/db";
 import { banners, homeSections, mediaAssets, menuItems, pages } from "@/db/schema";
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { audit } from "@/lib/audit";
 import { assertStaff } from "@/lib/auth";
-import { saveSettings } from "@/lib/settings";
+import { saveSettings, type Shortcut } from "@/lib/settings";
 import { deleteUpload } from "@/lib/storage";
 import { slugify, str, strOrNull, toNum } from "@/lib/utils";
 
 const done = (msg: string, redirect?: string) => {
   revalidatePath("/", "layout");
+  revalidateTag("header");
   return ok(msg, redirect ? { redirect } : {});
 };
 
@@ -237,5 +238,45 @@ export async function saveTicker(_: ActionResult | null, fd: FormData): Promise<
     });
     await audit(staff.id, "settings", "ticker", null, `Kayan şerit: ${items.length} madde`);
     return done("Kayan şerit kaydedildi.");
+  });
+}
+
+const safeHref = (h: string) => !h || /^\/(?!\/)/.test(h) || /^https?:\/\//i.test(h);
+
+/** Kısayollar ("Ne arıyorsun?") ve Minelab menüsündeki kampanya kartı */
+export async function saveNav(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("cms.manage");
+    const labels = fd.getAll("sLabel").map(String);
+    const hrefs = fd.getAll("sHref").map(String);
+    const images = fd.getAll("sImage").map(String);
+    const icons = fd.getAll("sIcon").map(String);
+    const orders = fd.getAll("sOrder").map((x) => Number(x) || 0);
+    const featured = new Set(fd.getAll("sFeatured").map(String));
+    const removed = new Set(fd.getAll("sRemove").map(String));
+    const ICONS = ["", "star", "trend", "flame", "tag", "sparkles"] as const;
+    const list: { o: number; i: number; s: Shortcut }[] = [];
+    for (let i = 0; i < labels.length; i++) {
+      const label = labels[i].replace(/\s+/g, " ").trim().slice(0, 28);
+      const href = (hrefs[i] ?? "").trim().slice(0, 300);
+      if (!label || removed.has(String(i))) continue;
+      if (!href) return fail(`"${label}" kısayolunun bağlantısı boş.`);
+      if (!safeHref(href)) return fail(`"${label}" kısayolunun bağlantısı / ile başlamalı ya da http(s):// olmalı.`);
+      const icon = (ICONS as readonly string[]).includes(icons[i]) ? (icons[i] as Shortcut["icon"]) : "";
+      list.push({ o: orders[i] ?? i, i, s: { label, href, image: (images[i] ?? "").trim(), icon, featured: featured.has(String(i)) } });
+    }
+    if (list.length > 12) return fail("En fazla 12 kısayol eklenebilir.");
+    const shortcuts = list.sort((a, b) => a.o - b.o || a.i - b.i).map((x) => x.s);
+    const mode = (["auto", "custom", "off"] as const).find((m) => m === fd.get("pMode")) ?? "auto";
+    const pHref = String(fd.get("pHref") ?? "").trim();
+    if (!safeHref(pHref)) return fail("Kampanya kartı bağlantısı / ile başlamalı ya da http(s):// olmalı.");
+    const pTitle = String(fd.get("pTitle") ?? "").trim().slice(0, 90);
+    if (mode === "custom" && !pTitle) return fail("Elle kampanya kartı için başlık girin.");
+    await saveSettings("nav", {
+      shortcuts,
+      promo: { mode, eyebrow: String(fd.get("pEyebrow") ?? "").trim().slice(0, 30), title: pTitle, href: pHref, image: String(fd.get("pImage") ?? "").trim() },
+    });
+    await audit(staff.id, "settings", "nav", null, `Kısayollar: ${shortcuts.length}, kampanya kartı: ${mode}`);
+    return done("Kısayollar ve menü kartı kaydedildi.");
   });
 }

@@ -75,7 +75,7 @@ export function productSearch(q: string): { where: SQL; score: SQL } | null {
 export async function suggest(q: string) {
   const s = productSearch(q);
   const n = trNorm(q).trim();
-  if (!s || n.length < 2) return { products: [], categories: [], brands: [], posts: [] };
+  if (!s || n.length < 2) return { products: [], total: 0, categories: [], brands: [], posts: [] };
   const like = `%${tokenize(q)[0]}%`;
   const [prods, cats, brs, ps] = await Promise.all([
     db
@@ -84,8 +84,12 @@ export async function suggest(q: string) {
         name: products.name,
         slug: products.slug,
         price: products.price,
+        compareAtPrice: products.compareAtPrice,
+        stock: products.stock,
+        allowBackorder: products.allowBackorder,
         brand: brands.name,
         image: sql<string | null>`(select url from product_images pi where pi.product_id = ${qc(products.id)} order by pi.sort_order limit 1)`,
+        total: sql<number>`(count(*) over ())::int`,
       })
       .from(products)
       .leftJoin(brands, eq(brands.id, products.brandId))
@@ -96,7 +100,7 @@ export async function suggest(q: string) {
     db.select({ name: brands.name, slug: brands.slug }).from(brands).where(and(eq(brands.isActive, true), sql`(arena_norm(${brands.name}) like ${like} or word_similarity(${n}, arena_norm(${brands.name})) >= 0.5)`)).limit(3),
     db.select({ title: posts.title, slug: posts.slug }).from(posts).where(and(eq(posts.status, "PUBLISHED"), sql`${posts.publishedAt} <= now()`, sql`arena_norm(${posts.title}) like ${like}`)).limit(2),
   ]);
-  return { products: prods, categories: cats, brands: brs, posts: ps };
+  return { products: prods.map(({ total: _t, ...p }) => p), total: prods[0]?.total ?? 0, categories: cats, brands: brs, posts: ps };
 }
 
 export async function logSearch(q: string, results: number) {

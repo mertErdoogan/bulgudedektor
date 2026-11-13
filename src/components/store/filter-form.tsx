@@ -55,6 +55,7 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
           <option value="fiyat-artan">Fiyat artan</option>
           <option value="fiyat-azalan">Fiyat azalan</option>
           <option value="yeni">En yeni</option>
+          <option value="cok-satan">Çok satan</option>
           <option value="hafif">En hafif</option>
         </select>
       </div>
@@ -76,6 +77,7 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
                 <option value="fiyat-artan">Fiyat artan</option>
                 <option value="fiyat-azalan">Fiyat azalan</option>
                 <option value="yeni">En yeni</option>
+          <option value="cok-satan">Çok satan</option>
                 <option value="hafif">En hafif</option>
               </select>
             </div>

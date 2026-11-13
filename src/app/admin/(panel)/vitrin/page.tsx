@@ -14,12 +14,13 @@ import { formatDate } from "@/lib/utils";
 import { deleteBanner, moveSection, saveAnnouncement, saveBanner, saveSection } from "./actions";
 import { MerchCard } from "./merch-card";
 import { TickerCard } from "./ticker-card";
+import { NavCard } from "./nav-card";
 
 export const metadata = { title: "Ana sayfa ve banner" };
 const PLACE: Record<string, string> = { HERO: "Büyük slider", SIDE: "Kampanya kartları (banner altı, 3 adet)", STRIP: "İnce şerit", CATEGORY: "Kategori sayfası" };
 const SECTION: Record<string, string> = {
   WIZARD_BAND: "'Bana hangisi?' bandı",
-  CATEGORY_TILES: "Kategori kutuları",
+  CATEGORY_TILES: "Ne arıyorsun? kısayolları",
   PRODUCT_TABS: "Ürün listeleri (çok satan / yeni / fırsat / aynı gün)",
   EXPERT_BAND: "Uzmana sor bandı",
   PRODUCT_ROW: "Profesyonel ürün şeridi",
@@ -50,6 +51,7 @@ export default async function VitrinPage({ searchParams }: { searchParams: Promi
           </Card>
           <TickerCard />
           <MerchCard />
+          <NavCard />
           <Card>
             <CardHeader title="Bannerlar" action={<Button size="sm" asChild><Link href="/admin/vitrin?yeni=1">+ Banner ekle</Link></Button>} />
             <ul className="divide-y divide-line">

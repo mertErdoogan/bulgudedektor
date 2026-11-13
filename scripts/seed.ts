@@ -139,8 +139,8 @@ async function main() {
     { title: "Kazıda hedefi saniyede bul", eyebrow: "POINTER · GARRETT", subtitle: "12.751 TL'den", imageUrl: img("garrett-pro-pointer-at"), linkUrl: "/kategori/pointer", placement: "SIDE", sortOrder: 2 },
   ]);
   await db.insert(t.homeSections).values([
-    { type: "WIZARD_BAND", sortOrder: 0, title: "Hangi dedektörü alacağını bilmiyor musun?", subtitle: "6 kısa soru, yaklaşık 1 dakika. Sana uygun 3 cihazı nedenleriyle gösterelim." },
-    { type: "CATEGORY_TILES", sortOrder: 1, title: "Ne arıyorsun?", subtitle: "Seç, gerisini bize bırak." },
+    { type: "WIZARD_BAND", sortOrder: 1, title: "Hangi dedektörü alacağını bilmiyor musun?", subtitle: "6 kısa soru, yaklaşık 1 dakika. Sana uygun 3 cihazı nedenleriyle gösterelim." },
+    { type: "CATEGORY_TILES", sortOrder: 0, title: "Ne arıyorsun?", subtitle: "Seç, gerisini bize bırak." },
     { type: "PRODUCT_TABS", sortOrder: 2, title: "Çok satanlar", config: { tabs: ["featured", "new", "deals", "sameday"], limit: 10 } },
     { type: "BRANDS", sortOrder: 3, title: "Markaya göre alışveriş", subtitle: "Markanı seç, kategorisine göre modelleri gör" },
     { type: "EXPERT_BAND", sortOrder: 4, title: "Kararsız mı kaldın? Bir uzman cihazı kamerada göstersin." },
@@ -149,13 +149,16 @@ async function main() {
     { type: "CATEGORY_RAILS", sortOrder: 7, title: "Kategorilere göre", config: { count: 4 } },
   ]);
   await db.insert(t.menuItems).values([
-    { location: "HEADER", label: "Define ve sikke", url: "/kategori/define-ve-sikke", sortOrder: 0 },
-    { location: "HEADER", label: "Doğal altın", url: "/kategori/dogal-altin", sortOrder: 1 },
-    { location: "HEADER", label: "Sahil ve su altı", url: "/kategori/sahil-ve-su-alti", sortOrder: 2 },
-    { location: "HEADER", label: "Derin arama", url: "/kategori/derin-arama", sortOrder: 3 },
+    { location: "HEADER", label: "Define Dedektörü", url: "/kategori/define-ve-sikke", sortOrder: 0 },
+    { location: "HEADER", label: "Altın Dedektörü", url: "/kategori/dogal-altin", sortOrder: 1 },
+    { location: "HEADER", label: "Sualtı", url: "/kategori/sahil-ve-su-alti", sortOrder: 2 },
+    { location: "HEADER", label: "Başlık ve Aksesuar", url: "/kategori/baslik-ve-aksesuar", sortOrder: 3 },
     { location: "HEADER", label: "Pointer", url: "/kategori/pointer", sortOrder: 4 },
-    { location: "HEADER", label: "Başlık ve aksesuar", url: "/kategori/baslik-ve-aksesuar", sortOrder: 5 },
-    { location: "HEADER", label: "Kampanyalar", url: "/kampanyalar", sortOrder: 6, highlight: true },
+    { location: "HEADER", label: "Kampanyalar", url: "/kampanyalar", sortOrder: 5, highlight: true },
+    { location: "HEADER", label: "Hakkımızda", url: "/sayfa/hakkimizda", sortOrder: 6 },
+    { location: "HEADER", label: "İletişim", url: "/iletisim", sortOrder: 7 },
+    { location: "HEADER", label: "Yardım", url: "/sss", sortOrder: 8 },
+    { location: "HEADER", label: "Blog", url: "/blog", sortOrder: 9 },
     { location: "FOOTER_HELP", label: "Sipariş takibi", url: "/siparis-takip", sortOrder: 0 },
     { location: "FOOTER_HELP", label: "İade talebi", url: "/hesabim", sortOrder: 1 },
     { location: "FOOTER_HELP", label: "Servis kaydı", url: "/servis", sortOrder: 2 },

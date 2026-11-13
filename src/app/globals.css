@@ -173,3 +173,8 @@
   .hero-ring, .hero-bar, .hero-zoom, .group:hover .card-shine { animation: none; }
   .hero-bar { transform: scaleX(1); }
 }
+
+/* Mobil tam ekran arama açıkken başlık alt menünün de üstüne çıksın */
+body.arena-search-open [data-site-header] {
+  z-index: 90;
+}

@@ -212,6 +212,8 @@ export async function listProducts(f: CatalogFilter) {
         ? desc(products.price)
         : f.sort === "yeni"
           ? desc(products.createdAt)
+          : f.sort === "cok-satan"
+            ? sql`(select coalesce(sum(oi.quantity), 0) from order_items oi join orders o on o.id = oi.order_id where oi.product_id = ${products.id} and o.status not in ('CANCELLED','REFUNDED','PENDING_PAYMENT') and o.created_at > now() - interval '90 days') desc, ${products.isFeatured} desc`
           : f.sort === "hafif"
             ? sql`${products.weightKg} asc nulls last`
             : search

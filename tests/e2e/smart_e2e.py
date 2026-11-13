@@ -13,7 +13,7 @@ async def main():
     c=await b.new_context(viewport={'width':1440,'height':900}, user_agent=UA); pg=await c.new_page()
     await pg.goto(B+'/', wait_until='networkidle'); await pg.click('button:has-text("Sadece zorunlu")')
     await pg.fill('input[name=q] >> nth=0','vanqish'); await pg.wait_for_timeout(900)
-    chk('Yazım hatalı aramada öneri', await pg.locator('#arama-onerileri >> text=Vanquish 560 Pro-Pack').count()>=1)
+    chk('Yazım hatalı aramada öneri', await pg.locator('[aria-label="Arama önerileri"] >> text=Vanquish 560 Pro-Pack').count()>=1)
     await pg.screenshot(path='/tmp/qa/s1.png', clip={'x':0,'y':0,'width':1440,'height':520})
     await pg.keyboard.press('ArrowDown'); await pg.keyboard.press('Enter'); await pg.wait_for_url('**/urun/vanquish-560-pro-pack')
     chk('Klavye ile öneriye gidiş', True)

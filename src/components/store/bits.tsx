@@ -20,9 +20,9 @@ export function CartButton({ compact }: { compact?: boolean }) {
       </Link>
     );
   return (
-    <Link href="/sepet" className="flex h-10 items-center gap-2 rounded-full bg-deep px-4 text-[13.5px] font-extrabold text-white transition hover:bg-black">
+    <Link href="/sepet" className="flex h-11 items-center gap-2.5 rounded-full bg-deep pr-4 pl-3.5 text-[14px] font-bold text-white transition hover:bg-black">
       <ShoppingCart size={19} /> Sepet
-      {ready && count ? <span className="rounded-md bg-pop px-2 text-xs text-on-pop">{count}</span> : null}
+      {ready && count ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[11.5px] font-extrabold">{count}</span> : null}
     </Link>
   );
 }
@@ -93,20 +93,24 @@ export function CompareBar() {
 
 type Cat = { id: string; name: string; slug: string; shortText: string | null; imageUrl: string | null; description: string | null };
 
-export function MegaMenu({ categories, brands }: { categories: Cat[]; brands: { name: string; slug: string }[] }) {
+export function MegaMenu({ categories, brands, variant = "nav" }: { categories: Cat[]; brands: { name: string; slug: string }[]; variant?: "nav" | "compact" }) {
   const [open, setOpen] = useState(false);
   const [cur, setCur] = useState(0);
   const c = categories[cur];
   return (
-    <div className="relative" onMouseLeave={() => setOpen(false)}>
+    <div className={cn("relative", variant === "nav" && "flex h-full items-center")} onMouseLeave={() => setOpen(false)}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         onMouseEnter={() => setOpen(true)}
         aria-expanded={open}
-        className="mr-1 flex h-9 items-center gap-2 rounded-full bg-deep px-4 text-[13.5px] font-bold text-white transition hover:bg-black"
+        className={
+          variant === "nav"
+            ? "flex h-full items-center gap-2.5 border-r border-line pr-5 text-[14.5px] font-bold whitespace-nowrap text-deep transition hover:text-brand"
+            : "flex h-10 items-center gap-2 rounded-full border border-line bg-white px-4 text-[14px] font-bold transition hover:border-deep"
+        }
       >
-        <Menu size={16} /> Tüm kategoriler
+        <Menu size={19} strokeWidth={2.1} /> {variant === "nav" ? "Kategoriler" : "Menü"}
       </button>
       {open && c ? (
         <div className="absolute top-full left-0 z-40 flex w-[min(1000px,calc(100vw-48px))] overflow-hidden rounded-xl border border-line bg-white pt-0 text-deep shadow-2xl">

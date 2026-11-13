@@ -158,6 +158,16 @@ export type TickerSettings = {
   theme: "soft" | "brand" | "dark" | "gold";
 };
 
+/** Ana sayfadaki "Ne arıyorsun?" yuvarlak kısayolları */
+export type ShortcutIcon = "" | "star" | "trend" | "flame" | "tag" | "sparkles";
+export type Shortcut = { label: string; href: string; image: string; icon: ShortcutIcon; featured: boolean };
+/** Header / menü ayarları */
+export type NavSettings = {
+  shortcuts: Shortcut[];
+  /** Minelab menüsünün sağındaki kampanya kartı: auto = yayındaki ilk kampanya, custom = aşağıdaki alanlar, off = gizli */
+  promo: { mode: "auto" | "custom" | "off"; eyebrow: string; title: string; href: string; image: string };
+};
+
 export type AllSettings = {
   store: StoreSettings;
   shipping: ShippingSettings;
@@ -167,6 +177,7 @@ export type AllSettings = {
   setup: SetupSettings;
   merch: MerchSettings;
   ticker: TickerSettings;
+  nav: NavSettings;
 };
 
 export const DEFAULT_SETTINGS: AllSettings = {
@@ -300,6 +311,20 @@ export const DEFAULT_SETTINGS: AllSettings = {
     direction: "ltr",
     speed: "normal",
     theme: "soft",
+  },
+  nav: {
+    shortcuts: [
+      { label: "Minelab", href: "/marka/minelab", image: "", icon: "", featured: true },
+      { label: "Pointer", href: "/kategori/pointer", image: "", icon: "", featured: false },
+      { label: "Altın Dedektörü", href: "/kategori/dogal-altin", image: "", icon: "", featured: false },
+      { label: "Define ve Sikke", href: "/kategori/define-ve-sikke", image: "", icon: "", featured: false },
+      { label: "Sualtı Dedektörü", href: "/kategori/sahil-ve-su-alti", image: "", icon: "", featured: false },
+      { label: "Derin Arama", href: "/kategori/derin-arama", image: "", icon: "", featured: false },
+      { label: "Başlık ve Aksesuar", href: "/kategori/baslik-ve-aksesuar", image: "", icon: "", featured: false },
+      { label: "Yeni Gelenler", href: "/urunler?sirala=yeni", image: "", icon: "sparkles", featured: false },
+      { label: "En Çok Satılan", href: "/urunler?sirala=cok-satan", image: "", icon: "trend", featured: false },
+    ],
+    promo: { mode: "auto", eyebrow: "", title: "", href: "", image: "" },
   },
 };
 

@@ -2,7 +2,10 @@ import { imgProps } from "@/lib/img";
 import Link from "next/link";
 import { ArrowRight, Compass, FileText, MessageCircle, RotateCcw, ShieldCheck, Store, Video } from "lucide-react";
 import { HeroStage, type HeroCard } from "@/components/store/home-client";
-import { CategoryTile } from "@/components/store/category-tile";
+import { resolveShortcuts, Shortcuts } from "@/components/store/shortcuts";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { categories } from "@/db/schema";
 import { Ticker } from "@/components/store/ticker";
 import { BestSellers, CategoryRail, Deals, NewArrivals, SameDay } from "@/components/store/home-lists";
 import { PersonalPicks, RecentlyViewed } from "@/components/store/rails";
@@ -10,7 +13,7 @@ import { HomeReviews } from "@/components/store/home-reviews";
 import { cardCtx } from "@/lib/card-ctx";
 import { msToCutoff } from "@/lib/delivery";
 import { getSettings } from "@/lib/settings";
-import { bestSellers, categoryRail, getBrandGroups, getHome, getNav, productsFor } from "@/lib/store";
+import { bestSellers, categoryRail, getActiveBrands, getBrandGroups, getHome, getNav, productsFor } from "@/lib/store";
 import { BrandGrid } from "@/components/store/brand-cards";
 import { focusThumbs as focusThumbs4, getMerch, latestFocus } from "@/lib/merch";
 import { Head } from "@/components/store/home-lists";
@@ -80,23 +83,14 @@ export default async function Home() {
               </div>
             </section>
           );
-        case "CATEGORY_TILES":
-          if (!nav.categories.some((c) => !c.parentId)) return null;
-          return (
-            <section key={sec.id} className="container-x mt-10">
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <h2 className="font-display text-2xl font-extrabold md:text-[32px]">
-                  {sec.title} {sec.subtitle ? <span className="text-link">{sec.subtitle}</span> : null}
-                </h2>
-                <Link href="/sihirbaz" className="rounded-lg border-[1.5px] border-deep px-4 py-2 text-sm font-extrabold">Emin değilim, 6 soruda öner →</Link>
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                {nav.categories.filter((c) => !c.parentId).map((c) => (
-                  <CategoryTile key={c.id} c={c} />
-                ))}
-              </div>
-            </section>
-          );
+        case "CATEGORY_TILES": {
+          // "Ne arıyorsun?": paneldeki yuvarlak kısayollar (kategori kutuları /kategoriler sayfasında)
+          const [allCats, allBrands] = await Promise.all([
+            db.select({ slug: categories.slug, imageUrl: categories.imageUrl }).from(categories).where(eq(categories.isActive, true)),
+            getActiveBrands(),
+          ]);
+          return <Shortcuts key={sec.id} title={sec.title || "Ne arıyorsun?"} items={resolveShortcuts(s.nav.shortcuts, allCats, allBrands)} />;
+        }
         case "PRODUCT_TABS": {
           // Eski "sekmeli" bölüm artık alt alta listeler: çok satanlar, yeni gelenler, fırsatlar, aynı gün kargo
           const n = Math.max(limit, 10);
