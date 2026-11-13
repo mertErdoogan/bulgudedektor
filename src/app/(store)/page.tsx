@@ -1,7 +1,8 @@
 import { imgProps, imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { ArrowRight, Compass, FileText, MessageCircle, RotateCcw, ShieldCheck, Store, Video } from "lucide-react";
-import { HeroStage } from "@/components/store/home-client";
+import { HeroStage, type HeroCard } from "@/components/store/home-client";
+import { Ticker } from "@/components/store/ticker";
 import { BestSellers, CategoryRail, Deals, NewArrivals, SameDay } from "@/components/store/home-lists";
 import { PersonalPicks, RecentlyViewed } from "@/components/store/rails";
 import { HomeReviews } from "@/components/store/home-reviews";
@@ -10,7 +11,7 @@ import { msToCutoff } from "@/lib/delivery";
 import { getSettings } from "@/lib/settings";
 import { bestSellers, categoryRail, getBrandGroups, getHome, getNav, productsFor } from "@/lib/store";
 import { BrandGrid } from "@/components/store/brand-cards";
-import { focusThumbs as focusThumbs4, getMerch } from "@/lib/merch";
+import { focusThumbs as focusThumbs4, getMerch, latestFocus } from "@/lib/merch";
 import { Head } from "@/components/store/home-lists";
 import { FaqSection } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -31,6 +32,24 @@ export default async function Home() {
   const [{ sections, banners }, nav, s, homeFaq, posts] = await Promise.all([getHome(), getNav(), getSettings(), getFaqs({ home: true }), getPublishedPosts()]);
   const hero = banners.filter((b) => b.placement === "HERO");
   const side = banners.filter((b) => b.placement === "SIDE").slice(0, 3);
+  // Banner altı 3 kart: öncelikli markanın en yeni cihazları (panelden "kampanya kartları"na çevrilebilir).
+  // Yeterli yeni cihaz yoksa kalan yer kampanya kartlarıyla dolar.
+  const latest = s.merch.heroCards === "latest" ? await latestFocus(s.merch, 3) : [];
+  const brandName = latest[0]?.brand ?? "";
+  const cards: HeroCard[] = [
+    ...latest.map((p) => ({
+      id: p.id,
+      href: `/urun/${p.slug}`,
+      eyebrow: brandName.toLocaleUpperCase("en-US"),
+      title: p.name,
+      line: p.shortDescription,
+      price: p.price,
+      oldPrice: p.compareAtPrice,
+      image: p.image,
+      isNew: true,
+    })),
+    ...side.map((b) => ({ id: b.id, href: b.linkUrl || "#", eyebrow: b.eyebrow ?? "KAMPANYA", title: b.title, line: b.subtitle, image: b.imageUrl })),
+  ].slice(0, 3);
   const strip = banners.find((b) => b.placement === "STRIP");
   const ctx = cardCtx(s);
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}` : "/iletisim";
@@ -172,7 +191,8 @@ export default async function Home() {
 
   return (
     <>
-      <HeroStage slides={hero} side={side} />
+      <Ticker t={s.ticker} />
+      <HeroStage slides={hero} cards={cards} />
       {strip ? (
         <Link href={strip.linkUrl || "#"} className="container-x mt-4 block">
           {/* eslint-disable-next-line @next/next/no-img-element */}

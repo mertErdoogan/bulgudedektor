@@ -11,7 +11,7 @@ const { weigh } = await import("../../src/lib/merch");
 const mk = (id: string, b: string) => ({ id, brandSlug: b, name: id } as never);
 const F = (n: number, p = "m") => Array.from({ length: n }, (_, i) => mk(`${p}${i}`, "minelab"));
 const O = (n: number) => Array.from({ length: n }, (_, i) => mk(`o${i}`, "garrett"));
-const m = (w: "off" | "light" | "balanced" | "high", pinned: { productId: string; until: string | null }[] = []) => ({ focusBrand: "minelab", weight: w, pinned, badge: true, focusNote: "" });
+const m = (w: "off" | "light" | "balanced" | "high", pinned: { productId: string; until: string | null }[] = []) => ({ focusBrand: "minelab", weight: w, pinned, badge: true, focusNote: "", heroCards: "latest" as const });
 const s = (l: { id: string }[]) => l.map((x) => (x.id.startsWith("o") ? "O" : "M")).join("");
 let fail = 0;
 const eq = (name: string, a: string, b: string) => { if (a !== b) { fail++; console.log("FAIL", name, a, "≠", b); } else console.log("ok  ", name, a); };

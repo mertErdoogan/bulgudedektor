@@ -199,8 +199,40 @@ export async function saveMerch(_: ActionResult | null, fd: FormData): Promise<A
       const found = await db.select({ id: products.id }).from(products).where(inArray(products.id, pinned.map((p) => p.productId)));
       if (found.length !== pinned.length) return fail("Sabitlenen ürünlerden biri bulunamadı.");
     }
-    await saveSettings("merch", { focusBrand, weight: weight as "off", badge: fd.get("badge") === "on", focusNote: str(fd.get("focusNote")).slice(0, 60), pinned });
+    const heroCards = fd.get("heroCards") === "banners" ? "banners" : "latest";
+    await saveSettings("merch", { focusBrand, weight: weight as "off", badge: fd.get("badge") === "on", focusNote: str(fd.get("focusNote")).slice(0, 60), pinned, heroCards });
     await audit(staff.id, "settings", "merch", null, `Vitrin önceliği: ${focusBrand || "kapalı"} / ${weight} / ${pinned.length} sabit`);
     return done("Vitrin önceliği kaydedildi.");
+  });
+}
+
+/** Kayan şerit: maddeler, yön, hız, renk */
+export async function saveTicker(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("cms.manage");
+    const texts = fd.getAll("tText").map(String);
+    const hrefs = fd.getAll("tHref").map(String);
+    const hl = new Set(fd.getAll("tHighlight").map(String));
+    const removed = new Set(fd.getAll("tRemove").map(String));
+    const items: { text: string; href: string; highlight: boolean }[] = [];
+    for (let i = 0; i < texts.length; i++) {
+      const text = texts[i].replace(/\s+/g, " ").trim().slice(0, 120);
+      if (!text || removed.has(String(i))) continue;
+      const href = (hrefs[i] ?? "").trim().slice(0, 300);
+      // Yalnızca site içi yol ya da http(s) bağlantısı (javascript: vb. reddedilir)
+      if (href && !/^\/(?!\/)/.test(href) && !/^https?:\/\//i.test(href)) return fail(`"${text}" maddesinin bağlantısı / ile başlamalı ya da http(s):// olmalı.`);
+      items.push({ text, href, highlight: hl.has(String(i)) });
+    }
+    if (items.length > 12) return fail("En fazla 12 madde eklenebilir.");
+    const pick = <T extends string>(v: FormDataEntryValue | null, ok: readonly T[], d: T) => (ok.includes(String(v) as T) ? (String(v) as T) : d);
+    await saveSettings("ticker", {
+      enabled: fd.get("enabled") === "on",
+      items,
+      direction: pick(fd.get("direction"), ["ltr", "rtl"] as const, "ltr"),
+      speed: pick(fd.get("speed"), ["slow", "normal", "fast"] as const, "normal"),
+      theme: pick(fd.get("theme"), ["brand", "dark", "gold"] as const, "brand"),
+    });
+    await audit(staff.id, "settings", "ticker", null, `Kayan şerit: ${items.length} madde`);
+    return done("Kayan şerit kaydedildi.");
   });
 }

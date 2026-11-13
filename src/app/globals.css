@@ -136,3 +136,15 @@
     @apply my-3;
   }
 }
+
+/* Kayan şerit (components/store/ticker.tsx) */
+@keyframes ticker-rtl { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes ticker-ltr { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+.ticker { mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent); }
+.ticker-track { animation: ticker-rtl var(--ticker-dur, 40s) linear infinite; }
+.ticker[data-dir="ltr"] .ticker-track { animation-name: ticker-ltr; }
+.ticker:hover .ticker-track, .ticker:focus-within .ticker-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .ticker { overflow-x: auto; mask-image: none; -webkit-mask-image: none; }
+  .ticker-track { animation: none; }
+}

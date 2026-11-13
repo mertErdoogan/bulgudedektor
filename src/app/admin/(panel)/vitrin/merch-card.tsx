@@ -64,6 +64,23 @@ export async function MerchCard() {
             </div>
             <span className="text-xs text-mute">Örn. “Dengeli”: 8 ürünlük rafta 6 öncelikli marka, 2 diğer marka (3. ve 6. sırada). Diğer markalar hiçbir ayarda tamamen gizlenmez.</span>
           </fieldset>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 text-sm font-bold">Banner altındaki 3 kart</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {([
+                ["latest", "En yeni cihazlar (otomatik)", "Öncelikli markanın en yeni 3 cihazı. Sabitlenen ürün varsa önce o."],
+                ["banners", "Kampanya kartları (elle)", "Aşağıdaki banner listesinden 'Kampanya kartları' yerindekiler."],
+              ] as const).map(([v, l, d]) => (
+                <label key={v} className="cursor-pointer">
+                  <input type="radio" name="heroCards" value={v} defaultChecked={m.heroCards === v} className="peer sr-only" />
+                  <span className="flex h-full flex-col gap-0.5 rounded-xl border-2 border-line bg-white p-3 text-sm font-bold transition peer-checked:border-deep peer-focus-visible:ring-2 peer-focus-visible:ring-brand">
+                    {l}
+                    <span className="text-xs font-normal text-mute">{d}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Marka kartındaki not" hint="Sözleşmedeki ifadeyle aynı olmalı. Boşsa gösterilmez."><Input name="focusNote" defaultValue={m.focusNote} maxLength={60} placeholder="Türkiye distribütörü" /></Field>
             <Checkbox name="badge" defaultChecked={m.badge} label="Ürün sayfasında 'Distribütör garantili' rozeti" className="sm:pt-7" />

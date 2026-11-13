@@ -23,7 +23,7 @@ BEST = """() => {
 async def main():
     sql("update users set totp_enabled=false, totp_secret=null, totp_last_step=null")
     sql("delete from rate_hits")
-    sql("delete from settings where key='merch'")  # varsayılan: minelab / dengeli
+    sql("delete from settings where key in ('merch','ticker')")  # varsayılanlar: minelab / dengeli / en yeni kartlar; şerit açık
     minelab = set(sql("select p.slug from products p join brands b on b.id=p.brand_id where b.slug='minelab' and p.status='ACTIVE'").split("\n"))
     ace = sql("select id from products where slug='ace-250'")
     try:
@@ -41,9 +41,21 @@ async def main():
             chk("Dengeli: 8'de 6 Minelab", share(best) == 6, [x.split('/')[-1] for x in best])
             first_other = next((i for i, x in enumerate(best) if x.split("/")[-1] not in minelab), -1)
             chk("Diğer markalar en sona itilmiyor, araya serpişiyor", 0 < first_other < 6, first_other)
-            hero_txt = await pg.locator("main section").first.inner_text()
-            chk("Sahne: 3 kampanya kartı", all(t in hero_txt for t in ["Vanquish 560 Pro-Pack", "Equinox 900, 3 taksit", "Kazıda hedefi saniyede bul"]), hero_txt[:200])
-            chk("Sahne: ambiyans katmanı (banner'ın küçük kopyası)", await pg.locator("img.blur-\\[64px\\]").count() >= 1)
+            cards = await pg.evaluate("() => [...document.querySelectorAll('[data-testid=hero-cards] > a')].map(a => a.getAttribute('href'))")
+            chk("Banner altı: 3 kart, hepsi Minelab cihazı (en yeni)", len(cards) == 3 and share(cards) == 3, cards)
+            chk("Banner altı: aksesuar yok", "/urun/eqx-11-baslik" not in cards, cards)
+            chk("Banner altı: 'YENİ' etiketi", (await pg.locator("[data-testid=hero-cards] >> text=YENİ").count()) == 3)
+            # Oklar yalnızca banner'ın üstüne gelince görünür
+            await pg.mouse.move(5, 5); await pg.wait_for_timeout(400)
+            op0 = await pg.evaluate("() => getComputedStyle(document.querySelector('[data-testid=hero-next]')).opacity")
+            await pg.locator("[data-testid=hero-stage] picture").first.hover(); await pg.wait_for_timeout(500)
+            op1 = await pg.evaluate("() => getComputedStyle(document.querySelector('[data-testid=hero-next]')).opacity")
+            chk("Banner okları: fare üstündeyken görünür, değilken gizli", op0 == "0" and op1 == "1", (op0, op1))
+            # Kayan şerit: varsayılan maddeler, soldan sağa
+            tk = pg.locator("[data-testid=ticker]")
+            chk("Kayan şerit görünür, soldan sağa", await tk.count() == 1 and await tk.get_attribute("data-dir") == "ltr")
+            chk("Kayan şerit maddeleri", "Seri numaranla orijinallik sorgula" in await tk.inner_text())
+            chk("Sahne: ambiyans katmanı (banner'ın küçük kopyası)", await pg.locator("[data-testid=hero-stage] > div[aria-hidden] img").count() >= 1)
             chk("Marka ızgarası: Minelab ilk ve notlu", "Türkiye distribütörü" in (await pg.inner_text("main")))
 
             # ── Ürün sayfası rozeti
@@ -112,6 +124,42 @@ async def main():
             await pg.goto(B + "/", wait_until="networkidle")
             chk("Not boşken marka kartında görünmez", "Türkiye distribütörü" not in await pg.inner_text("main"))
 
+            # Banner altı kartlar: kampanya kartları moduna geç
+            await ap.goto(B + "/admin/vitrin", wait_until="networkidle")
+            await card.locator("label:has(input[value=banners])").click()
+            await card.get_by_role("button", name="Kaydet").click(); await ap.wait_for_timeout(1500)
+            await pg.goto(B + "/", wait_until="networkidle")
+            txt = await pg.locator("[data-testid=hero-cards]").inner_text()
+            chk("Kampanya kartı modu: paneldeki kartlar", "Equinox 900, 3 taksit" in txt and "Kazıda hedefi saniyede bul" in txt, txt[:120])
+
+            # Kayan şerit: madde ekle (bağlantı + öne çıkar), yön/renk değiştir
+            tf = ap.locator("form:has([name=tText])")
+            empty = tf.locator("input[name=tText]").nth(4)
+            await empty.fill("Yılbaşına özel kampanya")
+            await tf.locator("input[name=tHref]").nth(4).fill("/kampanyalar")
+            await tf.locator("label:has(input[value=rtl])").click()
+            await tf.locator("label:has(input[value=dark])").click()
+            await tf.locator("input[name=tRemove][value='2']").check()
+            await tf.get_by_role("button", name="Kaydet").click(); await ap.wait_for_timeout(1500)
+            tset = json.loads(sql("select value::text from settings where key='ticker'") or "{}")
+            chk("Şerit kaydı: 4 madde, sağdan sola, siyah", [i["text"] for i in tset.get("items", [])] == ["Minelab'ın en yeni modelleri stoklarda", "3 aya kadar vade farksız taksit", "Hangi dedektör? Uzmanımıza WhatsApp'tan sor", "Yılbaşına özel kampanya"] and tset.get("direction") == "rtl" and tset.get("theme") == "dark", tset)
+            await pg.goto(B + "/", wait_until="networkidle")
+            tk = pg.locator("[data-testid=ticker]")
+            chk("Şerit ana sayfada güncel (yön + yeni madde + bağlantı)", await tk.get_attribute("data-dir") == "rtl" and await tk.locator("a[href='/kampanyalar']").count() >= 1 and "orijinallik" not in await tk.inner_text())
+            # Zararlı bağlantı reddedilir
+            await ap.reload(wait_until="networkidle")
+            tf = ap.locator("form:has([name=tText])")
+            await tf.locator("input[name=tHref]").first.fill("javascript:alert(1)")
+            await tf.get_by_role("button", name="Kaydet").click(); await ap.wait_for_timeout(1200)
+            chk("Şerit: javascript: bağlantısı reddedilir", "javascript" not in sql("select value::text from settings where key='ticker'"))
+            # Kapat
+            await ap.reload(wait_until="networkidle")
+            tf = ap.locator("form:has([name=tText])")
+            await tf.locator("input[name=enabled]").uncheck()
+            await tf.get_by_role("button", name="Kaydet").click(); await ap.wait_for_timeout(1200)
+            await pg.goto(B + "/", wait_until="networkidle")
+            chk("Şerit kapatılınca görünmez", await pg.locator("[data-testid=ticker]").count() == 0)
+
             # Banner rehberi
             await ap.goto(B + "/admin/vitrin?yeni=1", wait_until="networkidle")
             t = await ap.inner_text("main")
@@ -120,7 +168,7 @@ async def main():
             chk("Sayfa hatası yok", not errs, errs[:3])
             await b.close()
     finally:
-        sql("delete from settings where key='merch'")
+        sql("delete from settings where key in ('merch','ticker')")
     print(f"{sum(c for _, c in res)}/{len(res)} geçti")
 
 asyncio.run(main())

@@ -113,3 +113,22 @@ export async function focusThumbs(m: MerchSettings, n = 4): Promise<string[]> {
   const rows = await cardQuery().where(and(eq(products.status, "ACTIVE"), focusBrandCond(m.focusBrand))).orderBy(desc(products.isFeatured), desc(products.price)).limit(n * 2);
   return rows.map((r) => r.image).filter((x): x is string => !!x).slice(0, n);
 }
+
+/**
+ * Banner altı kartlar için öncelikli markanın en yeni cihazları.
+ * Cihaz = teknoloji alanı dolu ürün (başlık, kulaklık gibi aksesuarlar girmez).
+ * Sıra: sabitlenmiş (süresi geçmemiş) → "Yeni" rozetli → en son eklenen. Stokta olmayanlar sona.
+ */
+export async function latestFocus(m: MerchSettings, n = 3): Promise<ProductCard[]> {
+  if (!m.focusBrand) return [];
+  const { cardQuery } = await import("./store");
+  const { and, desc, eq, isNotNull } = await import("drizzle-orm");
+  const rows = await cardQuery()
+    .where(and(eq(products.status, "ACTIVE"), isNotNull(products.technology), focusBrandCond(m.focusBrand)))
+    .orderBy(sql`(${products.stock} > 0 or ${products.allowBackorder}) desc`, sql`(coalesce(${products.badges}, '{}') && array['Yeni']) desc`, desc(products.createdAt))
+    .limit(n + 6);
+  const pins = activePins(m);
+  const list = rows as unknown as ProductCard[];
+  const pinned = pins.map((id) => list.find((r) => r.id === id)).filter((x): x is ProductCard => !!x);
+  return [...pinned, ...list.filter((r) => !pinned.includes(r))].slice(0, n);
+}

@@ -13,6 +13,7 @@ import { getSettings } from "@/lib/settings";
 import { formatDate } from "@/lib/utils";
 import { deleteBanner, moveSection, saveAnnouncement, saveBanner, saveSection } from "./actions";
 import { MerchCard } from "./merch-card";
+import { TickerCard } from "./ticker-card";
 
 export const metadata = { title: "Ana sayfa ve banner" };
 const PLACE: Record<string, string> = { HERO: "Büyük slider", SIDE: "Kampanya kartları (banner altı, 3 adet)", STRIP: "İnce şerit", CATEGORY: "Kategori sayfası" };
@@ -47,6 +48,7 @@ export default async function VitrinPage({ searchParams }: { searchParams: Promi
               <SubmitButton variant="outline">Kaydet</SubmitButton>
             </ActionForm>
           </Card>
+          <TickerCard />
           <MerchCard />
           <Card>
             <CardHeader title="Bannerlar" action={<Button size="sm" asChild><Link href="/admin/vitrin?yeni=1">+ Banner ekle</Link></Button>} />

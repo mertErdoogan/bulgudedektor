@@ -143,6 +143,19 @@ export type MerchSettings = {
   badge: boolean;
   /** Marka kartındaki kısa not (ör. "Türkiye distribütörü"); boşsa gösterilmez. Sözleşmedeki ifadeyle aynı olmalı. */
   focusNote: string;
+  /** Banner altındaki 3 kart: öncelikli markanın en yeni cihazları (otomatik) ya da paneldeki kampanya kartları */
+  heroCards: "latest" | "banners";
+};
+
+/** Ana sayfada menü ile banner arasındaki kayan şerit */
+export type TickerItem = { text: string; href: string; highlight: boolean };
+export type TickerSettings = {
+  enabled: boolean;
+  items: TickerItem[];
+  /** ltr: soldan sağa, rtl: sağdan sola */
+  direction: "ltr" | "rtl";
+  speed: "slow" | "normal" | "fast";
+  theme: "brand" | "dark" | "gold";
 };
 
 export type AllSettings = {
@@ -153,6 +166,7 @@ export type AllSettings = {
   seo: SeoSettings;
   setup: SetupSettings;
   merch: MerchSettings;
+  ticker: TickerSettings;
 };
 
 export const DEFAULT_SETTINGS: AllSettings = {
@@ -274,7 +288,19 @@ export const DEFAULT_SETTINGS: AllSettings = {
       "Arena Dedektör, İstanbul Şişli'de bulunan ve Türkiye geneline Minelab, XP, Nokta ve Garrett marka metal dedektörleri, dedektör başlıkları, pointer ve aksesuarlar satan bir dedektör mağazasıdır. Tüm cihazlar faturalı ve 2 yıl garantilidir; seri numarasıyla orijinallik sorgulanabilir. Satıştan önce uzman danışmanlık (WhatsApp ve görüntülü görüşme), 'Bana hangisi?' seçim sihirbazı ve showroomda deneme; satıştan sonra kurulum eğitimi ve teknik servis sunar.",
   },
   setup: { completed: false, completedSteps: [] },
-  merch: { focusBrand: "minelab", weight: "balanced", pinned: [], badge: true, focusNote: "Türkiye distribütörü" },
+  merch: { focusBrand: "minelab", weight: "balanced", pinned: [], badge: true, focusNote: "Türkiye distribütörü", heroCards: "latest" },
+  ticker: {
+    enabled: true,
+    items: [
+      { text: "Minelab'ın en yeni modelleri stoklarda", href: "/marka/minelab", highlight: true },
+      { text: "3 aya kadar vade farksız taksit", href: "", highlight: false },
+      { text: "Seri numaranla orijinallik sorgula", href: "/seri-no", highlight: false },
+      { text: "Hangi dedektör? Uzmanımıza WhatsApp'tan sor", href: "/iletisim", highlight: false },
+    ],
+    direction: "ltr",
+    speed: "normal",
+    theme: "brand",
+  },
 };
 
 /**
