@@ -14,6 +14,7 @@ import { getSettings } from "@/lib/settings";
 import { bestSellers, categoryRail, getActiveBrands, getBrandGroups, getHome, getNav, productsFor, railWhere, type ProductCard as ProductCardT } from "@/lib/store";
 import { BlogShowcase, ExpertBand, TrustBand, WizardBand } from "@/components/store/home-sections";
 import { ExploreTabs } from "@/components/store/explore-tabs";
+import { RevealSections } from "@/components/store/reveal";
 
 /** Ana sayfa "Amacına göre keşfet" sekmeleri */
 const EXPLORE = [
@@ -170,6 +171,7 @@ export default async function Home() {
         <h1 className="sr-only">{s.store.name} · Metal dedektörü ve define dedektörü modelleri — orijinal, faturalı, garantili</h1>
       </div>
       <RecentlyViewed compact className="container-x mt-6" />
+      <RevealSections>
       {rendered}
       <PersonalPicks className="container-x mt-12" />
       <HomeReviews googleReviewUrl={s.store.googleReviewUrl || undefined} />
@@ -184,6 +186,7 @@ export default async function Home() {
           <p className="mt-3 text-sm"><Link href="/sss" className="font-bold text-link">Tüm soruları gör →</Link> · <Link href="/sozluk" className="font-bold text-link">Dedektör sözlüğü →</Link></p>
         </div>
       ) : null}
+      </RevealSections>
       <JsonLd data={graph(storeLd(s))} />
       <QueryToast />
     </>

@@ -48,7 +48,7 @@ export function WizardBand({ title, subtitle }: { title?: string | null; subtitl
               <span className="text-[12px] text-white/55">Birini seç, gerisi kolay</span>
             </div>
             <p className="font-display mt-1.5 px-1 text-[20px] font-extrabold">Ne arayacaksın?</p>
-            <div className="mt-4 grid grid-cols-2 gap-2.5">
+            <div data-stagger="" className="mt-4 grid grid-cols-2 gap-2.5">
               {AMAC.map(({ v, l, d, I }) => (
                 <Link key={v} href={`/sihirbaz?amac=${v}`} className="group flex flex-col items-start gap-2.5 rounded-2xl bg-white/[.07] p-3 ring-1 ring-white/10 sm:flex-row sm:gap-3 sm:p-3.5 transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-deep hover:ring-white">
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 text-white transition group-hover:bg-brand">
@@ -93,7 +93,7 @@ export function ExpertBand({ title, wa, phone, hours }: { title?: string | null;
           <h2 className="font-display mt-3 text-[26px] leading-tight font-extrabold tracking-tight md:text-[32px]">{title && !/kamera|görüntülü/i.test(title) ? title : "Kararsız mı kaldın? Bir uzmana sor."}</h2>
           <p className="mt-2 text-[14.5px] text-mute">Toprağını, bütçeni ve ne aradığını anlat; sana uygun modeli birlikte seçelim. <span className="whitespace-nowrap">{hours}</span></p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div data-stagger="" className="grid gap-3 sm:grid-cols-2">
           {tiles.map(({ href, ext, I, t, d, tone }) => (
             <a key={t} href={href} target={ext ? "_blank" : undefined} rel={ext ? "noopener" : undefined} className="group flex items-center gap-3 rounded-2xl border border-line bg-white p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-[#d6d6db] hover:shadow-[0_16px_30px_-20px_rgba(20,20,22,.4)] md:p-4">
               <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl transition duration-300 group-hover:scale-110 ${tone}`}>
@@ -120,7 +120,7 @@ export function TrustBand() {
     { big: "TEST", t: "Showroom'da dene", d: "Test alanında, cihaz elinde", I: Store },
   ];
   return (
-    <section className="container-x mt-12 grid grid-cols-3 gap-2.5 md:gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr]" data-testid="trust-band">
+    <section data-stagger="" className="container-x mt-12 grid grid-cols-3 gap-2.5 md:gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr]" data-testid="trust-band">
       <form action="/seri-no" className="relative isolate col-span-3 flex flex-col lg:col-span-1 justify-between gap-4 overflow-hidden rounded-[24px] bg-[#141416] p-5 text-white md:p-6">
         <span aria-hidden className="absolute -top-16 -right-10 -z-10 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(34,197,94,.35),transparent_65%)] blur-xl" />
         <ShieldCheck aria-hidden size={120} strokeWidth={1} className="absolute -right-4 -bottom-6 -z-10 text-white/[.06]" />
@@ -205,7 +205,7 @@ export function BlogShowcase({ posts }: { posts: PostCard[] }) {
             Rehberi oku <ArrowRight size={15} className="transition group-hover:translate-x-1" />
           </span>
         </Link>
-        <div className="grid gap-4">
+        <div data-stagger="" className="grid gap-4">
           {rest.slice(0, 2).map((p) => (
             <Link key={p.id} href={`/blog/${p.slug}`} className="group grid grid-cols-[150px_minmax(0,1fr)] overflow-hidden rounded-[22px] border border-line bg-white transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-22px_rgba(20,20,22,.4)] sm:grid-cols-[210px_minmax(0,1fr)]">
               <span className="relative isolate block overflow-hidden">

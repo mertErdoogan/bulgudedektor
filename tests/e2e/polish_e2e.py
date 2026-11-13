@@ -79,6 +79,22 @@ async def main():
         chk("Yorumlar: puan dağılımı", await pg.locator("[data-testid=home-reviews] >> text=onaylı yorum").count() == 1)
         chk("Rehber vitrini: 3 yazı + okuma süresi", await pg.locator("[data-testid=blog-showcase] a[href^='/blog/']").count() == 3 and await pg.locator("[data-testid=blog-showcase] >> text=/dk okuma/").count() == 1)
 
+        # ── Animasyonlar: ilk ekran animasyonsuz, aşağıdaki bölümler kaydırınca bir kez belirir
+        await pg.goto(B + "/", wait_until="networkidle")
+        chk("Banner hiç gizlenmiyor", await pg.evaluate("getComputedStyle(document.querySelector('[data-testid=hero-stage]')).opacity") == "1")
+        chk("Aşağıdaki bölüm başta gizli", await pg.evaluate("getComputedStyle(document.querySelector('[data-testid=explore]')).opacity") == "0")
+        for y in range(0, 12000, 700):
+            await pg.evaluate(f"window.scrollTo(0,{y})"); await pg.wait_for_timeout(100)
+        await pg.wait_for_timeout(1300)
+        chk("Kaydırınca tüm bölümler görünür", await pg.evaluate("[...document.querySelectorAll('[data-reveal-root] section.rv')].every(s => s.classList.contains('in') && getComputedStyle(s).opacity === '1')"))
+        b1 = pg.locator("[data-testid=explore] article button:has-text('Sepete ekle')").first
+        await b1.click(); await pg.wait_for_timeout(250)
+        chk("Sepete ekle: 'Eklendi' onayı", await pg.locator("[data-testid=explore] article button:has-text('Eklendi')").count() == 1)
+        rm = await b.new_context(user_agent=UA, viewport={"width": 1440, "height": 900}, reduced_motion="reduce"); rp = await rm.new_page()
+        await rp.goto(B + "/", wait_until="networkidle")
+        chk("Hareketi azalt: animasyon yok, her şey görünür", await rp.evaluate("getComputedStyle(document.querySelector('[data-testid=explore]')).opacity") == "1")
+        await rm.close()
+
         # ── Mobil: kategori ilk ekranında ürün, banner başlığı
         m = await b.new_context(user_agent=UA, viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True); mp = await m.new_page()
         mp.on("pageerror", lambda e: errs.append(mp.url + " :: " + str(e)[:90]))

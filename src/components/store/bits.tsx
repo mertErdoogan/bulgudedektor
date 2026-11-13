@@ -4,7 +4,7 @@ import { imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronRight, Compass, Grid2X2, Heart, Home, Menu, Scale, Search, ShoppingCart, User, X } from "lucide-react";
+import { Check, ChevronRight, Compass, Grid2X2, Heart, Home, Menu, Scale, Search, ShoppingCart, User, X } from "lucide-react";
 import { cn, formatTL } from "@/lib/utils";
 import { Button } from "@/components/ui";
 import { Logo } from "@/components/logo";
@@ -16,34 +16,51 @@ export function CartButton({ compact }: { compact?: boolean }) {
     return (
       <Link href="/sepet" aria-label="Sepet" className="relative grid h-11 w-11 place-items-center rounded-full hover:bg-soft">
         <ShoppingCart size={21} />
-        {ready && count ? <span className="absolute -top-0.5 -right-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[11px] font-extrabold text-white">{count}</span> : null}
+        {ready && count ? <span key={count} className="badge-bump absolute -top-0.5 -right-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[11px] font-extrabold text-white">{count}</span> : null}
       </Link>
     );
   return (
     <Link href="/sepet" className="flex h-11 items-center gap-2.5 rounded-full bg-deep pr-4 pl-3.5 text-[14px] font-bold text-white transition hover:bg-black">
       <ShoppingCart size={19} /> Sepet
-      {ready && count ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[11.5px] font-extrabold">{count}</span> : null}
+      {ready && count ? <span key={count} className="badge-bump grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[11.5px] font-extrabold">{count}</span> : null}
     </Link>
   );
 }
 
 export function AddToCart({ productId, name, disabled, size = "md", className, label = "Sepete ekle", price, brand, variant }: { productId: string; name: string; disabled?: boolean; size?: "md" | "lg"; className?: string; label?: string; price?: number; brand?: string | null; variant?: "card" }) {
   const { add } = useCart();
+  // Eklendiğinde 1,4 sn "Eklendi ✓" onayı: müşteri tıklamanın işe yaradığını butonun kendisinde görür
+  const [done, setDone] = useState(false);
+  const onAdd = () => {
+    add(productId, 1, name, { price, brand });
+    setDone(true);
+    setTimeout(() => setDone(false), 1400);
+  };
   if (variant === "card")
     // Kartlarda sakin, ikincil görünümlü buton: kırmızı her kartta bağırmasın; üzerine gelince dolar.
     return (
       <button
         type="button"
         disabled={disabled}
-        onClick={() => add(productId, 1, name, { price, brand })}
-        className={cn("flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[#dcdce0] bg-white text-[13.5px] font-bold text-deep transition hover:border-deep hover:bg-deep hover:text-white disabled:opacity-50", className)}
+        onClick={onAdd}
+        className={cn(
+          "flex h-10 w-full items-center justify-center gap-2 rounded-full border text-[13.5px] font-bold transition disabled:opacity-50",
+          done ? "border-ok bg-ok text-white" : "border-[#dcdce0] bg-white text-deep hover:border-deep hover:bg-deep hover:text-white",
+          className,
+        )}
       >
-        <ShoppingCart size={16} /> {disabled ? "Stokta yok" : label}
+        {done ? (
+          <span key="ok" className="pop-in flex items-center gap-1.5"><Check size={16} strokeWidth={3} /> Eklendi</span>
+        ) : (
+          <>
+            <ShoppingCart size={16} /> {disabled ? "Stokta yok" : label}
+          </>
+        )}
       </button>
     );
   return (
-    <Button type="button" size={size} disabled={disabled} className={cn("w-full", className)} onClick={() => add(productId, 1, name, { price, brand })}>
-      {disabled ? "Stokta yok" : label}
+    <Button type="button" size={size} disabled={disabled} className={cn("w-full", done && "bg-ok hover:bg-ok", className)} onClick={onAdd}>
+      {disabled ? "Stokta yok" : done ? <span key="ok" className="pop-in flex items-center gap-1.5"><Check size={18} strokeWidth={3} /> Sepete eklendi</span> : label}
     </Button>
   );
 }

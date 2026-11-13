@@ -103,7 +103,7 @@ export function BrandShowcase({ focus, models, note, rest }: { focus: BrandGroup
           ))}
         </div>
         {models.length ? (
-          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div data-stagger="" className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
             {models.slice(0, 4).map((p, i) => (
               <Link key={p.id} href={`/urun/${p.slug}`} className="group flex flex-col overflow-hidden rounded-2xl bg-white text-deep transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,.8)]">
                 <span className="relative grid h-[120px] place-items-center bg-[radial-gradient(circle_at_50%_60%,#fff_0%,#f1f1f2_75%)] md:h-[140px]">
@@ -121,7 +121,7 @@ export function BrandShowcase({ focus, models, note, rest }: { focus: BrandGroup
       </div>
       <div className="flex flex-col gap-3">
         <span className="px-1 text-[11.5px] font-extrabold tracking-[.14em] text-mute">DİĞER MARKALAR</span>
-        <div className="grid grid-cols-2 content-start gap-3">
+        <div data-stagger="" className="grid grid-cols-2 content-start gap-3">
           {rest.slice(0, 6).map((b) => (
             <Link key={b.id} href={`/marka/${b.slug}`} className="group relative isolate flex min-h-[96px] flex-col justify-between overflow-hidden rounded-2xl border border-line bg-white p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#d6d6db] hover:shadow-[0_16px_30px_-20px_rgba(20,20,22,.4)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}

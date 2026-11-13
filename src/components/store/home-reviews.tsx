@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { productImages, products, reviews } from "@/db/schema";
 import { formatDate } from "@/lib/utils";
 import { Rail } from "./rails";
+import { CountUp } from "./reveal";
 
 /**
  * Ana sayfadaki müşteri yorumları: yalnızca onaylanmış, gerçek ürün yorumları.
@@ -49,7 +50,7 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
           <span className="text-[11.5px] font-extrabold tracking-[.14em] text-mute">MÜŞTERİ YORUMLARI</span>
           <h2 id="yorumlar-baslik" className="font-display mt-1 text-[24px] leading-tight font-extrabold md:text-[28px]">Müşterilerimiz ne diyor?</h2>
           <div className="mt-5 flex items-end gap-3">
-            <span className="font-display text-[56px] leading-none font-black tracking-tight">{avg.toFixed(1)}</span>
+            <CountUp value={Number(avg.toFixed(1))} className="font-display text-[56px] leading-none font-black tracking-tight" />
             <span className="pb-1.5">
               <span className="flex text-[18px] leading-none text-gold" aria-label={`5 üzerinden ${avg.toFixed(1)}`}>
                 {Array.from({ length: 5 }, (_, i) => (
@@ -64,7 +65,7 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
               <span key={r} className="flex items-center gap-2 text-[12.5px] text-mute">
                 <span className="w-3 text-right font-bold text-deep">{r}</span>
                 <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#f1ece0]">
-                  <span className="block h-full rounded-full bg-gold" style={{ width: `${agg.n ? (by(r) / agg.n) * 100 : 0}%` }} />
+                  <span className="rv-bar block h-full origin-left rounded-full bg-gold" style={{ width: `${agg.n ? (by(r) / agg.n) * 100 : 0}%` }} />
                 </span>
                 <span className="w-6 text-right">{by(r)}</span>
               </span>

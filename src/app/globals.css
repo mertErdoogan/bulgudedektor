@@ -185,3 +185,26 @@ body.arena-search-open [data-site-header] {
 .explore-in > *:nth-child(2) { animation-delay: 40ms; } .explore-in > *:nth-child(3) { animation-delay: 80ms; } .explore-in > *:nth-child(4) { animation-delay: 120ms; }
 .explore-in > *:nth-child(n+5) { animation-delay: 160ms; }
 @media (prefers-reduced-motion: reduce) { .explore-in > * { animation: none; } }
+
+/* Ana sayfa kaydırma animasyonu (components/store/reveal.tsx). Yalnızca opacity + transform. */
+@keyframes rv-up { from { opacity: 0; transform: translate3d(0, 18px, 0); } to { opacity: 1; transform: none; } }
+html.rv-ready .rv:not(.in),
+html.rv-ready .rv:not(.in) article,
+html.rv-ready .rv:not(.in) [data-stagger] > * { opacity: 0; }
+.rv.in:not(.rv-skip) { animation: rv-up .6s cubic-bezier(.2, .7, .2, 1) both; }
+.rv.in:not(.rv-skip) article,
+.rv.in:not(.rv-skip) [data-stagger] > * { animation: rv-up .5s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--d, 0ms) + 120ms); }
+/* Sepete eklenince sayaç rozeti kısa bir "zıplama" yapar */
+@keyframes badge-bump { 0% { transform: scale(1); } 35% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.badge-bump { animation: badge-bump .45s cubic-bezier(.3, 1.6, .5, 1); }
+/* Sepete ekle butonundaki onay işareti */
+@keyframes pop-in { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+.pop-in { animation: pop-in .25s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .rv.in, .rv.in article, .rv.in [data-stagger] > *, .badge-bump, .pop-in { animation: none !important; }
+}
+/* Yorum puan çubukları bölüm görününce soldan dolar */
+@keyframes bar-grow { from { transform: scaleX(0); } to { transform: none; } }
+html.rv-ready .rv:not(.in) .rv-bar { transform: scaleX(0); }
+.rv.in:not(.rv-skip) .rv-bar { animation: bar-grow .9s .25s cubic-bezier(.2, .7, .2, 1) both; }
+@media (prefers-reduced-motion: reduce) { .rv.in .rv-bar { animation: none !important; } }

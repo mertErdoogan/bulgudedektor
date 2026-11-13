@@ -38,7 +38,7 @@ export function Shortcuts({ title, items }: { title: string; items: ReturnType<t
           Tüm kategoriler <ArrowRight size={15} />
         </Link>
       </div>
-      <div className="scrollbar-none -mx-4 flex snap-x gap-1 overflow-x-auto px-4 pt-1 pb-2 md:mx-0 md:justify-between md:gap-2 md:overflow-visible md:px-0">
+      <div data-stagger="" className="scrollbar-none -mx-4 flex snap-x gap-1 overflow-x-auto px-4 pt-1 pb-2 md:mx-0 md:justify-between md:gap-2 md:overflow-visible md:px-0">
         {items.map((s, i) => {
           const Icon = s.icon ? ICON[s.icon] : null;
           return (
