@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 /** Marka kartı: marka adı (veya logosu), temsilî ürün görseli ve o markanın kategorileri. */
 export function BrandCard({ b, className, thumbs, note }: { b: BrandGroup; className?: string; thumbs?: string[]; note?: string }) {
   return (
-    <div className={cn("group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition hover:shadow-[0_14px_30px_rgba(20,20,20,.10)]", className)}>
-      <Link href={`/marka/${b.slug}`} className="relative flex items-center gap-3 bg-[#f6f6f6] p-4">
+    <div className={cn("group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition duration-300 hover:-translate-y-0.5 hover:border-[#f0c9c2] hover:shadow-[0_18px_34px_-20px_rgba(196,42,27,.4)]", className)}>
+      <Link href={`/marka/${b.slug}`} className="relative isolate flex items-center gap-3 overflow-hidden bg-[radial-gradient(90%_120%_at_85%_50%,#ffffff_0%,#f6f6f6_60%)] p-4">
+        <span aria-hidden className="absolute -right-12 -bottom-16 -z-10 h-36 w-36 rounded-full bg-[#fdf0ee] transition duration-500 group-hover:scale-125" />
         <span className="min-w-0 flex-1">
           {b.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -22,12 +23,12 @@ export function BrandCard({ b, className, thumbs, note }: { b: BrandGroup; class
           <span className="hidden gap-2 sm:flex">
             {thumbs.slice(0, 6).map((t, i) => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={t} src={imgUrl(t, 256)} alt="" loading="lazy" className={cn("h-[84px] w-[104px] object-contain mix-blend-multiply transition duration-300 group-hover:scale-105", i >= 3 && "hidden lg:block")} />
+              <img key={t} src={imgUrl(t, 256)} alt="" loading="lazy" style={{ transitionDelay: `${i * 60}ms` }} className={cn("h-[84px] w-[104px] object-contain mix-blend-multiply transition duration-500 group-hover:-translate-y-1.5", i >= 3 && "hidden lg:block")} />
             ))}
           </span>
         ) : null}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {b.image && !thumbs?.length ? <img src={imgUrl(b.image, 256)} alt="" loading="lazy" className="hidden h-[84px] w-[110px] shrink-0 object-contain sm:block mix-blend-multiply transition duration-300 group-hover:scale-105" /> : null}
+        {b.image && !thumbs?.length ? <img src={imgUrl(b.image, 256)} alt="" loading="lazy" className="hidden h-[84px] w-[110px] shrink-0 object-contain mix-blend-multiply transition duration-500 group-hover:-translate-y-1 group-hover:-rotate-2 sm:block" /> : null}
       </Link>
       <ul className={cn("flex flex-1 flex-col p-2", thumbs?.length && "sm:grid sm:grid-cols-2 sm:content-start lg:grid-cols-4")}>
         {b.categories.map((c) => (

@@ -18,8 +18,8 @@ export function Head({ title, sub, href, cta = "Tümünü gör", extra }: { icon
       <div className="flex items-center gap-3">
         {extra}
         {href ? (
-          <Link href={href} className="flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-extrabold hover:border-deep">
-            {cta} <ArrowRight size={15} />
+          <Link href={href} className="group/cta flex h-10 items-center gap-1.5 rounded-full border border-line bg-white px-4 text-sm font-extrabold transition hover:border-deep hover:bg-deep hover:text-white">
+            {cta} <ArrowRight size={15} className="transition duration-300 group-hover/cta:translate-x-1" />
           </Link>
         ) : null}
       </div>

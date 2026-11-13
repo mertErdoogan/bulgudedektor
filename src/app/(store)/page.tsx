@@ -1,7 +1,8 @@
-import { imgProps, imgUrl } from "@/lib/img";
+import { imgProps } from "@/lib/img";
 import Link from "next/link";
 import { ArrowRight, Compass, FileText, MessageCircle, RotateCcw, ShieldCheck, Store, Video } from "lucide-react";
 import { HeroStage, type HeroCard } from "@/components/store/home-client";
+import { CategoryTile } from "@/components/store/category-tile";
 import { Ticker } from "@/components/store/ticker";
 import { BestSellers, CategoryRail, Deals, NewArrivals, SameDay } from "@/components/store/home-lists";
 import { PersonalPicks, RecentlyViewed } from "@/components/store/rails";
@@ -91,15 +92,7 @@ export default async function Home() {
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 {nav.categories.filter((c) => !c.parentId).map((c) => (
-                  <Link key={c.id} href={`/kategori/${c.slug}`} className="group relative flex flex-col overflow-hidden rounded-xl bg-tint transition hover:-translate-y-0.5 hover:shadow-lg">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <span className="block h-[110px] px-3 pt-3 md:h-[160px]">{c.imageUrl ? <img {...imgProps(c.imageUrl, [256, 384], "(min-width: 768px) 200px, 45vw")} alt="" className="h-full w-full object-contain mix-blend-multiply" /> : null}</span>
-                    <span className="flex flex-col px-3.5 pt-2 pb-3.5">
-                      <b className="truncate text-[15px]">{c.name}</b>
-                      <span className="truncate text-[13px] text-mute">{c.shortText}</span>
-                    </span>
-                    <span className="absolute top-2 right-2 grid h-8 w-8 place-items-center rounded-full bg-white shadow-sm transition group-hover:translate-x-0.5"><ArrowRight size={15} /></span>
-                  </Link>
+                  <CategoryTile key={c.id} c={c} />
                 ))}
               </div>
             </section>

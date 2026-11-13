@@ -159,7 +159,7 @@ export function ProductTabs({ tabs, children }: { tabs: { key: string; label: st
     <>
       <div className="scrollbar-none mb-4 flex gap-2 overflow-x-auto">
         {tabs.map((t, i) => (
-          <button key={t.key} onClick={() => setCur(i)} className={cn("h-10 shrink-0 rounded-lg px-4 text-sm font-extrabold", i === cur ? "bg-brand text-white" : "border border-line bg-white hover:bg-soft")}>
+          <button key={t.key} onClick={() => setCur(i)} className={cn("h-10 shrink-0 rounded-full px-4 text-sm font-extrabold transition duration-200", i === cur ? "bg-brand text-white shadow-[0_8px_18px_-8px_rgba(196,42,27,.7)]" : "border border-line bg-white hover:-translate-y-0.5 hover:border-deep")}>
             {t.label}
           </button>
         ))}

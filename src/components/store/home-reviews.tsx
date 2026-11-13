@@ -50,7 +50,9 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
       </div>
       <Rail itemClass="w-[82%] sm:w-[46%] lg:w-[31.8%] xl:w-[23.8%]">
         {rows.map((r) => (
-          <article key={r.id} className="flex h-full flex-col rounded-2xl border border-line bg-white p-4">
+          <article key={r.id} className="group relative isolate flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white p-4 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-20px_rgba(20,20,20,.35)]">
+            {/* Büyük tırnak işareti: sayfayı yormayan dekor */}
+            <span aria-hidden className="pointer-events-none absolute top-10 right-4 -z-10 font-serif text-[88px] leading-[0.8] text-[#f8dcd6] transition duration-500 group-hover:-translate-y-0.5 group-hover:text-[#f3c4bb]">“</span>
             <div className="flex items-center justify-between gap-2">
               <span className="text-gold" aria-label={`5 üzerinden ${r.rating} yıldız`}>
                 {"★".repeat(r.rating)}
@@ -63,7 +65,7 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
               {r.name}
               {r.isVerified ? <span className="flex items-center gap-1 text-xs font-semibold text-ok"><BadgeCheck size={14} /> Satın aldı</span> : null}
             </p>
-            <Link href={`/urun/${r.productSlug}#yorumlar`} className="mt-3 flex items-center gap-2.5 rounded-xl bg-soft p-2 hover:bg-tint">
+            <Link href={`/urun/${r.productSlug}#yorumlar`} className="mt-3 flex items-center gap-2.5 rounded-xl bg-soft p-2 transition hover:bg-tint">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {r.image ? <img src={imgUrl(r.image, 96)} alt="" loading="lazy" className="h-10 w-10 shrink-0 object-contain mix-blend-multiply" /> : null}
               <span className="min-w-0 truncate text-[13px] font-bold">{r.productName}</span>
