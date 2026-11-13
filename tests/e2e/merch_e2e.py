@@ -30,7 +30,7 @@ async def main():
         async with async_playwright() as p:
             b = await p.chromium.launch(executable_path=os.environ.get("CHROME", "/usr/bin/google-chrome"))
             c = await b.new_context(user_agent=UA, viewport={"width": 1440, "height": 900}); pg = await c.new_page()
-            errs = []; pg.on("pageerror", lambda e: errs.append(str(e)))
+            errs = []; pg.on("pageerror", lambda e: errs.append(pg.url + " :: " + str(e)[:90]))
             share = lambda items: sum(1 for x in items if x.split("/")[-1] in minelab)
 
             # ── Varsayılan (Dengeli): 10'luk rafta 8 Minelab, diğerleri araya serpiştirilmiş
@@ -76,7 +76,7 @@ async def main():
 
             # ── Panel: kart, önizleme, banner rehberi
             ac = await b.new_context(user_agent=UA, viewport={"width": 1440, "height": 1000}); ap = await ac.new_page()
-            ap.on("pageerror", lambda e: errs.append(str(e)))
+            ap.on("pageerror", lambda e: errs.append(ap.url + " :: " + str(e)[:90]))
             await ap.goto(B + "/admin/giris"); await ap.fill("input[name=email]", "admin@arenadedektor.local"); await ap.fill("input[name=password]", "Arena123!")
             await ap.click("button[type=submit]"); await ap.wait_for_url(re.compile(r".*/admin$"))
             await ap.goto(B + "/admin/vitrin", wait_until="networkidle")

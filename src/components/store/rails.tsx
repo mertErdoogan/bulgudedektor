@@ -33,7 +33,7 @@ export function Rail({ children, className, itemClass = "w-[62%] sm:w-[40%] md:w
   const go = (d: number) => ref.current?.scrollBy({ left: d * ref.current.clientWidth * 0.9, behavior: "smooth" });
   return (
     <div className={cn("relative min-w-0", className)}>
-      <div ref={ref} className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pt-1 pb-3 md:mx-0 md:gap-4 md:px-0 md:scroll-px-0">
+      <div ref={ref} className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pt-2 pb-8 -mb-5 md:mx-0 md:gap-4 md:px-1 md:-mx-1 md:scroll-px-1">
         {children.map((c, i) => (
           <div key={i} className={cn("shrink-0 snap-start", itemClass)}>
             {c}
