@@ -122,8 +122,9 @@ async function main() {
   await db.insert(t.banners).values([
     { title: "Derinliğin ötesine geçin", eyebrow: "MINELAB GPZ 8000", subtitle: "ZVT teknolojisi ile en zorlu topraklarda kesin sonuç.", imageUrl: img("banner-gpz8000-clean"), linkUrl: "/urun/gpz-8000", placement: "HERO", sortOrder: 0, ctaLabel: "İncele", showText: false },
     { title: "Vanquish 560 Pro-Pack", eyebrow: "İLK CİHAZ İÇİN", subtitle: "Aç ve ara. 3 ay vade farksız.", imageUrl: img("vanquish-560-pro"), linkUrl: "/urun/vanquish-560-pro-pack", placement: "HERO", sortOrder: 1, ctaLabel: "Fiyatı gör" },
-    { title: "Kazıda hedefi saniyede bul", eyebrow: "POINTER", subtitle: "6.500 TL'den", imageUrl: img("garrett-pro-pointer-at"), linkUrl: "/kategori/pointer", placement: "SIDE", sortOrder: 0 },
-    { title: "İlk cihaz için klasik", eyebrow: "GARRETT ACE", subtitle: "17.001 TL'den", imageUrl: img("garrett-ace-250"), linkUrl: "/urun/ace-250", placement: "SIDE", sortOrder: 1 },
+    { title: "Vanquish 560 Pro-Pack", eyebrow: "YENİ · MINELAB", subtitle: "49.588 TL'den", imageUrl: img("vanquish-560-pro"), linkUrl: "/urun/vanquish-560-pro-pack", placement: "SIDE", sortOrder: 0 },
+    { title: "Equinox 900, 3 taksit", eyebrow: "VADE FARKSIZ · MINELAB", subtitle: "3 × 33.227 TL", imageUrl: img("equinox-900"), linkUrl: "/urun/equinox-900", placement: "SIDE", sortOrder: 1 },
+    { title: "Kazıda hedefi saniyede bul", eyebrow: "POINTER · GARRETT", subtitle: "12.751 TL'den", imageUrl: img("garrett-pro-pointer-at"), linkUrl: "/kategori/pointer", placement: "SIDE", sortOrder: 2 },
   ]);
   await db.insert(t.homeSections).values([
     { type: "WIZARD_BAND", sortOrder: 0, title: "Hangi dedektörü alacağını bilmiyor musun?", subtitle: "6 kısa soru, yaklaşık 1 dakika. Sana uygun 3 cihazı nedenleriyle gösterelim." },

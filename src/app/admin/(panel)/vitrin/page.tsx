@@ -12,9 +12,10 @@ import { requireStaff } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { formatDate } from "@/lib/utils";
 import { deleteBanner, moveSection, saveAnnouncement, saveBanner, saveSection } from "./actions";
+import { MerchCard } from "./merch-card";
 
 export const metadata = { title: "Ana sayfa ve banner" };
-const PLACE: Record<string, string> = { HERO: "Büyük slider", SIDE: "Yan kutular (2 adet)", STRIP: "İnce şerit", CATEGORY: "Kategori sayfası" };
+const PLACE: Record<string, string> = { HERO: "Büyük slider", SIDE: "Kampanya kartları (banner altı, 3 adet)", STRIP: "İnce şerit", CATEGORY: "Kategori sayfası" };
 const SECTION: Record<string, string> = {
   WIZARD_BAND: "'Bana hangisi?' bandı",
   CATEGORY_TILES: "Kategori kutuları",
@@ -46,6 +47,7 @@ export default async function VitrinPage({ searchParams }: { searchParams: Promi
               <SubmitButton variant="outline">Kaydet</SubmitButton>
             </ActionForm>
           </Card>
+          <MerchCard />
           <Card>
             <CardHeader title="Bannerlar" action={<Button size="sm" asChild><Link href="/admin/vitrin?yeni=1">+ Banner ekle</Link></Button>} />
             <ul className="divide-y divide-line">
@@ -91,7 +93,13 @@ export default async function VitrinPage({ searchParams }: { searchParams: Promi
         <Card className="self-start">
           {showForm ? (
             <>
-              <CardHeader title={edit ? "Banner düzenle" : "Yeni banner"} description="Büyük slider: 1520×580 px. Yan kutu: kare ürün görseli. Mobil görsel: 800×450." />
+              <CardHeader title={edit ? "Banner düzenle" : "Yeni banner"} />
+              <div className="mx-5 mt-1 rounded-xl bg-soft p-3 text-[13px] leading-relaxed">
+                <b>Büyük slider: 1520×580 px</b> (yatay, ~2,6:1). Görselin <b>tamamı görünür</b>, hiçbir yeri kırpılmaz veya örtülmez; arkasındaki renkli ışık görselin kendi renklerinden otomatik oluşur.
+                <span className="mt-1.5 block"><b>Mobil görsel: 1080×608 px</b> (16:9, isteğe bağlı). Girilmezse büyük görsel küçültülür; yazılar telefonda okunmayacak kadar küçülüyorsa mobil görsel ekleyin.</span>
+                <span className="mt-1.5 block"><b>Kampanya kartı:</b> beyaz veya şeffaf zeminli ürün fotoğrafı yeterli; beyaz zemin karta karışır.</span>
+                <span className="mt-2 flex items-center gap-2 text-mute"><span className="relative block h-[29px] w-[76px] rounded-[5px] bg-deep"><span className="absolute inset-[3px] rounded-[3px] border border-dashed border-white/70" /></span>Önemli yazı ve ürünü kenarlardan biraz içeride tutun (yuvarlak köşeler).</span>
+              </div>
               <ActionForm action={saveBanner} key={edit?.id ?? "new"} className="flex flex-col gap-3 p-5">
                 {edit ? <input type="hidden" name="id" value={edit.id} /> : null}
                 <Field label="Yer">

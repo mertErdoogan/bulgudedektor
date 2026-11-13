@@ -24,6 +24,7 @@ export const cardColumns = {
   waterproof: products.waterproof,
   technology: products.technology,
   brand: brands.name,
+  brandSlug: brands.slug,
   image: sql<string | null>`(select ${q(productImages.url)} from ${productImages} where ${q(productImages.productId)} = ${q(products.id)} order by ${q(productImages.sortOrder)} limit 1)`,
   rating: sql<number | null>`(select avg(${q(reviews.rating)})::float from ${reviews} where ${q(reviews.productId)} = ${q(products.id)} and ${q(reviews.isApproved)})`,
   reviewCount: sql<number>`(select count(*)::int from ${reviews} where ${q(reviews.productId)} = ${q(products.id)} and ${q(reviews.isApproved)})`,
@@ -49,6 +50,7 @@ export type ProductCard = {
   waterproof: string | null;
   technology: string | null;
   brand: string | null;
+  brandSlug?: string | null;
   image: string | null;
   rating: number | null;
   reviewCount: number;
@@ -94,8 +96,20 @@ export async function getHome() {
   return { sections: secs, banners: bs };
 }
 
-/** Son 60 günde en çok satanlar (iptal/iade hariç); yetersizse öne çıkanlarla tamamlanır. */
+/**
+ * Son 60 günde en çok satanlar (iptal/iade hariç); yetersizse öne çıkanlarla tamamlanır.
+ * Vitrin önceliği (merch.ts) uygulanır: öncelikli marka ağırlığı ve sabit ürünler.
+ */
 export async function bestSellers(limit = 10): Promise<ProductCard[]> {
+  const { weighed } = await import("./merch");
+  return weighed(
+    (n) => rawBestSellers(n),
+    (cond, n) => cardQuery().where(and(active, cond)).orderBy(desc(products.isFeatured), asc(products.sortOrder)).limit(n),
+    limit,
+  );
+}
+
+async function rawBestSellers(limit: number): Promise<ProductCard[]> {
   const sold = db
     .select({ pid: orderItems.productId, q: sql<number>`sum(${orderItems.quantity})`.as("q") })
     .from(orderItems)
@@ -112,13 +126,21 @@ export async function bestSellers(limit = 10): Promise<ProductCard[]> {
     .orderBy(desc(sold.q))
     .limit(limit);
   if (top.length >= limit) return top;
-  const more = await productsFor("featured", limit);
+  const more = await rawProductsFor("featured", limit);
   const seen = new Set(top.map((t) => t.id));
   return [...top, ...more.filter((m) => !seen.has(m.id))].slice(0, limit);
 }
 
-export async function productsFor(kind: "featured" | "new" | "deals" | "sameday" | "pro", limit = 10): Promise<ProductCard[]> {
-  const base = cardQuery();
+type Kind = "featured" | "new" | "deals" | "sameday" | "pro";
+
+/** Ana sayfa rafları; vitrin önceliği uygulanmış */
+export async function productsFor(kind: Kind, limit = 10): Promise<ProductCard[]> {
+  const { weighed } = await import("./merch");
+  const { where, order } = railQuery(kind);
+  return weighed((n) => rawProductsFor(kind, n), (cond, n) => cardQuery().where(and(where, cond)).orderBy(order).limit(n), limit);
+}
+
+function railQuery(kind: Kind) {
   const where =
     kind === "featured"
       ? and(active, eq(products.isFeatured, true))
@@ -130,7 +152,20 @@ export async function productsFor(kind: "featured" | "new" | "deals" | "sameday"
             ? and(active, eq(products.isPro, true))
             : active;
   const order = kind === "new" ? desc(products.createdAt) : kind === "deals" ? desc(sql`(${products.compareAtPrice} - ${products.price}) / ${products.compareAtPrice}`) : asc(products.sortOrder);
-  return base.where(where).orderBy(order).limit(limit);
+  return { where: where!, order };
+}
+
+async function rawProductsFor(kind: Kind, limit: number): Promise<ProductCard[]> {
+  const { where, order } = railQuery(kind);
+  return cardQuery().where(where).orderBy(order).limit(limit);
+}
+
+/** Bir kategorinin rafı (ana sayfa kategori şeritleri) */
+export async function categoryRail(categoryId: string, limit = 12): Promise<ProductCard[]> {
+  const { weighed } = await import("./merch");
+  const where = and(active, eq(products.categoryId, categoryId))!;
+  const order = [sql`(${products.stock} > 0) desc`, asc(products.sortOrder)];
+  return weighed((n) => cardQuery().where(where).orderBy(...order).limit(n), (cond, n) => cardQuery().where(and(where, cond)).orderBy(...order).limit(n), limit);
 }
 
 export type CatalogFilter = {
@@ -182,7 +217,16 @@ export async function listProducts(f: CatalogFilter) {
             : search
               ? sql`${search.score} desc, ${products.isFeatured} desc`
               : sql`(${products.stock} > 0) desc, ${products.isFeatured} desc, ${products.sortOrder} asc`;
-  return cardQuery().where(and(...conds)).orderBy(order).limit(120);
+  const rows = await cardQuery().where(and(...conds)).orderBy(order).limit(120);
+  // "Önerilen" sıralama (kullanıcı sıralama seçmediyse, arama değilse): vitrin önceliği. Stoktakiler yine önce.
+  if (!f.sort && !search && !f.ids?.length) {
+    const { getMerch, weigh } = await import("./merch");
+    const m = await getMerch();
+    const inStock = rows.filter((r) => r.stock > 0);
+    const out = rows.filter((r) => r.stock <= 0);
+    return [...weigh(inStock, m), ...weigh(out, m, { pins: false })];
+  }
+  return rows;
 }
 
 export async function facetCounts(category?: string) {

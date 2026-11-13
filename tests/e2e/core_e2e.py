@@ -111,7 +111,14 @@ async def main():
         check("Admin: havale onaylandı", sql(f"select payment_status from orders where id='{tid}'") == "PAID", t)
         # seri takipli ürün: seri ataması zorunlu
         # Ön koşul: seri takipli ürün içeren, seri atanmamış ödenmiş bir sipariş ve stokta bir seri no (rastgele demo veriye bağlı kalmasın)
-        pid = sql("select i.product_id from order_items i join orders o on o.id=i.order_id where o.status='PAID' and o.delivery_method='CARGO' and i.product_id is not null and not exists (select 1 from serial_numbers s where s.order_item_id=i.id) order by o.number limit 1")
+        q_pid = "select i.product_id from order_items i join orders o on o.id=i.order_id where o.status='PAID' and o.delivery_method='CARGO' and i.product_id is not null and not exists (select 1 from serial_numbers s where s.order_item_id=i.id) order by o.number limit 1"
+        pid = sql(q_pid)
+        if not pid:
+            # Başka bir test (ör. features: toplu kargoya ver) uygun siparişi tüketmiş olabilir: ödenmiş bir kargo siparişini "Ödendi"ye geri al
+            back = sql("select o.id from orders o where o.delivery_method='CARGO' and o.payment_status='PAID' and exists (select 1 from order_items i where i.order_id=o.id and i.product_id is not null and not exists (select 1 from serial_numbers s where s.order_item_id=i.id)) order by o.created_at desc limit 1")
+            if back:
+                sql(f"update orders set status='PAID', tracking_number=null, shipped_at=null where id='{back}'")
+            pid = sql(q_pid)
         if pid:
             sql(f"update products set track_serial=true where id='{pid}'")
             sql(f"insert into serial_numbers (id, product_id, serial, status) values (gen_random_uuid()::text, '{pid}', 'E2E-SERI-' || floor(random()*1e9)::text, 'IN_STOCK')")

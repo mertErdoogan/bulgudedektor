@@ -168,3 +168,39 @@ export async function deleteMedia(id: string): Promise<ActionResult> {
     return ok("Dosya silindi. Kullanıldığı yerlerde görsel kırık görünebilir.");
   });
 }
+
+/** Vitrin önceliği: öncelikli marka, ağırlık, rozet, sabit ürünler */
+export async function saveMerch(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("cms.manage");
+    const weight = str(fd.get("weight"));
+    if (!["off", "light", "balanced", "high"].includes(weight)) return fail("Ağırlık seçin.");
+    const focusBrand = str(fd.get("focusBrand"));
+    if (focusBrand) {
+      const { brands } = await import("@/db/schema");
+      const b = await db.query.brands.findFirst({ where: eq(brands.slug, focusBrand) });
+      if (!b) return fail("Marka bulunamadı.");
+    }
+    // Sabit ürünler: mevcut satırlar (kaldır işaretli olmayanlar) + yeni eklenen
+    const ids = fd.getAll("pinId").map(String);
+    const untils = fd.getAll("pinUntil").map(String);
+    const removed = new Set(fd.getAll("pinRemove").map(String));
+    const date = (v: string) => (/^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+    const pinned: { productId: string; until: string | null }[] = [];
+    ids.forEach((id, i) => {
+      if (id && !removed.has(id) && !pinned.some((p) => p.productId === id)) pinned.push({ productId: id, until: date(untils[i] ?? "") });
+    });
+    const add = str(fd.get("pinAdd"));
+    if (add && !pinned.some((p) => p.productId === add)) pinned.push({ productId: add, until: date(str(fd.get("pinAddUntil"))) });
+    if (pinned.length > 6) return fail("En fazla 6 ürün sabitlenebilir.");
+    if (pinned.length) {
+      const { products } = await import("@/db/schema");
+      const { inArray } = await import("drizzle-orm");
+      const found = await db.select({ id: products.id }).from(products).where(inArray(products.id, pinned.map((p) => p.productId)));
+      if (found.length !== pinned.length) return fail("Sabitlenen ürünlerden biri bulunamadı.");
+    }
+    await saveSettings("merch", { focusBrand, weight: weight as "off", badge: fd.get("badge") === "on", focusNote: str(fd.get("focusNote")).slice(0, 60), pinned });
+    await audit(staff.id, "settings", "merch", null, `Vitrin önceliği: ${focusBrand || "kapalı"} / ${weight} / ${pinned.length} sabit`);
+    return done("Vitrin önceliği kaydedildi.");
+  });
+}

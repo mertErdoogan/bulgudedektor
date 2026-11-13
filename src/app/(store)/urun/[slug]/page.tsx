@@ -188,6 +188,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {s.payment.transferEnabled && s.payment.transferDiscountPct ? (
               <p className="mt-0.5 text-sm font-bold text-link">Havale ile öde: %{s.payment.transferDiscountPct} indirim ({formatTL((p.price * s.payment.transferDiscountPct) / 100)})</p>
             ) : null}
+            {s.merch.badge && p.brand && p.brand.slug === s.merch.focusBrand ? (
+              <p className="mt-2.5 flex flex-wrap gap-1.5" data-testid="focus-badge">
+                <span className="inline-flex h-7 items-center gap-1.5 rounded-md bg-ok-bg px-2.5 text-[13px] font-bold text-ok"><Check size={14} strokeWidth={3} />Distribütör garantili · {p.warrantyMonths % 12 === 0 ? `${p.warrantyMonths / 12} yıl` : `${p.warrantyMonths} ay`}</span>
+                {p.trackSerial ? <Link href="/seri-no" className="inline-flex h-7 items-center rounded-md bg-white px-2.5 text-[13px] font-bold text-deep hover:text-link">Seri no kayıtlı</Link> : null}
+              </p>
+            ) : null}
           </div>
 
           {!archived ? (

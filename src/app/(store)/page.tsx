@@ -1,18 +1,16 @@
 import { imgProps, imgUrl } from "@/lib/img";
 import Link from "next/link";
 import { ArrowRight, Compass, FileText, MessageCircle, RotateCcw, ShieldCheck, Store, Video } from "lucide-react";
-import { HeroSlider } from "@/components/store/home-client";
+import { HeroStage } from "@/components/store/home-client";
 import { BestSellers, CategoryRail, Deals, NewArrivals, SameDay } from "@/components/store/home-lists";
 import { PersonalPicks, RecentlyViewed } from "@/components/store/rails";
 import { HomeReviews } from "@/components/store/home-reviews";
 import { cardCtx } from "@/lib/card-ctx";
 import { msToCutoff } from "@/lib/delivery";
-import { and, eq } from "drizzle-orm";
-import { products } from "@/db/schema";
-import { cardQuery } from "@/lib/store";
 import { getSettings } from "@/lib/settings";
-import { bestSellers, getBrandGroups, getHome, getNav, productsFor } from "@/lib/store";
+import { bestSellers, categoryRail, getBrandGroups, getHome, getNav, productsFor } from "@/lib/store";
 import { BrandGrid } from "@/components/store/brand-cards";
+import { focusThumbs as focusThumbs4, getMerch } from "@/lib/merch";
 import { Head } from "@/components/store/home-lists";
 import { FaqSection } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -32,7 +30,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const [{ sections, banners }, nav, s, homeFaq, posts] = await Promise.all([getHome(), getNav(), getSettings(), getFaqs({ home: true }), getPublishedPosts()]);
   const hero = banners.filter((b) => b.placement === "HERO");
-  const side = banners.filter((b) => b.placement === "SIDE").slice(0, 2);
+  const side = banners.filter((b) => b.placement === "SIDE").slice(0, 3);
   const strip = banners.find((b) => b.placement === "STRIP");
   const ctx = cardCtx(s);
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}` : "/iletisim";
@@ -90,7 +88,8 @@ export default async function Home() {
         case "PRODUCT_TABS": {
           // Eski "sekmeli" bölüm artık alt alta listeler: çok satanlar, yeni gelenler, fırsatlar, aynı gün kargo
           const n = Math.max(limit, 10);
-          const [best, fresh, deals, sameday] = await Promise.all([bestSellers(n), productsFor("new", n + 1), productsFor("deals", 12), productsFor("sameday", 12)]);
+          // Çok satanlar rafı 8 ürün gösterir; ağırlık görünen ürün sayısına göre hesaplanır
+          const [best, fresh, deals, sameday] = await Promise.all([bestSellers(8), productsFor("new", n + 1), productsFor("deals", 12), productsFor("sameday", 12)]);
           return (
             <div key={sec.id}>
               <BestSellers items={best} ctx={ctx} />
@@ -105,18 +104,19 @@ export default async function Home() {
           return <CategoryRail key={sec.id} title={sec.title || "Profesyonel seçim"} href="/kategori/derin-arama" items={items} ctx={ctx} />;
         }
         case "BRANDS": {
-          const groups = await getBrandGroups();
+          const [groups, m] = await Promise.all([getBrandGroups(), getMerch()]);
           if (!groups.length) return null;
+          const focusThumbs = groups.some((g) => g.slug === m.focusBrand) ? await focusThumbs4(m) : [];
           return (
             <section key={sec.id} className="container-x mt-12">
               <Head title={sec.title || "Markaya göre alışveriş"} sub={sec.subtitle || "Markanı seç, kategorisine göre modelleri gör"} href="/markalar" cta="Tüm markalar" />
-              <BrandGrid brands={groups.slice(0, 8)} />
+              <BrandGrid brands={groups.slice(0, 8)} focus={focusThumbs.length ? { slug: m.focusBrand, thumbs: focusThumbs, note: m.focusNote || undefined } : undefined} />
             </section>
           );
         }
         case "CATEGORY_RAILS": {
           const cats = nav.categories.filter((c) => !c.parentId).slice(0, Number(sec.config.count) || 4);
-          const rails = await Promise.all(cats.map((c) => cardQuery().where(and(eq(products.status, "ACTIVE"), eq(products.categoryId, c.id))).orderBy(products.sortOrder).limit(12)));
+          const rails = await Promise.all(cats.map((c) => categoryRail(c.id, 12)));
           return (
             <div key={sec.id}>
               {cats.map((c, i) => (
@@ -172,28 +172,7 @@ export default async function Home() {
 
   return (
     <>
-      {hero.length || side.length ? (
-      <section className="bg-soft py-4 md:py-5">
-        <div className="container-x grid gap-3 md:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)] md:gap-4">
-          <HeroSlider slides={hero} />
-          {side.length ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-1 md:gap-4">
-              {side.map((b) => (
-                <Link key={b.id} href={b.linkUrl || "#"} className="flex items-center gap-2 overflow-hidden rounded-2xl bg-tint p-4 hover:shadow-md md:p-5">
-                  <span className="min-w-0 flex-1">
-                    {b.eyebrow ? <span className="block text-[11px] font-extrabold tracking-wider text-link">{b.eyebrow}</span> : null}
-                    <b className="block text-[15px] leading-tight md:text-lg">{b.title}</b>
-                    {b.subtitle ? <span className="mt-1 block text-sm font-bold text-link">{b.subtitle} →</span> : null}
-                  </span>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imgUrl(b.imageUrl, 256)} alt="" className="h-20 w-20 shrink-0 object-contain mix-blend-multiply md:h-28 md:w-28" />
-                </Link>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </section>
-      ) : null}
+      <HeroStage slides={hero} side={side} />
       {strip ? (
         <Link href={strip.linkUrl || "#"} className="container-x mt-4 block">
           {/* eslint-disable-next-line @next/next/no-img-element */}

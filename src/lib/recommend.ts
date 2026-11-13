@@ -54,12 +54,13 @@ export async function boughtTogether(ids: string[], limit = 4): Promise<ProductC
   return [...top, ...more];
 }
 
+/** Benzer modeller: aynı kategoride fiyatı en yakın olanlar; vitrin önceliğindeki marka öne alınır (sabitler hariç). */
 export async function similarTo(p: { id: string; categoryId: string | null; price: number }, limit = 4): Promise<ProductCard[]> {
   if (!p.categoryId) return [];
-  return cardQuery()
-    .where(and(active, eq(products.categoryId, p.categoryId), sql`${products.id} <> ${p.id}`))
-    .orderBy(sql`(${products.stock} > 0) desc`, sql`abs(${products.price} - ${p.price})`)
-    .limit(limit);
+  const { weighed } = await import("./merch");
+  const where = and(active, eq(products.categoryId, p.categoryId), sql`${products.id} <> ${p.id}`)!;
+  const order = [sql`(${products.stock} > 0) desc`, sql`abs(${products.price} - ${p.price})`];
+  return weighed((n) => cardQuery().where(where).orderBy(...order).limit(n), (cond, n) => cardQuery().where(and(where, cond)).orderBy(...order).limit(n), limit, { pins: false });
 }
 
 export async function forVisitor(viewedIds: string[], limit = 8): Promise<ProductCard[]> {

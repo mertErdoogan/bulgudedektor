@@ -41,6 +41,10 @@ PAYMENT_SIMULATION=1 npm run dev
 
 **Güvenlik:** Giriş, kayıt, şifre sıfırlama ve sorgu sayfalarında deneme sınırı vardır (sunucu belleğinde; birden fazla sunucuya ölçeklenirse Redis'e taşınmalı). Formlarda Cloudflare Turnstile, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` girilince otomatik açılır.
 
+**Vitrin önceliği (distribütör markası):** Panel → Ana sayfa ve banner → "Raflarda marka ağırlığı". Öncelikli marka (varsayılan Minelab) çok satanlar, yeni gelenler, fırsatlar, kategori şeritleri, benzer modeller ve kategorilerdeki "Önerilen" sıralamada ağırlıklı görünür (Kapalı / Hafif ~%60 / Dengeli ~%75 / Yüksek ~%90); diğer markalar araya serpiştirilir, hiçbir zaman gizlenmez. Yeni çıkan cihaz gibi dönemsel ürünler bitiş tarihiyle rafların başına sabitlenir. Arama sonuçları ve müşterinin seçtiği sıralamalar tarafsızdır. Öncelikli marka ürünlerinde "Distribütör garantili" rozeti, marka ızgarasında geniş kart ve panelden değiştirilebilen kısa not ("Türkiye distribütörü") gösterilir.
+
+**Ana sayfa sahnesi:** Büyük banner (1520×580) tam görünür, hiçbir yeri kırpılmaz; arkasında aktif banner'ın bulanık kopyası ambiyans ışığı olarak yayılır ve beyaza erir. Altında 3 kampanya kartı (Panel → banner yeri "Kampanya kartları").
+
 **Çerezler ve reklam ölçümü (KVKK):** Google etiketi (GA4 + Google Ads) ve Meta Pixel yalnızca ziyaretçi çerez bandında onay verirse yüklenir; Consent Mode v2 sinyalleri tercihe göre gider. Ürün görüntüleme, sepete ekleme, ödemeye geçiş, satın alma, site içi arama ve WhatsApp/telefon tıklaması ölçülür. Olaylar betik yüklenene kadar kuyrukta bekler (kaybolmaz). Satın alma Google Ads'e dönüşüm olarak, Meta'ya hem tarayıcıdan hem Conversions API ile (tek sayılır) gider. Her siparişin kaynağı (Google Ads/gclid, utm kampanyası, Instagram, organik…) kaydedilir; panelde sipariş detayında ve Raporlar → Satış kaynağı'nda görünür.
 
 ### iyzico canlıya geçiş

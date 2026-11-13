@@ -5,7 +5,7 @@ import type { BrandGroup } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 /** Marka kartı: marka adı (veya logosu), temsilî ürün görseli ve o markanın kategorileri. */
-export function BrandCard({ b, className }: { b: BrandGroup; className?: string }) {
+export function BrandCard({ b, className, thumbs, note }: { b: BrandGroup; className?: string; thumbs?: string[]; note?: string }) {
   return (
     <div className={cn("group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition hover:shadow-[0_14px_30px_rgba(20,20,20,.10)]", className)}>
       <Link href={`/marka/${b.slug}`} className="relative flex items-center gap-3 bg-[#f6f6f6] p-4">
@@ -16,12 +16,20 @@ export function BrandCard({ b, className }: { b: BrandGroup; className?: string 
           ) : (
             <span className="font-display block truncate text-[19px] leading-none font-black tracking-tight md:text-[26px]">{b.name.toLocaleUpperCase("en-US")}</span>
           )}
-          <span className="mt-1.5 block text-[13px] text-mute">{b.total} ürün</span>
+          <span className="mt-1.5 block text-[13px] text-mute">{note ? <b className="font-bold text-deep">{note} · </b> : null}{b.total} ürün</span>
         </span>
+        {thumbs?.length ? (
+          <span className="hidden gap-2 sm:flex">
+            {thumbs.slice(0, 6).map((t, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={t} src={imgUrl(t, 256)} alt="" loading="lazy" className={cn("h-[84px] w-[104px] object-contain mix-blend-multiply transition duration-300 group-hover:scale-105", i >= 3 && "hidden lg:block")} />
+            ))}
+          </span>
+        ) : null}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {b.image ? <img src={imgUrl(b.image, 256)} alt="" loading="lazy" className="hidden h-[84px] w-[110px] shrink-0 object-contain sm:block mix-blend-multiply transition duration-300 group-hover:scale-105" /> : null}
+        {b.image && !thumbs?.length ? <img src={imgUrl(b.image, 256)} alt="" loading="lazy" className="hidden h-[84px] w-[110px] shrink-0 object-contain sm:block mix-blend-multiply transition duration-300 group-hover:scale-105" /> : null}
       </Link>
-      <ul className="flex flex-1 flex-col p-2">
+      <ul className={cn("flex flex-1 flex-col p-2", thumbs?.length && "sm:grid sm:grid-cols-2 sm:content-start lg:grid-cols-4")}>
         {b.categories.map((c) => (
           <li key={c.slug}>
             <Link href={`/marka/${b.slug}?kategori=${c.slug}`} className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-[13.5px] font-semibold md:px-2.5 md:text-[14px] hover:bg-soft hover:text-link">
@@ -32,18 +40,30 @@ export function BrandCard({ b, className }: { b: BrandGroup; className?: string 
         ))}
       </ul>
       <Link href={`/marka/${b.slug}`} className="flex items-center justify-between border-t border-line px-3 py-3 text-[13px] font-extrabold text-link md:px-4 md:text-sm">
-        Tüm {b.name}<span className="hidden sm:inline">&nbsp;ürünleri</span> <ArrowRight size={15} />
+        <span>Tüm {b.name}<span className="hidden sm:inline"> ürünleri</span></span> <ArrowRight size={15} />
       </Link>
     </div>
   );
 }
 
-export function BrandGrid({ brands }: { brands: BrandGroup[] }) {
+/**
+ * Marka ızgarası. Vitrin önceliğindeki marka (focus) en üstte tam genişlikte, ürün görselleriyle;
+ * diğer markalar altında eşit sütunlarla (tek başına kalan kart olmasın diye sütun sayısı marka sayısına göre).
+ */
+export function BrandGrid({ brands, focus }: { brands: BrandGroup[]; focus?: { slug: string; thumbs: string[]; note?: string } }) {
+  const f = focus ? brands.find((b) => b.slug === focus.slug) : undefined;
+  const rest = f ? brands.filter((b) => b !== f) : brands;
+  const cols = rest.length >= 4 ? "xl:grid-cols-4" : rest.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2";
   return (
-    <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
-      {brands.map((b) => (
-        <BrandCard key={b.id} b={b} />
-      ))}
+    <div className="flex flex-col gap-3 md:gap-4">
+      {f ? <BrandCard b={f} thumbs={focus!.thumbs} note={focus!.note} /> : null}
+      {rest.length ? (
+        <div className={cn("grid grid-cols-2 gap-3 md:gap-4", f ? cols : "xl:grid-cols-4")}>
+          {rest.map((b) => (
+            <BrandCard key={b.id} b={b} />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

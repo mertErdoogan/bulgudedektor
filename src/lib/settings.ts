@@ -131,6 +131,20 @@ export type SeoSettings = {
 };
 export type SetupSettings = { completed: boolean; completedSteps: string[] };
 
+/** Vitrin önceliği: dağıtıcısı olunan markanın raflarda ağırlıklı görünmesi ve dönemsel sabit ürünler */
+export type MerchWeight = "off" | "light" | "balanced" | "high";
+export type MerchSettings = {
+  /** Öncelikli markanın slug'ı (boş = kapalı) */
+  focusBrand: string;
+  weight: MerchWeight;
+  /** Rafların başına sabitlenen ürünler; until (YYYY-MM-DD) geçince kendiliğinden düşer */
+  pinned: { productId: string; until: string | null }[];
+  /** Öncelikli marka ürünlerinde "Distribütör garantili" rozeti */
+  badge: boolean;
+  /** Marka kartındaki kısa not (ör. "Türkiye distribütörü"); boşsa gösterilmez. Sözleşmedeki ifadeyle aynı olmalı. */
+  focusNote: string;
+};
+
 export type AllSettings = {
   store: StoreSettings;
   shipping: ShippingSettings;
@@ -138,6 +152,7 @@ export type AllSettings = {
   integrations: IntegrationSettings;
   seo: SeoSettings;
   setup: SetupSettings;
+  merch: MerchSettings;
 };
 
 export const DEFAULT_SETTINGS: AllSettings = {
@@ -259,6 +274,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
       "Arena Dedektör, İstanbul Şişli'de bulunan ve Türkiye geneline Minelab, XP, Nokta ve Garrett marka metal dedektörleri, dedektör başlıkları, pointer ve aksesuarlar satan bir dedektör mağazasıdır. Tüm cihazlar faturalı ve 2 yıl garantilidir; seri numarasıyla orijinallik sorgulanabilir. Satıştan önce uzman danışmanlık (WhatsApp ve görüntülü görüşme), 'Bana hangisi?' seçim sihirbazı ve showroomda deneme; satıştan sonra kurulum eğitimi ve teknik servis sunar.",
   },
   setup: { completed: false, completedSteps: [] },
+  merch: { focusBrand: "minelab", weight: "balanced", pinned: [], badge: true, focusNote: "Türkiye distribütörü" },
 };
 
 /**
