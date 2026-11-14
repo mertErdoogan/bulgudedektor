@@ -52,7 +52,9 @@ services:
     plan: starter
     schedule: "*/15 * * * *"
     # Render iç ağı üzerinden (aynı bölge): siteye internet üzerinden gitmeye gerek yok
-    dockerCommand: sh -c 'curl -fsS -H "Authorization: Bearer $CRON_SECRET" "http://$SITE_HOSTPORT/api/cron"'
+    # Değer ":" içerdiği için blok olarak yazılır (düz yazılırsa YAML "mapping values are not allowed" hatası verir)
+    dockerCommand: >-
+      sh -c 'curl -fsS -H "Authorization: Bearer $CRON_SECRET" "http://$SITE_HOSTPORT/api/cron"'
     envVars:
       - key: CRON_SECRET
         fromService:
