@@ -4,7 +4,7 @@ import { imgProps, imgUrl } from "@/lib/img";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatTL } from "@/lib/utils";
 
 type Pal = { a: [number, number, number]; b: [number, number, number]; lum: number };
@@ -42,6 +42,7 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
   const hasMobile = slides.some((s) => s.mobileImageUrl);
   // Telefon oranı: tüm slaytların dikey mobil görseli varsa 4:5 (ekranın yarısı), bir kısmında varsa 16:9, hiç yoksa masaüstü oranı
   const allMobile = n > 0 && slides.every((s) => s.mobileImageUrl);
+  const capOn = !!slides[i] && !slides[i].mobileImageUrl && !slides[i].showText;
   const mobileAspect = allMobile ? "aspect-[4/5]" : hasMobile ? "aspect-[16/9]" : "aspect-[1520/580]";
   if (!n && !cards.length) return null;
   return (
@@ -53,7 +54,7 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
         ))}
       </div>
       {n ? (
-        <div className="relative mx-auto w-full max-w-[1400px] px-0 md:px-6">
+        <div className="relative mx-auto w-full max-w-[1400px] px-3 md:px-6">
           <div
             className={cn("group relative", paused && "hero-paused")}
             onMouseEnter={() => setPaused(true)}
@@ -66,7 +67,7 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
             {/* Renkli parıltı + dönen renkli kenar: banner'ı arka plandan ayırır, sahneye hareket katar */}
             <div aria-hidden className="hero-ring hero-glow absolute hidden md:block inset-x-10 top-8 -bottom-4 rounded-[30px]" />
             <div className="hero-ring relative md:rounded-[26px] md:p-[2px] md:shadow-[0_40px_80px_-36px_rgba(0,0,0,.65)]">
-              <div className={cn("relative overflow-hidden bg-[#1b1b1e] md:aspect-[1520/580] md:rounded-[24px]", mobileAspect)}>
+              <div className={cn("relative overflow-hidden bg-[#1b1b1e] md:aspect-[1520/580] md:rounded-[24px]", mobileAspect, capOn ? "rounded-t-[20px]" : "rounded-[20px]")}>
                 {slides.map((s, k) => {
                   const wide = !s.showText || s.imageUrl.includes("banner");
                   return (
@@ -114,15 +115,23 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
                 ) : null}
               </div>
             </div>
-            {/* Mobil görseli olmayan banner telefonda küçülür, içindeki yazılar okunmaz: mesaj altta okunur bir bantla verilir */}
-            {slides[i] && !slides[i].mobileImageUrl && !slides[i].showText ? (
-              <Link href={slides[i].linkUrl || "#"} className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-line bg-white/90 p-3.5 pl-4 shadow-[0_12px_28px_-20px_rgba(0,0,0,.45)] backdrop-blur md:hidden" data-testid="hero-caption">
-                <span className="min-w-0 flex-1">
-                  {slides[i].eyebrow ? <span className="block truncate text-[11px] font-extrabold tracking-wider text-brand uppercase">{slides[i].eyebrow}</span> : null}
-                  <span className="line-clamp-2 block text-[16px] leading-snug font-extrabold text-deep">{slides[i].title}</span>
-                  {slides[i].subtitle ? <span className="mt-0.5 line-clamp-1 block text-[13px] text-mute">{slides[i].subtitle}</span> : null}
+            {/* Mobil görseli olmayan banner telefonda küçülür, içindeki yazılar okunmaz: mesaj, banner'la tek parça
+                duran koyu bir alt şeritte verilir (banner'ın kendi renginden hafif bir ışıkla) */}
+            {capOn ? (
+              <Link
+                href={slides[i].linkUrl || "#"}
+                className="relative flex items-center gap-3 overflow-hidden rounded-b-[20px] bg-[#141417] py-3 pr-3 pl-4 text-white shadow-[0_24px_40px_-26px_rgba(0,0,0,.7)] md:hidden"
+                style={{ backgroundImage: "linear-gradient(100deg, rgba(var(--ha),.5), rgba(20,20,23,0) 62%)" }}
+                data-testid="hero-caption"
+              >
+                <span key={slides[i].id} className="min-w-0 flex-1 hero-cap-in">
+                  <span className="block truncate text-[10.5px] font-extrabold tracking-[.14em] text-white/70 uppercase">{slides[i].eyebrow || "Kampanya"}</span>
+                  <span className="line-clamp-2 block text-[15px] leading-snug font-extrabold">{slides[i].title}</span>
                 </span>
-                <span className="shrink-0 rounded-full bg-deep px-4 py-2.5 text-[13px] font-extrabold text-white">{slides[i].ctaLabel || "İncele"} →</span>
+                <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-deep">
+                  <ArrowRight size={18} strokeWidth={2.5} />
+                </span>
+                <span className="sr-only">{slides[i].ctaLabel || "İncele"}</span>
               </Link>
             ) : null}
           </div>

@@ -227,3 +227,8 @@ article:active, a[class*="rounded"]:active { scale: .985; }
 @keyframes gallery-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
 .gallery-in { animation: gallery-in .35s ease-out; }
 @media (prefers-reduced-motion: reduce) { .gallery-in { animation: none; } }
+
+/* Mobil banner alt şeridi: slayt değişince başlık yumuşakça gelir */
+@keyframes hero-cap-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.hero-cap-in { animation: hero-cap-in .4s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .hero-cap-in { animation: none; } }

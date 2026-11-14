@@ -2,6 +2,7 @@ import { imgProps } from "@/lib/img";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Clock3, Coins, Compass, Gem, GitCompare, MessageCircle, Phone, Radar, RotateCcw, ShieldCheck, Store, Waves } from "lucide-react";
 import type { PostCard } from "@/lib/content";
+import type { CSSProperties } from "react";
 import { formatDate } from "@/lib/utils";
 
 /* ───────────────────────── "Hangi dedektör sana göre?" testi ───────────────────────── */
@@ -115,9 +116,9 @@ export function ExpertBand({ title, wa, phone, hours }: { title?: string | null;
 
 export function TrustBand() {
   const cards = [
-    { big: "2 YIL", t: "Distribütör garantisi", d: "Faturalı, Türkiye garantili", I: ShieldCheck },
-    { big: "14 GÜN", t: "Kolay iade", d: "Hesabından tek tıkla talep", I: RotateCcw },
-    { big: "TEST", t: "Showroom'da dene", d: "Test alanında, cihaz elinde", I: Store },
+    { big: "2 YIL", t: "Distribütör garantisi", d: "Faturalı, Türkiye garantili", I: ShieldCheck, c: "22,163,74" },
+    { big: "14 GÜN", t: "Kolay iade", d: "Hesabından tek tıkla talep", I: RotateCcw, c: "37,99,235" },
+    { big: "TEST", t: "Showroom'da dene", d: "Test alanında, cihaz elinde", I: Store, c: "212,46,30" },
   ];
   return (
     <section data-stagger="" className="container-x mt-12 grid grid-cols-3 gap-2.5 md:gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr]" data-testid="trust-band">
@@ -136,15 +137,19 @@ export function TrustBand() {
           <button className="h-10 shrink-0 rounded-full bg-white px-5 text-[13.5px] font-extrabold text-deep transition hover:bg-[#86efac]">Sorgula</button>
         </span>
       </form>
-      {cards.map(({ big, t, d, I }) => (
-        <div key={t} className="group relative isolate flex flex-col justify-between gap-3 overflow-hidden rounded-[20px] border border-line bg-white p-3.5 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-22px_rgba(20,20,22,.4)] md:gap-6 md:rounded-[24px] md:p-6">
+      {cards.map(({ big, t, d, I, c }) => (
+        <div key={t} style={{ ["--tc" as string]: c } as CSSProperties} className="group relative isolate flex flex-col justify-start gap-2.5 md:justify-between overflow-hidden rounded-[20px] border border-line bg-[linear-gradient(160deg,rgba(var(--tc),.09),#fff_55%)] p-3.5 shadow-[0_10px_24px_-20px_rgba(20,20,22,.5)] md:bg-white md:bg-none md:shadow-none transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-22px_rgba(20,20,22,.4)] md:gap-6 md:rounded-[24px] md:p-6">
           <span aria-hidden className="absolute -right-6 -bottom-8 -z-10 hidden md:grid h-32 w-32 place-items-center rounded-full bg-soft transition duration-500 group-hover:scale-110">
             <I size={44} strokeWidth={1.4} className="-translate-x-3 -translate-y-3 text-[#c9c9cf] transition duration-500 group-hover:text-brand" />
           </span>
-          <span className="font-display text-[21px] leading-none font-black tracking-tight md:text-[34px]">{big}</span>
+          {/* Telefonda renkli ikon rozeti: üç kutu birbirinden ayrışır, tek tip gri kutu gibi durmaz */}
+          <span aria-hidden className="grid h-9 w-9 place-items-center rounded-xl bg-[rgba(var(--tc),.12)] text-[rgb(var(--tc))] ring-1 ring-[rgba(var(--tc),.18)] md:hidden">
+            <I size={18} strokeWidth={2} />
+          </span>
+          <span className="font-display text-[21px] leading-none font-black tracking-tight text-[rgb(var(--tc))] md:text-[34px] md:text-deep">{big}</span>
           <span>
             <b className="block text-[12.5px] leading-tight md:text-[15px]">{t}</b>
-            <span className="hidden text-[13px] text-mute md:block">{d}</span>
+            <span className="mt-0.5 block text-[11px] leading-snug text-mute md:text-[13px]">{d}</span>
           </span>
         </div>
       ))}

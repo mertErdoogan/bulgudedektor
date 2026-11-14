@@ -4,13 +4,17 @@ import { NextResponse, type NextRequest } from "next/server";
  * 1) Ön izleme ortamı (PREPROD=1): tüm site şifreli (HTTP Basic Auth: PREVIEW_USER / PREVIEW_PASSWORD) ve
  *    arama motorlarına kapalı (X-Robots-Tag). /api altı açık kalır: ödeme dönüşleri, cron ve sağlık kontrolü
  *    tarayıcı olmadan çağrılır; bu uçlar kendi anahtar/imza kontrolünü yapar.
+ *    Görsel dosyaları (/demo, /media, /brand) da açıktır; aşağıdaki nota bakın.
  * 2) Hafif admin kontrolü: admin çerezi yoksa girişe yönlendir. Asıl doğrulama sunucuda (layout/action) yapılır.
  */
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const preprod = process.env.PREPROD === "1";
 
-  if (preprod && process.env.PREVIEW_PASSWORD && !pathname.startsWith("/api/")) {
+  // Görseller şifresiz: Next görsel optimizasyonu (/_next/image) kaynağı sunucunun kendisinden şifre başlığı olmadan
+  // çeker; şifre istenirse 401 alır ve tüm ürün/kategori görselleri kırık görünür. Görseller zaten gizli bilgi değil.
+  const publicAsset = /^\/(demo|media|brand)\//.test(pathname) || /\.(jpe?g|png|webp|avif|gif|svg|ico|pdf)$/i.test(pathname);
+  if (preprod && process.env.PREVIEW_PASSWORD && !pathname.startsWith("/api/") && !publicAsset) {
     const user = process.env.PREVIEW_USER || "arena";
     const [scheme, enc] = (req.headers.get("authorization") ?? "").split(" ");
     let ok = false;
