@@ -40,6 +40,9 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
   const [paused, setPaused] = useState(false);
   const n = slides.length;
   const hasMobile = slides.some((s) => s.mobileImageUrl);
+  // Telefon oranı: tüm slaytların dikey mobil görseli varsa 4:5 (ekranın yarısı), bir kısmında varsa 16:9, hiç yoksa masaüstü oranı
+  const allMobile = n > 0 && slides.every((s) => s.mobileImageUrl);
+  const mobileAspect = allMobile ? "aspect-[4/5]" : hasMobile ? "aspect-[16/9]" : "aspect-[1520/580]";
   if (!n && !cards.length) return null;
   return (
     <section className="relative isolate pt-4 pb-2 md:pt-7 md:pb-16" data-testid="hero-stage">
@@ -50,7 +53,7 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
         ))}
       </div>
       {n ? (
-        <div className="relative mx-auto w-full max-w-[1400px] px-3 md:px-6">
+        <div className="relative mx-auto w-full max-w-[1400px] px-0 md:px-6">
           <div
             className={cn("group relative", paused && "hero-paused")}
             onMouseEnter={() => setPaused(true)}
@@ -61,9 +64,9 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
             style={{ ["--ha" as string]: rgb((slides[i]?.palette ?? DEFAULT_PAL).a), ["--hb" as string]: rgb((slides[i]?.palette ?? DEFAULT_PAL).b) } as React.CSSProperties}
           >
             {/* Renkli parıltı + dönen renkli kenar: banner'ı arka plandan ayırır, sahneye hareket katar */}
-            <div aria-hidden className="hero-ring hero-glow absolute inset-x-10 top-8 -bottom-4 rounded-[30px]" />
-            <div className="hero-ring relative rounded-[20px] p-[2px] shadow-[0_40px_80px_-36px_rgba(0,0,0,.65)] md:rounded-[26px]">
-              <div className={cn("relative overflow-hidden rounded-[18px] bg-[#1b1b1e] md:aspect-[1520/580] md:rounded-[24px]", hasMobile ? "aspect-[16/9]" : "aspect-[1520/580]")}>
+            <div aria-hidden className="hero-ring hero-glow absolute hidden md:block inset-x-10 top-8 -bottom-4 rounded-[30px]" />
+            <div className="hero-ring relative md:rounded-[26px] md:p-[2px] md:shadow-[0_40px_80px_-36px_rgba(0,0,0,.65)]">
+              <div className={cn("relative overflow-hidden bg-[#1b1b1e] md:aspect-[1520/580] md:rounded-[24px]", mobileAspect)}>
                 {slides.map((s, k) => {
                   const wide = !s.showText || s.imageUrl.includes("banner");
                   return (
@@ -111,11 +114,15 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
                 ) : null}
               </div>
             </div>
-            {/* Mobilde banner'daki yazılar küçülüp okunmaz; mobil görseli olmayan banner'ın başlığı altta düz yazıyla da verilir */}
+            {/* Mobil görseli olmayan banner telefonda küçülür, içindeki yazılar okunmaz: mesaj altta okunur bir bantla verilir */}
             {slides[i] && !slides[i].mobileImageUrl && !slides[i].showText ? (
-              <Link href={slides[i].linkUrl || "#"} className="mt-2.5 flex items-center justify-between gap-3 px-1 text-[14px] font-bold md:hidden" data-testid="hero-caption">
-                <span className="truncate">{slides[i].title}</span>
-                <span className="shrink-0 text-brand">İncele →</span>
+              <Link href={slides[i].linkUrl || "#"} className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-line bg-white/90 p-3.5 pl-4 shadow-[0_12px_28px_-20px_rgba(0,0,0,.45)] backdrop-blur md:hidden" data-testid="hero-caption">
+                <span className="min-w-0 flex-1">
+                  {slides[i].eyebrow ? <span className="block truncate text-[11px] font-extrabold tracking-wider text-brand uppercase">{slides[i].eyebrow}</span> : null}
+                  <span className="line-clamp-2 block text-[16px] leading-snug font-extrabold text-deep">{slides[i].title}</span>
+                  {slides[i].subtitle ? <span className="mt-0.5 line-clamp-1 block text-[13px] text-mute">{slides[i].subtitle}</span> : null}
+                </span>
+                <span className="shrink-0 rounded-full bg-deep px-4 py-2.5 text-[13px] font-extrabold text-white">{slides[i].ctaLabel || "İncele"} →</span>
               </Link>
             ) : null}
           </div>

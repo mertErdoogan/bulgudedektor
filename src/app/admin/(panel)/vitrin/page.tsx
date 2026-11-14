@@ -64,6 +64,7 @@ export default async function VitrinPage({ searchParams }: { searchParams: Promi
                     <div className="flex-1 text-sm">
                       <Link href={`/admin/vitrin?id=${b.id}`} className="font-bold hover:text-link">{b.title}</Link>
                       <p className="text-xs text-mute">{PLACE[b.placement]} · sıra {b.sortOrder}{b.endsAt ? ` · bitiş ${formatDate(b.endsAt)}` : ""}</p>
+                      {b.placement === "HERO" && !b.mobileImageUrl ? <p className="mt-1 text-xs font-semibold text-[#b45309]" data-testid="no-mobile-warn">Mobil görsel yok: telefonda küçük görünür. 1080×1350 dikey görsel ekleyin.</p> : null}
                     </div>
                     {live ? <Badge tone="ok">Yayında</Badge> : <Badge>{b.isActive ? "Zamanlanmış" : "Kapalı"}</Badge>}
                     <DeleteButton run={deleteBanner.bind(null, b.id)} confirmText="Banner silinsin mi?" />
@@ -100,7 +101,7 @@ export default async function VitrinPage({ searchParams }: { searchParams: Promi
               <CardHeader title={edit ? "Banner düzenle" : "Yeni banner"} />
               <div className="mx-5 mt-1 rounded-xl bg-soft p-3 text-[13px] leading-relaxed">
                 <b>Büyük slider: 1520×580 px</b> (yatay, ~2,6:1). Görselin <b>tamamı görünür</b>, hiçbir yeri kırpılmaz veya örtülmez; arkasındaki renkli ışık görselin kendi renklerinden otomatik oluşur.
-                <span className="mt-1.5 block"><b>Mobil görsel: 1080×608 px</b> (16:9, isteğe bağlı). Girilmezse büyük görsel küçültülür; yazılar telefonda okunmayacak kadar küçülüyorsa mobil görsel ekleyin.</span>
+                <span className="mt-1.5 block"><b>Mobil görsel: 1080×1350 px</b> (dikey 4:5, önerilir). Telefonda ekranın yarısını kaplar. Girilmezse büyük görsel telefonda ~390×150 px boyutuna küçülür ve içindeki yazılar okunmaz; başlık altta ayrı bir bantla gösterilir. Mobil görselde yazıyı az ve büyük tutun. Tüm büyük slaytlarda mobil görsel olunca telefon görünümü 4:5 olur.</span>
                 <span className="mt-1.5 block"><b>Kampanya kartı:</b> beyaz veya şeffaf zeminli ürün fotoğrafı yeterli; beyaz zemin karta karışır.</span>
                 <span className="mt-2 flex items-center gap-2 text-mute"><span className="relative block h-[29px] w-[76px] rounded-[5px] bg-deep"><span className="absolute inset-[3px] rounded-[3px] border border-dashed border-white/70" /></span>Önemli yazı ve ürünü kenarlardan biraz içeride tutun (yuvarlak köşeler).</span>
               </div>

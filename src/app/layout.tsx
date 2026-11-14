@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Toaster position="top-center" richColors closeButton />
         {process.env.PREPROD === "1" ? (
-          <span className="pointer-events-none fixed bottom-20 left-3 z-[90] rounded-full bg-[#1d1d1f]/85 px-3 py-1 text-[11px] font-extrabold tracking-[.12em] text-white md:bottom-3" aria-hidden>
+          <span className="pointer-events-none fixed top-0 left-1/2 z-[95] -translate-x-1/2 rounded-b-md bg-[#1d1d1f]/80 px-2.5 pt-px pb-0.5 text-[9px] leading-tight font-extrabold tracking-[.14em] text-white" aria-hidden>
             ÖN İZLEME
           </span>
         ) : null}

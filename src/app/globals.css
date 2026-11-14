@@ -160,6 +160,8 @@
   animation: hero-spin 16s linear infinite;
 }
 .hero-glow { filter: blur(34px); opacity: 0.32; }
+/* Telefonda banner kenardan kenara: dönen çerçeve yer kaplamasın */
+@media (max-width: 767px) { .hero-ring:not(.hero-glow) { background: none; animation: none; } }
 .hero-paused .hero-ring, .hero-paused .hero-bar, .hero-paused .hero-zoom { animation-play-state: paused; }
 .hero-bar { transform-origin: left; animation: hero-progress var(--hero-dur, 6.5s) linear forwards; }
 .hero-zoom { animation: hero-zoom var(--hero-dur, 6.5s) ease-out forwards; }
