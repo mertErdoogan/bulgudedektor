@@ -23,6 +23,9 @@ export async function StoreHeader() {
     <>
       {/* iOS Safari (26+) sayfayı durum çubuğunun arkasına da çizer; yapışkan başlığın üstünde kayan içerik görünmesin diye
           başlık yukarı doğru beyaz bir örtüyle uzatılır */}
+      {/* Yedek örtü: bazı sayfalarda Safari başlığın kendi örtüsünü durum çubuğu alanına uzatmıyor; ekranın üst kenarının
+          hemen üstüne sabitlenmiş beyaz şerit, kayan içeriğin orada görünmesini her sayfada engeller */}
+      <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-full z-[29] h-[100vh] bg-white md:hidden" />
       <header data-site-header="" className="sticky top-0 z-30 bg-white before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-[100vh] before:bg-white md:static md:before:hidden">
         {notes.length ? (
           <div className="hidden bg-deep text-white/85 md:block">

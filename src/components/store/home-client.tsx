@@ -139,13 +139,13 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
       ) : null}
       {cards.length ? (
         <div className="container-x relative pt-0 md:pt-12">
-          <div className="scrollbar-none -mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pt-14 pb-12 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pt-4 md:pb-4" data-testid="hero-cards">
+          <div className="scrollbar-none -mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pt-4 pb-7 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pt-4 md:pb-4" data-testid="hero-cards">
             {cards.slice(0, 3).map((c, k) => (
               <Link
                 key={c.id}
                 href={c.href}
                 className={cn(
-                  "group/card relative flex min-h-[150px] w-[86%] shrink-0 snap-start items-center gap-3 rounded-[22px] bg-gradient-to-br p-5 pr-4 text-white shadow-[0_20px_40px_-18px_rgba(0,0,0,.5)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_50px_-18px_rgba(0,0,0,.55)] md:w-auto md:min-h-[168px]",
+                  "group/card relative flex w-[80%] shrink-0 snap-start items-center gap-3 rounded-[20px] bg-gradient-to-br p-3.5 pl-4 md:rounded-[22px] md:p-5 md:pr-4 text-white shadow-[0_14px_28px_-16px_rgba(0,0,0,.5)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_50px_-18px_rgba(0,0,0,.55)] md:w-auto md:min-h-[168px] md:shadow-[0_20px_40px_-18px_rgba(0,0,0,.5)]",
                   CARD_TONES[k % 3],
                 )}
               >
@@ -154,20 +154,20 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
                   <span className="absolute inset-y-0 -left-1/2 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent transition-all duration-700 group-hover/card:left-[120%]" />
                   <span className="absolute -right-10 -bottom-16 h-44 w-44 rounded-full bg-white/10" />
                 </span>
-                <span className="relative z-[1] flex min-w-0 flex-1 flex-col gap-1.5">
-                  <span className="w-fit rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-extrabold tracking-wider text-deep">{c.eyebrow}</span>
-                  <b className="text-[17px] leading-tight md:text-xl">{c.title}</b>
-                  {c.line ? <span className="line-clamp-2 text-[13px] leading-snug text-white/85">{c.line}</span> : null}
+                <span className="relative z-[1] flex min-w-0 flex-1 flex-col gap-1 md:gap-1.5">
+                  <span className="w-fit rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-deep md:px-2.5 md:py-1 md:text-[11px]">{c.eyebrow}</span>
+                  <b className="line-clamp-1 text-[15.5px] leading-tight md:line-clamp-none md:text-xl">{c.title}</b>
+                  {c.line ? <span className="hidden line-clamp-2 text-[13px] md:block leading-snug text-white/85">{c.line}</span> : null}
                   {c.price ? (
-                    <span className="mt-1 flex items-baseline gap-2">
-                      <span className="text-base font-extrabold whitespace-nowrap md:text-lg">{formatTL(c.price)}</span>
+                    <span className="flex items-baseline gap-2 md:mt-1">
+                      <span className="text-[15px] font-extrabold whitespace-nowrap md:text-lg">{formatTL(c.price)}</span>
                       {c.oldPrice && c.oldPrice > c.price ? <s className="text-xs whitespace-nowrap text-white/70">{formatTL(c.oldPrice)}</s> : null}
                     </span>
                   ) : null}
-                  <span className="mt-1 inline-flex w-fit items-center gap-1 text-sm font-extrabold underline-offset-4 group-hover/card:underline">Keşfet <span aria-hidden className="transition group-hover/card:translate-x-1">→</span></span>
+                  <span className="inline-flex w-fit items-center gap-1 text-[12.5px] font-extrabold underline-offset-4 md:mt-1 md:text-sm group-hover/card:underline">Keşfet <span aria-hidden className="transition group-hover/card:translate-x-1">→</span></span>
                 </span>
                 {/* Ürün: beyaz "sahne" dairesi kartın üst kenarından taşar */}
-                <span className="relative z-[1] -mt-12 grid h-[104px] w-[104px] shrink-0 place-items-center self-start rounded-full bg-white shadow-[0_14px_30px_-10px_rgba(0,0,0,.45)] ring-4 ring-white/30 transition duration-500 group-hover/card:-translate-y-1 group-hover/card:scale-105 md:-mt-16 md:h-[150px] md:w-[150px]">
+                <span className="relative z-[1] grid h-[78px] w-[78px] shrink-0 place-items-center rounded-full bg-white shadow-[0_10px_22px_-10px_rgba(0,0,0,.45)] ring-[3px] ring-white/30 md:-mt-16 md:self-start md:ring-4 transition duration-500 group-hover/card:-translate-y-1 group-hover/card:scale-105 md:-mt-16 md:h-[150px] md:w-[150px]">
                   {/* Fotoğrafın kare köşeleri dairenin dışına taşmasın */}
                   <span className="grid h-full w-full place-items-center overflow-hidden rounded-full">
                     {c.image ? (
@@ -175,7 +175,7 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
                       <img src={imgUrl(c.image, 256)} alt="" className="h-[80%] w-[80%] object-contain mix-blend-multiply transition duration-500 group-hover/card:-rotate-6" />
                     ) : null}
                   </span>
-                  {c.isNew ? <span className="absolute -top-1 -right-1 grid h-11 w-11 rotate-12 place-items-center rounded-full bg-[#ffcf3d] text-[11px] font-black text-deep shadow-md transition group-hover/card:rotate-0">YENİ</span> : null}
+                  {c.isNew ? <span className="absolute -top-1.5 -right-1.5 grid h-8 w-8 rotate-12 text-[9px] md:h-11 md:w-11 md:text-[11px] place-items-center rounded-full bg-[#ffcf3d] font-black text-deep shadow-md transition group-hover/card:rotate-0">YENİ</span> : null}
                 </span>
               </Link>
             ))}

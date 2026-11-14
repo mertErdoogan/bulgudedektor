@@ -1,7 +1,7 @@
 import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { getBrandGroups, getNav } from "@/lib/store";
-import { BrandGrid } from "@/components/store/brand-cards";
+import { FocusBrands } from "@/components/store/brand-cards";
 import { CategoryTile } from "@/components/store/category-tile";
 
 export const metadata = pageMeta({ title: "Dedektör Kategorileri ve Markaları", description: "Define, doğal altın, sahil ve derin arama dedektörleri; pinpointer ve aksesuarlar. Tüm kategoriler ve markalar tek sayfada.", path: "/kategoriler" });
@@ -17,7 +17,7 @@ export default async function CategoriesPage() {
         ))}
       </div>
       <h2 className="font-display mt-10 mb-3 text-2xl font-extrabold">Markaya göre</h2>
-      <BrandGrid brands={brands} />
+      <FocusBrands brands={brands} />
       <Link href="/urunler" className="group mt-6 flex items-center justify-center gap-2 rounded-xl bg-deep p-4 text-center font-bold text-white transition hover:bg-black">Tüm ürünleri gör <span aria-hidden className="transition group-hover:translate-x-1">→</span></Link>
     </div>
   );

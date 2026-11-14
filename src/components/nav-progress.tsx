@@ -96,8 +96,11 @@ function Bar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Boştayken hiç çizilmez: iOS Safari 26 durum çubuğu rengini ekranın üst kenarındaki sabit öğeden alır; şeffaf ve tam
+  // genişlikte duran bu çubuk seçilirse durum çubuğu şeffaflaşır ve kayan içerik başlığın üstünde görünür.
+  if (!w) return null;
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px]" style={{ opacity: w ? 1 : 0, transition: "opacity .25s" }}>
+    <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px]">
       <div
         className="h-full bg-brand shadow-[0_0_10px_var(--color-brand)]"
         style={{ width: `${w}%`, transition: w === 0 ? "none" : w === 100 ? "width .2s ease-out" : w === 30 ? "width .08s ease-out" : "width .8s cubic-bezier(.2,.7,.2,1)" }}

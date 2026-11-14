@@ -20,19 +20,20 @@ const AMAC = [
  */
 export function WizardBand({ title, subtitle }: { title?: string | null; subtitle?: string | null }) {
   return (
-    <section className="container-x mt-12" data-testid="wizard-band">
-      <div className="relative isolate overflow-hidden rounded-[28px] bg-[#141416] text-white">
+    <section className="container-x mt-8 md:mt-12" data-testid="wizard-band">
+      <div className="relative isolate overflow-hidden rounded-[24px] bg-[#141416] text-white md:rounded-[28px]">
         <span aria-hidden className="absolute -top-32 -left-24 -z-10 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(212,46,30,.55),transparent_65%)] blur-2xl" />
         <span aria-hidden className="absolute -right-24 -bottom-40 -z-10 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(47,86,200,.45),transparent_65%)] blur-2xl" />
         <span aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(rgba(255,255,255,.08)_1px,transparent_1px)] [mask-image:linear-gradient(90deg,transparent,#000_30%,#000_70%,transparent)] bg-[size:22px_22px]" />
-        <div className="grid gap-8 p-6 md:p-10 lg:grid-cols-[1fr_1.35fr] lg:items-center">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 p-5 md:gap-8 md:p-10 lg:grid-cols-[1fr_1.35fr] lg:items-center">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11.5px] font-extrabold tracking-[.12em] text-white/85 ring-1 ring-white/15">
-              <Compass size={14} /> 1 DAKİKALIK TEST
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[10.5px] font-extrabold tracking-[.12em] text-white/85 ring-1 ring-white/15 md:gap-2 md:px-3 md:py-1 md:text-[11.5px]">
+              <Compass size={13} /> 1 DAKİKALIK TEST
             </span>
-            <h2 className="font-display mt-4 text-[28px] leading-[1.1] font-extrabold tracking-tight md:text-[40px]">{title || "Hangi dedektör sana göre?"}</h2>
-            <p className="mt-3 max-w-md text-[15px] leading-relaxed text-white/70">{subtitle || "6 kısa soru. Sana uygun 3 cihazı nedenleriyle gösterelim; karar vermeden önce uzmana da sorabilirsin."}</p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+            <h2 className="font-display mt-2.5 text-[21px] leading-[1.15] md:mt-4 md:leading-[1.1] font-extrabold tracking-tight md:text-[40px]">{title || "Hangi dedektör sana göre?"}</h2>
+            <p className="mt-1.5 text-[13px] text-white/65 md:hidden">6 kısa soru · 1 dakika · sana uygun 3 cihaz</p>
+            <p className="mt-3 hidden max-w-md text-[15px] leading-relaxed text-white/70 md:block">{subtitle || "6 kısa soru. Sana uygun 3 cihazı nedenleriyle gösterelim; karar vermeden önce uzmana da sorabilirsin."}</p>
+            <div className="mt-6 hidden flex-wrap items-center gap-3 md:flex">
               <Link href="/sihirbaz" className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 text-[15px] font-extrabold text-deep transition hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-10px_rgba(255,255,255,.5)]">
                 Teste başla <ArrowRight size={17} />
               </Link>
@@ -43,24 +44,28 @@ export function WizardBand({ title, subtitle }: { title?: string | null; subtitl
               </span>
             </div>
           </div>
-          <div className="rounded-3xl bg-white/[.06] p-4 ring-1 ring-white/12 backdrop-blur md:p-5">
-            <div className="flex items-center justify-between px-1">
+          <div className="md:rounded-3xl md:bg-white/[.06] md:p-5 md:ring-1 md:ring-white/12 md:backdrop-blur">
+            <div className="hidden items-center justify-between px-1 md:flex">
               <span className="text-[11px] font-extrabold tracking-[.14em] text-white/55">SORU 1 / 6</span>
               <span className="text-[12px] text-white/55">Birini seç, gerisi kolay</span>
             </div>
-            <p className="font-display mt-1.5 px-1 text-[20px] font-extrabold">Ne arayacaksın?</p>
-            <div data-stagger="" className="mt-4 grid grid-cols-2 gap-2.5">
+            <p className="text-[12px] font-bold text-white/55 md:font-display md:mt-1.5 md:px-1 md:text-[20px] md:font-extrabold md:text-white">Ne arayacaksın? <span className="md:hidden">Birini seç, test başlasın</span></p>
+            {/* Telefonda seçenekler yatay kayan çipler: bant ekranı kaplamaz, tek dokunuşla test başlar */}
+            <div data-stagger="" className="scrollbar-none -mx-5 mt-2.5 flex gap-2 overflow-x-auto px-5 md:mx-0 md:mt-4 md:grid md:grid-cols-2 md:gap-2.5 md:overflow-visible md:px-0">
               {AMAC.map(({ v, l, d, I }) => (
-                <Link key={v} href={`/sihirbaz?amac=${v}`} className="group flex flex-col items-start gap-2.5 rounded-2xl bg-white/[.07] p-3 ring-1 ring-white/10 sm:flex-row sm:gap-3 sm:p-3.5 transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-deep hover:ring-white">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 text-white transition group-hover:bg-brand">
-                    <I size={20} />
+                <Link key={v} href={`/sihirbaz?amac=${v}`} className="group flex shrink-0 items-center gap-2 rounded-full bg-white/[.08] py-1.5 pr-3.5 pl-1.5 ring-1 ring-white/10 md:items-start md:gap-3 md:rounded-2xl md:p-3.5 transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-deep hover:ring-white">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white transition group-hover:bg-brand md:h-10 md:w-10 md:rounded-xl">
+                    <I size={17} />
                   </span>
                   <span className="min-w-0">
-                    <b className="block text-[14px] leading-tight md:text-[15px]">{l}</b>
-                    <span className="hidden text-[12px] text-white/60 group-hover:text-mute sm:block">{d}</span>
+                    <b className="block text-[13.5px] leading-tight whitespace-nowrap md:text-[15px] md:whitespace-normal">{l}</b>
+                    <span className="hidden text-[12px] text-white/60 group-hover:text-mute md:block">{d}</span>
                   </span>
                 </Link>
               ))}
+              <Link href="/sihirbaz" className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-[13.5px] font-extrabold whitespace-nowrap text-deep md:hidden">
+                Teste başla <ArrowRight size={15} />
+              </Link>
             </div>
           </div>
         </div>

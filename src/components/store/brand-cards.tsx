@@ -103,15 +103,15 @@ export function BrandShowcase({ focus, models, note, rest }: { focus: BrandGroup
           ))}
         </div>
         {models.length ? (
-          <div data-stagger="" className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div data-stagger="" className="scrollbar-none -mx-5 mt-5 flex snap-x scroll-px-5 gap-2.5 overflow-x-auto px-5 md:mx-0 md:mt-6 md:grid md:grid-cols-4 md:gap-3 md:overflow-visible md:px-0">
             {models.slice(0, 4).map((p, i) => (
-              <Link key={p.id} href={`/urun/${p.slug}`} className="group flex flex-col overflow-hidden rounded-2xl bg-white text-deep transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,.8)]">
-                <span className="relative grid h-[120px] place-items-center bg-[radial-gradient(circle_at_50%_60%,#fff_0%,#f1f1f2_75%)] md:h-[140px]">
+              <Link key={p.id} href={`/urun/${p.slug}`} className="group flex w-[38%] shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white text-deep md:w-auto transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-20px_rgba(0,0,0,.8)]">
+                {/* Telefonda yatay kayan küçük kart */}<span className="relative grid h-[92px] place-items-center bg-[radial-gradient(circle_at_50%_60%,#fff_0%,#f1f1f2_75%)] md:h-[140px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {p.image ? <img src={imgUrl(p.image, 256)} alt="" loading="lazy" style={{ transitionDelay: `${i * 40}ms` }} className="h-[84%] w-[84%] object-contain mix-blend-multiply transition duration-500 group-hover:-translate-y-1 group-hover:scale-105" /> : null}
                 </span>
-                <span className="flex flex-col px-3 py-2.5">
-                  <b className="truncate text-[13.5px]">{p.name}</b>
+                <span className="flex flex-col px-2.5 py-2 md:px-3 md:py-2.5">
+                  <b className="truncate text-[12.5px] md:text-[13.5px]">{p.name}</b>
                   <span className="text-[12.5px] text-mute">{formatTL(p.price)}</span>
                 </span>
               </Link>
@@ -142,4 +142,18 @@ export function BrandShowcase({ focus, models, note, rest }: { focus: BrandGroup
       </div>
     </div>
   );
+}
+
+
+/**
+ * Kategoriler ve Markalar sayfaları için: vitrin önceliğindeki marka (Minelab) ana sayfadaki gibi koyu vitrinde
+ * en üstte, diğer markalar altında. Öncelikli marka tanımlı değilse düz ızgara.
+ */
+export async function FocusBrands({ brands }: { brands: BrandGroup[] }) {
+  const { getMerch, latestFocus } = await import("@/lib/merch");
+  const m = await getMerch();
+  const f = brands.find((g) => g.slug === m.focusBrand);
+  if (!f) return <BrandGrid brands={brands} />;
+  const models = await latestFocus(m, 4);
+  return <BrandShowcase focus={f} models={models} note={m.focusNote || undefined} rest={brands.filter((g) => g !== f)} />;
 }
