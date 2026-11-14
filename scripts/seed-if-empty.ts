@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { sql } from "drizzle-orm";
 import { db } from "../src/db";
 import * as t from "../src/db/schema";
+import { ensureDemoGallery } from "./demo-gallery";
 
 async function main() {
   if (process.env.SEED_DEMO !== "1") return;
@@ -17,6 +18,8 @@ async function main() {
     console.log("Veritabanı boş: demo veri yükleniyor…");
     execSync("npx tsx scripts/seed.ts", { stdio: "inherit" });
   }
+  // Var olan ön izleme veritabanına da test galerisini ekle (yalnızca tek görselli demo ürünlere)
+  await ensureDemoGallery();
   const pw = process.env.ADMIN_PASSWORD;
   if (pw && pw.length >= 10) {
     await db.update(t.users).set({ passwordHash: await bcrypt.hash(pw, 10) }).where(sql`${t.users.email} like '%@arenadedektor.local'`);

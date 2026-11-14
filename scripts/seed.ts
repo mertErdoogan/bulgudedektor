@@ -1,6 +1,7 @@
 /* Demo verisi: npm run db:seed  (mevcut veriyi SİLER, sadece kurulumda kullanın) */
 import { paletteFromUrl } from "../src/lib/palette-core";
 import "dotenv/config";
+import { ensureDemoGallery } from "./demo-gallery";
 import bcrypt from "bcryptjs";
 import { sql } from "drizzle-orm";
 import { db } from "../src/db";
@@ -287,6 +288,8 @@ async function main() {
   await seedContent();
   // Eski site (arenadedektor.com / Efortek) adresleri → yeni adresler (301)
   await db.insert(t.redirects).values(LEGACY_REDIRECTS.map(([fromPath, toPath]) => ({ fromPath, toPath }))).onConflictDoNothing();
+
+  await ensureDemoGallery();
 
   console.log("Bitti. Giriş: admin@arenadedektor.local / Arena123!  (satis@, depo@, servis@ aynı şifre)");
   process.exit(0);

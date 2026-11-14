@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { redirectOrNotFound } from "@/lib/redirects";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
-import { BadgeCheck, Check, Cpu, CreditCard, Droplets, Headset, Info, Landmark, MessageCircle, PackageOpen, Phone, Play, RotateCcw, ShieldCheck, Star, ThumbsUp, UserRound, Weight, Wrench } from "lucide-react";
+import { Truck, BadgeCheck, Check, Cpu, CreditCard, Droplets, Headset, Info, Landmark, MessageCircle, PackageOpen, Phone, Play, RotateCcw, ShieldCheck, Star, ThumbsUp, UserRound, Weight, Wrench } from "lucide-react";
 import { db } from "@/db";
 import { productImages, productQuestions, products, reviews } from "@/db/schema";
 import { ProductCard } from "@/components/store/product-card";
@@ -144,7 +144,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     { id: "garanti", label: "Garanti ve ödeme" },
   ];
   const h2 = "font-display text-[24px] leading-tight font-extrabold tracking-tight md:text-[30px]";
-  const eyebrow = "text-[11.5px] font-extrabold tracking-[.14em] text-mute";
+  // Bölümler kart: sekmeyle atlanan her bölüm kendi çerçevesinde, birbirinden net ayrılır
+  const sec = "scroll-mt-40 rounded-[28px] border border-line bg-white p-5 shadow-[0_1px_0_rgba(20,20,22,.03)] md:p-8";
+  const eyebrow = "inline-flex items-center rounded-full bg-soft px-2.5 py-1 text-[11px] font-extrabold tracking-[.14em] text-mute";
 
   return (
     <div className="container-x pt-4 pb-24 md:pb-10">
@@ -178,7 +180,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <h1 className="font-display text-[30px] leading-[1.05] font-extrabold tracking-tight md:text-[44px]">{p.name}</h1>
               <FavoriteButton productId={p.id} name={p.name} className="mt-1 shrink-0" />
             </div>
-            {p.shortDescription ? <p className="mt-2 line-clamp-3 max-w-[560px] text-[15px] leading-relaxed text-[#52525b]">{p.shortDescription}</p> : null}
           </div>
 
           {/* Öne çıkanlar: fiyatın hemen üstünde, bir bakışta "bu cihaz ne" */}
@@ -214,9 +215,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           ) : null}
 
-          {/* Satın alma kartı: fiyat ve butonlar tek blokta, ilk ekranda */}
-          <div className="relative overflow-hidden rounded-[26px] bg-white p-5 shadow-[0_30px_60px_-34px_rgba(20,20,22,.45)] ring-1 ring-line md:p-6" id="satin-al">
-            <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand via-[#f0704f] to-brand" />
+          {/* Satın alma kartı. Sıra: durum → FİYAT → BUTONLAR (en önde) → bilgi satırları (her biri kendi ikonu ve
+              etiketiyle, bir bakışta ne olduğu anlaşılsın) → rozet. */}
+          <div className="rounded-[26px] border border-[#e2e2e6] bg-white p-5 shadow-[0_24px_50px_-34px_rgba(20,20,22,.4)] md:p-6" id="satin-al">
             {!archived ? (
               <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px] font-bold">
                 {out ? (
@@ -227,16 +228,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     Stokta{p.stock > 0 && p.stock <= 5 ? ` · son ${p.stock} adet` : ""}
                   </span>
                 )}
-                {discount ? <span className="rounded-full bg-brand px-2.5 py-1 text-white">{formatTL(discount)} indirim</span> : null}
+                {discount ? <span className="rounded-full bg-brand px-2.5 py-1 text-white">%{Math.round((discount / (p.compareAtPrice || 1)) * 100)} indirim</span> : null}
               </div>
             ) : null}
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <strong className="font-display text-[36px] leading-none font-extrabold tracking-tight md:text-[46px]">{formatTL(p.price)}</strong>
+              <strong className="font-display text-[38px] leading-none font-extrabold tracking-tight md:text-[48px]">{formatTL(p.price)}</strong>
               {discount ? <s className="text-[16px] text-mute">{formatTL(p.compareAtPrice)}</s> : null}
-            </div>
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13.5px] text-[#3f3f46]">
-              {inst > 1 ? <span className="flex items-center gap-1.5"><CreditCard size={15} className="text-mute" /> {inst} × <b className="text-deep">{formatTL(Math.round(p.price / inst))}</b> vade farksız <a href="#garanti" className="text-mute underline-offset-2 hover:underline">· {s.payment.maxInstallment} taksite kadar</a></span> : null}
-              {s.payment.transferEnabled && s.payment.transferDiscountPct ? <span className="flex items-center gap-1.5"><Landmark size={15} className="text-mute" /> Havale/EFT %{s.payment.transferDiscountPct} indirim</span> : null}
             </div>
             {deal ? (
               <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-2xl bg-ok-bg px-3.5 py-2.5 text-sm" data-testid="pdp-deal">
@@ -253,28 +250,62 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <ProductForms productId={p.id} mode="alert" />
               </div>
             ) : (
-              <div className="mt-5 hidden md:block">
+              <div className="mt-5">
                 <BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} amount={p.price} brand={p.brand?.name} />
               </div>
             )}
-            {!archived && !out ? (
-              <div className="mt-4 border-t border-line pt-4 text-[13.5px] text-[#3f3f46]">
-                <DeliveryLine p={p} ctx={ctx} pickup={s.shipping.pickupEnabled} />
+
+            {/* Bilgi satırları: renkli ikon + kısa etiket + değer; satırlar çizgiyle ayrık */}
+            <dl className="mt-5 divide-y divide-line rounded-2xl border border-line" data-testid="pdp-info">
+              {inst > 1 ? (
+                <div className="flex items-center gap-3 px-3.5 py-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#eef3ff] text-[#2952cc]"><CreditCard size={17} /></span>
+<div className="min-w-0 flex-1 md:flex md:items-center md:gap-3">
+                  <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">Taksit</dt>
+                  <dd className="min-w-0 md:flex-1 text-[13.5px]"><b>{inst} × {formatTL(Math.round(p.price / inst))}</b> vade farksız <a href="#garanti" className="block text-[12px] text-mute underline-offset-2 hover:underline">{s.payment.maxInstallment} taksite kadar, tabloyu gör</a></dd>
+</div>
+                </div>
+              ) : null}
+              {s.payment.transferEnabled && s.payment.transferDiscountPct ? (
+                <div className="flex items-center gap-3 px-3.5 py-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-ok-bg text-ok"><Landmark size={17} /></span>
+<div className="min-w-0 flex-1 md:flex md:items-center md:gap-3">
+                  <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">Havale/EFT</dt>
+                  <dd className="min-w-0 md:flex-1 text-[13.5px]"><b>%{s.payment.transferDiscountPct} indirim</b> <span className="text-mute">· {formatTL(p.price * (1 - s.payment.transferDiscountPct / 100))}</span></dd>
+</div>
+                </div>
+              ) : null}
+              {!archived && !out ? (
+                <div className="flex items-center gap-3 px-3.5 py-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#fff4e5] text-[#b45309]"><Truck size={17} /></span>
+<div className="min-w-0 flex-1 md:flex md:items-center md:gap-3">
+                  <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">Teslimat</dt>
+                  <dd className="pdp-delivery-plain min-w-0 md:flex-1 text-[13.5px]"><DeliveryLine p={p} ctx={ctx} pickup={s.shipping.pickupEnabled} /></dd>
+</div>
+                </div>
+              ) : null}
+              <div className="flex items-center gap-3 px-3.5 py-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-soft text-deep"><ShieldCheck size={17} /></span>
+                <div className="min-w-0 flex-1 md:flex md:items-center md:gap-3">
+                <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">Garanti</dt>
+                <dd className="min-w-0 text-[13.5px] md:flex-1">
+                  {s.merch.badge && p.brand && p.brand.slug === s.merch.focusBrand ? (
+                    <span className="inline-flex items-center gap-1.5 font-bold" data-testid="focus-badge"><BadgeCheck size={15} className="text-ok" /> Türkiye distribütör garantili · {warranty}</span>
+                  ) : (
+                    <b>{warranty}, faturalı</b>
+                  )}
+                </dd>
+                </div>
               </div>
-            ) : null}
-            {s.merch.badge && p.brand && p.brand.slug === s.merch.focusBrand ? (
-              <p className="mt-3 flex w-fit items-center gap-1.5 rounded-full bg-deep px-3 py-1 text-[12.5px] font-bold text-white" data-testid="focus-badge">
-                <BadgeCheck size={15} className="text-[#86efac]" /> Türkiye distribütör garantili · {warranty}
-              </p>
-            ) : null}
-            {act ? <SocialProof p={act} ctx={ctx} className="mt-3 text-[12.5px]" /> : null}
+            </dl>
+            {act ? <SocialProof p={act} ctx={ctx} className="mt-3 justify-center text-[12px] font-medium text-mute" /> : null}
           </div>
 
           {/* Güven: masaüstünde tek satır, dört kısa madde */}
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4" data-testid="pdp-trust">
             {[
               { I: BadgeCheck, t: "Yetkili distribütör", d: p.trackSerial ? "Seri no ile sorgula" : "Orijinal ürün", href: p.trackSerial ? "/seri-no" : undefined },
-              { I: ShieldCheck, t: `${warranty} garanti`, d: "Faturalı, Türkiye" },
+              { I: Truck, t: "Ücretsiz kargo", d: "Sigortalı gönderim" },
               { I: RotateCcw, t: "14 gün iade", d: "Ücretsiz kargo kodu" },
               { I: Headset, t: "Uzman desteği", d: "Kurulum ve kullanım" },
             ].map(({ I, t, d, href }) => {
@@ -312,11 +343,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <PdpTabs tabs={tabs} product={{ id: p.id, name: p.name, price: formatTL(p.price), amount: p.price, image: p.images[0]?.url ?? null, brand: p.brand?.name, disabled: out }} />
 
-      <div className="mx-auto mt-10 flex max-w-[1080px] flex-col gap-16">
+      <div className="-mx-4 mt-6 flex flex-col gap-3 bg-[#f4f4f5] px-3 py-4 md:mx-auto md:mt-8 md:max-w-[1120px] md:gap-5 md:rounded-[36px] md:p-5">
         {/* ───────── Genel bakış ───────── */}
-        <section id="genel" className="scroll-mt-40">
+        <section id="genel" className={sec}>
           <span className={eyebrow}>GENEL BAKIŞ</span>
-          <h2 className={`${h2} mt-1`}>{fullName(p)} kimin için?</h2>
+          <h2 className={`${h2} mt-3`}>{fullName(p)} kimin için?</h2>
+          {p.shortDescription ? <p className="mt-2 max-w-3xl text-[16px] leading-relaxed text-[#52525b]">{p.shortDescription}</p> : null}
           <div className="mt-5">
             <AnswerBox title={`${fullName(p)} nedir?`} updated={formatDate(p.updatedAt)}>{quickAnswer(p, s)}</AnswerBox>
           </div>
@@ -341,9 +373,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </section>
 
         {/* ───────── Özellikler ───────── */}
-        <section id="ozellikler" className="scroll-mt-40">
+        <section id="ozellikler" className={sec}>
           <span className={eyebrow}>ÖZELLİKLER</span>
-          <h2 className={`${h2} mt-1`}>Teknik özellikler</h2>
+          <h2 className={`${h2} mt-3`}>Teknik özellikler</h2>
           {p.specs.length ? (
             <dl className="mt-5 grid overflow-hidden rounded-[22px] border border-line md:grid-cols-2" data-testid="pdp-specs">
               {p.specs.map((x) => (
@@ -365,9 +397,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </section>
 
         {vid ? (
-          <section id="video" className="scroll-mt-40">
+          <section id="video" className={sec}>
             <span className={eyebrow}>VİDEO</span>
-            <h2 className={`${h2} mt-1 flex items-center gap-2`}><Play size={22} /> Elde gösterim</h2>
+            <h2 className={`${h2} mt-3 flex items-center gap-2`}><Play size={22} /> Elde gösterim</h2>
             <div className="mt-5 aspect-video overflow-hidden rounded-[22px] bg-black">
               <iframe className="h-full w-full" src={`https://www.youtube-nocookie.com/embed/${vid}`} title={`${p.name} video`} loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
             </div>
@@ -375,9 +407,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         ) : null}
 
         {/* ───────── Yorumlar ───────── */}
-        <section id="yorumlar" className="scroll-mt-40">
+        <section id="yorumlar" className={sec}>
           <span className={eyebrow}>YORUMLAR</span>
-          <h2 className={`${h2} mt-1`}>Kullananlar ne diyor?</h2>
+          <h2 className={`${h2} mt-3`}>Kullananlar ne diyor?</h2>
           <div className="mt-5 grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
             <div className="flex flex-col rounded-[22px] bg-[linear-gradient(160deg,#fffaf0_0%,#ffffff_60%)] p-5 ring-1 ring-[#f1e6cf]">
               {rCount ? (
@@ -429,9 +461,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </section>
 
         {/* ───────── Soru-cevap ───────── */}
-        <section id="sorular" className="scroll-mt-40">
+        <section id="sorular" className={sec}>
           <span className={eyebrow}>SORU-CEVAP</span>
-          <h2 className={`${h2} mt-1`}>Uzmana sorulanlar</h2>
+          <h2 className={`${h2} mt-3`}>Uzmana sorulanlar</h2>
           {p.questions.length ? (
             <div className="mt-5 flex flex-col gap-3">
               {p.questions.map((q) => (
@@ -447,12 +479,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <ProductForms productId={p.id} mode="question" />
         </section>
 
-        <FaqSection items={faqItems} title={`${fullName(p)} hakkında sık sorulanlar`} />
+        <div className={sec}>
+          <FaqSection items={faqItems} title={`${fullName(p)} hakkında sık sorulanlar`} />
+        </div>
 
         {/* ───────── Garanti ve ödeme ───────── */}
-        <section id="garanti" className="scroll-mt-40">
+        <section id="garanti" className={sec}>
           <span className={eyebrow}>GARANTİ VE ÖDEME</span>
-          <h2 className={`${h2} mt-1`}>İçin rahat olsun</h2>
+          <h2 className={`${h2} mt-3`}>İçin rahat olsun</h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             {[
               { I: ShieldCheck, t: `${warranty} garanti`, d: "Faturalı, distribütör garantisi. Seri numarası kayıtlı." },
