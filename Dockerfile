@@ -34,5 +34,6 @@ COPY --from=build --chown=node:node /app/package.json /app/next.config.ts /app/d
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s CMD curl -fsS http://localhost:3000/api/health || exit 1
-# Açılışta bekleyen veritabanı göçlerini uygular, sonra sunucuyu başlatır
-CMD ["sh", "-c", "npx drizzle-kit migrate && npx next start -p ${PORT}"]
+# Açılışta: site adresi verilmemişse Render'ın verdiği adres kullanılır; bekleyen veritabanı göçleri uygulanır;
+# ön izlemede (SEED_DEMO=1) veritabanı boşsa demo veri yüklenir; sonra sunucu başlar.
+CMD ["sh", "-c", "export APP_URL=${APP_URL:-$RENDER_EXTERNAL_URL}; npx drizzle-kit migrate && npx tsx scripts/seed-if-empty.ts && npx next start -p ${PORT}"]

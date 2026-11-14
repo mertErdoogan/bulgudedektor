@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/seo";
 
+// Çalışma anında üretilir: site adresi (APP_URL) ve ön izleme modu derlemede değil, sunucuda belli olur
+export const dynamic = "force-dynamic";
+
 const PRIVATE = ["/admin", "/api/", "/hesabim", "/favoriler", "/odeme", "/sepet", "/siparis", "/giris", "/kayit", "/karsilastir", "/*?*sirala=", "/ara?"];
 
 // AI arama motorlarının botları: açıkça izin veriyoruz ki ChatGPT Search, Perplexity, Claude,
@@ -27,6 +30,8 @@ const AI_BOTS = [
 
 export default function robots(): MetadataRoute.Robots {
   const base = siteUrl();
+  // Ön izleme ortamı arama motorlarına tamamen kapalı (asıl siteyle yarışmasın)
+  if (process.env.PREPROD === "1") return { rules: [{ userAgent: "*", disallow: "/" }] };
   return {
     rules: [
       { userAgent: "*", allow: "/", disallow: PRIVATE },

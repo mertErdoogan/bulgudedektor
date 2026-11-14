@@ -144,3 +144,8 @@ drizzle/              migration dosyaları
 ```
 
 Şema değişikliği: `src/db/schema.ts` düzenle → `npm run db:generate` → `npm run db:migrate`.
+
+
+## Ön izleme (preprod)
+
+Render üzerinde `main`'e her push otomatik yayınlanan şifreli ön izleme ortamı: [docs/ONIZLEME.md](docs/ONIZLEME.md) (`render.yaml`).

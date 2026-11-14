@@ -1,17 +1,42 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// Hafif kontrol: admin çerezi yoksa girişe yönlendir. Asıl doğrulama sunucuda (layout/action) yapılır.
+/**
+ * 1) Ön izleme ortamı (PREPROD=1): tüm site şifreli (HTTP Basic Auth: PREVIEW_USER / PREVIEW_PASSWORD) ve
+ *    arama motorlarına kapalı (X-Robots-Tag). /api altı açık kalır: ödeme dönüşleri, cron ve sağlık kontrolü
+ *    tarayıcı olmadan çağrılır; bu uçlar kendi anahtar/imza kontrolünü yapar.
+ * 2) Hafif admin kontrolü: admin çerezi yoksa girişe yönlendir. Asıl doğrulama sunucuda (layout/action) yapılır.
+ */
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/giris")) {
-    if (!req.cookies.get("bulgu_admin")) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/admin/giris";
-      url.searchParams.set("next", pathname);
-      return NextResponse.redirect(url);
+  const preprod = process.env.PREPROD === "1";
+
+  if (preprod && process.env.PREVIEW_PASSWORD && !pathname.startsWith("/api/")) {
+    const user = process.env.PREVIEW_USER || "arena";
+    const [scheme, enc] = (req.headers.get("authorization") ?? "").split(" ");
+    let ok = false;
+    if (scheme === "Basic" && enc) {
+      try {
+        const [u, ...rest] = atob(enc).split(":");
+        ok = u === user && rest.join(":") === process.env.PREVIEW_PASSWORD;
+      } catch {}
     }
+    if (!ok)
+      return new NextResponse("Ön izleme ortamı: giriş gerekli.", {
+        status: 401,
+        headers: { "WWW-Authenticate": 'Basic realm="Arena Dedektor on izleme", charset="UTF-8"', "X-Robots-Tag": "noindex, nofollow" },
+      });
   }
-  return NextResponse.next();
+
+  let res: NextResponse;
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/giris") && !req.cookies.get("bulgu_admin")) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/admin/giris";
+    url.searchParams.set("next", pathname);
+    res = NextResponse.redirect(url);
+  } else res = NextResponse.next();
+  if (preprod) res.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return res;
 }
 
-export const config = { matcher: ["/admin/:path*"] };
+// Statik dosyalar hariç her istek (ön izleme şifresi tüm sayfalara uygulanabilsin)
+export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|fonts/).*)"] };

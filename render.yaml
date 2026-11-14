@@ -1,0 +1,73 @@
+# Arena Dedektör — Render ön izleme (preprod) kurulumu
+# Render → New → Blueprint → bu repo. main dalına her push otomatik yayına alınır.
+# Ayrıntı: docs/ONIZLEME.md
+services:
+  - type: web
+    name: arena-onizleme
+    runtime: docker
+    region: frankfurt
+    plan: starter            # kalıcı disk için ücretli plan gerekir (yüklenen görseller /data'da)
+    branch: main
+    autoDeploy: true         # main'e her push → yeni sürüm (derleme hatalıysa eski sürüm yayında kalır)
+    healthCheckPath: /api/health
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: arena-db
+          property: connectionString
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
+      - key: PREPROD
+        value: "1"
+      - key: SEED_DEMO
+        value: "1"
+      - key: PAYMENT_SIMULATION
+        value: force-test-only
+      - key: TZ
+        value: Europe/Istanbul
+      - key: UPLOAD_DIR
+        value: /data/uploads
+      - key: PREVIEW_USER
+        value: arena
+      # Kurulumda Render sorar: siteyi açarken istenecek şifre
+      - key: PREVIEW_PASSWORD
+        sync: false
+      # Kurulumda Render sorar: panel (admin@arenadedektor.local) şifresi, en az 10 karakter
+      - key: ADMIN_PASSWORD
+        sync: false
+
+  # 15 dakikada bir zamanlanmış işler (ödeme zaman aşımı, sepet hatırlatma, yorum daveti, temizlik)
+  - type: cron
+    name: arena-onizleme-cron
+    runtime: image
+    image:
+      url: docker.io/curlimages/curl:8.10.1
+    region: frankfurt
+    plan: starter
+    schedule: "*/15 * * * *"
+    # Render iç ağı üzerinden (aynı bölge): siteye internet üzerinden gitmeye gerek yok
+    dockerCommand: sh -c 'curl -fsS -H "Authorization: Bearer $CRON_SECRET" "http://$SITE_HOSTPORT/api/cron"'
+    envVars:
+      - key: CRON_SECRET
+        fromService:
+          type: web
+          name: arena-onizleme
+          envVarKey: CRON_SECRET
+      - key: SITE_HOSTPORT
+        fromService:
+          type: web
+          name: arena-onizleme
+          property: hostport
+
+databases:
+  - name: arena-db
+    region: frankfurt
+    plan: basic-256mb
+    postgresMajorVersion: "17"
+    ipAllowList: []          # yalnızca Render içinden erişim
