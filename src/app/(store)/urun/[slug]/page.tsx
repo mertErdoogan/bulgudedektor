@@ -3,12 +3,13 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { redirectOrNotFound } from "@/lib/redirects";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
-import { Check, MessageCircle, Phone, Play, Star, Truck } from "lucide-react";
+import { BadgeCheck, Check, Cpu, CreditCard, Droplets, Headset, Info, Landmark, MessageCircle, PackageOpen, Phone, Play, RotateCcw, ShieldCheck, Star, ThumbsUp, UserRound, Weight, Wrench } from "lucide-react";
 import { db } from "@/db";
 import { productImages, productQuestions, products, reviews } from "@/db/schema";
 import { ProductCard } from "@/components/store/product-card";
 import { BuyBox, Gallery, ProductViewTracker, StickyBuy } from "@/components/store/product-client";
-import { DeliveryBadge, SocialProof } from "@/components/store/product-card";
+import { DeliveryLine, SocialProof } from "@/components/store/product-card";
+import { PdpTabs } from "@/components/store/pdp-tabs";
 import { autoDealFor } from "@/lib/pricing";
 import { FavoriteButton } from "@/components/store/bits";
 import { RecentlyViewed } from "@/components/store/rails";
@@ -101,12 +102,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}?text=${encodeURIComponent(`Merhaba, ${p.name} hakkında bilgi almak istiyorum.`)}` : "/iletisim";
   const discount = p.compareAtPrice && p.compareAtPrice > p.price ? p.compareAtPrice - p.price : 0;
   const vid = ytId(p.videoUrl);
-  const quick = [
-    p.weightKg ? { k: "Ağırlık", v: `${p.weightKg.toLocaleString("tr-TR")} kg` } : null,
-    p.technology ? { k: "Teknoloji", v: TECH_LABEL[p.technology] } : null,
-    p.waterproof ? { k: "Su geçirmezlik", v: WATERPROOF_LABEL[p.waterproof] } : null,
-    p.experience ? { k: "Kimin için", v: EXPERIENCE_LABEL[p.experience] } : null,
-  ].filter(Boolean) as { k: string; v: string }[];
   const ctx = cardCtx(s);
   // Sayfanın üst kısmı için gerekenler tek seferde, paralel: ardışık bekleme (şelale) yok.
   // Benzer modeller, birlikte alınanlar ve rehberler aşağıda <Suspense> ile ayrıca akar: ürün, fiyat ve
@@ -130,45 +125,82 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   ]);
   const faqItems = [...toQA(dbFaq), ...autoFaq(p, s)];
 
+  const rCount = p.reviews.length;
+  const dist = [5, 4, 3, 2, 1].map((r) => ({ r, n: p.reviews.filter((x) => x.rating === r).length }));
+  const warranty = p.warrantyMonths % 12 === 0 ? `${p.warrantyMonths / 12} yıl` : `${p.warrantyMonths} ay`;
+  const facts = [
+    p.technology ? { I: Cpu, k: "Teknoloji", v: TECH_LABEL[p.technology] } : null,
+    p.waterproof ? { I: Droplets, k: "Su dayanımı", v: WATERPROOF_LABEL[p.waterproof] } : null,
+    p.weightKg ? { I: Weight, k: "Ağırlık", v: `${p.weightKg.toLocaleString("tr-TR")} kg` } : null,
+    p.experience ? { I: UserRound, k: "Kimin için", v: EXPERIENCE_LABEL[p.experience] } : null,
+  ].filter(Boolean) as { I: typeof Cpu; k: string; v: string }[];
+  const tabs = [
+    { id: "genel", label: "Genel bakış" },
+    { id: "ozellikler", label: "Özellikler", count: p.specs.length || undefined },
+    ...(vid ? [{ id: "video", label: "Video" }] : []),
+    { id: "yorumlar", label: "Yorumlar", count: rCount || undefined },
+    { id: "sorular", label: "Soru-cevap", count: p.questions.length || undefined },
+    { id: "sss", label: "SSS" },
+    { id: "garanti", label: "Garanti ve ödeme" },
+  ];
+  const h2 = "font-display text-[24px] leading-tight font-extrabold tracking-tight md:text-[30px]";
+  const eyebrow = "text-[11.5px] font-extrabold tracking-[.14em] text-mute";
+
   return (
     <div className="container-x pt-4 pb-24 md:pb-10">
       <JsonLd data={graph(productLd(p, s))} />
       <ProductViewTracker id={p.id} name={p.name} price={p.price} brand={p.brand?.name} />
       <Breadcrumbs items={[...(p.category ? [{ name: p.category.name, path: `/kategori/${p.category.slug}` }] : []), ...(p.brand ? [{ name: p.brand.name, path: `/marka/${p.brand.slug}` }] : []), { name: p.name, path: `/urun/${p.slug}` }]} />
-      <div className="grid gap-6 md:grid-cols-2 lg:gap-10">
-        <Gallery images={p.images} name={p.name} badge={p.badges[0]} brand={p.brand?.name} />
-        <div className="flex flex-col gap-3">
-          <p className="text-[13px] font-semibold text-mute">
-            {p.brand ? <Link href={`/marka/${p.brand.slug}`} className="font-extrabold text-link">{p.brand.name}</Link> : null} · Kod {p.sku}
-          </p>
+
+      {/* ───────── Üst: galeri + satın alma ───────── */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:gap-12">
+        <div className="flex flex-col gap-4">
+          <Gallery images={p.images} name={p.name} badge={p.badges[0]} brand={p.brand?.name} discountPct={discount && p.compareAtPrice ? Math.round((discount / p.compareAtPrice) * 100) : 0} />
+          {facts.length ? (
+            <div className="hidden grid-cols-4 gap-2.5 md:grid" data-testid="pdp-facts">
+              {facts.map(({ I, k, v }) => (
+                <div key={k} className="flex flex-col gap-2 rounded-2xl border border-line bg-white p-3.5">
+                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-soft text-deep"><I size={18} /></span>
+                  <span>
+                    <span className="block text-[11.5px] font-semibold text-mute">{k}</span>
+                    <b className="text-[14px] leading-tight">{v}</b>
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            {p.brand ? <Link href={`/marka/${p.brand.slug}`} className="rounded-full bg-deep px-3 py-1 text-[11.5px] font-extrabold tracking-[.12em] text-white">{p.brand.name.toLocaleUpperCase("en-US")}</Link> : null}
+            {rating ? (
+              <a href="#yorumlar" className="flex items-center gap-1.5 text-[13.5px] hover:underline">
+                <span className="flex">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={14} className={i < Math.round(rating) ? "fill-gold text-gold" : "text-line"} />)}</span>
+                <b>{rating.toFixed(1)}</b> <span className="text-mute">· {rCount} yorum</span>
+              </a>
+            ) : (
+              <a href="#yorumlar" className="text-[13px] font-semibold text-mute hover:text-deep">İlk yorumu sen yaz</a>
+            )}
+            <span className="ml-auto text-[12px] text-mute">Kod {p.sku}</span>
+          </div>
           <div className="flex items-start justify-between gap-3">
-            <h1 className="font-display text-[26px] leading-tight font-extrabold md:text-[34px]">{p.name}</h1>
+            <h1 className="font-display text-[28px] leading-[1.1] font-extrabold tracking-tight md:text-[40px]">{p.name}</h1>
             <FavoriteButton productId={p.id} name={p.name} className="mt-1 shrink-0" />
           </div>
-          {rating ? (
-            <a href="#yorumlar" className="flex items-center gap-1.5 text-sm">
-              <Star size={15} className="fill-gold text-gold" /> <b>{rating.toFixed(1)}</b> <span className="text-mute">({p.reviews.length} yorum)</span>
-            </a>
-          ) : null}
-          {p.shortDescription ? <p className="text-[15px] leading-relaxed text-[#3f3f46]">{p.shortDescription}</p> : null}
-          {act ? <SocialProof p={act} ctx={ctx} className="text-[13px]" /> : null}
+          {p.shortDescription ? <p className="text-[15.5px] leading-relaxed text-[#3f3f46]">{p.shortDescription}</p> : null}
 
           {variants.length > 1 ? (
             <div>
-              <p className="mb-1.5 text-[13px] font-bold">Seçenek</p>
+              <p className="mb-2 text-[13px] font-bold">Seçenek</p>
               <div className="flex flex-wrap gap-2">
                 {variants.map((v) => {
                   const cur = v.id === p.id;
                   const none = v.stock <= 0 && !v.allowBackorder;
                   return (
-                    <Link
-                      key={v.id}
-                      href={`/urun/${v.slug}`}
-                      aria-current={cur ? "page" : undefined}
-                      className={`rounded-xl border px-3 py-2 text-sm transition ${cur ? "border-brand bg-tint font-bold text-brand" : "border-line hover:border-deep"} ${none ? "opacity-60" : ""}`}
-                    >
-                      <span className="block leading-tight">{v.label || v.name}</span>
-                      <span className="text-xs text-mute">{none ? "Stokta yok" : formatTL(v.price)}</span>
+                    <Link key={v.id} href={`/urun/${v.slug}`} aria-current={cur ? "page" : undefined} className={`rounded-2xl border px-3.5 py-2 text-sm transition ${cur ? "border-deep bg-deep text-white" : "border-line hover:border-deep"} ${none ? "opacity-60" : ""}`}>
+                      <span className="block leading-tight font-bold">{v.label || v.name}</span>
+                      <span className={`text-xs ${cur ? "text-white/70" : "text-mute"}`}>{none ? "Stokta yok" : formatTL(v.price)}</span>
                     </Link>
                   );
                 })}
@@ -176,194 +208,259 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           ) : null}
 
-          <div className="rounded-2xl bg-soft p-4">
-            <div className="flex flex-wrap items-baseline gap-x-3">
-              <strong className="font-display text-[32px] font-extrabold">{formatTL(p.price)}</strong>
-              {discount ? <s className="text-mute">{formatTL(p.compareAtPrice)}</s> : null}
-              {discount ? <span className="rounded bg-accent px-2 py-0.5 text-xs font-extrabold text-white">{formatTL(discount)} indirim</span> : null}
+          {/* Fiyat kartı */}
+          <div className="rounded-[24px] border border-line bg-[linear-gradient(160deg,#ffffff_0%,#fafafa_100%)] p-5" id="satin-al">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <strong className="font-display text-[34px] leading-none font-extrabold tracking-tight md:text-[40px]">{formatTL(p.price)}</strong>
+              {discount ? <s className="text-[15px] text-mute">{formatTL(p.compareAtPrice)}</s> : null}
+              {discount ? <span className="rounded-full bg-brand px-2.5 py-0.5 text-[12px] font-extrabold text-white">{formatTL(discount)} indirim</span> : null}
             </div>
             {deal ? (
-              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-white px-3 py-2 text-sm ring-1 ring-[#cfe9d8]" data-testid="pdp-deal">
+              <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-2xl bg-ok-bg px-3.5 py-2.5 text-sm" data-testid="pdp-deal">
                 <span className="font-semibold text-ok">Sepette</span>
-                <b className="font-display text-[19px] text-ok">{formatTL(Math.round((p.price - deal.amount) * 100) / 100)}</b>
-                <span className="text-mute">· {deal.name} ile {formatTL(deal.amount)} otomatik düşer</span>
+                <b className="font-display text-[20px] text-ok">{formatTL(Math.round((p.price - deal.amount) * 100) / 100)}</b>
+                <span className="text-[#2f5d43]">· {deal.name}, {formatTL(deal.amount)} otomatik düşer</span>
               </p>
-            ) : null}
-            {inst > 1 ? (
-              <p className="mt-2 text-sm">
-                {inst} ay vade farksız <b>{formatTL(Math.round(p.price / inst))}</b> × {inst} · en fazla {s.payment.maxInstallment} taksit
-              </p>
-            ) : null}
-            {s.payment.transferEnabled && s.payment.transferDiscountPct ? (
-              <p className="mt-0.5 text-sm font-semibold text-deep">Havale ile öde: %{s.payment.transferDiscountPct} indirim ({formatTL((p.price * s.payment.transferDiscountPct) / 100)})</p>
             ) : null}
             {s.merch.badge && p.brand && p.brand.slug === s.merch.focusBrand ? (
-              <p className="mt-2.5 flex flex-wrap gap-1.5" data-testid="focus-badge">
-                <span className="inline-flex h-7 items-center gap-1.5 rounded-md bg-ok-bg px-2.5 text-[13px] font-bold text-ok"><Check size={14} strokeWidth={3} />Distribütör garantili · {p.warrantyMonths % 12 === 0 ? `${p.warrantyMonths / 12} yıl` : `${p.warrantyMonths} ay`}</span>
-                {p.trackSerial ? <Link href="/seri-no" className="inline-flex h-7 items-center rounded-md bg-white px-2.5 text-[13px] font-bold text-deep hover:text-link">Seri no kayıtlı</Link> : null}
+              <p className="mt-3 flex w-fit items-center gap-1.5 rounded-full bg-deep px-3 py-1 text-[12.5px] font-bold text-white" data-testid="focus-badge">
+                <BadgeCheck size={15} className="text-[#86efac]" /> Türkiye distribütör garantili · {warranty}
               </p>
             ) : null}
+            <div className="mt-3 flex flex-col gap-1 text-[13.5px] text-[#3f3f46]">
+              {inst > 1 ? <span className="flex items-center gap-2"><CreditCard size={15} className="text-mute" /> {inst} × <b className="text-deep">{formatTL(Math.round(p.price / inst))}</b> vade farksız <a href="#garanti" className="text-mute underline-offset-2 hover:underline">· {s.payment.maxInstallment} taksite kadar</a></span> : null}
+              {s.payment.transferEnabled && s.payment.transferDiscountPct ? <span className="flex items-center gap-2"><Landmark size={15} className="text-mute" /> Havale/EFT ile %{s.payment.transferDiscountPct} indirim ({formatTL((p.price * s.payment.transferDiscountPct) / 100)})</span> : null}
+              {!archived && !out ? <DeliveryLine p={p} ctx={ctx} pickup={s.shipping.pickupEnabled} /> : null}
+            </div>
+            {archived ? (
+              <p className="mt-4 rounded-xl bg-warn-bg p-3 text-sm font-bold text-warn">Bu ürün artık satılmıyor. Benzer ürünler için uzmana sor.</p>
+            ) : out ? (
+              <div className="mt-4 flex flex-col gap-2">
+                <p className="text-sm"><b className="text-danger">Şu an stokta yok.</b> Gelince haber verelim.</p>
+                <ProductForms productId={p.id} mode="alert" />
+              </div>
+            ) : (
+              <div className="mt-4 hidden md:block">
+                <BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} amount={p.price} brand={p.brand?.name} />
+              </div>
+            )}
+            {act ? <SocialProof p={act} ctx={ctx} className="mt-3 text-[12.5px]" /> : null}
           </div>
 
-          {!archived ? (
-            <p className="flex items-start gap-2.5 text-sm">
-              {out ? <Truck size={20} className="mt-0.5 shrink-0 text-brand" /> : null}
-              {out ? (
-                <span><b className="text-danger">Şu an stokta yok.</b> Gelince haber verelim veya uzmana benzerini sor.</span>
-              ) : (
-                <span className="flex flex-col gap-1.5">
-                  <DeliveryBadge p={p} ctx={ctx} className="w-fit text-[13px]" />
-                  <span className="text-mute">
-                    {p.sameDayShipping && p.stock > 0 ? `Saat ${s.shipping.sameDayCutoff}'e kadar verilen siparişler aynı gün kargoda.` : "Kargo süresi stok durumuna göre hesaplanır."}
-                    {s.shipping.pickupEnabled ? " Showroom'dan da teslim alabilirsin." : ""}
-                  </span>
+          {/* Mobilde öne çıkan bilgiler fiyattan sonra, tek satır kaydırılabilir haplar (galeri altında yer kaplamasın) */}
+          {facts.length ? (
+            <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 md:hidden">
+              {facts.map(({ I, k, v }) => (
+                <span key={k} className="flex shrink-0 items-center gap-2 rounded-full border border-line bg-white py-1.5 pr-3.5 pl-1.5">
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-soft"><I size={15} /></span>
+                  <span className="flex flex-col leading-tight"><span className="text-[10.5px] text-mute">{k}</span><b className="text-[12.5px]">{v}</b></span>
                 </span>
-              )}
-            </p>
-          ) : (
-            <p className="rounded-lg bg-warn-bg p-3 text-sm font-bold text-warn">Bu ürün artık satılmıyor. Benzer ürünler için uzmana sor.</p>
-          )}
+              ))}
+            </div>
+          ) : null}
 
-          <div className="hidden md:block">
-            <BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} amount={p.price} brand={p.brand?.name} />
+          {/* Güven: 4 kısa madde, ikonlu */}
+          <div className="grid grid-cols-2 gap-2" data-testid="pdp-trust">
+            {[
+              { I: BadgeCheck, t: "Yetkili distribütör", d: p.trackSerial ? "Seri no ile sorgula" : "Orijinal ürün", href: p.trackSerial ? "/seri-no" : undefined },
+              { I: ShieldCheck, t: `${warranty} garanti`, d: "Faturalı, Türkiye garantili" },
+              { I: RotateCcw, t: "14 gün iade", d: "Ücretsiz kargo kodu" },
+              { I: Headset, t: "Uzman desteği", d: "Kurulum ve kullanım" },
+            ].map(({ I, t, d, href }) => {
+              const body = (
+                <>
+                  <I size={19} className="shrink-0 text-deep" />
+                  <span className="min-w-0">
+                    <b className="block truncate text-[13px]">{t}</b>
+                    <span className="block truncate text-[12px] text-mute">{d}</span>
+                  </span>
+                </>
+              );
+              return href ? (
+                <Link key={t} href={href} className="flex items-center gap-2.5 rounded-xl bg-soft px-3 py-2.5 transition hover:bg-[#ececee]">{body}</Link>
+              ) : (
+                <div key={t} className="flex items-center gap-2.5 rounded-xl bg-soft px-3 py-2.5">{body}</div>
+              );
+            })}
           </div>
-          {/* Uzman desteği: satın alma butonlarıyla yarışmasın diye sakin bir satır */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line px-4 py-3 text-sm">
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <span className="text-mute">Sorunuz mu var?</span>
             <a href={wa} target="_blank" className="inline-flex items-center gap-1.5 font-bold text-[#11643a] hover:underline"><MessageCircle size={17} /> WhatsApp&apos;tan sor</a>
             {s.store.phone ? <a href={`tel:${s.store.phone.replace(/[^\d+]/g, "")}`} className="inline-flex items-center gap-1.5 font-bold hover:underline"><Phone size={16} /> {s.store.phone}</a> : null}
           </div>
-
-          <ul className="mt-1 flex flex-col gap-2 text-sm">
-            {[
-              <><b>Yetkili distribütör ürünü</b>{p.trackSerial ? " · seri no ile sorgulanabilir" : ""}</>,
-              <><b>{p.warrantyMonths} ay garanti</b> · faturalı</>,
-              <><b>14 gün koşulsuz iade</b> · ücretsiz kargo kodu</>,
-              <>Şirket adına e-fatura, hesabında</>,
-            ].map((t, i) => (
-              <li key={i} className="flex items-start gap-2.5"><span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-soft text-deep"><Check size={12} strokeWidth={3} /></span><span>{t}</span></li>
-            ))}
-          </ul>
-
           {p.trialRentalPrice ? (
-            <p className="text-sm text-mute">
+            <p className="rounded-2xl border border-dashed border-[#d6d6db] px-4 py-3 text-[13.5px] text-mute">
               <b className="text-deep">Önce dene:</b> 3 günlük kiralama {formatTL(p.trialRentalPrice)}, 30 gün içinde alırsan fiyattan düşülür.{" "}
               <Link href={`/iletisim?konu=kiralama&urun=${encodeURIComponent(p.name)}`} className="font-bold text-deep underline-offset-2 hover:underline">Talep et →</Link>
             </p>
           ) : null}
-          {out && !archived ? <ProductForms productId={p.id} mode="alert" /> : null}
         </div>
       </div>
 
-      <nav className="scrollbar-none sticky top-[132px] z-20 -mx-4 mt-8 flex gap-2 overflow-x-auto border-y border-line bg-white px-4 py-2.5 md:top-0" aria-label="Ürün bölümleri">
-        {[["neden", "Kimler için"], ["ozellikler", "Teknik özellikler"], ...(vid ? [["video", "Video"]] : []), ["garanti", "Garanti ve servis"], ["sss", "SSS"], ["yorumlar", p.reviews.length ? `Yorumlar (${p.reviews.length})` : "Yorumlar"], ["sorular", p.questions.length ? `Sorular (${p.questions.length})` : "Sorular"]].map(([id, l]) => (
-          <a key={id} href={`#${id}`} className="shrink-0 rounded-full border border-line px-4 py-1.5 text-sm font-bold hover:bg-soft">{l}</a>
-        ))}
-      </nav>
+      <PdpTabs tabs={tabs} product={{ id: p.id, name: p.name, price: formatTL(p.price), amount: p.price, image: p.images[0]?.url ?? null, brand: p.brand?.name, disabled: out }} />
 
-      <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="flex flex-col gap-10">
-          <AnswerBox title={`${fullName(p)} nedir?`} updated={formatDate(p.updatedAt)}>{quickAnswer(p, s)}</AnswerBox>
-          <section id="neden" className="scroll-mt-40">
-            <h2 className="font-display mb-3 text-2xl font-extrabold">Kimler için ideal</h2>
-            {quick.length ? (
-              <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {quick.map((q) => <div key={q.k} className="rounded-xl bg-soft p-3"><span className="block text-xs text-mute">{q.k}</span><b className="text-sm">{q.v}</b></div>)}
-              </div>
-            ) : null}
-            {p.idealFor.length ? <ul className="flex flex-col gap-2">{p.idealFor.map((t) => <li key={t} className="flex gap-2.5"><Check size={18} className="mt-0.5 shrink-0 text-brand" />{t}</li>)}</ul> : null}
-            {p.notFor.length ? (
-              <div className="mt-4 rounded-xl bg-[#fff4f2] p-4 text-sm text-[#7a2a20]">
-                <b>Bilmen gereken:</b>
-                <ul className="mt-1 list-disc pl-5">{p.notFor.map((t) => <li key={t}>{t}</li>)}</ul>
-                <Link href="/sihirbaz" className="mt-2 inline-block font-bold underline">Farklı bir iş için mi arıyorsun? 6 soruda bulalım →</Link>
-              </div>
-            ) : null}
-            {p.description ? <div className="prose-lite mt-5 text-[15px]" dangerouslySetInnerHTML={{ __html: markdownToHtml(p.description) }} /> : null}
-          </section>
-
-          <section id="ozellikler" className="scroll-mt-40">
-            <h2 className="font-display mb-3 text-2xl font-extrabold">Teknik özellikler</h2>
-            {p.specs.length ? (
-              <dl className="divide-y divide-line rounded-xl border border-line">
-                {p.specs.map((x) => (
-                  <div key={x.key} className="grid grid-cols-[1fr_1.3fr] gap-3 px-4 py-3 text-sm"><dt className="text-mute">{x.key}</dt><dd className="font-semibold">{x.value}</dd></div>
-                ))}
-              </dl>
-            ) : <p className="text-sm text-mute">Detaylı teknik bilgi için uzmana sor.</p>}
-            {p.boxContents.length ? (
-              <>
-                <h3 className="mt-6 mb-2 font-extrabold">Kutudan çıkanlar</h3>
-                <ul className="grid gap-1.5 text-sm sm:grid-cols-2">{p.boxContents.map((b) => <li key={b} className="flex gap-2"><Check size={16} className="mt-0.5 text-brand" />{b}</li>)}</ul>
-              </>
-            ) : null}
-          </section>
-
-          {vid ? (
-            <section id="video" className="scroll-mt-40">
-              <h2 className="font-display mb-3 flex items-center gap-2 text-2xl font-extrabold"><Play size={20} /> Elde gösterim</h2>
-              <div className="aspect-video overflow-hidden rounded-xl bg-black">
-                <iframe className="h-full w-full" src={`https://www.youtube-nocookie.com/embed/${vid}`} title={`${p.name} video`} loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-              </div>
-            </section>
+      <div className="mx-auto mt-10 flex max-w-[1080px] flex-col gap-16">
+        {/* ───────── Genel bakış ───────── */}
+        <section id="genel" className="scroll-mt-40">
+          <span className={eyebrow}>GENEL BAKIŞ</span>
+          <h2 className={`${h2} mt-1`}>{fullName(p)} kimin için?</h2>
+          <div className="mt-5">
+            <AnswerBox title={`${fullName(p)} nedir?`} updated={formatDate(p.updatedAt)}>{quickAnswer(p, s)}</AnswerBox>
+          </div>
+          {p.idealFor.length || p.notFor.length ? (
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {p.idealFor.length ? (
+                <div className="rounded-[22px] border border-line bg-white p-5">
+                  <b className="flex items-center gap-2 text-[15px]"><span className="grid h-8 w-8 place-items-center rounded-full bg-ok-bg text-ok"><ThumbsUp size={16} /></span> Kimler için ideal</b>
+                  <ul className="mt-3 flex flex-col gap-2.5 text-[14.5px]">{p.idealFor.map((t) => <li key={t} className="flex gap-2.5"><Check size={18} className="mt-0.5 shrink-0 text-ok" />{t}</li>)}</ul>
+                </div>
+              ) : null}
+              {p.notFor.length ? (
+                <div className="rounded-[22px] border border-[#f1e2c4] bg-[#fffbf2] p-5">
+                  <b className="flex items-center gap-2 text-[15px]"><span className="grid h-8 w-8 place-items-center rounded-full bg-[#fdefd0] text-[#8a5a00]"><Info size={16} /></span> Bilmen gereken</b>
+                  <ul className="mt-3 flex flex-col gap-2.5 text-[14.5px] text-[#5c4a26]">{p.notFor.map((t) => <li key={t} className="flex gap-2.5"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#c99a3a]" />{t}</li>)}</ul>
+                  <Link href="/sihirbaz" className="mt-3 inline-block text-[13.5px] font-bold text-deep underline-offset-2 hover:underline">Farklı bir iş için mi? 6 soruda bulalım →</Link>
+                </div>
+              ) : null}
+            </div>
           ) : null}
+          {p.description ? <div className="prose-lite prose-article mt-6 max-w-3xl text-[15.5px]" dangerouslySetInnerHTML={{ __html: markdownToHtml(p.description) }} /> : null}
+        </section>
 
-          <section id="garanti" className="scroll-mt-40">
-            <h2 className="font-display mb-3 text-2xl font-extrabold">Garanti ve servis</h2>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl bg-soft p-4 text-sm"><b>{p.warrantyMonths} ay garanti</b><p className="text-mute">Faturalı, distribütör garantisi.</p></div>
-              <div className="rounded-xl bg-soft p-4 text-sm"><b>Arıza olursa</b><p className="text-mute">Hesabından kayıt aç → ücretsiz kargo kodu → aşama aşama takip.</p></div>
-              <div className="rounded-xl bg-soft p-4 text-sm"><b>14 gün iade</b><p className="text-mute">Beğenmezsen tek tıkla iade talebi.</p></div>
+        {/* ───────── Özellikler ───────── */}
+        <section id="ozellikler" className="scroll-mt-40">
+          <span className={eyebrow}>ÖZELLİKLER</span>
+          <h2 className={`${h2} mt-1`}>Teknik özellikler</h2>
+          {p.specs.length ? (
+            <dl className="mt-5 grid overflow-hidden rounded-[22px] border border-line md:grid-cols-2" data-testid="pdp-specs">
+              {p.specs.map((x) => (
+                <div key={x.key} className="flex items-baseline justify-between gap-4 border-b border-line px-5 py-3.5 text-[14.5px] odd:bg-[#fcfcfc] md:[&:nth-child(4n+3)]:bg-[#fcfcfc] md:[&:nth-child(4n+4)]:bg-[#fcfcfc] md:odd:bg-white md:[&:nth-last-child(-n+2)]:border-b-0 [&:last-child]:border-b-0">
+                  <dt className="text-mute">{x.key}</dt>
+                  <dd className="text-right font-semibold">{x.value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="mt-4 rounded-2xl bg-soft p-5 text-sm text-mute">Detaylı teknik bilgi için <a href={wa} target="_blank" className="font-bold text-deep underline">uzmana sor</a>.</p>
+          )}
+          {p.boxContents.length ? (
+            <div className="mt-6 rounded-[22px] bg-soft p-5">
+              <b className="flex items-center gap-2 text-[15px]"><PackageOpen size={18} /> Kutudan çıkanlar</b>
+              <ul className="mt-3 flex flex-wrap gap-2">{p.boxContents.map((b) => <li key={b} className="flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-[13.5px] font-semibold ring-1 ring-line"><Check size={14} className="text-ok" />{b}</li>)}</ul>
+            </div>
+          ) : null}
+        </section>
+
+        {vid ? (
+          <section id="video" className="scroll-mt-40">
+            <span className={eyebrow}>VİDEO</span>
+            <h2 className={`${h2} mt-1 flex items-center gap-2`}><Play size={22} /> Elde gösterim</h2>
+            <div className="mt-5 aspect-video overflow-hidden rounded-[22px] bg-black">
+              <iframe className="h-full w-full" src={`https://www.youtube-nocookie.com/embed/${vid}`} title={`${p.name} video`} loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
             </div>
           </section>
+        ) : null}
 
-          {!out && p.price >= 1000 ? (
-            <section id="taksit" className="scroll-mt-40">
-              <h2 className="font-display mb-3 text-2xl font-extrabold">Taksit seçenekleri</h2>
-              <InstallmentTable price={p.price} banks={banks} noInterest={s.payment.noInterestInstallments} max={s.payment.maxInstallment} rates={s.payment.installmentRates} />
-            </section>
-          ) : null}
-
-          <FaqSection items={faqItems} title={`${fullName(p)} hakkında sık sorulanlar`} />
-
-          <section id="yorumlar" className="scroll-mt-40">
-            <h2 className="font-display mb-3 text-2xl font-extrabold">Yorumlar</h2>
-            {p.reviews.length ? (
-              <ul className="divide-y divide-line">
+        {/* ───────── Yorumlar ───────── */}
+        <section id="yorumlar" className="scroll-mt-40">
+          <span className={eyebrow}>YORUMLAR</span>
+          <h2 className={`${h2} mt-1`}>Kullananlar ne diyor?</h2>
+          <div className="mt-5 grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="flex flex-col rounded-[22px] bg-[linear-gradient(160deg,#fffaf0_0%,#ffffff_60%)] p-5 ring-1 ring-[#f1e6cf]">
+              {rCount ? (
+                <>
+                  <span className="font-display text-[52px] leading-none font-black">{(rating ?? 0).toFixed(1)}</span>
+                  <span className="mt-1 flex">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={17} className={i < Math.round(rating ?? 0) ? "fill-gold text-gold" : "text-[#e5d9bd]"} />)}</span>
+                  <span className="mt-1 text-[13px] text-mute">{rCount} yorum</span>
+                  <div className="mt-4 flex flex-col gap-1.5">
+                    {dist.map(({ r, n }) => (
+                      <span key={r} className="flex items-center gap-2 text-[12.5px] text-mute">
+                        <span className="w-3 text-right font-bold text-deep">{r}</span>
+                        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#f1ece0]"><span className="block h-full rounded-full bg-gold" style={{ width: `${(n / rCount) * 100}%` }} /></span>
+                        <span className="w-4 text-right">{n}</span>
+                      </span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="flex">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={22} className="text-[#e5d9bd]" />)}</span>
+                  <b className="mt-3 text-[16px]">Henüz yorum yok</b>
+                  <span className="text-[13.5px] text-mute">Bu cihazı kullandıysan deneyimini paylaş; başkalarının kararına yardımcı ol.</span>
+                </>
+              )}
+              <div className="mt-auto pt-4"><ProductForms productId={p.id} mode="review" /></div>
+            </div>
+            {rCount ? (
+              <div className="grid gap-3 sm:grid-cols-2">
                 {p.reviews.map((r) => (
-                  <li key={r.id} className="py-4 text-sm">
-                    <p className="flex flex-wrap items-center gap-2"><b>{r.name}</b> <span className="text-gold">{"★".repeat(r.rating)}<span className="text-line">{"★".repeat(5 - r.rating)}</span></span>{r.isVerified ? <span className="rounded bg-pop px-1.5 py-0.5 text-[11px] font-bold text-on-pop">Doğrulanmış alıcı</span> : null}<span className="text-xs text-mute">{formatDate(r.createdAt)}</span></p>
-                    <p className="mt-1">{r.body}</p>
-                    {r.reply ? <p className="mt-2 rounded-lg bg-soft p-3"><b>Mağaza:</b> {r.reply}</p> : null}
-                  </li>
+                  <article key={r.id} className="flex flex-col rounded-[22px] border border-line bg-white p-5">
+                    <div className="flex items-center gap-3">
+                      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[15px] font-extrabold text-white ${AVATAR[[...r.name].reduce((n, c) => n + c.charCodeAt(0), 0) % AVATAR.length]}`}>{r.name.trim().charAt(0).toLocaleUpperCase("tr")}</span>
+                      <span className="min-w-0">
+                        <b className="block truncate text-[14.5px]">{r.name}</b>
+                        <span className="flex items-center gap-1.5 text-[12px] text-mute">
+                          {r.isVerified ? <span className="flex items-center gap-1 font-semibold text-ok"><BadgeCheck size={13} /> Doğrulanmış alıcı</span> : null}
+                          <time dateTime={r.createdAt.toISOString()}>{formatDate(r.createdAt)}</time>
+                        </span>
+                      </span>
+                    </div>
+                    <span className="mt-3 flex" aria-label={`5 üzerinden ${r.rating} yıldız`}>{Array.from({ length: 5 }, (_, i) => <Star key={i} size={15} className={i < r.rating ? "fill-gold text-gold" : "text-line"} />)}</span>
+                    <p className="mt-2 text-[15px] leading-relaxed text-[#2a2a2e]">{r.body}</p>
+                    {r.reply ? <p className="mt-3 rounded-2xl bg-soft p-3.5 text-[13.5px]"><b>Arena Dedektör:</b> {r.reply}</p> : null}
+                  </article>
                 ))}
-              </ul>
-            ) : <p className="text-sm text-mute">Henüz yorum yok. İlk yorumu sen yaz.</p>}
-            <ProductForms productId={p.id} mode="review" />
-          </section>
-
-          <section id="sorular" className="scroll-mt-40">
-            <h2 className="font-display mb-3 text-2xl font-extrabold">Sorular</h2>
-            <ul className="divide-y divide-line">
-              {p.questions.map((q) => (
-                <li key={q.id} className="py-4 text-sm">
-                  <p><b>Soru:</b> {q.question} <span className="text-xs text-mute">· {q.name}</span></p>
-                  {q.answer ? <p className="mt-1 rounded-lg bg-tint p-3"><b>Uzman:</b> {q.answer}</p> : null}
-                </li>
-              ))}
-            </ul>
-            <ProductForms productId={p.id} mode="question" />
-          </section>
-        </div>
-        <aside className="hidden lg:block">
-          <div className="sticky top-20 rounded-2xl border border-line p-5">
-            <b className="text-lg">{p.name}</b>
-            <p className="font-display mt-1 text-2xl font-extrabold">{formatTL(p.price)}</p>
-            {inst > 1 ? <p className="text-sm text-mute">{inst} × {formatTL(Math.round(p.price / inst))} vade farksız</p> : null}
-            <div className="mt-4"><BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} amount={p.price} brand={p.brand?.name} /></div>
-            <a href={wa} target="_blank" className="mt-2 flex h-11 items-center justify-center gap-2 rounded-lg bg-[#e9f9ef] text-sm font-extrabold text-[#11643a]"><MessageCircle size={17} /> Uzmana sor</a>
+              </div>
+            ) : null}
           </div>
-        </aside>
+        </section>
+
+        {/* ───────── Soru-cevap ───────── */}
+        <section id="sorular" className="scroll-mt-40">
+          <span className={eyebrow}>SORU-CEVAP</span>
+          <h2 className={`${h2} mt-1`}>Uzmana sorulanlar</h2>
+          {p.questions.length ? (
+            <div className="mt-5 flex flex-col gap-3">
+              {p.questions.map((q) => (
+                <div key={q.id} className="rounded-[22px] border border-line bg-white p-5 text-[14.5px]">
+                  <p className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-soft text-[12px] font-extrabold">S</span><span><b>{q.question}</b> <span className="text-[12px] text-mute">· {q.name}</span></span></p>
+                  {q.answer ? <p className="mt-3 flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-deep text-[12px] font-extrabold text-white">C</span><span className="rounded-2xl rounded-tl-sm bg-soft px-4 py-2.5">{q.answer}</span></p> : <p className="mt-2 pl-10 text-[13px] text-mute">Uzman yanıtı bekleniyor.</p>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-[14.5px] text-mute">Aklına takılan bir şey mi var? Sor, uzmanımız burada yanıtlasın.</p>
+          )}
+          <ProductForms productId={p.id} mode="question" />
+        </section>
+
+        <FaqSection items={faqItems} title={`${fullName(p)} hakkında sık sorulanlar`} />
+
+        {/* ───────── Garanti ve ödeme ───────── */}
+        <section id="garanti" className="scroll-mt-40">
+          <span className={eyebrow}>GARANTİ VE ÖDEME</span>
+          <h2 className={`${h2} mt-1`}>İçin rahat olsun</h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {[
+              { I: ShieldCheck, t: `${warranty} garanti`, d: "Faturalı, distribütör garantisi. Seri numarası kayıtlı." },
+              { I: Wrench, t: "Arıza olursa", d: "Hesabından kayıt aç → ücretsiz kargo kodu → aşama aşama takip." },
+              { I: RotateCcw, t: "14 gün iade", d: "Beğenmezsen hesabından tek tıkla iade talebi." },
+            ].map(({ I, t, d }) => (
+              <div key={t} className="rounded-[22px] border border-line bg-white p-5">
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-soft"><I size={21} /></span>
+                <b className="mt-3 block text-[15.5px]">{t}</b>
+                <p className="mt-1 text-[13.5px] text-mute">{d}</p>
+              </div>
+            ))}
+          </div>
+          {!out && p.price >= 1000 ? (
+            <div className="mt-6">
+              <b className="flex items-center gap-2 text-[16px]"><CreditCard size={18} /> Taksit seçenekleri</b>
+              <div className="mt-3"><InstallmentTable price={p.price} banks={banks} noInterest={s.payment.noInterestInstallments} max={s.payment.maxInstallment} rates={s.payment.installmentRates} /></div>
+            </div>
+          ) : null}
+        </section>
       </div>
 
       <Suspense fallback={<ExtrasSkeleton />}>
@@ -373,6 +470,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     </div>
   );
 }
+
+const AVATAR = ["bg-[#d42e1e]", "bg-[#1f3b8f]", "bg-[#11643a]", "bg-[#7a4a14]", "bg-[#3a3a40]"];
 
 /** Ürün sayfasının alt kısmı (rehberler, birlikte alınanlar, son gezilenler, benzer modeller): ayrı akar. */
 async function PdpExtras({ p, ctx }: { p: NonNullable<Awaited<ReturnType<typeof getProduct>>>; ctx: ReturnType<typeof cardCtx> }) {

@@ -40,6 +40,22 @@ export function DeliveryBadge({ p, ctx, className }: { p: Pick<P, "stock" | "all
   );
 }
 
+/** Ürün sayfası fiyat kartında tek satır teslimat bilgisi: "Pazartesi kargoda · Sal–Çar, 17–18 Kas kapında". */
+export function DeliveryLine({ p, ctx, pickup }: { p: Pick<P, "stock" | "allowBackorder" | "sameDayShipping">; ctx: CardCtx; pickup?: boolean }) {
+  const d = deliveryInfo(p, ctx.ship);
+  if (d.tone === "none") return null;
+  return (
+    <span className="flex items-start gap-2" data-testid="pdp-delivery">
+      <Truck size={15} className={cn("mt-0.5 shrink-0", d.tone === "fast" ? "text-ok" : d.tone === "slow" ? "text-warn" : "text-mute")} />
+      <span>
+        <b className={d.tone === "fast" ? "text-ok" : d.tone === "slow" ? "text-warn" : "text-deep"}>{d.ship}</b>
+        {d.eta ? <span className="text-mute"> · {d.eta}</span> : null}
+        {pickup ? <span className="block text-[12.5px] text-mute">Showroom&apos;dan da teslim alabilirsin.</span> : null}
+      </span>
+    </span>
+  );
+}
+
 /** Gerçek etkileşim verisi; eşiğin altındaysa hiçbir şey gösterilmez. */
 export function SocialProof({ p, ctx, className }: { p: Pick<P, "views24" | "carts24">; ctx: CardCtx; className?: string }) {
   if (!ctx.social) return null;

@@ -36,6 +36,18 @@ async def main():
         await pg.goto(B + "/sepet", wait_until="networkidle")
         chk("Sepet toplamı ürün sayfasındakiyle aynı", "48.088" in await pg.inner_text("main"))
 
+        # ── Ürün sayfası: bölüm menüsü (yorum sayısıyla), tıklayınca bölüme gider, satın al kutusu ekrandan çıkınca menüde mini satın al
+        await pg.goto(B + "/urun/vanquish-560-pro-pack", wait_until="networkidle")
+        tabs = pg.locator("[data-testid=pdp-tabs]")
+        chk("Bölüm menüsünde yorum sayısı", "Yorumlar" in await tabs.inner_text() and "2" in await tabs.locator("a[href='#yorumlar']").inner_text())
+        await tabs.locator("a[href='#yorumlar']").click(); await pg.wait_for_timeout(1200)
+        top = await pg.evaluate("document.getElementById('yorumlar').getBoundingClientRect().top")
+        chk("Yorumlar'a tıklayınca bölüme gidiyor", 0 < top < 260, top)
+        chk("Okunan bölüm vurgulu", await tabs.locator("a[aria-current=true]").get_attribute("href") == "#yorumlar")
+        chk("Menüde mini 'Sepete ekle' görünür", await tabs.locator("button:has-text('Sepete ekle')").is_visible())
+        chk("Öne çıkan bilgiler (teknoloji, su, ağırlık)", await pg.locator("[data-testid=pdp-facts] >> text=Teknoloji").count() == 1)
+        chk("Fiyat kartında teslimat satırı", await pg.locator("[data-testid=pdp-delivery]").count() == 1)
+
         # ── Kartlar: sepette fiyatı, YENİ sadece rozetli üründe
         await pg.goto(B + "/kategori/define-ve-sikke", wait_until="networkidle")
         vq = pg.locator("article:has(a[href='/urun/vanquish-560-pro-pack'])")

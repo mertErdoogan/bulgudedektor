@@ -221,3 +221,7 @@ html.rv-ready .rv:not(.in) .rv-bar { transform: scaleX(0); }
 button:not(:disabled):active { scale: .97; }
 article:active, a[class*="rounded"]:active { scale: .985; }
 @media (prefers-reduced-motion: reduce) { button:active, article:active, a:active { scale: 1; } }
+/* Ürün galerisi görsel değişimi */
+@keyframes gallery-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+.gallery-in { animation: gallery-in .35s ease-out; }
+@media (prefers-reduced-motion: reduce) { .gallery-in { animation: none; } }
