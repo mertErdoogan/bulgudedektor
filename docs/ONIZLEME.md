@@ -1,18 +1,25 @@
 # Ön izleme (preprod) ortamı — Render
 
 `main` dalına gelen her commit birkaç dakika içinde ön izleme adresine otomatik yayınlanır.
-Kurulum tek seferliktir ve telefondan yapılabilir.
+Kurulum tek seferliktir, telefondan yapılabilir ve ücretsizdir.
 
-## Ne kuruluyor (render.yaml)
+## Ne kuruluyor (render.yaml) — ücretsiz
 
-| Servis | Ne işe yarar | Aylık (yaklaşık) |
+| Servis | Ne işe yarar | Ücret |
 |---|---|---|
-| `arena-onizleme` (web, Docker, Frankfurt) | Site + panel. Açılışta veritabanı göçlerini uygular. | 7 $ |
-| 1 GB kalıcı disk (`/data`) | Panelden yüklenen görseller | 0,25 $ |
-| `arena-db` (PostgreSQL 17, Basic-256mb) | Veritabanı | 6 $ |
-| `arena-onizleme-cron` | 15 dakikada bir zamanlanmış işler | ~1 $ |
+| `arena-onizleme` (web, Docker, Frankfurt, free) | Site + panel. Açılışta veritabanı göçlerini uygular. | 0 |
+| `arena-db` (PostgreSQL 17, free) | Veritabanı | 0 |
 
-Toplam yaklaşık **14–15 $/ay**. Fiyatlar değişebilir; güncelini render.com/pricing'den kontrol edin.
+Kart istemez. Ücretsiz planın sınırları:
+
+- **Uyku:** 15 dakika kimse açmazsa site uyur; sonraki ilk açılış ~1 dakika sürer (sonra normal hızda).
+- **Veritabanı 30 gün:** Render ücretsiz veritabanını 30 gün sonra siler (öncesinde e-postayla uyarır). O gün Render'da
+  `arena-db`'yi silip Blueprint'i yeniden senkronlamak yeter; site açılışta boş veritabanına demo veriyi yeniden yükler.
+- **Kalıcı disk yok:** panelden yüklenen görseller güncellemede/uykuda silinir (demo görseller etkilenmez).
+- **Zamanlanmış işler yok:** cron ücretli olduğu için kurulmadı (ödeme zaman aşımı, sepet hatırlatma çalışmaz; ön izlemede sorun değil).
+- **Derleme süresi:** aylık ücretsiz derleme dakikası sınırlıdır; her güncelleme ~8–10 dakika sürer.
+
+Canlıya yakın bir ortam gerektiğinde `plan: starter`, `disk` ve cron eklenerek ücretli plana geçilir (~14–15 $/ay).
 
 ## Ön izleme modunun farkları (`PREPROD=1`)
 
@@ -29,13 +36,12 @@ Toplam yaklaşık **14–15 $/ay**. Fiyatlar değişebilir; güncelini render.co
 ## Kurulum (telefondan, ~10 dakika)
 
 1. **render.com** → *Get Started* → **GitHub ile giriş yapın**.
-2. Sağ üst menü → **Billing** → kart ekleyin (disk ve kalıcı servis ücretli plan ister).
-3. **New +** → **Blueprint** → GitHub erişimine izin verin → `mertErdoogan/bulgudedektor` deposunu seçin.
-4. Render `render.yaml` dosyasını okur ve 3 servisi listeler. İki değer sorar:
+2. **New +** → **Blueprint** → GitHub erişimine izin verin → `mertErdoogan/bulgudedektor` deposunu seçin.
+3. Render `render.yaml` dosyasını okur ve site ile veritabanını listeler. İki değer sorar:
    - `PREVIEW_PASSWORD`: siteyi açarken istenecek şifre (ör. uzun ve tahmin edilmesi zor bir kelime grubu)
    - `ADMIN_PASSWORD`: panel şifresi (en az 10 karakter)
-5. **Apply / Deploy Blueprint**. İlk derleme 8–12 dakika sürer.
-6. Bittiğinde `arena-onizleme` servisine girin; üstte adres görünür (ör. `https://arena-onizleme.onrender.com`,
+4. **Apply / Deploy Blueprint**. İlk derleme 8–12 dakika sürer.
+5. Bittiğinde `arena-onizleme` servisine girin; üstte adres görünür (ör. `https://arena-onizleme.onrender.com`,
    isim alınmışsa sonuna ek gelir). Açın → `arena` / `PREVIEW_PASSWORD` ile girin.
 
 ## Sonrası: telefondan geliştirme
@@ -49,6 +55,6 @@ Toplam yaklaşık **14–15 $/ay**. Fiyatlar değişebilir; güncelini render.co
 
 - **Demo veriyi baştan yüklemek:** Render → `arena-db` → *Shell* yerine en kolayı: veritabanını silip yeniden
   oluşturmak değil, panelden ürünleri düzenlemektir. Gerçekten sıfırlamak gerekirse Claude'dan isteyin.
-- **Görseller kayboldu mu?** Panelden yüklenen görseller kalıcı diskte (`/data/uploads`) durur, güncellemede silinmez.
+- **Görseller kayboldu mu?** Ücretsiz planda disk kalıcı değil; panelden yüklenen görseller güncellemede silinir. Demo görseller kodla birlikte gelir, onlar kalır.
 - **Gerçek siteye geçiş:** ön izleme denemeleri bitince `docs/KURULUM.md`'deki canlı kurulum yapılır;
   `PREPROD`, `SEED_DEMO` ve `PAYMENT_SIMULATION` değişkenleri canlıda **olmaz**.

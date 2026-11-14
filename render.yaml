@@ -1,19 +1,15 @@
-# Arena Dedektör — Render ön izleme (preprod) kurulumu
-# Render → New → Blueprint → bu repo. main dalına her push otomatik yayına alınır.
-# Ayrıntı: docs/ONIZLEME.md
+# Arena Dedektör — Render ÜCRETSİZ ön izleme (geliştirme aşaması, telefondan görmek için)
+# Render → New → Blueprint → bu repo. main dalına her push otomatik yayına alınır. Kart gerekmez.
+# Ücretsiz planın sınırları ve ücretli plana geçiş: docs/ONIZLEME.md
 services:
   - type: web
     name: arena-onizleme
     runtime: docker
     region: frankfurt
-    plan: starter            # kalıcı disk için ücretli plan gerekir (yüklenen görseller /data'da)
+    plan: free               # 15 dk kullanılmazsa uyur; ilk açılış ~1 dk. Kalıcı disk yok.
     branch: main
     autoDeploy: true         # main'e her push → yeni sürüm (derleme hatalıysa eski sürüm yayında kalır)
     healthCheckPath: /api/health
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -31,8 +27,9 @@ services:
         value: force-test-only
       - key: TZ
         value: Europe/Istanbul
+      # Ücretsiz planda kalıcı disk yok: panelden yüklenen görseller güncellemede/uykuda silinir (demo görseller kalır)
       - key: UPLOAD_DIR
-        value: /data/uploads
+        value: /tmp/uploads
       - key: PREVIEW_USER
         value: arena
       # Kurulumda Render sorar: siteyi açarken istenecek şifre
@@ -42,34 +39,9 @@ services:
       - key: ADMIN_PASSWORD
         sync: false
 
-  # 15 dakikada bir zamanlanmış işler (ödeme zaman aşımı, sepet hatırlatma, yorum daveti, temizlik)
-  - type: cron
-    name: arena-onizleme-cron
-    runtime: image
-    image:
-      url: docker.io/curlimages/curl:8.10.1
-    region: frankfurt
-    plan: starter
-    schedule: "*/15 * * * *"
-    # Render iç ağı üzerinden (aynı bölge): siteye internet üzerinden gitmeye gerek yok
-    # Değer ":" içerdiği için blok olarak yazılır (düz yazılırsa YAML "mapping values are not allowed" hatası verir)
-    dockerCommand: >-
-      sh -c 'curl -fsS -H "Authorization: Bearer $CRON_SECRET" "http://$SITE_HOSTPORT/api/cron"'
-    envVars:
-      - key: CRON_SECRET
-        fromService:
-          type: web
-          name: arena-onizleme
-          envVarKey: CRON_SECRET
-      - key: SITE_HOSTPORT
-        fromService:
-          type: web
-          name: arena-onizleme
-          property: hostport
-
 databases:
   - name: arena-db
     region: frankfurt
-    plan: basic-256mb
+    plan: free               # 30 gün sonra Render siler (öncesinde e-postayla uyarır); bkz. docs/ONIZLEME.md
     postgresMajorVersion: "17"
     ipAllowList: []          # yalnızca Render içinden erişim
