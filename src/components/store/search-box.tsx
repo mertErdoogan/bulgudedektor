@@ -1,8 +1,8 @@
 "use client";
 
 import { imgUrl } from "@/lib/img";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/locale-link";
+import { useLocaleRouter } from "@/components/i18n";
 import { useEffect, useId, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, Clock3, Compass, CornerDownLeft, Search, Sparkles, X } from "lucide-react";
 import { cn, formatTL } from "@/lib/utils";
@@ -69,7 +69,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
   const [mobile, setMobile] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
-  const router = useRouter();
+  const router = useLocaleRouter();
   const listId = useId();
 
   useEffect(() => {

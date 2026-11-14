@@ -49,8 +49,12 @@ export function excerpt(md: string | null | undefined, n = 160) {
   return t.length > n ? `${t.slice(0, n - 1).replace(/\s+\S*$/, "")}…` : t;
 }
 
-export function pageMeta(o: { title?: string; description?: string | null; path: string; image?: string | null; type?: "website" | "article"; noindex?: boolean; publishedTime?: Date | null; modifiedTime?: Date | null; absoluteTitle?: boolean }): Metadata {
-  const url = abs(o.path)!;
+export async function pageMeta(o: { title?: string; description?: string | null; path: string; image?: string | null; type?: "website" | "article"; noindex?: boolean; publishedTime?: Date | null; modifiedTime?: Date | null; absoluteTitle?: boolean }): Promise<Metadata> {
+  // Dil: canonical o dilin kendi adresi (İngilizce sayfa Türkçenin kopyası sayılmasın)
+  const { getLocale } = await import("./i18n/server");
+  const { localePath } = await import("./i18n/config");
+  const locale = await getLocale();
+  const url = abs(localePath(o.path, locale))!;
   // Kendi görseli olmayan sayfa: varsayılan paylaşım görseli (boş WhatsApp/Facebook kartı olmasın)
   const images = [o.image ? { url: abs(o.image)! } : { url: abs("/og-default")!, width: 1200, height: 630 }];
   return {
@@ -61,7 +65,7 @@ export function pageMeta(o: { title?: string; description?: string | null; path:
     openGraph: {
       type: o.type ?? "website",
       url,
-      locale: "tr_TR",
+      locale: locale === "en" ? "en_US" : "tr_TR",
       ...(o.title ? { title: o.title } : {}),
       ...(o.description ? { description: o.description.slice(0, 300) } : {}),
       images,

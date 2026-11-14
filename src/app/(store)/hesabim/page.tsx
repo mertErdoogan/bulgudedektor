@@ -1,6 +1,6 @@
 import { imgUrl } from "@/lib/img";
 import { CityDistrict } from "@/components/city-district";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { redirect } from "next/navigation";
 import { desc, eq, inArray } from "drizzle-orm";
 import { Download, MailWarning, ShieldCheck } from "lucide-react";

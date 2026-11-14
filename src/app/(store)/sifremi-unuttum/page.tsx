@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Turnstile } from "@/components/turnstile";
 import { Field, Input } from "@/components/ui";

@@ -4,6 +4,8 @@ import { and, asc, eq, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { brands, categories, pages, posts, productImages, products } from "@/db/schema";
 import { abs, siteUrl } from "@/lib/seo";
+import { getSettings } from "@/lib/settings";
+import { DEFAULT_LOCALE, HTML_LANG, LOCALES, localePath } from "@/lib/i18n/config";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     db.select({ slug: posts.slug, u: posts.updatedAt, img: posts.coverImage }).from(posts).where(and(eq(posts.status, "PUBLISHED"), lte(posts.publishedAt, new Date()))),
   ]);
   const now = new Date();
-  return [
+  const list: MetadataRoute.Sitemap = [
     { url: base, lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: `${base}/urunler`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${base}/sihirbaz`, priority: 0.8 },
@@ -43,4 +45,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...bl.map((x) => ({ url: `${base}/blog/${x.slug}`, lastModified: x.u, changeFrequency: "monthly" as const, priority: 0.75, images: x.img ? [abs(x.img)!] : undefined })),
     ...pg.map((x) => ({ url: `${base}/sayfa/${x.slug}`, lastModified: x.u, priority: 0.3 })),
   ];
+  // Açık diğer diller: her adresin dil karşılığı (hreflang) ve o dilin kendi adresi de haritada
+  const s = await getSettings();
+  const others = LOCALES.filter((l) => l !== DEFAULT_LOCALE && s.i18n.locales.includes(l));
+  if (!others.length) return list;
+  const out: MetadataRoute.Sitemap = [];
+  for (const e of list) {
+    const path = e.url.slice(base.length) || "/";
+    const languages = Object.fromEntries([[HTML_LANG[DEFAULT_LOCALE], e.url], ...others.map((l) => [HTML_LANG[l], `${base}${localePath(path, l)}`])]);
+    out.push({ ...e, alternates: { languages } });
+    for (const l of others) out.push({ ...e, url: `${base}${localePath(path, l)}`, alternates: { languages } });
+  }
+  return out;
 }

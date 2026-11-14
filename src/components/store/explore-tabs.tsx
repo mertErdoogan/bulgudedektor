@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { useState } from "react";
 import { ArrowRight, Coins, Gem, Radar, Sprout, Waves } from "lucide-react";
 import type { CardCtx } from "@/lib/card-ctx";

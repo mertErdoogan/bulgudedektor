@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { and, eq, isNull } from "drizzle-orm";
 import { CheckCircle2, CircleAlert } from "lucide-react";
 import { db } from "@/db";

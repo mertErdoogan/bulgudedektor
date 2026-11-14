@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { TranslationFields } from "@/components/admin/translation-fields";
 import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Copy, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
@@ -61,7 +62,11 @@ export function ProductForm({
   categories,
   showCost,
   canDelete,
+  translations,
+  locales,
 }: {
+  translations?: Record<string, Record<string, string>>;
+  locales?: string[];
   product?: Product;
   brands: Opt[];
   categories: Opt[];
@@ -142,6 +147,18 @@ export function ProductForm({
               </Field>
             </div>
           </Card>
+
+          <TranslationFields
+            values={translations}
+            enabled={locales}
+            fields={[
+              { field: "name", label: "Ürün adı" },
+              { field: "shortDescription", label: "Kısa açıklama", multiline: true },
+              { field: "description", label: "Detaylı açıklama", multiline: true, hint: "Markdown destekler" },
+              { field: "seoTitle", label: "SEO başlığı" },
+              { field: "seoDescription", label: "SEO açıklaması", multiline: true },
+            ]}
+          />
 
           <Card>
             <CardHeader title="Görseller" description="İlk görsel kapak olarak kullanılır. Sürükle-bırak veya dosya seç; oklarla sırala." />

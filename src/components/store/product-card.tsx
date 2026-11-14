@@ -1,11 +1,12 @@
 import { imgProps } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { Eye, Flame, Star, Truck } from "lucide-react";
 import type { ProductCard as P } from "@/lib/store";
 import { SOCIAL_MIN_CARTS, SOCIAL_MIN_VIEWS, type CardCtx } from "@/lib/card-ctx";
 import { deliveryInfo } from "@/lib/delivery";
 import { cn, formatTL } from "@/lib/utils";
 import { AddToCart, CompareToggle, FavoriteButton } from "./bits";
+import { T } from "@/components/i18n";
 
 const NEW_DAYS = 30;
 
@@ -108,8 +109,8 @@ export function ProductCard({ p, ctx, compare = false, className, rank }: { p: P
         <span aria-hidden className="card-shine pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/60 to-transparent" />
         <span className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1 pr-10">
           {rank ? <span className="grid h-7 min-w-7 place-items-center rounded-full bg-deep px-1.5 text-[12.5px] font-black text-white shadow-sm">{rank}</span> : null}
-          {out ? <span className="rounded-full bg-deep px-2.5 py-0.5 text-[11px] font-extrabold text-white">Tükendi</span> : null}
-          {fresh && !out ? <span className="rounded-full bg-white px-2.5 py-0.5 text-[10.5px] font-black tracking-[.08em] text-deep shadow-sm ring-1 ring-line">YENİ</span> : null}
+          {out ? <span className="rounded-full bg-deep px-2.5 py-0.5 text-[11px] font-extrabold text-white"><T k="card.soldOut" /></span> : null}
+          {fresh && !out ? <span className="rounded-full bg-white px-2.5 py-0.5 text-[10.5px] font-black tracking-[.08em] text-deep shadow-sm ring-1 ring-line"><T k="card.new" /></span> : null}
           {badge && !discount && !fresh ? <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-extrabold text-deep ring-1 ring-line">{badge}</span> : null}
         </span>
         {discount ? <span className="absolute right-2.5 bottom-2.5 rounded-full bg-brand px-2.5 py-1 text-[11.5px] font-black text-white shadow-sm">−%{discount}</span> : null}
@@ -133,11 +134,11 @@ export function ProductCard({ p, ctx, compare = false, className, rank }: { p: P
         </div>
         {deal ? (
           <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-ok-bg px-2 py-0.5 text-[12px] font-semibold text-ok" data-testid="card-deal">
-            Sepette <b>{formatTL(deal)}</b>
+            <T k="card.inCart" /> <b>{formatTL(deal)}</b>
           </span>
         ) : (
           <span className="text-[12px] text-mute">
-            {out ? "Gelince haber verelim" : ctx.installments > 1 && p.price >= 3000 ? `${ctx.installments} × ${formatTL(Math.round(p.price / ctx.installments))} vade farksız` : "Taksit seçenekleri"}
+            {out ? <T k="card.notify" /> : ctx.installments > 1 && p.price >= 3000 ? <T k="card.installment" v={{ n: ctx.installments, tutar: formatTL(Math.round(p.price / ctx.installments)) }} /> : <T k="card.installOptions" />}
           </span>
         )}
         {d.tone !== "none" ? (
@@ -148,7 +149,7 @@ export function ProductCard({ p, ctx, compare = false, className, rank }: { p: P
         <div className="mt-auto flex flex-col gap-2 pt-3">
           {out ? (
             <Link href={`/urun/${p.slug}`} className="grid h-10 place-items-center rounded-full border border-[#dcdce0] text-[13.5px] font-bold hover:border-deep">
-              İncele
+              <T k="card.view" />
             </Link>
           ) : (
             <AddToCart productId={p.id} name={p.name} price={p.price} brand={p.brand} variant="card" />

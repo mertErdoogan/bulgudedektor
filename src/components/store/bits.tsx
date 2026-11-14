@@ -1,7 +1,7 @@
 "use client";
 
 import { imgUrl } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Check, ChevronRight, Compass, Grid2X2, Heart, Home, Menu, Scale, Search, ShoppingCart, User, X } from "lucide-react";
@@ -9,26 +9,31 @@ import { cn, formatTL } from "@/lib/utils";
 import { Button } from "@/components/ui";
 import { Logo } from "@/components/logo";
 import { useCart } from "./cart";
+import { useT } from "@/components/i18n";
+import { splitLocale } from "@/lib/i18n/config";
 
 export function CartButton({ compact }: { compact?: boolean }) {
   const { count, ready } = useCart();
+  const t = useT();
   if (compact)
     return (
-      <Link href="/sepet" aria-label="Sepet" className="relative grid h-11 w-11 place-items-center rounded-full hover:bg-soft">
+      <Link href="/sepet" aria-label={t("nav.cart")} className="relative grid h-11 w-11 place-items-center rounded-full hover:bg-soft">
         <ShoppingCart size={21} />
         {ready && count ? <span key={count} className="badge-bump absolute -top-0.5 -right-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[11px] font-extrabold text-white">{count}</span> : null}
       </Link>
     );
   return (
     <Link href="/sepet" className="flex h-11 items-center gap-2.5 rounded-full bg-deep pr-4 pl-3.5 text-[14px] font-bold text-white transition hover:bg-black">
-      <ShoppingCart size={19} /> Sepet
+      <ShoppingCart size={19} /> {t("nav.cart")}
       {ready && count ? <span key={count} className="badge-bump grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[11.5px] font-extrabold">{count}</span> : null}
     </Link>
   );
 }
 
-export function AddToCart({ productId, name, disabled, size = "md", className, label = "Sepete ekle", price, brand, variant }: { productId: string; name: string; disabled?: boolean; size?: "md" | "lg"; className?: string; label?: string; price?: number; brand?: string | null; variant?: "card" }) {
+export function AddToCart({ productId, name, disabled, size = "md", className, label, price, brand, variant }: { productId: string; name: string; disabled?: boolean; size?: "md" | "lg"; className?: string; label?: string; price?: number; brand?: string | null; variant?: "card" }) {
   const { add } = useCart();
+  const t = useT();
+  label ??= t("card.addToCart");
   // Eklendiğinde 1,4 sn "Eklendi ✓" onayı: müşteri tıklamanın işe yaradığını butonun kendisinde görür
   const [done, setDone] = useState(false);
   const onAdd = () => {
@@ -50,23 +55,24 @@ export function AddToCart({ productId, name, disabled, size = "md", className, l
         )}
       >
         {done ? (
-          <span key="ok" className="pop-in flex items-center gap-1.5"><Check size={16} strokeWidth={3} /> Eklendi</span>
+          <span key="ok" className="pop-in flex items-center gap-1.5"><Check size={16} strokeWidth={3} /> {t("card.added")}</span>
         ) : (
           <>
-            <ShoppingCart size={16} /> {disabled ? "Stokta yok" : label}
+            <ShoppingCart size={16} /> {disabled ? t("card.outOfStock") : label}
           </>
         )}
       </button>
     );
   return (
     <Button type="button" size={size} disabled={disabled} className={cn("w-full", done && "bg-ok hover:bg-ok", className)} onClick={onAdd}>
-      {disabled ? "Stokta yok" : done ? <span key="ok" className="pop-in flex items-center gap-1.5"><Check size={18} strokeWidth={3} /> Sepete eklendi</span> : label}
+      {disabled ? t("card.outOfStock") : done ? <span key="ok" className="pop-in flex items-center gap-1.5"><Check size={18} strokeWidth={3} /> {t("card.addedLong")}</span> : label}
     </Button>
   );
 }
 
 export function FavoriteButton({ productId, name, className, withLabel }: { productId: string; name?: string; className?: string; withLabel?: boolean }) {
   const { favorites, toggleFavorite, ready } = useCart();
+  const t = useT();
   const on = ready && favorites.includes(productId);
   return (
     <button
@@ -76,14 +82,14 @@ export function FavoriteButton({ productId, name, className, withLabel }: { prod
         toggleFavorite(productId, name);
       }}
       aria-pressed={on}
-      aria-label={on ? "Favorilerden çıkar" : "Favorilere ekle"}
+      aria-label={on ? t("fav.remove") : t("fav.add")}
       className={cn(
         withLabel ? "flex h-12 items-center justify-center gap-2 rounded-lg border border-line px-4 text-sm font-bold hover:border-deep" : "grid h-9 w-9 place-items-center rounded-full bg-white/90 shadow-sm ring-1 ring-line backdrop-blur hover:scale-105",
         className,
       )}
     >
       <Heart size={withLabel ? 18 : 17} className={on ? "fill-accent text-accent" : "text-deep"} />
-      {withLabel ? (on ? "Favorilerde" : "Favorilere ekle") : null}
+      {withLabel ? (on ? t("fav.on") : t("fav.add")) : null}
     </button>
   );
 }
@@ -190,18 +196,19 @@ export function MegaMenu({ categories, brands, variant = "nav" }: { categories: 
 }
 
 export function MobileTabBar() {
-  const p = usePathname();
+  const p = splitLocale(usePathname()).path;
   const { count, ready } = useCart();
+  const t = useT();
   const items = [
-    { href: "/", label: "Ana sayfa", icon: Home },
-    { href: "/kategoriler", label: "Kategoriler", icon: Grid2X2 },
-    { href: "/sihirbaz", label: "Bana hangisi", icon: Compass, center: true },
-    { href: "/sepet", label: "Sepet", icon: ShoppingCart, badge: ready ? count : 0 },
-    { href: "/hesabim", label: "Hesabım", icon: User },
+    { href: "/", label: t("nav.home"), icon: Home },
+    { href: "/kategoriler", label: t("nav.categories"), icon: Grid2X2 },
+    { href: "/sihirbaz", label: t("nav.whichOne"), icon: Compass, center: true },
+    { href: "/sepet", label: t("nav.cart"), icon: ShoppingCart, badge: ready ? count : 0 },
+    { href: "/hesabim", label: t("nav.account"), icon: User },
   ];
   if (p.startsWith("/odeme") || p.startsWith("/urun/")) return null;
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-white pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Alt menü">
+    <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-white pb-[env(safe-area-inset-bottom)] md:hidden" aria-label={t("nav.bottomMenu")}>
       {items.map((i) => {
         const on = i.href === "/" ? p === "/" : p.startsWith(i.href);
         return (

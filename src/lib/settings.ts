@@ -168,6 +168,9 @@ export type NavSettings = {
   promo: { mode: "auto" | "custom" | "off"; eyebrow: string; title: string; href: string; image: string };
 };
 
+/** Diller: Türkçe her zaman açık; diğerleri admin > Ayarlar > Diller'den açılır */
+export type I18nSettings = { locales: string[]; switcher: boolean };
+
 export type AllSettings = {
   store: StoreSettings;
   shipping: ShippingSettings;
@@ -178,6 +181,7 @@ export type AllSettings = {
   merch: MerchSettings;
   ticker: TickerSettings;
   nav: NavSettings;
+  i18n: I18nSettings;
 };
 
 export const DEFAULT_SETTINGS: AllSettings = {
@@ -300,6 +304,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
   },
   setup: { completed: false, completedSteps: [] },
   merch: { focusBrand: "minelab", weight: "balanced", pinned: [], badge: true, focusNote: "Türkiye distribütörü", heroCards: "latest" },
+  i18n: { locales: ["tr"], switcher: true },
   ticker: {
     enabled: true,
     items: [

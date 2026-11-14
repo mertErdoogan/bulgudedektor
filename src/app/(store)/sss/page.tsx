@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { MessageCircle } from "lucide-react";
 import { Breadcrumbs, FaqSection } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -7,7 +7,7 @@ import { faqLd, graph, pageMeta } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
-export const metadata = pageMeta({
+export const generateMetadata = () => pageMeta({
   title: "Sık Sorulan Sorular — Metal Dedektörü, Sipariş, Garanti",
   description: "Metal dedektörü seçimi, yasal durum, kargo, taksit, garanti, iade ve servis hakkında en çok sorulan soruların kısa ve net yanıtları.",
   path: "/sss",

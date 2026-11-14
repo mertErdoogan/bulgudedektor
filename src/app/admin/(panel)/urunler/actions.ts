@@ -3,6 +3,7 @@
 import { q } from "@/db/q";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { saveEntityTranslations } from "@/lib/i18n/content";
 import { z } from "zod";
 import { db } from "@/db";
 import { orderItems, productImages, products, serialNumbers, stockMovements, type Spec } from "@/db/schema";
@@ -125,6 +126,7 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
       return pid!;
     });
 
+    await saveEntityTranslations("product", productId, fd);
     await recordSlugChange("/urun", prevSlug, slug);
     if (status === "ACTIVE") await pingIndexNow([`/urun/${slug}`]);
     await audit(staff.id, id ? "update" : "create", "product", productId, `${name} ${id ? "güncellendi" : "eklendi"}`);

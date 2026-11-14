@@ -1,18 +1,22 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { Logo } from "@/components/logo";
 import { ConsentLink } from "./consent";
 import { getSettings } from "@/lib/settings";
 import { getFooterPages, getNav } from "@/lib/store";
+import { LangSwitch } from "./lang-switch";
+import { getPathname, getT } from "@/lib/i18n/server";
+import { DEFAULT_LOCALE, LOCALES } from "@/lib/i18n/config";
 
 export async function StoreFooter() {
-  const [s, nav, pages] = await Promise.all([getSettings(), getNav(), getFooterPages()]);
+  const [s, nav, pages, t, path] = await Promise.all([getSettings(), getNav(), getFooterPages(), getT(), getPathname()]);
+  const langs = LOCALES.filter((l) => l === DEFAULT_LOCALE || s.i18n.locales.includes(l));
   const st = s.store;
   const social = ([[st.instagram, "Instagram"], [st.youtube, "YouTube"], [st.tiktok, "TikTok"], [st.facebook, "Facebook"], [st.x, "X"], [st.linkedin, "LinkedIn"], [st.googleBusinessUrl, "Google Haritalar"]] as const).filter(([h]) => h) as unknown as [string, string][];
   const help = nav.menu.filter((m) => m.location === "FOOTER_HELP");
   const groups = [
-    { title: "Kategoriler", links: nav.categories.map((c) => ({ href: `/kategori/${c.slug}`, label: c.name })) },
-    { title: "Yardım ve rehberler", links: [{ href: "/blog", label: "Dedektör rehberleri" }, { href: "/sss", label: "Sık sorulan sorular" }, { href: "/sozluk", label: "Dedektör sözlüğü" }, { href: "/sihirbaz", label: "Hangi dedektörü almalıyım?" }, ...help.map((m) => ({ href: m.url, label: m.label })), ...pages.filter((p) => p.group === "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title }))] },
-    { title: "Sözleşmeler ve kurumsal", links: pages.filter((p) => p.group !== "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title })) },
+    { title: t("footer.categories"), links: nav.categories.map((c) => ({ href: `/kategori/${c.slug}`, label: c.name })) },
+    { title: t("footer.help"), links: [{ href: "/blog", label: t("footer.guides") }, { href: "/sss", label: t("footer.faq") }, { href: "/sozluk", label: t("footer.glossary") }, { href: "/sihirbaz", label: t("footer.whichDetector") }, ...help.map((m) => ({ href: m.url, label: m.label })), ...pages.filter((p) => p.group === "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title }))] },
+    { title: t("footer.legal"), links: pages.filter((p) => p.group !== "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title })) },
   ];
   return (
     <footer className="mt-16 bg-deep pb-24 text-white md:pb-0">
@@ -27,7 +31,7 @@ export async function StoreFooter() {
           </p>
           <a href={`mailto:${s.store.email}`} className="block opacity-80 hover:opacity-100">{s.store.email}</a>
           <p className="opacity-60">
-            {s.store.taxNumber ? `Vergi no: ${s.store.taxNumber} · ` : ""}
+            {s.store.taxNumber ? `${t("footer.taxNo")}: ${s.store.taxNumber} · ` : ""}
             {s.store.mersis ? `MERSİS: ${s.store.mersis} · ` : ""}
             {s.store.etbis ? `ETBİS: ${s.store.etbis}` : ""}
           </p>
@@ -52,8 +56,8 @@ export async function StoreFooter() {
       </div>
       <div className="border-t border-white/10">
         <div className="container-x flex flex-wrap items-center justify-between gap-2 py-4 text-xs opacity-60">
-          <span>© {new Date().getFullYear()} {s.store.name}. Tüm hakları saklıdır. · <ConsentLink className="underline hover:text-white" /></span>
-          <span>Ödemeler {s.payment.provider === "paytr" ? "PayTR" : "iyzico"} güvencesiyle 3D Secure · Kart bilgisi saklanmaz</span>
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">© {new Date().getFullYear()} {s.store.name}. {t("footer.rights")} · <ConsentLink className="underline hover:text-white" />{s.i18n.switcher && langs.length > 1 ? <LangSwitch langs={langs} current={t.locale} path={path} /> : null}</span>
+          <span>{t("footer.secure", { saglayici: s.payment.provider === "paytr" ? "PayTR" : "iyzico" })}</span>
         </div>
       </div>
     </footer>

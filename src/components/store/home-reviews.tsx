@@ -1,6 +1,6 @@
 import { imgUrl } from "@/lib/img";
 import { q } from "@/db/q";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { BadgeCheck, Star } from "lucide-react";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";

@@ -1,7 +1,7 @@
 "use client";
 
 import { imgUrl } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { useState, useTransition } from "react";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui";

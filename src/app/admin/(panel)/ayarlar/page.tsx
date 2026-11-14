@@ -6,7 +6,8 @@ import { Badge, Card, CardHeader, Checkbox, Field, Input, Select, Textarea } fro
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSettings } from "@/lib/settings";
-import { generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
+import { DEFAULT_LOCALE, LOCALES, LOCALE_LABEL } from "@/lib/i18n/config";
+import { saveI18n, generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
 
 export const metadata = { title: "Ayarlar" };
 const mask = (v: string) => (v ? `${v.slice(0, 4)}••••••••${v.slice(-3)}` : "");
@@ -21,6 +22,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     ...(can(staff.permissions, "payments.manage") ? [["odeme", "Ödeme"]] : []),
     ["entegrasyon", "Entegrasyonlar"],
     ["seo", "SEO"],
+    ["diller", "Diller"],
   ];
   return (
     <>
@@ -258,6 +260,30 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 </ul>
                 <p className="mt-2"><Link href="/admin/seo" className="font-bold text-link">SEO sağlık kontrolü →</Link></p>
               </div>
+            </ActionForm>
+          </Card>
+        ) : null}
+        {tab === "diller" ? (
+          <Card>
+            <CardHeader title="Diller" description="Türkçe her zaman açıktır. Açtığın dil /en/... gibi kendi adresinde yayınlanır, arama motorlarına hreflang ile bildirilir." />
+            <ActionForm action={saveI18n} className="flex flex-col gap-4 p-5" data-testid="i18n-settings">
+              <div className="flex flex-col gap-2.5">
+                {LOCALES.map((l) => (
+                  <Checkbox
+                    key={l}
+                    name={`locale_${l}`}
+                    defaultChecked={l === DEFAULT_LOCALE || s.i18n.locales.includes(l)}
+                    disabled={l === DEFAULT_LOCALE}
+                    label={<><b>{LOCALE_LABEL[l]}</b> <span className="text-mute">{l === DEFAULT_LOCALE ? "· varsayılan, adres ön eksiz" : `· adres /${l}/...`}</span></>}
+                  />
+                ))}
+              </div>
+              <Checkbox name="switcher" defaultChecked={s.i18n.switcher} label="Sitenin üst şeridinde ve alt bilgisinde dil seçiciyi göster" />
+              <div className="rounded-xl bg-soft p-3.5 text-[13px] leading-relaxed text-mute">
+                <b className="text-deep">Nasıl çalışır?</b> Butonlar, menüler, sepet ve ödeme metinleri hazır çevirilerle gelir. Ürün ve kategori metinlerini
+                ilgili kaydın düzenleme ekranındaki <b>Çeviriler</b> bölümünden gir; çevrilmeyen alan sitede Türkçe görünür.
+              </div>
+              <SubmitButton className="self-start">Kaydet</SubmitButton>
             </ActionForm>
           </Card>
         ) : null}

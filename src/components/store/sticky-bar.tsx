@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { useEffect, useState } from "react";
 import { MessageCircle, User } from "lucide-react";
 import { Logo } from "@/components/logo";

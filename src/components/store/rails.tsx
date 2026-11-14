@@ -1,7 +1,7 @@
 "use client";
 
 import { imgUrl } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Clock3, Heart, X } from "lucide-react";
 import type { CardCtx } from "@/lib/card-ctx";

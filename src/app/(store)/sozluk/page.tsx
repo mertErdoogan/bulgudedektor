@@ -5,7 +5,7 @@ import { headingId } from "@/lib/markdown";
 import { definedTermSetLd, graph, pageMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-export const metadata = pageMeta({
+export const generateMetadata = () => pageMeta({
   title: "Metal Dedektörü Sözlüğü — Terimler ve Anlamları",
   description: "Ayrım (discrimination), toprak dengeleme, VLF, PI, çok frekans, pinpointer, ID numarası… Metal dedektörü terimlerinin kısa ve anlaşılır tanımları.",
   path: "/sozluk",

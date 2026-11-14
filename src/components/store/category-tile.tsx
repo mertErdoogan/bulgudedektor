@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { ArrowRight } from "lucide-react";
 import { imgProps } from "@/lib/img";
 import { cn } from "@/lib/utils";

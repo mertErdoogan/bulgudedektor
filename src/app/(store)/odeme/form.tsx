@@ -1,7 +1,7 @@
 "use client";
 
 import { imgUrl } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { emit } from "@/lib/track";
 import { CityDistrict } from "@/components/city-district";

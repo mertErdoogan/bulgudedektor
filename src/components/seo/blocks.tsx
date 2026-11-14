@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { ChevronDown, Sparkles } from "lucide-react";
 import { breadcrumbLd, faqLd, graph } from "@/lib/seo";
 import { JsonLd } from "./json-ld";

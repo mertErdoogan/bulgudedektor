@@ -7,7 +7,7 @@ import { orders } from "@/db/schema";
 import { orderKey } from "@/lib/store";
 import { normalizePhone } from "@/lib/utils";
 
-export const metadata = pageMeta({ title: "Sipariş Takibi — Kargom Nerede?", description: "Sipariş numaranız ve e-posta ya da telefonunuzla siparişinizin ve kargonuzun durumunu anında sorgulayın.", path: "/siparis-takip" });
+export const generateMetadata = () => pageMeta({ title: "Sipariş Takibi — Kargom Nerede?", description: "Sipariş numaranız ve e-posta ya da telefonunuzla siparişinizin ve kargonuzun durumunu anında sorgulayın.", path: "/siparis-takip" });
 
 export default async function TrackPage({ searchParams }: { searchParams: Promise<{ no?: string; iletisim?: string }> }) {
   const sp = await searchParams;

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { DEFAULT_LOCALE, splitLocale } from "@/lib/i18n/config";
 
 /**
  * 1) Ön izleme ortamı (PREPROD=1): tüm site şifreli (HTTP Basic Auth: PREVIEW_USER / PREVIEW_PASSWORD) ve
@@ -31,13 +32,29 @@ export function middleware(req: NextRequest) {
       });
   }
 
+  // Dil: /en/... adresleri ön eki atılarak aynı sayfaya yönlenir; sayfa dili x-locale başlığından okur.
+  // Türkçe (varsayılan) ön eksizdir; /tr/... gelirse ön eksiz adrese kalıcı yönlendirilir.
+  const { locale, path } = splitLocale(pathname);
+  if (pathname === "/tr" || pathname.startsWith("/tr/")) {
+    const url = req.nextUrl.clone();
+    url.pathname = pathname.slice(3) || "/";
+    return NextResponse.redirect(url, 308);
+  }
+  const reqHeaders = new Headers(req.headers);
+  reqHeaders.set("x-locale", locale);
+  reqHeaders.set("x-pathname", path);
+
   let res: NextResponse;
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/giris") && !req.cookies.get("bulgu_admin")) {
+  if (path.startsWith("/admin") && !path.startsWith("/admin/giris") && !req.cookies.get("bulgu_admin")) {
     const url = req.nextUrl.clone();
     url.pathname = "/admin/giris";
-    url.searchParams.set("next", pathname);
+    url.searchParams.set("next", path);
     res = NextResponse.redirect(url);
-  } else res = NextResponse.next();
+  } else if (locale !== DEFAULT_LOCALE) {
+    const url = req.nextUrl.clone();
+    url.pathname = path;
+    res = NextResponse.rewrite(url, { request: { headers: reqHeaders } });
+  } else res = NextResponse.next({ request: { headers: reqHeaders } });
   if (preprod) res.headers.set("X-Robots-Tag", "noindex, nofollow");
   return res;
 }

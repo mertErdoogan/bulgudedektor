@@ -1,5 +1,5 @@
 import { imgProps } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { ArrowRight, BookOpen, Clock3, Coins, Compass, Gem, GitCompare, MessageCircle, Phone, Radar, RotateCcw, ShieldCheck, Store, Waves, Truck } from "lucide-react";
 import type { PostCard } from "@/lib/content";
 import type { CSSProperties } from "react";

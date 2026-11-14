@@ -4,7 +4,7 @@ import { pageMeta } from "@/lib/seo";
 import { getBrandGroups } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
-export const metadata = pageMeta({
+export const generateMetadata = () => pageMeta({
   title: "Dedektör Markaları — Minelab, Garrett, Nokta, XP",
   description: "Markaya göre alışveriş: Minelab, Garrett, Nokta ve XP dedektörleri kategorilerine göre. Tüm modeller orijinal, faturalı ve garantili.",
   path: "/markalar",

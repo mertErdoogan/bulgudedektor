@@ -1,9 +1,11 @@
 import { cardCtx } from "@/lib/card-ctx";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { Check, ChevronDown, Compass, Sparkles } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 import { facetCounts, listProducts, type CatalogFilter } from "@/lib/store";
-import { EXPERIENCE_LABEL, TECH_LABEL, WATERPROOF_LABEL } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
+import { localize } from "@/lib/i18n/content";
+import { enumLabel } from "@/lib/i18n/dict";
 import { FilterForm } from "./filter-form";
 import { Breadcrumbs } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -33,16 +35,18 @@ export function parseFilter(sp: SP, base: Partial<CatalogFilter> = {}): CatalogF
 
 export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, children }: { title: string; intro?: React.ReactNode; crumbs?: { href: string; label: string }[]; sp: SP; base?: Partial<CatalogFilter>; hideBrand?: boolean; top?: React.ReactNode; children?: React.ReactNode }) {
   const f = parseFilter(sp, base);
-  const [items, facets, s] = await Promise.all([listProducts(f), facetCounts(base?.category), getSettings()]);
+  const [items0, facets, s, t] = await Promise.all([listProducts(f), facetCounts(base?.category), getSettings(), getT()]);
+  const items = await localize(items0, "product");
+  const money = (n: number) => `${n.toLocaleString(t.locale === "en" ? "en-US" : "tr-TR")} TL`;
   const active = [
     ...(f.brand && !hideBrand ? f.brand.map((b) => ({ k: "marka", v: b, l: facets.brands.find((x) => x.slug === b)?.name ?? b })) : []),
-    ...(f.tech ?? []).map((v) => ({ k: "tek", v, l: TECH_LABEL[v] })),
-    ...(f.water ?? []).map((v) => ({ k: "su", v, l: WATERPROOF_LABEL[v] })),
-    ...(f.exp ?? []).map((v) => ({ k: "seviye", v, l: EXPERIENCE_LABEL[v] })),
-    ...(f.max ? [{ k: "max", v: String(f.max), l: `${f.max.toLocaleString("tr-TR")} TL'ye kadar` }] : []),
-    ...(f.min ? [{ k: "min", v: String(f.min), l: `${f.min.toLocaleString("tr-TR")} TL'den` }] : []),
-    ...(f.stock ? [{ k: "stok", v: "1", l: "Stokta" }] : []),
-    ...(f.light ? [{ k: "hafif", v: "1", l: "1,5 kg altı" }] : []),
+    ...(f.tech ?? []).map((v) => ({ k: "tek", v, l: enumLabel(t.locale, "tech", v) })),
+    ...(f.water ?? []).map((v) => ({ k: "su", v, l: enumLabel(t.locale, "water", v) })),
+    ...(f.exp ?? []).map((v) => ({ k: "seviye", v, l: enumLabel(t.locale, "exp", v) })),
+    ...(f.max ? [{ k: "max", v: String(f.max), l: t("cat.upTo", { tutar: money(f.max) }) }] : []),
+    ...(f.min ? [{ k: "min", v: String(f.min), l: t("cat.from", { tutar: money(f.min) }) }] : []),
+    ...(f.stock ? [{ k: "stok", v: "1", l: t("cat.qStock") }] : []),
+    ...(f.light ? [{ k: "hafif", v: "1", l: t("cat.qLight") }] : []),
   ];
   const removeHref = (k: string, v: string) => {
     const q = new URLSearchParams();
@@ -62,13 +66,13 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
   const has = (m: Map<string, number>, k: string) => (m.get(k) ?? 0) > 0;
   const focus = s.merch.focusBrand;
   const quick = [
-    { k: "stok", v: "1", l: "Stokta", show: true },
+    { k: "stok", v: "1", l: t("cat.qStock"), show: true },
     ...(!hideBrand && focus && facets.brands.some((b) => b.slug === focus) ? [{ k: "marka", v: focus, l: facets.brands.find((b) => b.slug === focus)!.name, show: true }] : []),
-    { k: "seviye", v: "BEGINNER", l: "İlk cihaz", show: has(facets.exp, "BEGINNER") },
-    { k: "tek", v: "MULTI", l: "Çok frekanslı", show: has(facets.tech, "MULTI") },
-    { k: "su", v: "FULL", l: "Su geçirmez", show: has(facets.water, "FULL") },
-    { k: "hafif", v: "1", l: "1,5 kg altı", show: true },
-    { k: "max", v: "50000", l: "50.000 TL altı", show: true },
+    { k: "seviye", v: "BEGINNER", l: t("cat.qBeginner"), show: has(facets.exp, "BEGINNER") },
+    { k: "tek", v: "MULTI", l: t("cat.qMulti"), show: has(facets.tech, "MULTI") },
+    { k: "su", v: "FULL", l: t("cat.qWater"), show: has(facets.water, "FULL") },
+    { k: "hafif", v: "1", l: t("cat.qLight"), show: true },
+    { k: "max", v: "50000", l: t("cat.qUnder", { tutar: money(50000) }), show: true },
   ]
     .filter((q) => q.show)
     .map((q) => ({ ...q, on: on(q.k, q.v) }));
@@ -85,14 +89,14 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
           {top ? (
             <details className="group w-full sm:w-auto [&[open]]:w-full" data-testid="catalog-answer">
               <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full bg-soft px-3 py-1.5 font-bold text-deep transition hover:bg-[#ececee] [&::-webkit-details-marker]:hidden">
-                <Sparkles size={13} className="text-brand" /> Kısa bilgi
+                <Sparkles size={13} className="text-brand" /> {t("cat.shortInfo")}
                 <ChevronDown size={14} className="text-mute transition group-open:rotate-180" />
               </summary>
               <div className="mt-2.5">{top}</div>
             </details>
           ) : null}
           <Link href="/sihirbaz" className="inline-flex items-center gap-1.5 font-bold text-link hover:underline">
-            <Compass size={14} className="text-brand" /> Kararsız mısın? 6 soruda öneri al
+            <Compass size={14} className="text-brand" /> {t("cat.wizard")}
           </Link>
         </div>
       </div>
@@ -100,16 +104,16 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
         <FilterForm
           sp={Object.fromEntries(Object.entries(sp).map(([k, v]) => [k, arr(v)]))}
           brands={hideBrand ? [] : facets.brands}
-          tech={[...facets.tech].map(([k, n]) => ({ k, n, l: TECH_LABEL[k] }))}
-          water={[...facets.water].map(([k, n]) => ({ k, n, l: WATERPROOF_LABEL[k] }))}
-          exp={[...facets.exp].map(([k, n]) => ({ k, n, l: EXPERIENCE_LABEL[k] }))}
+          tech={[...facets.tech].map(([k, n]) => ({ k, n, l: enumLabel(t.locale, "tech", k) }))}
+          water={[...facets.water].map(([k, n]) => ({ k, n, l: enumLabel(t.locale, "water", k) }))}
+          exp={[...facets.exp].map(([k, n]) => ({ k, n, l: enumLabel(t.locale, "exp", k) }))}
           count={items.length}
         />
         <div>
           {/* Hızlı filtreler: en çok kullanılanlar, tek dokunuşla açılır/kapanır */}
           {quick.length ? (
             <div className="scrollbar-none -mx-4 mb-3 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0" data-testid="quick-filters">
-              <span className="hidden shrink-0 items-center text-[12px] font-extrabold tracking-[.12em] text-mute md:flex">HIZLI</span>
+              <span className="hidden shrink-0 items-center text-[12px] font-extrabold tracking-[.12em] text-mute md:flex">{t("cat.quick")}</span>
               {quick.map((q) => (
                 <Link
                   key={q.k + q.v}
@@ -128,8 +132,8 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
             {active.map((a) => (
               <Link key={a.k + a.v} href={removeHref(a.k, a.v)} className="rounded-full bg-deep px-3 py-1.5 text-[13px] font-bold text-white">{a.l} ×</Link>
             ))}
-            {active.length ? <Link href="?" className="text-[13px] font-bold text-link underline">Temizle</Link> : null}
-            <span className="ml-auto text-[13px] font-semibold text-mute">{items.length} ürün</span>
+            {active.length ? <Link href="?" className="text-[13px] font-bold text-link underline">{t("cat.clear")}</Link> : null}
+            <span className="ml-auto text-[13px] font-semibold text-mute">{t("cat.count", { n: items.length })}</span>
           </div>
           {items.length ? (
             <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
@@ -139,8 +143,8 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
             </div>
           ) : (
             <div className="rounded-xl bg-soft p-10 text-center">
-              <p className="font-bold">Bu filtrelerle ürün bulunamadı.</p>
-              <p className="mt-1 text-sm text-mute">Filtreleri azalt ya da <Link href="/sihirbaz" className="font-bold text-link">sihirbaza</Link> sor.</p>
+              <p className="font-bold">{t("cat.empty")}</p>
+              <p className="mt-1 text-sm text-mute"><Link href="/sihirbaz" className="font-bold text-link">{t("cat.emptyHint")}</Link></p>
             </div>
           )}
         </div>

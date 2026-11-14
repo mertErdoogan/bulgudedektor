@@ -249,3 +249,14 @@ export async function hepsiburadaSyncNow(): Promise<ActionResult> {
     return r.ok ? ok(r.message) : fail(r.message);
   });
 }
+
+/** Diller: hangi dillerin sitede yayında olduğu ve dil seçicinin görünürlüğü */
+export async function saveI18n(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("settings.manage");
+    const { LOCALES, DEFAULT_LOCALE } = await import("@/lib/i18n/config");
+    const locales = [DEFAULT_LOCALE, ...LOCALES.filter((l) => l !== DEFAULT_LOCALE && fd.get(`locale_${l}`) === "on")];
+    await saveSettings("i18n", { locales, switcher: fd.get("switcher") === "on" });
+    return fin(staff.id, "i18n");
+  });
+}

@@ -1,7 +1,7 @@
 import { imgProps } from "@/lib/img";
 import { cardCtx } from "@/lib/card-ctx";
 import { redirectOrNotFound } from "@/lib/redirects";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { and, eq, inArray } from "drizzle-orm";
 import { Clock, MessageCircle, UserRound } from "lucide-react";
 import { products } from "@/db/schema";

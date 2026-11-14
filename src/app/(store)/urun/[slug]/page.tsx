@@ -1,5 +1,8 @@
 import { cardCtx } from "@/lib/card-ctx";
-import Link from "next/link";
+import Link from "@/components/locale-link";
+import { getT } from "@/lib/i18n/server";
+import { localize, localizeOne } from "@/lib/i18n/content";
+import { enumLabel } from "@/lib/i18n/dict";
 import { Suspense } from "react";
 import { redirectOrNotFound } from "@/lib/redirects";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
@@ -30,6 +33,14 @@ import { graph, metaDesc, pageMeta, productLd } from "@/lib/seo";
 import type { AllSettings } from "@/lib/settings";
 
 async function getProduct(slug: string) {
+  const p = await getProductRaw(slug);
+  if (!p) return p;
+  // İsteğin diline çevrilmiş ad/açıklama (çevirisi olmayan alan Türkçe kalır)
+  const [lp, lc] = await Promise.all([localizeOne(p, "product"), p.category ? localizeOne(p.category, "category") : Promise.resolve(null)]);
+  return { ...lp, category: lc };
+}
+
+async function getProductRaw(slug: string) {
   return db.query.products.findFirst({
     where: and(eq(products.slug, slug), ne(products.status, "DRAFT")),
     with: {
@@ -95,6 +106,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const p = await getProduct((await params).slug);
   if (!p) return redirectOrNotFound(`/urun/${(await params).slug}`);
   const s = await getSettings();
+  const t = await getT();
   const archived = p.status === "ARCHIVED";
   const out = archived || (p.stock <= 0 && !p.allowBackorder);
   const inst = s.payment.noInterestInstallments;
@@ -127,21 +139,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const rCount = p.reviews.length;
   const dist = [5, 4, 3, 2, 1].map((r) => ({ r, n: p.reviews.filter((x) => x.rating === r).length }));
-  const warranty = p.warrantyMonths % 12 === 0 ? `${p.warrantyMonths / 12} yıl` : `${p.warrantyMonths} ay`;
+  const warranty = p.warrantyMonths % 12 === 0 ? t("pdp.year", { n: p.warrantyMonths / 12 }) : t("pdp.month", { n: p.warrantyMonths });
   const facts = [
-    p.technology ? { I: Cpu, k: "Teknoloji", v: TECH_LABEL[p.technology] } : null,
-    p.waterproof ? { I: Droplets, k: "Su dayanımı", v: WATERPROOF_LABEL[p.waterproof] } : null,
-    p.weightKg ? { I: Weight, k: "Ağırlık", v: `${p.weightKg.toLocaleString("tr-TR")} kg` } : null,
-    p.experience ? { I: UserRound, k: "Kimin için", v: EXPERIENCE_LABEL[p.experience] } : null,
+    p.technology ? { I: Cpu, k: t("pdp.factTech"), v: enumLabel(t.locale, "tech", p.technology) } : null,
+    p.waterproof ? { I: Droplets, k: t("pdp.factWater"), v: enumLabel(t.locale, "water", p.waterproof) } : null,
+    p.weightKg ? { I: Weight, k: t("pdp.factWeight"), v: `${p.weightKg.toLocaleString(t.locale === "en" ? "en-US" : "tr-TR")} kg` } : null,
+    p.experience ? { I: UserRound, k: t("pdp.factFor"), v: enumLabel(t.locale, "exp", p.experience) } : null,
   ].filter(Boolean) as { I: typeof Cpu; k: string; v: string }[];
   const tabs = [
-    { id: "genel", label: "Genel bakış" },
-    { id: "ozellikler", label: "Özellikler", count: p.specs.length || undefined },
-    ...(vid ? [{ id: "video", label: "Video" }] : []),
-    { id: "yorumlar", label: "Yorumlar", count: rCount || undefined },
-    { id: "sorular", label: "Soru-cevap", count: p.questions.length || undefined },
-    { id: "sss", label: "SSS" },
-    { id: "garanti", label: "Garanti ve ödeme" },
+    { id: "genel", label: t("pdp.tabOverview") },
+    { id: "ozellikler", label: t("pdp.tabSpecs"), count: p.specs.length || undefined },
+    ...(vid ? [{ id: "video", label: t("pdp.tabVideo") }] : []),
+    { id: "yorumlar", label: t("pdp.tabReviews"), count: rCount || undefined },
+    { id: "sorular", label: t("pdp.tabQa"), count: p.questions.length || undefined },
+    { id: "sss", label: t("pdp.tabFaq") },
+    { id: "garanti", label: t("pdp.tabWarranty") },
   ];
   const h2 = "font-display text-[24px] leading-tight font-extrabold tracking-tight md:text-[30px]";
   // Bölümler kart: sekmeyle atlanan her bölüm kendi çerçevesinde, birbirinden net ayrılır
@@ -169,12 +181,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               {rating ? (
                 <a href="#yorumlar" className="flex items-center gap-1.5 text-[13.5px] hover:underline">
                   <span className="flex">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={14} className={i < Math.round(rating) ? "fill-gold text-gold" : "text-line"} />)}</span>
-                  <b>{rating.toFixed(1)}</b> <span className="text-mute">· {rCount} yorum</span>
+                  <b>{rating.toFixed(1)}</b> <span className="text-mute">· {t("pdp.reviews", { n: rCount })}</span>
                 </a>
               ) : (
-                <a href="#yorumlar" className="text-[13px] font-semibold text-mute hover:text-deep">İlk yorumu sen yaz</a>
+                <a href="#yorumlar" className="text-[13px] font-semibold text-mute hover:text-deep">{t("pdp.firstReview")}</a>
               )}
-              <span className="ml-auto text-[12px] text-mute">Kod {p.sku}</span>
+              <span className="ml-auto text-[12px] text-mute">{t("pdp.code")} {p.sku}</span>
             </div>
             <div className="mt-2.5 flex items-start justify-between gap-3">
               <h1 className="font-display text-[30px] leading-[1.05] font-extrabold tracking-tight md:text-[44px]">{p.name}</h1>
@@ -221,14 +233,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {!archived ? (
               <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px] font-bold">
                 {out ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-danger-bg px-2.5 py-1 text-danger"><span className="h-1.5 w-1.5 rounded-full bg-danger" /> Stokta yok</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-danger-bg px-2.5 py-1 text-danger"><span className="h-1.5 w-1.5 rounded-full bg-danger" /> {t("card.outOfStock")}</span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-ok-bg px-2.5 py-1 text-ok" data-testid="pdp-stock">
                     <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ok opacity-60" /><span className="relative h-1.5 w-1.5 rounded-full bg-ok" /></span>
-                    Stokta{p.stock > 0 && p.stock <= 5 ? ` · son ${p.stock} adet` : ""}
+                    {t("pdp.inStock")}{p.stock > 0 && p.stock <= 5 ? ` · ${t("pdp.lastN", { n: p.stock })}` : ""}
                   </span>
                 )}
-                {discount ? <span className="rounded-full bg-brand px-2.5 py-1 text-white">%{Math.round((discount / (p.compareAtPrice || 1)) * 100)} indirim</span> : null}
+                {discount ? <span className="rounded-full bg-brand px-2.5 py-1 text-white">{t("pdp.discountPct", { n: Math.round((discount / (p.compareAtPrice || 1)) * 100) })}</span> : null}
               </div>
             ) : null}
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -237,16 +249,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
             {deal ? (
               <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-2xl bg-ok-bg px-3.5 py-2.5 text-sm" data-testid="pdp-deal">
-                <span className="font-semibold text-ok">Sepette</span>
+                <span className="font-semibold text-ok">{t("pdp.inCartPrice")}</span>
                 <b className="font-display text-[20px] text-ok">{formatTL(Math.round((p.price - deal.amount) * 100) / 100)}</b>
-                <span className="text-[#2f5d43]">· {deal.name}, {formatTL(deal.amount)} otomatik düşer</span>
+                <span className="text-[#2f5d43]">· {t("pdp.dealAuto", { kampanya: deal.name, tutar: formatTL(deal.amount) })}</span>
               </p>
             ) : null}
             {archived ? (
-              <p className="mt-4 rounded-xl bg-warn-bg p-3 text-sm font-bold text-warn">Bu ürün artık satılmıyor. Benzer ürünler için uzmana sor.</p>
+              <p className="mt-4 rounded-xl bg-warn-bg p-3 text-sm font-bold text-warn">{t("pdp.archived")}</p>
             ) : out ? (
               <div className="mt-4 flex flex-col gap-2">
-                <p className="text-sm"><b className="text-danger">Şu an stokta yok.</b> Gelince haber verelim.</p>
+                <p className="text-sm"><b className="text-danger">{t("pdp.outNow")}</b> {t("pdp.notifyMe")}</p>
                 <ProductForms productId={p.id} mode="alert" />
               </div>
             ) : (
@@ -261,8 +273,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <div className="flex items-center gap-3 px-3.5 py-3">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#eef3ff] text-[#2952cc]"><CreditCard size={17} /></span>
 <div className="min-w-0 flex-1 md:flex md:items-center md:gap-3">
-                  <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">Taksit</dt>
-                  <dd className="min-w-0 md:flex-1 text-[13.5px]"><b>{inst} × {formatTL(Math.round(p.price / inst))}</b> vade farksız <a href="#garanti" className="block text-[12px] text-mute underline-offset-2 hover:underline">{s.payment.maxInstallment} taksite kadar, tabloyu gör</a></dd>
+                  <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">{t("pdp.rowInstallment")}</dt>
+                  <dd className="min-w-0 md:flex-1 text-[13.5px]"><b>{inst} × {formatTL(Math.round(p.price / inst))}</b> {t("pdp.instValue")} <a href="#garanti" className="block text-[12px] text-mute underline-offset-2 hover:underline">{t("pdp.instUpTo", { n: s.payment.maxInstallment })}</a></dd>
 </div>
                 </div>
               ) : null}
@@ -270,8 +282,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <div className="flex items-center gap-3 px-3.5 py-3">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-ok-bg text-ok"><Landmark size={17} /></span>
 <div className="min-w-0 flex-1 md:flex md:items-center md:gap-3">
-                  <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">Havale/EFT</dt>
-                  <dd className="min-w-0 md:flex-1 text-[13.5px]"><b>%{s.payment.transferDiscountPct} indirim</b> <span className="text-mute">· {formatTL(p.price * (1 - s.payment.transferDiscountPct / 100))}</span></dd>
+                  <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">{t("pdp.rowTransfer")}</dt>
+                  <dd className="min-w-0 md:flex-1 text-[13.5px]"><b>{t("pdp.transferValue", { n: s.payment.transferDiscountPct })}</b> <span className="text-mute">· {formatTL(p.price * (1 - s.payment.transferDiscountPct / 100))}</span></dd>
 </div>
                 </div>
               ) : null}
@@ -279,7 +291,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <div className="flex items-center gap-3 px-3.5 py-3">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#fff4e5] text-[#b45309]"><Truck size={17} /></span>
 <div className="min-w-0 flex-1 md:flex md:items-center md:gap-3">
-                  <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">Teslimat</dt>
+                  <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">{t("pdp.rowDelivery")}</dt>
                   <dd className="pdp-delivery-plain min-w-0 md:flex-1 text-[13.5px]"><DeliveryLine p={p} ctx={ctx} pickup={s.shipping.pickupEnabled} /></dd>
 </div>
                 </div>
@@ -287,12 +299,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <div className="flex items-center gap-3 px-3.5 py-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-soft text-deep"><ShieldCheck size={17} /></span>
                 <div className="min-w-0 flex-1 md:flex md:items-center md:gap-3">
-                <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">Garanti</dt>
+                <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">{t("pdp.rowWarranty")}</dt>
                 <dd className="min-w-0 text-[13.5px] md:flex-1">
                   {s.merch.badge && p.brand && p.brand.slug === s.merch.focusBrand ? (
-                    <span className="inline-flex items-center gap-1.5 font-bold" data-testid="focus-badge"><BadgeCheck size={15} className="text-ok" /> Türkiye distribütör garantili · {warranty}</span>
+                    <span className="inline-flex items-center gap-1.5 font-bold" data-testid="focus-badge"><BadgeCheck size={15} className="text-ok" /> {t("pdp.distWarranty", { sure: warranty })}</span>
                   ) : (
-                    <b>{warranty}, faturalı</b>
+                    <b>{t("pdp.invoiced", { sure: warranty })}</b>
                   )}
                 </dd>
                 </div>
@@ -304,11 +316,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {/* Güven: dört renkli kutu; her biri kendi rengi ve hareketli ikonuyla, bir bakışta ayırt edilir */}
           <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4" data-testid="pdp-trust">
             {[
-              { I: BadgeCheck, t: "Yetkili distribütör", d: p.trackSerial ? "Seri no ile sorgula" : "Orijinal, faturalı", href: p.trackSerial ? "/seri-no" : undefined, c: "22,163,74" },
-              { I: Truck, t: "Ücretsiz kargo", d: "Sigortalı gönderim", c: "37,99,235" },
-              { I: RotateCcw, t: "14 gün iade", d: "Hesabından talep", c: "217,119,6" },
-              { I: Headset, t: "Uzman desteği", d: "WhatsApp'tan yaz", href: wa, c: "124,58,237" },
-            ].map(({ I, t, d, href, c }) => {
+              { I: BadgeCheck, t: t("pdp.trustDist"), d: p.trackSerial ? t("pdp.trustSerial") : t("pdp.trustOriginal"), href: p.trackSerial ? "/seri-no" : undefined, c: "22,163,74" },
+              { I: Truck, t: t("pdp.trustShip"), d: t("pdp.trustShipD"), c: "37,99,235" },
+              { I: RotateCcw, t: t("pdp.trustReturn"), d: t("pdp.trustReturnD"), c: "217,119,6" },
+              { I: Headset, t: t("pdp.trustExpert"), d: t("pdp.trustExpertD"), href: wa, c: "124,58,237" },
+            ].map(({ I, t: title, d, href, c }) => {
               const body = (
                 <>
                   <I aria-hidden size={64} strokeWidth={1.4} className="pointer-events-none absolute -right-3 -bottom-4 text-[rgba(var(--tc),.09)] transition duration-500 group-hover:-rotate-12 group-hover:scale-110" />
@@ -316,7 +328,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     <I size={17} strokeWidth={2.2} />
                   </span>
                   <span className="relative min-w-0">
-                    <b className="block truncate text-[12.5px] text-deep">{t}</b>
+                    <b className="block truncate text-[12.5px] text-deep">{title}</b>
                     <span className="block truncate text-[11.5px] text-[rgb(var(--tc))]">{d}{href ? " →" : ""}</span>
                   </span>
                 </>
@@ -324,16 +336,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               const cls = "group relative isolate flex items-center gap-2.5 overflow-hidden rounded-2xl bg-[linear-gradient(135deg,rgba(var(--tc),.13),rgba(var(--tc),.03))] px-3 py-3 ring-1 ring-[rgba(var(--tc),.16)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_24px_-18px_rgba(var(--tc),.9)] lg:flex-col lg:items-start lg:gap-2.5";
               const st = { ["--tc" as string]: c } as React.CSSProperties;
               return href ? (
-                <a key={t} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener" className={cls} style={st}>{body}</a>
+                <a key={title} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener" className={cls} style={st}>{body}</a>
               ) : (
-                <div key={t} className={cls} style={st}>{body}</div>
+                <div key={title} className={cls} style={st}>{body}</div>
               );
             })}
           </div>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-            <span className="text-mute">Sorunuz mu var?</span>
-            <a href={wa} target="_blank" className="inline-flex items-center gap-1.5 font-bold text-[#11643a] hover:underline"><MessageCircle size={17} /> WhatsApp&apos;tan sor</a>
+            <span className="text-mute">{t("pdp.question")}</span>
+            <a href={wa} target="_blank" className="inline-flex items-center gap-1.5 font-bold text-[#11643a] hover:underline"><MessageCircle size={17} /> {t("pdp.askWhatsapp")}</a>
             {s.store.phone ? <a href={`tel:${s.store.phone.replace(/[^\d+]/g, "")}`} className="inline-flex items-center gap-1.5 font-bold hover:underline"><Phone size={16} /> {s.store.phone}</a> : null}
           </div>
         </div>
@@ -524,7 +536,8 @@ const AVATAR = ["bg-[#d42e1e]", "bg-[#1f3b8f]", "bg-[#11643a]", "bg-[#7a4a14]", 
 
 /** Ürün sayfasının alt kısmı (rehberler, birlikte alınanlar, son gezilenler, benzer modeller): ayrı akar. */
 async function PdpExtras({ p, ctx }: { p: NonNullable<Awaited<ReturnType<typeof getProduct>>>; ctx: ReturnType<typeof cardCtx> }) {
-  const [together, guides] = await Promise.all([boughtTogether([p.id], 4), relatedPosts({ productId: p.id, categoryId: p.categoryId, limit: 3 })]);
+  const [together0, guides] = await Promise.all([boughtTogether([p.id], 4), relatedPosts({ productId: p.id, categoryId: p.categoryId, limit: 3 })]);
+  const together = await localize(together0, "product");
   return (
     <>
       {guides.length ? (
@@ -546,16 +559,17 @@ async function PdpExtras({ p, ctx }: { p: NonNullable<Awaited<ReturnType<typeof 
 
 /** Benzer modeller: ürünün hemen altında; telefonda yatay kayan, masaüstünde 4'lü. */
 async function SimilarRail({ p, ctx }: { p: NonNullable<Awaited<ReturnType<typeof getProduct>>>; ctx: ReturnType<typeof cardCtx> }) {
-  const related = await similarTo(p, 4);
+  const [rel, t] = await Promise.all([similarTo(p, 4), getT()]);
+  const related = await localize(rel, "product");
   if (!related.length) return null;
   return (
     <section className="mt-10" data-testid="pdp-similar">
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-[22px] leading-tight font-extrabold tracking-tight md:text-[26px]">Benzer modeller</h2>
-          <p className="mt-0.5 text-[13.5px] text-mute">Karar vermeden önce bunlara da bak</p>
+          <h2 className="font-display text-[22px] leading-tight font-extrabold tracking-tight md:text-[26px]">{t("pdp.similar")}</h2>
+          <p className="mt-0.5 text-[13.5px] text-mute">{t("pdp.similarD")}</p>
         </div>
-        <Link href={`/karsilastir?ids=${[p.id, ...related.slice(0, 2).map((r) => r.id)].join(",")}`} className="shrink-0 rounded-full border border-line px-3.5 py-2 text-[13px] font-bold transition hover:border-deep">Karşılaştır →</Link>
+        <Link href={`/karsilastir?ids=${[p.id, ...related.slice(0, 2).map((r) => r.id)].join(",")}`} className="shrink-0 rounded-full border border-line px-3.5 py-2 text-[13px] font-bold transition hover:border-deep">{t("pdp.compare")}</Link>
       </div>
       <div className="scrollbar-none -mx-4 flex snap-x gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:px-0">
         {related.map((r) => (

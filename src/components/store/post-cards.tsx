@@ -1,5 +1,5 @@
 import { imgProps } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { BookOpen } from "lucide-react";
 import type { PostCard } from "@/lib/content";
 import { formatDate } from "@/lib/utils";

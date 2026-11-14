@@ -1,5 +1,5 @@
 import { imgProps } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import type { CardCtx } from "@/lib/card-ctx";
 import type { ProductCard as P } from "@/lib/store";

@@ -78,7 +78,10 @@ export const getNav = cache(async () => {
       .where(and(eq(categories.isActive, true), eq(categories.showInMenu, true)))
       .orderBy(asc(categories.sortOrder)),
   ]);
-  return { menu, categories: cats };
+  // İsteğin diline çevir (Türkçede sorgu yapılmaz)
+  const { localize } = await import("./i18n/content");
+  const [lm, lc] = await Promise.all([localize(menu, "menu"), localize(cats, "category")]);
+  return { menu: lm, categories: lc };
 });
 
 export const getFooterPages = cache(async () =>

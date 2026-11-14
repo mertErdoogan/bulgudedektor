@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
+import { translate, type DictKey } from "@/lib/i18n/dict";
+import { isLocale } from "@/lib/i18n/config";
+
+// Sayfa dili <html lang> üzerinden: tr-TR → tr, en → en
+const tt = (k: DictKey, v?: Record<string, string | number>) => {
+  const l = document.documentElement.lang.slice(0, 2);
+  return translate(isLocale(l) ? l : "tr", k, v);
+};
 
 /**
  * Sitenin tüm formlarında tarayıcının kendi (çoğu zaman İngilizce) uyarı balonları yerine Türkçe, alanın hemen
@@ -18,18 +26,18 @@ function message(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)
   const custom = el.dataset.error;
   const name = label(el);
   if (v.valueMissing) {
-    if (el instanceof HTMLInputElement && el.type === "checkbox") return custom ?? "Devam etmek için bu kutuyu onaylaman gerekiyor.";
-    if (el instanceof HTMLSelectElement) return name ? `${name} seç.` : "Bir seçenek seç.";
-    return name ? `${name} boş bırakılamaz.` : "Bu alanı doldur.";
+    if (el instanceof HTMLInputElement && el.type === "checkbox") return custom ?? tt("v.checkbox");
+    if (el instanceof HTMLSelectElement) return name ? tt("v.choose", { alan: name }) : tt("v.chooseAny");
+    return name ? tt("v.required", { alan: name }) : tt("v.requiredAny");
   }
   if (custom) return custom;
-  if (v.typeMismatch) return el.type === "email" ? "Geçerli bir e-posta yaz (ör. ad@ornek.com)." : el.type === "url" ? "Geçerli bir bağlantı yaz (https:// ile)." : "Biçim hatalı.";
-  if (v.tooShort) return `En az ${(el as HTMLInputElement).minLength} karakter olmalı.`;
-  if (v.tooLong) return `En fazla ${(el as HTMLInputElement).maxLength} karakter olabilir.`;
-  if (v.rangeUnderflow) return `En az ${(el as HTMLInputElement).min} olmalı.`;
-  if (v.rangeOverflow) return `En fazla ${(el as HTMLInputElement).max} olabilir.`;
-  if (v.patternMismatch) return el.title || "Biçim hatalı.";
-  return "Bu alanı kontrol et.";
+  if (v.typeMismatch) return el.type === "email" ? tt("v.email") : el.type === "url" ? tt("v.url") : tt("v.format");
+  if (v.tooShort) return tt("v.min", { n: (el as HTMLInputElement).minLength });
+  if (v.tooLong) return tt("v.max", { n: (el as HTMLInputElement).maxLength });
+  if (v.rangeUnderflow) return tt("v.rangeMin", { n: (el as HTMLInputElement).min });
+  if (v.rangeOverflow) return tt("v.rangeMax", { n: (el as HTMLInputElement).max });
+  if (v.patternMismatch) return el.title || tt("v.format");
+  return tt("v.check");
 }
 
 const errId = (el: HTMLElement) => {

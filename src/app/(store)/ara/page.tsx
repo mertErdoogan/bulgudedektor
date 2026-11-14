@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { MessageCircle } from "lucide-react";
 import { Catalog, parseFilter, type SP } from "@/components/store/catalog";
 import { ProductCard } from "@/components/store/product-card";

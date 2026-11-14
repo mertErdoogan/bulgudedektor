@@ -1,5 +1,5 @@
 import { imgUrl } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { ArrowRight } from "lucide-react";
 import type { BrandGroup } from "@/lib/store";
 import { cn, formatTL } from "@/lib/utils";

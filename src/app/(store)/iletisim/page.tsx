@@ -5,7 +5,7 @@ import { ContactForm } from "./form";
 import { JsonLd } from "@/components/seo/json-ld";
 import { graph, storeLd } from "@/lib/seo";
 
-export const metadata = pageMeta({ title: "İletişim — Uzmana Sor, Showroom ve WhatsApp", description: "Dedektör uzmanımıza WhatsApp, telefon veya görüntülü görüşmeyle ulaşın. Showroom adresi ve çalışma saatleri.", path: "/iletisim" });
+export const generateMetadata = () => pageMeta({ title: "İletişim — Uzmana Sor, Showroom ve WhatsApp", description: "Dedektör uzmanımıza WhatsApp, telefon veya görüntülü görüşmeyle ulaşın. Showroom adresi ve çalışma saatleri.", path: "/iletisim" });
 
 export default async function ContactPage({ searchParams }: { searchParams: Promise<{ konu?: string; urun?: string }> }) {
   const s = await getSettings();

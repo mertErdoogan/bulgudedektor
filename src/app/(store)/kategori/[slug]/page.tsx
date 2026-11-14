@@ -1,5 +1,5 @@
 import { redirectOrNotFound } from "@/lib/redirects";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
@@ -11,9 +11,12 @@ import { markdownToHtml } from "@/lib/markdown";
 import { metaDesc, pageMeta } from "@/lib/seo";
 import { catalogStats } from "@/lib/store";
 import { formatTL } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
+import { localizeOne } from "@/lib/i18n/content";
 
 async function getCat(slug: string) {
-  return db.query.categories.findFirst({ where: and(eq(categories.slug, slug), eq(categories.isActive, true)) });
+  const c = await db.query.categories.findFirst({ where: and(eq(categories.slug, slug), eq(categories.isActive, true)) });
+  return c ? localizeOne(c, "category") : c;
 }
 
 export async function generateMetadata({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<SP> }) {
@@ -34,9 +37,19 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   const { slug } = await params;
   const c = await getCat(slug);
   if (!c) return redirectOrNotFound(`/kategori/${slug}`);
-  const [stats, faq, guides] = await Promise.all([catalogStats({ categoryId: c.id }), getFaqs({ categoryId: c.id }), relatedPosts({ categoryId: c.id, limit: 3 })]);
+  const [stats, faq, guides, t] = await Promise.all([catalogStats({ categoryId: c.id }), getFaqs({ categoryId: c.id }), relatedPosts({ categoryId: c.id, limit: 3 }), getT()]);
   const lower = c.name.toLocaleLowerCase("tr-TR");
-  const summary = stats.count ? (
+  const summary = stats.count && t.locale === "en" ? (
+    <AnswerBox title={`Which ${c.name} detector?`}>
+      We carry <b>{stats.count} models</b> for {c.name.toLocaleLowerCase("en-US")}
+      {stats.min != null ? (stats.min === stats.max ? <>, priced at <b>{formatTL(stats.min)}</b></> : <>, from <b>{formatTL(stats.min)}</b> to <b>{formatTL(stats.max)}</b></>) : null}
+      {stats.brands.length ? <> ({stats.brands.join(", ")})</> : null}. Popular picks:{" "}
+      {stats.picks.map((p, i) => (
+        <span key={p.id}>{i ? ", " : ""}<Link className="font-bold text-link" href={`/urun/${p.slug}`}>{p.name}</Link></span>
+      ))}
+      . Every device is genuine, invoiced and under warranty; not sure? Our 6-question finder suggests the right model.
+    </AnswerBox>
+  ) : stats.count ? (
     <AnswerBox title={`${c.name} için hangi dedektör?`}>
       Arena Dedektör’de {lower} için <b>{stats.count} model</b> var
       {stats.min != null ? (stats.min === stats.max ? <>; fiyatı <b>{formatTL(stats.min)}</b></> : <>; fiyatlar <b>{formatTL(stats.min)}</b> ile <b>{formatTL(stats.max)}</b> arasında</>) : null}
@@ -48,7 +61,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
     </AnswerBox>
   ) : null;
   return (
-    <Catalog title={`${c.name} için dedektörler`} intro={c.description} top={summary} crumbs={[{ href: `/kategori/${c.slug}`, label: c.name }]} sp={await searchParams} base={{ category: c.slug }}>
+    <Catalog title={t("cat.title", { ad: c.name })} intro={c.description} top={summary} crumbs={[{ href: `/kategori/${c.slug}`, label: c.name }]} sp={await searchParams} base={{ category: c.slug }}>
       {c.seoContent ? (
         <section className="max-w-3xl">
           <div className="prose-lite prose-article" dangerouslySetInnerHTML={{ __html: markdownToHtml(c.seoContent) }} />

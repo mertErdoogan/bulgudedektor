@@ -1,5 +1,5 @@
 import { imgProps } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { HeroStage, type HeroCard } from "@/components/store/home-client";
 import { resolveShortcuts, Shortcuts } from "@/components/store/shortcuts";
 import { eq, sql } from "drizzle-orm";

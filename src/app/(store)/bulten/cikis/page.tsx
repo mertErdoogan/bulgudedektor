@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { revokeMarketing, unsubKey } from "@/lib/store";
 
 export const metadata = { title: "E-posta listesinden çık", robots: { index: false } };

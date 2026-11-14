@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import Script from "next/script";
 import { notFound, redirect } from "next/navigation";
 import { eq } from "drizzle-orm";

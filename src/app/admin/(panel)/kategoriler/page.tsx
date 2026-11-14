@@ -4,6 +4,9 @@ import { asc, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { categories, products } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { TranslationFields } from "@/components/admin/translation-fields";
+import { getEntityTranslations } from "@/lib/i18n/content";
+import { getSettings } from "@/lib/settings";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { PageHeader } from "@/components/admin/shell";
 import { SingleImageField } from "@/components/admin/single-image-field";
@@ -21,6 +24,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
     .from(categories)
     .orderBy(asc(categories.sortOrder), asc(categories.name));
   const edit = id ? rows.find((r) => r.c.id === id)?.c : undefined;
+  const [trs, st] = await Promise.all([edit ? getEntityTranslations("category", edit.id) : Promise.resolve({}), getSettings()]);
   const parentName = (pid: string | null) => rows.find((r) => r.c.id === pid)?.c.name;
   return (
     <>
@@ -122,6 +126,18 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
             <Field label="Kategori rehber metni (Markdown)" hint="Ürün listesinin altında görünür. ## alt başlıklar, listeler ve | tablo | kullanılabilir. 300–800 kelime, soru biçiminde başlıklar AI aramada öne çıkar.">
               <Textarea name="seoContent" defaultValue={edit?.seoContent ?? ""} className="min-h-[160px] font-mono text-[12px]" />
             </Field>
+            <TranslationFields
+              values={trs}
+              enabled={st.i18n.locales}
+              fields={[
+                { field: "name", label: "Kategori adı" },
+                { field: "shortText", label: "Kısa alt yazı" },
+                { field: "description", label: "Açıklama", multiline: true },
+                { field: "seoTitle", label: "SEO başlığı" },
+                { field: "seoDescription", label: "SEO açıklaması", multiline: true },
+                { field: "seoContent", label: "Kategori rehber metni", multiline: true },
+              ]}
+            />
             <Checkbox name="isActive" defaultChecked={edit?.isActive ?? true} label="Aktif" />
             <Checkbox name="showInMenu" defaultChecked={edit?.showInMenu ?? true} label="Mağaza menüsünde ve ana sayfa kutularında göster" />
             <SubmitButton>{edit ? "Kaydet" : "Kategori ekle"}</SubmitButton>

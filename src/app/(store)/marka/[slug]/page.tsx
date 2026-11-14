@@ -1,5 +1,5 @@
 import { redirectOrNotFound } from "@/lib/redirects";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { brands } from "@/db/schema";

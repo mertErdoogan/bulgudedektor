@@ -2,7 +2,7 @@
 
 import { imgProps, imgUrl } from "@/lib/img";
 
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { useEffect, useState } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatTL } from "@/lib/utils";

@@ -1,10 +1,10 @@
 import { pageMeta } from "@/lib/seo";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { getBrandGroups, getNav } from "@/lib/store";
 import { FocusBrands } from "@/components/store/brand-cards";
 import { CategoryTile } from "@/components/store/category-tile";
 
-export const metadata = pageMeta({ title: "Dedektör Kategorileri ve Markaları", description: "Define, doğal altın, sahil ve derin arama dedektörleri; pinpointer ve aksesuarlar. Tüm kategoriler ve markalar tek sayfada.", path: "/kategoriler" });
+export const generateMetadata = () => pageMeta({ title: "Dedektör Kategorileri ve Markaları", description: "Define, doğal altın, sahil ve derin arama dedektörleri; pinpointer ve aksesuarlar. Tüm kategoriler ve markalar tek sayfada.", path: "/kategoriler" });
 
 export default async function CategoriesPage() {
   const [nav, brands] = await Promise.all([getNav(), getBrandGroups()]);

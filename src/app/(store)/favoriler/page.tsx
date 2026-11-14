@@ -1,6 +1,6 @@
 import { FavoritesGrid, RecentlyViewed } from "@/components/store/rails";
 import { getCustomer } from "@/lib/auth";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 
 export const metadata = { title: "Favorilerim", robots: { index: false, follow: true } };
 

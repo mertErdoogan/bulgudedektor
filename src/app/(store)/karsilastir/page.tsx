@@ -1,5 +1,5 @@
 import { imgUrl } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { asc, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { products } from "@/db/schema";

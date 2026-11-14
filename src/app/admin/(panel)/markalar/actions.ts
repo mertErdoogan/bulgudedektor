@@ -2,6 +2,7 @@
 
 import { and, eq, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { saveEntityTranslations } from "@/lib/i18n/content";
 import { db } from "@/db";
 import { brands, categories, products } from "@/db/schema";
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
@@ -69,11 +70,13 @@ export async function saveCategory(_: ActionResult | null, fd: FormData): Promis
       seoDescription: strOrNull(fd.get("seoDescription")),
       seoContent: strOrNull(fd.get("seoContent")),
     };
+    let catId = id;
     if (id) {
       const prev = await db.query.categories.findFirst({ where: eq(categories.id, id), columns: { slug: true } });
       await db.update(categories).set(values).where(eq(categories.id, id));
       await recordSlugChange("/kategori", prev?.slug, slug);
-    } else await db.insert(categories).values(values);
+    } else [{ id: catId }] = await db.insert(categories).values(values).returning({ id: categories.id });
+    await saveEntityTranslations("category", catId!, fd);
     await pingIndexNow([`/kategori/${slug}`]);
     await audit(staff.id, id ? "update" : "create", "category", id, `Kategori ${name} kaydedildi`);
     revalidatePath("/", "layout");

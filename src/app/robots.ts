@@ -4,7 +4,9 @@ import { siteUrl } from "@/lib/seo";
 // Çalışma anında üretilir: site adresi (APP_URL) ve ön izleme modu derlemede değil, sunucuda belli olur
 export const dynamic = "force-dynamic";
 
-const PRIVATE = ["/admin", "/api/", "/hesabim", "/favoriler", "/odeme", "/sepet", "/siparis", "/giris", "/kayit", "/karsilastir", "/*?*sirala=", "/ara?"];
+const BASE_PRIVATE = ["/admin", "/api/", "/hesabim", "/favoriler", "/odeme", "/sepet", "/siparis", "/giris", "/kayit", "/karsilastir", "/*?*sirala=", "/ara?"];
+// Diğer dillerin (/en/...) aynı özel sayfaları da kapalı
+const PRIVATE = [...BASE_PRIVATE, ...BASE_PRIVATE.filter((p) => !/^\/(admin|api)/.test(p) && !p.startsWith("/*")).map((p) => `/en${p}`)];
 
 // AI arama motorlarının botları: açıkça izin veriyoruz ki ChatGPT Search, Perplexity, Claude,
 // Google AI Overviews / Gemini ve Apple Intelligence siteyi okuyup kaynak gösterebilsin.

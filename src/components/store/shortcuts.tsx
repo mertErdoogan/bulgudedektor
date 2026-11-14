@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { ArrowRight, Flame, Sparkles, Star, Tag, TrendingUp } from "lucide-react";
 import { imgUrl } from "@/lib/img";
 import type { Shortcut, ShortcutIcon } from "@/lib/settings";

@@ -3,7 +3,7 @@
 import { imgUrl } from "@/lib/img";
 import { CartUpsell } from "@/components/store/rails";
 
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { useEffect, useState, useTransition } from "react";
 import { Minus, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useCart } from "@/components/store/cart";

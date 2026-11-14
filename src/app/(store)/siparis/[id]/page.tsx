@@ -1,5 +1,5 @@
 import { imgUrl } from "@/lib/img";
-import Link from "next/link";
+import Link from "@/components/locale-link";
 import { AutoRefresh } from "@/components/store/auto-refresh";
 import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";

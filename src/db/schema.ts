@@ -849,3 +849,21 @@ export const staffNotifications = pgTable(
   },
   (t) => [index("staff_notifications_created_idx").on(t.createdAt)],
 );
+
+/**
+ * İçerik çevirileri (ürün, kategori, marka, sayfa, menü). Türkçe asıl kayıt tablolarda durur; diğer dillerin
+ * metinleri burada alan alan tutulur. Çevirisi olmayan alan sitede Türkçe gösterilir.
+ */
+export const translations = pgTable(
+  "translations",
+  {
+    id: id(),
+    entity: text("entity").notNull(),
+    entityId: text("entity_id").notNull(),
+    locale: text("locale").notNull(),
+    field: text("field").notNull(),
+    value: text("value").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("translations_entity_field_idx").on(t.entity, t.entityId, t.locale, t.field), index("translations_lookup_idx").on(t.entity, t.locale)],
+);
