@@ -90,7 +90,7 @@ async def main():
             chk("WhatsApp tıklaması = contact olayı", any(x[:2] == ["event", "contact"] and x[2].get("method") == "whatsapp" for x in e["g"]) and any(x[:2] == ["track", "Contact"] for x in e["f"]))
 
             # Sipariş (havale)
-            await pg.goto(B + "/odeme", wait_until="networkidle"); await pg.wait_for_timeout(1200)
+            await pg.goto(B + "/odeme?misafir=1", wait_until="networkidle"); await pg.wait_for_timeout(1200)
             e = await ev(pg)
             chk("begin_checkout + InitiateCheckout", any(x[:2] == ["event", "begin_checkout"] for x in e["g"]) and any(x[:2] == ["track", "InitiateCheckout"] for x in e["f"]))
             await pg.fill("input[name=phone]", "05559870011")

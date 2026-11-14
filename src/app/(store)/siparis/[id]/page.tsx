@@ -60,6 +60,18 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           </div>
         </div>
       ) : null}
+      {sp.yeni && !me ? (
+        /* Üye olmadan alan müşteriye: bundan sonra ne olacak, kısaca */
+        <div className="mb-5 rounded-2xl border border-line p-5" data-testid="guest-next">
+          <b className="text-[15px]">Bundan sonra ne olacak?</b>
+          <ol className="mt-3 grid gap-3 text-[13.5px] sm:grid-cols-3">
+            <li className="rounded-xl bg-soft p-3"><b className="block">1. Hazırlık</b><span className="text-mute">{o.paymentMethod === "TRANSFER" ? "Havalen hesabımıza geçince" : "Ödemen onaylanınca"} siparişin hazırlanır.</span></li>
+            <li className="rounded-xl bg-soft p-3"><b className="block">2. Kargo</b><span className="text-mute">Kargo takip numaran SMS ve e-postayla gelir.</span></li>
+            <li className="rounded-xl bg-soft p-3"><b className="block">3. Takip</b><span className="text-mute"><Link href="/siparis-takip" className="font-bold text-link">Sipariş takibi</Link>&apos;nde {orderNo(o.number)} ve e-postanla durumu görürsün.</span></li>
+          </ol>
+          <p className="mt-3 text-[12.5px] text-mute">Siparişin ve garantin hesabında dursun istersen <Link href={`/kayit?email=${encodeURIComponent(o.email)}`} className="font-bold text-link">aynı e-postayla hesap oluştur</Link>.</p>
+        </div>
+      ) : null}
       {o.paymentMethod === "TRANSFER" && o.paymentStatus === "PENDING" ? (
         <div className="mb-5 rounded-2xl border border-accent/30 bg-[#fff4f2] p-5 text-sm">
           <b className="text-base">Havale / EFT bilgileri</b>

@@ -28,6 +28,8 @@ async def main():
     el=pg.locator('h2:has-text("Sana özel öneriler")'); await el.scroll_into_view_if_needed(); bb=await el.bounding_box(); await pg.screenshot(path='/tmp/qa/s2.png', clip={'x':0,'y':max(0,bb['y']-20),'width':1440,'height':560})
     # hemen al
     await pg.goto(B+'/urun/ace-250', wait_until='networkidle'); await pg.click('button:has-text("Hemen al")'); await pg.wait_for_url('**/odeme'); await pg.wait_for_timeout(800)
+    chk('Hemen al → giriş / misafir seçimi', await pg.locator('[data-testid=checkout-gate]').count() == 1)
+    await pg.click('[data-testid=guest-continue]'); await pg.wait_for_url('**/odeme?misafir=1'); await pg.wait_for_timeout(1200)
     chk('Hemen al → ödeme', 'Ace 250' in await pg.content())
     await pg.goto(B+'/sepet', wait_until='networkidle'); await pg.wait_for_timeout(1500); chk('Sepette birlikte alınanlar', 'Bunlarla birlikte alınanlar' in await pg.content())
     await b.close()

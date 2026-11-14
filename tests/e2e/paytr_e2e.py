@@ -100,7 +100,7 @@ async def checkout(br):
     await pg.goto(B + "/urun/ace-250", wait_until="networkidle")
     await pg.get_by_role("button", name="Sepete ekle", exact=True).first.click()
     await pg.wait_for_timeout(500)
-    await pg.goto(B + "/odeme", wait_until="networkidle")
+    await pg.goto(B + "/odeme?misafir=1", wait_until="networkidle")
     await pg.fill("input[name=phone]", "05321234567")
     await pg.fill("input[name=email]", "paytr.test@ornek.com")
     await pg.fill("input[name=fullName]", "Şükrü Öztürk")

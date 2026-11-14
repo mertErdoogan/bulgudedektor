@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
 import { NavProgress } from "@/components/nav-progress";
+import { FormValidation } from "@/components/form-validation";
 import { siteUrl } from "@/lib/seo";
 import "./globals.css";
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <NavProgress />
+        <FormValidation />
         {children}
         <Toaster position="top-center" richColors closeButton />
         {process.env.PREPROD === "1" ? (

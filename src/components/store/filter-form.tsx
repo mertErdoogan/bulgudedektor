@@ -22,9 +22,9 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
   };
   const Group = ({ title, name, opts }: { title: string; name: string; opts: Opt[] }) =>
     opts.length ? (
-      <fieldset className="border-b border-line py-4">
-        <legend className="mb-2 text-sm font-extrabold">{title}</legend>
-        <div className="flex flex-col gap-2">
+      <div role="group" aria-label={title} className="border-b border-line pt-5 pb-4">
+        <p aria-hidden className="mb-3 text-sm font-extrabold">{title}</p>
+        <div className="flex flex-col gap-2.5">
           {opts.map((o) => (
             <label key={o.k} className="flex cursor-pointer items-center gap-2.5 text-sm">
               <input type="checkbox" name={name} value={o.k} defaultChecked={has(name, o.k)} onChange={apply} className="h-[18px] w-[18px] accent-brand" />
@@ -33,7 +33,7 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
             </label>
           ))}
         </div>
-      </fieldset>
+      </div>
     ) : null;
   return (
     <>
@@ -85,14 +85,14 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
             <Group title="Marka" name="marka" opts={brands.map((b) => ({ k: b.slug, n: b.n, l: b.name }))} />
             <Group title="Teknoloji" name="tek" opts={tech} />
             <Group title="Su geçirmezlik" name="su" opts={water} />
-            <fieldset className="border-b border-line py-4">
-              <legend className="mb-2 text-sm font-extrabold">Bütçe (TL)</legend>
+            <div role="group" aria-label="Bütçe (TL)" className="border-b border-line pt-5 pb-4">
+              <p aria-hidden className="mb-3 text-sm font-extrabold">Bütçe (TL)</p>
               <div className="flex gap-2">
                 <input name="min" inputMode="numeric" placeholder="En az" defaultValue={sp.min?.[0]} className="h-10 w-full rounded-lg border border-[#d6d6d9] px-3 text-sm" onBlur={apply} />
                 <input name="max" inputMode="numeric" placeholder="En çok" defaultValue={sp.max?.[0]} className="h-10 w-full rounded-lg border border-[#d6d6d9] px-3 text-sm" onBlur={apply} />
               </div>
-            </fieldset>
-            <div className="flex flex-col gap-2 py-4">
+            </div>
+            <div className="flex flex-col gap-2.5 pt-5 pb-4">
               <label className="flex items-center gap-2.5 text-sm"><input type="checkbox" name="stok" value="1" defaultChecked={has("stok", "1")} onChange={apply} className="h-[18px] w-[18px] accent-brand" /> Stokta ve aynı gün kargo</label>
               <label className="flex items-center gap-2.5 text-sm"><input type="checkbox" name="hafif" value="1" defaultChecked={has("hafif", "1")} onChange={apply} className="h-[18px] w-[18px] accent-brand" /> 1,5 kg altı (gün boyu taşınır)</label>
             </div>

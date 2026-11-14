@@ -301,28 +301,32 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {act ? <SocialProof p={act} ctx={ctx} className="mt-3 justify-center text-[12px] font-medium text-mute" /> : null}
           </div>
 
-          {/* Güven: masaüstünde tek satır, dört kısa madde */}
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4" data-testid="pdp-trust">
+          {/* Güven: dört renkli kutu; her biri kendi rengi ve hareketli ikonuyla, bir bakışta ayırt edilir */}
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4" data-testid="pdp-trust">
             {[
-              { I: BadgeCheck, t: "Yetkili distribütör", d: p.trackSerial ? "Seri no ile sorgula" : "Orijinal ürün", href: p.trackSerial ? "/seri-no" : undefined },
-              { I: Truck, t: "Ücretsiz kargo", d: "Sigortalı gönderim" },
-              { I: RotateCcw, t: "14 gün iade", d: "Ücretsiz kargo kodu" },
-              { I: Headset, t: "Uzman desteği", d: "Kurulum ve kullanım" },
-            ].map(({ I, t, d, href }) => {
+              { I: BadgeCheck, t: "Yetkili distribütör", d: p.trackSerial ? "Seri no ile sorgula" : "Orijinal, faturalı", href: p.trackSerial ? "/seri-no" : undefined, c: "22,163,74" },
+              { I: Truck, t: "Ücretsiz kargo", d: "Sigortalı gönderim", c: "37,99,235" },
+              { I: RotateCcw, t: "14 gün iade", d: "Hesabından talep", c: "217,119,6" },
+              { I: Headset, t: "Uzman desteği", d: "WhatsApp'tan yaz", href: wa, c: "124,58,237" },
+            ].map(({ I, t, d, href, c }) => {
               const body = (
                 <>
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-deep shadow-sm ring-1 ring-line"><I size={16} /></span>
-                  <span className="min-w-0">
-                    <b className="block truncate text-[12.5px]">{t}</b>
-                    <span className="block truncate text-[11.5px] text-mute">{d}</span>
+                  <I aria-hidden size={64} strokeWidth={1.4} className="pointer-events-none absolute -right-3 -bottom-4 text-[rgba(var(--tc),.09)] transition duration-500 group-hover:-rotate-12 group-hover:scale-110" />
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[rgb(var(--tc))] text-white shadow-[0_8px_16px_-8px_rgba(var(--tc),.9)] transition duration-300 group-hover:-translate-y-0.5 group-hover:-rotate-6">
+                    <I size={17} strokeWidth={2.2} />
+                  </span>
+                  <span className="relative min-w-0">
+                    <b className="block truncate text-[12.5px] text-deep">{t}</b>
+                    <span className="block truncate text-[11.5px] text-[rgb(var(--tc))]">{d}{href ? " →" : ""}</span>
                   </span>
                 </>
               );
-              const cls = "flex items-center gap-2.5 rounded-2xl bg-soft px-3 py-2.5 lg:flex-col lg:items-start lg:gap-2";
+              const cls = "group relative isolate flex items-center gap-2.5 overflow-hidden rounded-2xl bg-[linear-gradient(135deg,rgba(var(--tc),.13),rgba(var(--tc),.03))] px-3 py-3 ring-1 ring-[rgba(var(--tc),.16)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_24px_-18px_rgba(var(--tc),.9)] lg:flex-col lg:items-start lg:gap-2.5";
+              const st = { ["--tc" as string]: c } as React.CSSProperties;
               return href ? (
-                <Link key={t} href={href} className={`${cls} transition hover:bg-[#ececee]`}>{body}</Link>
+                <a key={t} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener" className={cls} style={st}>{body}</a>
               ) : (
-                <div key={t} className={cls}>{body}</div>
+                <div key={t} className={cls} style={st}>{body}</div>
               );
             })}
           </div>
@@ -332,14 +336,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <a href={wa} target="_blank" className="inline-flex items-center gap-1.5 font-bold text-[#11643a] hover:underline"><MessageCircle size={17} /> WhatsApp&apos;tan sor</a>
             {s.store.phone ? <a href={`tel:${s.store.phone.replace(/[^\d+]/g, "")}`} className="inline-flex items-center gap-1.5 font-bold hover:underline"><Phone size={16} /> {s.store.phone}</a> : null}
           </div>
-          {p.trialRentalPrice ? (
-            <p className="rounded-2xl border border-dashed border-[#d6d6db] px-4 py-3 text-[13.5px] text-mute">
-              <b className="text-deep">Önce dene:</b> 3 günlük kiralama {formatTL(p.trialRentalPrice)}, 30 gün içinde alırsan fiyattan düşülür.{" "}
-              <Link href={`/iletisim?konu=kiralama&urun=${encodeURIComponent(p.name)}`} className="font-bold text-deep underline-offset-2 hover:underline">Talep et →</Link>
-            </p>
-          ) : null}
         </div>
       </div>
+
+      {/* Benzer modeller üstte: karar aşamasındaki müşteri alternatifleri hemen görsün */}
+      <Suspense fallback={null}>
+        <SimilarRail p={p} ctx={ctx} />
+      </Suspense>
 
       <PdpTabs tabs={tabs} product={{ id: p.id, name: p.name, price: formatTL(p.price), amount: p.price, image: p.images[0]?.url ?? null, brand: p.brand?.name, disabled: out }} />
 
@@ -521,7 +524,7 @@ const AVATAR = ["bg-[#d42e1e]", "bg-[#1f3b8f]", "bg-[#11643a]", "bg-[#7a4a14]", 
 
 /** Ürün sayfasının alt kısmı (rehberler, birlikte alınanlar, son gezilenler, benzer modeller): ayrı akar. */
 async function PdpExtras({ p, ctx }: { p: NonNullable<Awaited<ReturnType<typeof getProduct>>>; ctx: ReturnType<typeof cardCtx> }) {
-  const [related, together, guides] = await Promise.all([similarTo(p, 4), boughtTogether([p.id], 4), relatedPosts({ productId: p.id, categoryId: p.categoryId, limit: 3 })]);
+  const [together, guides] = await Promise.all([boughtTogether([p.id], 4), relatedPosts({ productId: p.id, categoryId: p.categoryId, limit: 3 })]);
   return (
     <>
       {guides.length ? (
@@ -537,13 +540,31 @@ async function PdpExtras({ p, ctx }: { p: NonNullable<Awaited<ReturnType<typeof 
         </section>
       ) : null}
       <RecentlyViewed exclude={p.id} className="mt-12" />
-      {related.length ? (
-        <section className="mt-12">
-          <h2 className="font-display mb-4 text-2xl font-extrabold">Benzer modeller</h2>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{related.map((r) => <ProductCard key={r.id} p={r} ctx={ctx} />)}</div>
-        </section>
-      ) : null}
     </>
+  );
+}
+
+/** Benzer modeller: ürünün hemen altında; telefonda yatay kayan, masaüstünde 4'lü. */
+async function SimilarRail({ p, ctx }: { p: NonNullable<Awaited<ReturnType<typeof getProduct>>>; ctx: ReturnType<typeof cardCtx> }) {
+  const related = await similarTo(p, 4);
+  if (!related.length) return null;
+  return (
+    <section className="mt-10" data-testid="pdp-similar">
+      <div className="mb-4 flex items-end justify-between gap-3">
+        <div>
+          <h2 className="font-display text-[22px] leading-tight font-extrabold tracking-tight md:text-[26px]">Benzer modeller</h2>
+          <p className="mt-0.5 text-[13.5px] text-mute">Karar vermeden önce bunlara da bak</p>
+        </div>
+        <Link href={`/karsilastir?ids=${[p.id, ...related.slice(0, 2).map((r) => r.id)].join(",")}`} className="shrink-0 rounded-full border border-line px-3.5 py-2 text-[13px] font-bold transition hover:border-deep">Karşılaştır →</Link>
+      </div>
+      <div className="scrollbar-none -mx-4 flex snap-x gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:px-0">
+        {related.map((r) => (
+          <div key={r.id} className="w-[46%] shrink-0 snap-start md:w-auto">
+            <ProductCard p={r} ctx={ctx} />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

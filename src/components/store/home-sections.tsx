@@ -1,6 +1,6 @@
 import { imgProps } from "@/lib/img";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Clock3, Coins, Compass, Gem, GitCompare, MessageCircle, Phone, Radar, RotateCcw, ShieldCheck, Store, Waves } from "lucide-react";
+import { ArrowRight, BookOpen, Clock3, Coins, Compass, Gem, GitCompare, MessageCircle, Phone, Radar, RotateCcw, ShieldCheck, Store, Waves, Truck } from "lucide-react";
 import type { PostCard } from "@/lib/content";
 import type { CSSProperties } from "react";
 import { formatDate } from "@/lib/utils";
@@ -86,7 +86,7 @@ export function ExpertBand({ title, wa, phone, hours }: { title?: string | null;
     { href: wa, ext: true, I: MessageCircle, t: "WhatsApp'tan yaz", d: "Genelde dakikalar içinde yanıt", tone: "bg-[#e9f7ef] text-[#11643a]" },
     { href: tel, ext: false, I: Phone, t: phone || "Bizi arayın", d: hours.split(",")[0] || "Mesai saatlerinde", tone: "bg-[#eef2fd] text-[#1f3b8f]" },
     { href: "/karsilastir", ext: false, I: GitCompare, t: "Yan yana karşılaştır", d: "Modelleri tek tabloda gör", tone: "bg-[#fdf0ee] text-brand" },
-    { href: "/iletisim", ext: false, I: Store, t: "Showroom'da dene", d: "Test alanında, elinde", tone: "bg-[#f4f4f5] text-deep" },
+    { href: "/iletisim", ext: false, I: Store, t: "Showroom'a gel", d: "Adres ve çalışma saatleri", tone: "bg-[#f4f4f5] text-deep" },
   ];
   return (
     <section className="container-x mt-12" data-testid="expert-band">
@@ -123,7 +123,7 @@ export function TrustBand() {
   const cards = [
     { big: "2 YIL", t: "Distribütör garantisi", d: "Faturalı, Türkiye garantili", I: ShieldCheck, c: "22,163,74" },
     { big: "14 GÜN", t: "Kolay iade", d: "Hesabından tek tıkla talep", I: RotateCcw, c: "37,99,235" },
-    { big: "TEST", t: "Showroom'da dene", d: "Test alanında, cihaz elinde", I: Store, c: "212,46,30" },
+    { big: "ÜCRETSİZ", t: "Kargo", d: "Sigortalı, tüm Türkiye'ye", I: Truck, c: "212,46,30" },
   ];
   return (
     <section data-stagger="" className="container-x mt-12 grid grid-cols-3 gap-2.5 md:gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr]" data-testid="trust-band">

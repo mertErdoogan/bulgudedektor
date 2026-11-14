@@ -46,7 +46,7 @@ async def main():
         await pg.click("text=Uygula")
         await pg.wait_for_selector("text=Hoş geldin indirimi uygulandı", timeout=20000)
         check("Kupon sepette uygulandı", True)
-        await pg.goto(B + "/odeme", wait_until="networkidle")
+        await pg.goto(B + "/odeme?misafir=1", wait_until="networkidle")
         await pg.fill("input[name=phone]", "05321234567")
         await pg.fill("input[name=email]", "e2e.test@ornek.com")
         await pg.fill("input[name=fullName]", "Test Müşteri")
@@ -71,7 +71,7 @@ async def main():
         # ───────── Havale siparişi
         await pg.goto(B + "/urun/findx-pro", wait_until="networkidle")
         await pg.get_by_role("button", name="Sepete ekle", exact=True).first.click()
-        await pg.goto(B + "/odeme", wait_until="networkidle")
+        await pg.goto(B + "/odeme?misafir=1", wait_until="networkidle")
         await pg.fill("input[name=phone]", "05321234567")
         await pg.fill("input[name=email]", "e2e.test@ornek.com")
         await pg.fill("input[name=fullName]", "Test Müşteri")

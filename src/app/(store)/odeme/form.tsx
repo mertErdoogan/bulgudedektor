@@ -100,16 +100,20 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
         </div>
         <Step n={1} title="İletişim">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Cep telefonu"><Input name="phone" type="tel" autoComplete="tel" defaultValue={me?.phone ?? ""} placeholder="05xx xxx xx xx" required /></Field>
+            <Field label="Cep telefonu"><Input name="phone" type="tel" autoComplete="tel" defaultValue={me?.phone ?? ""} placeholder="05xx xxx xx xx" required pattern="\+?[0-9 ]{10,16}" data-error="Telefonunu 05xx xxx xx xx biçiminde yaz." /></Field>
             <Field label="E-posta"><Input name="email" type="email" autoComplete="email" defaultValue={me?.email ?? ""} required onBlur={(e) => snapshot(e.currentTarget.form)} /></Field>
           </div>
           {!me ? (
             <details className="mt-3 text-sm">
               <summary className="cursor-pointer font-bold text-link">Hesap oluştur (isteğe bağlı) — cihazın ve garantin hesabında dursun</summary>
-              <Field label="Şifre belirle (en az 8 karakter)" className="mt-2"><Input name="password" type="password" autoComplete="new-password" /></Field>
+              <Field label="Şifre belirle (en az 8 karakter)" className="mt-2"><Input name="password" type="password" autoComplete="new-password" minLength={8} /></Field>
             </details>
           ) : <p className="mt-2 text-xs text-mute">{me.name} olarak giriş yaptın.</p>}
-          {!me ? <p className="mt-2 text-xs text-mute">Üyelik gerekmez. Zaten hesabın varsa <Link href="/giris?next=/odeme" className="font-bold text-link">giriş yap</Link>.</p> : null}
+          {!me ? (
+            <p className="mt-3 rounded-xl bg-soft px-3.5 py-2.5 text-[12.5px] leading-relaxed text-mute" data-testid="guest-info">
+              <b className="text-deep">Üye olmadan alıyorsun.</b> Sipariş onayın e-posta ve SMS ile gelir; kargonu <Link href="/siparis-takip" className="font-bold text-link">Sipariş takibi</Link>&apos;nden sipariş no + e-posta ile izlersin. Hesabın varsa <Link href="/giris?next=/odeme" className="font-bold text-link">giriş yap</Link>.
+            </p>
+          ) : null}
         </Step>
 
         <Step n={2} title="Teslimat">
@@ -136,7 +140,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <Field label="Şirket unvanı" className="sm:col-span-3"><Input name="companyName" required /></Field>
               <Field label="Vergi dairesi"><Input name="taxOffice" required /></Field>
-              <Field label="Vergi no" className="sm:col-span-2"><Input name="taxNumber" inputMode="numeric" required /></Field>
+              <Field label="Vergi no" className="sm:col-span-2"><Input name="taxNumber" inputMode="numeric" required pattern="[0-9]{10,11}" data-error="Vergi no 10 haneli (şahıs şirketinde 11 haneli TC no) olmalı." /></Field>
             </div>
           ) : null}
           <Field label="Sipariş notu (isteğe bağlı)" className="mt-3"><Input name="note" placeholder="Örn. hafta içi 18:00 sonrası teslim" /></Field>
@@ -149,7 +153,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
           </div>
           {pay === "CARD" ? (
             <Field label="TC kimlik no (isteğe bağlı)" hint="Bazı bankalar kartlı ödemede ister. Yalnızca ödeme kuruluşuna iletilir, sitemizde saklanmaz." className="mt-3">
-              <Input name="tckn" inputMode="numeric" maxLength={11} autoComplete="off" placeholder="11 haneli" />
+              <Input name="tckn" inputMode="numeric" maxLength={11} autoComplete="off" placeholder="11 haneli" pattern="[0-9]{11}" data-error="TC kimlik no 11 haneli olmalı." />
             </Field>
           ) : null}
           {pay === "CARD" ? (

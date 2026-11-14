@@ -101,7 +101,7 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
       videoUrl: strOrNull(fd.get("videoUrl")),
       isFeatured: fd.get("isFeatured") === "on",
       isPro: fd.get("isPro") === "on",
-      trialRentalPrice: toNumOrNull(fd.get("trialRentalPrice")),
+      trialRentalPrice: null, // Deneme kiralaması kaldırıldı (kötüye kullanım); alan veritabanında boş tutulur
       seoTitle: strOrNull(fd.get("seoTitle")),
       seoDescription: strOrNull(fd.get("seoDescription")),
     };

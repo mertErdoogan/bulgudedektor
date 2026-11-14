@@ -66,7 +66,8 @@ export async function customerRegister(_: ActionResult | null, fd: FormData): Pr
     await setSessionCookie(CUSTOMER_COOKIE, await signToken({ sub: id, kind: "customer" }, 30), 30);
     const { sendVerification } = await import("@/lib/account");
     void sendVerification({ name, email });
-    return ok("Hesabın oluşturuldu. E-posta adresine doğrulama bağlantısı gönderdik.", { redirect: "/hesabim" });
+    const next = str(fd.get("next"));
+    return ok("Hesabın oluşturuldu. E-posta adresine doğrulama bağlantısı gönderdik.", { redirect: next.startsWith("/") && !next.startsWith("//") ? next : "/hesabim" });
   });
 }
 

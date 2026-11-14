@@ -86,8 +86,8 @@ export function Label({ className, children, hint, ...props }: React.LabelHTMLAt
 
 export function Field({ label, hint, children, className }: { label: React.ReactNode; hint?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
-      <span className="text-[13px] font-semibold text-mute">{label}</span>
+    <div data-field="" className={cn("flex flex-col gap-1.5", className)}>
+      <span data-field-label="" className="text-[13px] font-semibold text-mute">{label}</span>
       {children}
       {hint ? <span className="text-xs text-mute/90">{hint}</span> : null}
     </div>

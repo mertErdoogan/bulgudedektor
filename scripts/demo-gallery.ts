@@ -18,3 +18,11 @@ export async function ensureDemoGallery() {
         and (select count(*) from product_images x where x.product_id = pi.product_id) = 1`);
   }
 }
+
+/** Deneme kiralaması kaldırıldı: var olan (ön izleme) veritabanında fiyatları ve eski SSS cevabını temizler. */
+export async function removeTrialRental() {
+  await db.execute(sql`update products set trial_rental_price = null where trial_rental_price is not null`);
+  await db.execute(sql`update faqs set question = 'Hangi cihazın bana uygun olduğunu nasıl anlarım?',
+    answer = '6 soruluk sihirbazı çözebilir veya WhatsApp''tan uzmanımıza yazabilirsin; arama alanına, hedefine ve bütçene göre en uygun modelleri nedenleriyle önerir.'
+    where question = 'Satın almadan önce cihazı deneyebilir miyim?'`);
+}

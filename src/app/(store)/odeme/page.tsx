@@ -4,11 +4,14 @@ import { addresses } from "@/db/schema";
 import { getCustomer } from "@/lib/auth";
 import { getSettings, publicSettings } from "@/lib/settings";
 import { CheckoutForm } from "./form";
+import { CheckoutGate } from "./gate";
 
 export const metadata = { title: "Ödeme", robots: { index: false } };
 
-export default async function CheckoutPage() {
-  const [s, me] = await Promise.all([getSettings(), getCustomer()]);
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ misafir?: string }> }) {
+  const [s, me, sp] = await Promise.all([getSettings(), getCustomer(), searchParams]);
+  // Giriş yapmamış müşteri önce seçim ekranını görür: giriş yap ya da üye olmadan devam et
+  if (!me && sp.misafir !== "1") return <CheckoutGate />;
   const addr = me ? await db.select().from(addresses).where(eq(addresses.customerId, me.id)).orderBy(desc(addresses.isDefault)).limit(1) : [];
   return (
     <CheckoutForm

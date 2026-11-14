@@ -184,9 +184,6 @@ export function ProductForm({
                   </div>
                 </>
               ) : null}
-              <Field label="Deneme kiralaması (3 gün)" hint="Boşsa ürün sayfasında gösterilmez.">
-                <Input name="trialRentalPrice" inputMode="decimal" defaultValue={product?.trialRentalPrice ?? ""} />
-              </Field>
             </div>
           </Card>
 

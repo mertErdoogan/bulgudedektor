@@ -10,7 +10,7 @@ export const metadata = pageMeta({ title: "İletişim — Uzmana Sor, Showroom v
 export default async function ContactPage({ searchParams }: { searchParams: Promise<{ konu?: string; urun?: string }> }) {
   const s = await getSettings();
   const sp = await searchParams;
-  const subject = sp.konu === "goruntulu" ? `Görüntülü görüşme talebi${sp.urun ? `: ${sp.urun}` : ""}` : sp.konu === "kiralama" ? `Deneme kiralaması${sp.urun ? `: ${sp.urun}` : ""}` : sp.konu === "sifre" ? "Şifre sıfırlama" : "";
+  const subject = sp.konu === "goruntulu" ? `Görüntülü görüşme talebi${sp.urun ? `: ${sp.urun}` : ""}` : sp.konu === "sifre" ? "Şifre sıfırlama" : "";
   return (
     <div className="container-x grid max-w-5xl gap-8 py-10 md:grid-cols-[1fr_1.2fr]">
       <JsonLd data={graph(storeLd(s))} />

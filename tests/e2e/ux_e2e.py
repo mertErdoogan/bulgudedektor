@@ -58,7 +58,7 @@ async def main():
     # sepet anlık görüntüsü
     await pg.goto(B+'/urun/ace-250', wait_until='networkidle'); await pg.click('button:has-text("Sepete ekle") >> nth=0'); await pg.wait_for_timeout(500)
     chk('Sepete ekleme sayıldı', int(sql("select coalesce(sum(carts),0) from product_activity a join products p on p.id=a.product_id where p.slug='ace-250' and a.hour>now()-interval '1 hour'"))>=1)
-    await pg.goto(B+'/odeme', wait_until='networkidle'); await pg.fill('input[name=email]','terk@ornek.com'); await pg.press('input[name=email]','Tab'); await pg.wait_for_timeout(800)
+    await pg.goto(B+'/odeme?misafir=1', wait_until='networkidle'); await pg.fill('input[name=email]','terk@ornek.com'); await pg.press('input[name=email]','Tab'); await pg.wait_for_timeout(800)
     chk('Sepet kaydı oluştu', sql("select count(*) from cart_snapshots where email='terk@ornek.com'")=='1')
     # görsel yükleme webp
     a=await b.new_context(); ap=await a.new_page()
