@@ -7,6 +7,9 @@ import { failOrderPayment, markOrderPaid } from "@/lib/orders";
 import { orderKey } from "@/lib/store";
 import { formatTL, orderNo } from "@/lib/utils";
 
+// Her istekte çalışır: derlemede (veritabanı yokken) önceden üretilmeye çalışılmasın
+export const dynamic = "force-dynamic";
+
 // Sadece geliştirme ortamında (PAYMENT_SIMULATION=1) iyzico anahtarı yokken uçtan uca test için.
 export default async function SimPage({ searchParams }: { searchParams: Promise<{ o?: string; k?: string }> }) {
   if (!simulationAllowed()) notFound();

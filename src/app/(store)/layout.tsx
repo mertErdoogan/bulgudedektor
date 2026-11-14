@@ -25,6 +25,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+// Mağaza sayfaları her istekte sunucuda üretilir (fiyat, stok, kampanya canlı). Ayrıca derleme sırasında
+// veritabanı olmadığı için (Docker/Render derlemesi) hiçbir sayfa önceden üretilmeye çalışılmaz.
+export const dynamic = "force-dynamic";
+
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
   const s = await getSettings();
   const { gaMeasurementId: ga, metaPixelId: px, googleAdsIds, adsPurchaseLabels, gtmId } = s.integrations;
