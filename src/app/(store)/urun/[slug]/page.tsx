@@ -152,43 +152,49 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <ProductViewTracker id={p.id} name={p.name} price={p.price} brand={p.brand?.name} />
       <Breadcrumbs items={[...(p.category ? [{ name: p.category.name, path: `/kategori/${p.category.slug}` }] : []), ...(p.brand ? [{ name: p.brand.name, path: `/marka/${p.brand.slug}` }] : []), { name: p.name, path: `/urun/${p.slug}` }]} />
 
-      {/* ───────── Üst: galeri + satın alma ───────── */}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:gap-12">
-        <div className="flex flex-col gap-4">
+      {/* ───────── Üst: galeri + satın alma ─────────
+          Masaüstünde galeri yapışkan; sağ sütun sırası karar verdirecek şekilde: marka/puan → ad → öne çıkanlar →
+          fiyat + butonlar (ilk ekranda) → güven. */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[minmax(0,1.04fr)_minmax(0,.96fr)]">
+        <div className="md:sticky md:top-[84px] md:self-start">
           <Gallery images={p.images} name={p.name} badge={p.badges[0]} brand={p.brand?.name} discountPct={discount && p.compareAtPrice ? Math.round((discount / p.compareAtPrice) * 100) : 0} />
+        </div>
+
+        <div className="flex flex-col gap-4 md:gap-5">
+          <div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              {p.brand ? <Link href={`/marka/${p.brand.slug}`} className="rounded-full bg-deep px-3 py-1 text-[11px] font-extrabold tracking-[.14em] text-white transition hover:bg-black">{p.brand.name.toLocaleUpperCase("en-US")}</Link> : null}
+              {rating ? (
+                <a href="#yorumlar" className="flex items-center gap-1.5 text-[13.5px] hover:underline">
+                  <span className="flex">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={14} className={i < Math.round(rating) ? "fill-gold text-gold" : "text-line"} />)}</span>
+                  <b>{rating.toFixed(1)}</b> <span className="text-mute">· {rCount} yorum</span>
+                </a>
+              ) : (
+                <a href="#yorumlar" className="text-[13px] font-semibold text-mute hover:text-deep">İlk yorumu sen yaz</a>
+              )}
+              <span className="ml-auto text-[12px] text-mute">Kod {p.sku}</span>
+            </div>
+            <div className="mt-2.5 flex items-start justify-between gap-3">
+              <h1 className="font-display text-[30px] leading-[1.05] font-extrabold tracking-tight md:text-[44px]">{p.name}</h1>
+              <FavoriteButton productId={p.id} name={p.name} className="mt-1 shrink-0" />
+            </div>
+            {p.shortDescription ? <p className="mt-2 line-clamp-3 max-w-[560px] text-[15px] leading-relaxed text-[#52525b]">{p.shortDescription}</p> : null}
+          </div>
+
+          {/* Öne çıkanlar: fiyatın hemen üstünde, bir bakışta "bu cihaz ne" */}
           {facts.length ? (
-            <div className="hidden grid-cols-4 gap-2.5 md:grid" data-testid="pdp-facts">
+            <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:[grid-template-columns:repeat(var(--n),minmax(0,1fr))]" style={{ ["--n" as string]: facts.length }} data-testid="pdp-facts">
               {facts.map(({ I, k, v }) => (
-                <div key={k} className="flex flex-col gap-2 rounded-2xl border border-line bg-white p-3.5">
-                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-soft text-deep"><I size={18} /></span>
-                  <span>
-                    <span className="block text-[11.5px] font-semibold text-mute">{k}</span>
-                    <b className="text-[14px] leading-tight">{v}</b>
+                <span key={k} className="flex shrink-0 items-center gap-2.5 rounded-2xl border border-line bg-white py-2 pr-3.5 pl-2">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-soft text-deep"><I size={16} /></span>
+                  <span className="flex min-w-0 flex-col leading-tight">
+                    <span className="text-[10.5px] font-semibold text-mute md:text-[11px]">{k}</span>
+                    <b className="text-[12.5px] md:text-[13.5px]">{v}</b>
                   </span>
-                </div>
+                </span>
               ))}
             </div>
           ) : null}
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            {p.brand ? <Link href={`/marka/${p.brand.slug}`} className="rounded-full bg-deep px-3 py-1 text-[11.5px] font-extrabold tracking-[.12em] text-white">{p.brand.name.toLocaleUpperCase("en-US")}</Link> : null}
-            {rating ? (
-              <a href="#yorumlar" className="flex items-center gap-1.5 text-[13.5px] hover:underline">
-                <span className="flex">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={14} className={i < Math.round(rating) ? "fill-gold text-gold" : "text-line"} />)}</span>
-                <b>{rating.toFixed(1)}</b> <span className="text-mute">· {rCount} yorum</span>
-              </a>
-            ) : (
-              <a href="#yorumlar" className="text-[13px] font-semibold text-mute hover:text-deep">İlk yorumu sen yaz</a>
-            )}
-            <span className="ml-auto text-[12px] text-mute">Kod {p.sku}</span>
-          </div>
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="font-display text-[28px] leading-[1.1] font-extrabold tracking-tight md:text-[40px]">{p.name}</h1>
-            <FavoriteButton productId={p.id} name={p.name} className="mt-1 shrink-0" />
-          </div>
-          {p.shortDescription ? <p className="text-[15.5px] leading-relaxed text-[#3f3f46]">{p.shortDescription}</p> : null}
 
           {variants.length > 1 ? (
             <div>
@@ -208,12 +214,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           ) : null}
 
-          {/* Fiyat kartı */}
-          <div className="rounded-[24px] border border-line bg-[linear-gradient(160deg,#ffffff_0%,#fafafa_100%)] p-5" id="satin-al">
+          {/* Satın alma kartı: fiyat ve butonlar tek blokta, ilk ekranda */}
+          <div className="relative overflow-hidden rounded-[26px] bg-white p-5 shadow-[0_30px_60px_-34px_rgba(20,20,22,.45)] ring-1 ring-line md:p-6" id="satin-al">
+            <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand via-[#f0704f] to-brand" />
+            {!archived ? (
+              <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px] font-bold">
+                {out ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-danger-bg px-2.5 py-1 text-danger"><span className="h-1.5 w-1.5 rounded-full bg-danger" /> Stokta yok</span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-ok-bg px-2.5 py-1 text-ok" data-testid="pdp-stock">
+                    <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ok opacity-60" /><span className="relative h-1.5 w-1.5 rounded-full bg-ok" /></span>
+                    Stokta{p.stock > 0 && p.stock <= 5 ? ` · son ${p.stock} adet` : ""}
+                  </span>
+                )}
+                {discount ? <span className="rounded-full bg-brand px-2.5 py-1 text-white">{formatTL(discount)} indirim</span> : null}
+              </div>
+            ) : null}
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <strong className="font-display text-[34px] leading-none font-extrabold tracking-tight md:text-[40px]">{formatTL(p.price)}</strong>
-              {discount ? <s className="text-[15px] text-mute">{formatTL(p.compareAtPrice)}</s> : null}
-              {discount ? <span className="rounded-full bg-brand px-2.5 py-0.5 text-[12px] font-extrabold text-white">{formatTL(discount)} indirim</span> : null}
+              <strong className="font-display text-[36px] leading-none font-extrabold tracking-tight md:text-[46px]">{formatTL(p.price)}</strong>
+              {discount ? <s className="text-[16px] text-mute">{formatTL(p.compareAtPrice)}</s> : null}
+            </div>
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13.5px] text-[#3f3f46]">
+              {inst > 1 ? <span className="flex items-center gap-1.5"><CreditCard size={15} className="text-mute" /> {inst} × <b className="text-deep">{formatTL(Math.round(p.price / inst))}</b> vade farksız <a href="#garanti" className="text-mute underline-offset-2 hover:underline">· {s.payment.maxInstallment} taksite kadar</a></span> : null}
+              {s.payment.transferEnabled && s.payment.transferDiscountPct ? <span className="flex items-center gap-1.5"><Landmark size={15} className="text-mute" /> Havale/EFT %{s.payment.transferDiscountPct} indirim</span> : null}
             </div>
             {deal ? (
               <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-2xl bg-ok-bg px-3.5 py-2.5 text-sm" data-testid="pdp-deal">
@@ -222,16 +245,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <span className="text-[#2f5d43]">· {deal.name}, {formatTL(deal.amount)} otomatik düşer</span>
               </p>
             ) : null}
-            {s.merch.badge && p.brand && p.brand.slug === s.merch.focusBrand ? (
-              <p className="mt-3 flex w-fit items-center gap-1.5 rounded-full bg-deep px-3 py-1 text-[12.5px] font-bold text-white" data-testid="focus-badge">
-                <BadgeCheck size={15} className="text-[#86efac]" /> Türkiye distribütör garantili · {warranty}
-              </p>
-            ) : null}
-            <div className="mt-3 flex flex-col gap-1 text-[13.5px] text-[#3f3f46]">
-              {inst > 1 ? <span className="flex items-center gap-2"><CreditCard size={15} className="text-mute" /> {inst} × <b className="text-deep">{formatTL(Math.round(p.price / inst))}</b> vade farksız <a href="#garanti" className="text-mute underline-offset-2 hover:underline">· {s.payment.maxInstallment} taksite kadar</a></span> : null}
-              {s.payment.transferEnabled && s.payment.transferDiscountPct ? <span className="flex items-center gap-2"><Landmark size={15} className="text-mute" /> Havale/EFT ile %{s.payment.transferDiscountPct} indirim ({formatTL((p.price * s.payment.transferDiscountPct) / 100)})</span> : null}
-              {!archived && !out ? <DeliveryLine p={p} ctx={ctx} pickup={s.shipping.pickupEnabled} /> : null}
-            </div>
             {archived ? (
               <p className="mt-4 rounded-xl bg-warn-bg p-3 text-sm font-bold text-warn">Bu ürün artık satılmıyor. Benzer ürünler için uzmana sor.</p>
             ) : out ? (
@@ -240,46 +253,45 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <ProductForms productId={p.id} mode="alert" />
               </div>
             ) : (
-              <div className="mt-4 hidden md:block">
+              <div className="mt-5 hidden md:block">
                 <BuyBox productId={p.id} name={p.name} max={p.allowBackorder ? 99 : p.stock} disabled={out} amount={p.price} brand={p.brand?.name} />
               </div>
             )}
+            {!archived && !out ? (
+              <div className="mt-4 border-t border-line pt-4 text-[13.5px] text-[#3f3f46]">
+                <DeliveryLine p={p} ctx={ctx} pickup={s.shipping.pickupEnabled} />
+              </div>
+            ) : null}
+            {s.merch.badge && p.brand && p.brand.slug === s.merch.focusBrand ? (
+              <p className="mt-3 flex w-fit items-center gap-1.5 rounded-full bg-deep px-3 py-1 text-[12.5px] font-bold text-white" data-testid="focus-badge">
+                <BadgeCheck size={15} className="text-[#86efac]" /> Türkiye distribütör garantili · {warranty}
+              </p>
+            ) : null}
             {act ? <SocialProof p={act} ctx={ctx} className="mt-3 text-[12.5px]" /> : null}
           </div>
 
-          {/* Mobilde öne çıkan bilgiler fiyattan sonra, tek satır kaydırılabilir haplar (galeri altında yer kaplamasın) */}
-          {facts.length ? (
-            <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 md:hidden">
-              {facts.map(({ I, k, v }) => (
-                <span key={k} className="flex shrink-0 items-center gap-2 rounded-full border border-line bg-white py-1.5 pr-3.5 pl-1.5">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-soft"><I size={15} /></span>
-                  <span className="flex flex-col leading-tight"><span className="text-[10.5px] text-mute">{k}</span><b className="text-[12.5px]">{v}</b></span>
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          {/* Güven: 4 kısa madde, ikonlu */}
-          <div className="grid grid-cols-2 gap-2" data-testid="pdp-trust">
+          {/* Güven: masaüstünde tek satır, dört kısa madde */}
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4" data-testid="pdp-trust">
             {[
               { I: BadgeCheck, t: "Yetkili distribütör", d: p.trackSerial ? "Seri no ile sorgula" : "Orijinal ürün", href: p.trackSerial ? "/seri-no" : undefined },
-              { I: ShieldCheck, t: `${warranty} garanti`, d: "Faturalı, Türkiye garantili" },
+              { I: ShieldCheck, t: `${warranty} garanti`, d: "Faturalı, Türkiye" },
               { I: RotateCcw, t: "14 gün iade", d: "Ücretsiz kargo kodu" },
               { I: Headset, t: "Uzman desteği", d: "Kurulum ve kullanım" },
             ].map(({ I, t, d, href }) => {
               const body = (
                 <>
-                  <I size={19} className="shrink-0 text-deep" />
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-deep shadow-sm ring-1 ring-line"><I size={16} /></span>
                   <span className="min-w-0">
-                    <b className="block truncate text-[13px]">{t}</b>
-                    <span className="block truncate text-[12px] text-mute">{d}</span>
+                    <b className="block truncate text-[12.5px]">{t}</b>
+                    <span className="block truncate text-[11.5px] text-mute">{d}</span>
                   </span>
                 </>
               );
+              const cls = "flex items-center gap-2.5 rounded-2xl bg-soft px-3 py-2.5 lg:flex-col lg:items-start lg:gap-2";
               return href ? (
-                <Link key={t} href={href} className="flex items-center gap-2.5 rounded-xl bg-soft px-3 py-2.5 transition hover:bg-[#ececee]">{body}</Link>
+                <Link key={t} href={href} className={`${cls} transition hover:bg-[#ececee]`}>{body}</Link>
               ) : (
-                <div key={t} className="flex items-center gap-2.5 rounded-xl bg-soft px-3 py-2.5">{body}</div>
+                <div key={t} className={cls}>{body}</div>
               );
             })}
           </div>

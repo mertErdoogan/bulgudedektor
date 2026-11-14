@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Minus, Plus, ShoppingCart, Zap, ZoomIn } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui";
 import { useCart } from "./cart";
 import { NoImage } from "./product-card";
 
@@ -23,7 +22,7 @@ export function Gallery({ images, name, badge, brand, discountPct = 0 }: { image
   return (
     <div>
       <div
-        className="group relative grid aspect-square place-items-center overflow-hidden rounded-[28px] border border-line bg-[radial-gradient(110%_85%_at_50%_40%,#ffffff_0%,#f6f6f7_55%,#ececee_100%)]"
+        className="group relative grid aspect-[5/4] place-items-center md:aspect-square overflow-hidden rounded-[28px] bg-[radial-gradient(70%_60%_at_50%_42%,#ffffff_0%,#f4f4f5_58%,#e7e7ea_100%)] ring-1 ring-line"
         onMouseMove={(e) => {
           if (!cur || window.matchMedia("(hover: none)").matches) return;
           const r = e.currentTarget.getBoundingClientRect();
@@ -37,6 +36,8 @@ export function Gallery({ images, name, badge, brand, discountPct = 0 }: { image
         tabIndex={n > 1 ? 0 : -1}
         aria-label={n > 1 ? `${name} görselleri, ${i + 1} / ${n}` : undefined}
       >
+        {/* Ürünün altında yumuşak bir zemin gölgesi: düz gri kutu yerine "sahnede duran" ürün hissi */}
+        <span aria-hidden className="pointer-events-none absolute bottom-[11%] left-1/2 h-8 w-[55%] -translate-x-1/2 rounded-[50%] bg-black/[.09] blur-2xl" />
         {cur ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -82,8 +83,8 @@ export function BuyBox({ productId, name, max, disabled, amount, brand }: { prod
   const [done, setDone] = useState(false);
   const router = useRouter();
   return (
-    <div className="flex flex-col gap-2.5">
-      <div className="flex gap-2.5">
+    <div className="flex flex-wrap gap-2.5">
+      <div className="flex min-w-0 flex-1 basis-[300px] gap-2.5">
         <div className="flex h-14 items-center rounded-full border border-[#d6d6d9] bg-white">
           <button className="grid h-full w-12 place-items-center rounded-l-full hover:bg-soft" onClick={() => setQ(Math.max(1, q - 1))} aria-label="Azalt"><Minus size={16} /></button>
           <span className="w-7 text-center font-bold tabular-nums">{q}</span>
@@ -110,7 +111,7 @@ export function BuyBox({ productId, name, max, disabled, amount, brand }: { prod
             window.dispatchEvent(new Event("arena-nav-start"));
             router.push("/odeme");
           }}
-          className="flex h-12 items-center justify-center gap-2 rounded-full border border-deep bg-white text-[14.5px] font-extrabold text-deep transition hover:bg-deep hover:text-white"
+          className="flex h-14 flex-1 basis-[140px] items-center justify-center gap-2 rounded-full bg-deep px-6 text-[15px] font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-black lg:flex-none"
         >
           <Zap size={17} /> Hemen al
         </button>
@@ -127,7 +128,9 @@ export function StickyBuy({ productId, name, price, inst, disabled, amount, bran
         <b className="font-display text-lg">{price}</b>
         {inst ? <span className="text-[11.5px] text-mute">{inst}</span> : null}
       </span>
-      <Button size="lg" className="flex-1" disabled={disabled} onClick={() => add(productId, 1, name, { price: amount, brand })}>{disabled ? "Stokta yok" : "Sepete ekle"}</Button>
+      <button type="button" disabled={disabled} onClick={() => add(productId, 1, name, { price: amount, brand })} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-brand text-[15px] font-extrabold text-white shadow-[0_10px_22px_-12px_rgba(212,46,30,.7)] transition active:scale-[.98] disabled:opacity-50">
+        {disabled ? "Stokta yok" : <><ShoppingCart size={18} /> Sepete ekle</>}
+      </button>
     </div>
   );
 }
