@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/i18n";
 
@@ -89,9 +89,14 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
             <Group title={t("filter.water")} name="su" opts={water} />
             <div role="group" aria-label={t("filter.budget")} className="border-b border-line pt-5 pb-4">
               <p aria-hidden className="mb-3 text-sm font-extrabold">{t("filter.budget")}</p>
-              <div className="flex gap-2">
-                <input name="min" inputMode="numeric" placeholder={t("filter.min")} defaultValue={sp.min?.[0]} className="h-10 w-full rounded-lg border border-[#d6d6d9] px-3 text-sm" onBlur={apply} />
-                <input name="max" inputMode="numeric" placeholder={t("filter.max")} defaultValue={sp.max?.[0]} className="h-10 w-full rounded-lg border border-[#d6d6d9] px-3 text-sm" onBlur={apply} />
+              {/* Bütçe: Enter veya ok butonu uygular (telefonda alttaki "ürünü göster" butonu da uygular) */}
+              <div className="flex items-center gap-1.5">
+                <input name="min" inputMode="numeric" placeholder={t("filter.min")} defaultValue={sp.min?.[0]} aria-label={t("filter.min")} className="h-10 w-full min-w-0 rounded-lg border border-[#d6d6d9] px-3 text-sm" />
+                <span aria-hidden className="text-mute">–</span>
+                <input name="max" inputMode="numeric" placeholder={t("filter.max")} defaultValue={sp.max?.[0]} aria-label={t("filter.max")} className="h-10 w-full min-w-0 rounded-lg border border-[#d6d6d9] px-3 text-sm" />
+                <button type="submit" aria-label={t("filter.apply")} title={t("filter.apply")} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-deep text-white transition hover:bg-black active:scale-95" data-testid="budget-apply">
+                  <ArrowRight size={17} />
+                </button>
               </div>
             </div>
             <div className="flex flex-col gap-2.5 pt-5 pb-4">

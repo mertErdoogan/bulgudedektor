@@ -159,6 +159,7 @@ const tr = {
   "filter.light": "1,5 kg altı (gün boyu taşınır)",
   "filter.show": "{n} ürünü göster",
   "filter.close": "Kapat",
+  "filter.apply": "Uygula",
   // Ödeme
   "checkout.gateTitle": "Nasıl devam etmek istersin?",
   "checkout.gateItems": "Sepetinde {n} ürün var.",
@@ -351,6 +352,7 @@ const en: Partial<Record<DictKey, string>> = {
   "filter.light": "Under 1.5 kg (all-day carry)",
   "filter.show": "Show {n} products",
   "filter.close": "Close",
+  "filter.apply": "Apply",
   "checkout.gateTitle": "How would you like to continue?",
   "checkout.gateItems": "You have {n} items in your cart.",
   "checkout.gateNoAccount": "No account needed.",
