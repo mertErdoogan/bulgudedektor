@@ -212,7 +212,8 @@ html.rv-ready .rv:not(.in) .rv-bar { transform: scaleX(0); }
 
 /* Tıklama anında "basıldı" hissi (transform'dan bağımsız scale özelliği: hover kaymalarıyla çakışmaz) */
 button:not(:disabled):active { scale: .97; }
-article:active, a[class*="rounded"]:active { scale: .985; }
+/* Basılma geri bildirimi yalnızca tıklanabilir kartlarda: içerik sayfalarını saran <article> (hakkımızda, blog) küçülmesin */
+article.group:active, a[class*="rounded"]:active { scale: .985; }
 @media (prefers-reduced-motion: reduce) { button:active, article:active, a:active { scale: 1; } }
 /* Ürün galerisi görsel değişimi */
 @keyframes gallery-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
@@ -375,3 +376,16 @@ input[type="checkbox"][aria-invalid="true"] { outline: 2px solid var(--color-dan
 .scrollbar-thin { scrollbar-width: thin; scrollbar-color: #d4d4d8 transparent; }
 .scrollbar-thin::-webkit-scrollbar { width: 6px; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 99px; }
+
+/* Hakkımızda: dedektör radarı */
+.radar-sweep { background: conic-gradient(from 0deg, rgba(94,224,176,0) 0deg, rgba(94,224,176,0) 300deg, rgba(94,224,176,.28) 355deg, rgba(94,224,176,0) 360deg); animation: radar-spin 5s linear infinite; }
+@keyframes radar-spin { to { rotate: 360deg; } }
+.radar-ping { animation: radar-ping 2.4s cubic-bezier(0,0,.2,1) infinite; }
+@keyframes radar-ping { 0% { transform: translate(-50%,-50%) scale(.6); opacity: .9; } 100% { transform: translate(-50%,-50%) scale(3.2); opacity: 0; } }
+.radar-blip { opacity: 0; box-shadow: 0 0 12px 3px rgba(255,180,168,.6); animation: radar-blip 5s ease-out infinite; }
+@keyframes radar-blip { 0%, 100% { opacity: 0; transform: scale(.4); } 8% { opacity: 1; transform: scale(1.2); } 40% { opacity: .15; transform: scale(1); } }
+.about-prose h2 { @apply font-display mt-6 text-xl font-extrabold; }
+.about-prose ul { @apply list-none pl-0; }
+.about-prose ul li { @apply relative my-2 rounded-xl bg-soft py-2.5 pr-3 pl-9; }
+.about-prose ul li::before { content: "✓"; @apply absolute top-2.5 left-3 font-extrabold text-brand; }
+@media (prefers-reduced-motion: reduce) { .radar-sweep, .radar-ping, .radar-blip { animation: none; } .radar-blip { opacity: .7; } }

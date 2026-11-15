@@ -8,6 +8,8 @@ import { formatDate } from "@/lib/utils";
 import { getSettings } from "@/lib/settings";
 import { siteUrl } from "@/lib/seo";
 import { fillLegal, legalTokens } from "@/lib/legal-tokens";
+import { AboutPage } from "@/components/store/about-page";
+import { getLocale } from "@/lib/i18n/server";
 
 async function get(slug: string) {
   return db.query.pages.findFirst({ where: and(eq(pages.slug, slug), eq(pages.isPublished, true)) });
@@ -23,6 +25,9 @@ export default async function ContentPage({ params }: { params: Promise<{ slug: 
   if (!p) return redirectOrNotFound(`/sayfa/${slug}`);
   const st = await getSettings();
   const html = fillLegal(renderContent(p.content), legalTokens(st.store, st.payment, siteUrl()));
+  // Hakkımızda: metin yine panelden (Sayfalar) yönetilir; çevresine harita, kısayollar ve markalar eklenir.
+  // Metindeki "Showroom" başlığı ve adres satırı aşağıdaki showroom bölümüyle tekrar etmesin diye çıkarılır.
+  if (slug === "hakkimizda") return <AboutPage title={p.title} html={html.replace(/<h2>\s*Showroom\s*<\/h2>[\s\S]*$/i, "")} settings={st} locale={await getLocale()} />;
   return (
     <article className="container-x max-w-3xl py-10">
       <h1 className="font-display text-3xl font-extrabold">{p.title}</h1>
