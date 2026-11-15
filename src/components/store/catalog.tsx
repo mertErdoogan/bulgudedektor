@@ -11,8 +11,10 @@ import { Breadcrumbs } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
 import { graph, itemListLd } from "@/lib/seo";
 import { ProductCard } from "./product-card";
+import { LoadMore } from "./load-more";
 
 export type SP = Record<string, string | string[] | undefined>;
+const PER = 24;
 const arr = (v: string | string[] | undefined) => (Array.isArray(v) ? v : v ? v.split(",") : []);
 
 export function parseFilter(sp: SP, base: Partial<CatalogFilter> = {}): CatalogFilter {
@@ -35,8 +37,11 @@ export function parseFilter(sp: SP, base: Partial<CatalogFilter> = {}): CatalogF
 
 export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, children }: { title: string; intro?: React.ReactNode; crumbs?: { href: string; label: string }[]; sp: SP; base?: Partial<CatalogFilter>; hideBrand?: boolean; top?: React.ReactNode; children?: React.ReactNode }) {
   const f = parseFilter(sp, base);
-  const [items0, facets, s, t] = await Promise.all([listProducts(f), facetCounts(base?.category), getSettings(), getT()]);
-  const items = await localize(items0, "product");
+  const [all, facets, s, t] = await Promise.all([listProducts(f), facetCounts(base?.category), getSettings(), getT()]);
+  // Sayfalama: ?sayfa=N ilk N×24 ürünü gösterir (birikimli; "Daha fazla göster" bir sonrakine bağlanır)
+  const page = Math.max(1, Math.min(100, Number(sp.sayfa) || 1));
+  const total = all.length;
+  const items = await localize(all.slice(0, page * PER), "product");
   const money = (n: number) => `${n.toLocaleString(t.locale === "en" ? "en-US" : "tr-TR")} TL`;
   const active = [
     ...(f.brand && !hideBrand ? f.brand.map((b) => ({ k: "marka", v: b, l: facets.brands.find((x) => x.slug === b)?.name ?? b })) : []),
@@ -51,17 +56,24 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
   const removeHref = (k: string, v: string) => {
     const q = new URLSearchParams();
     for (const [key, val] of Object.entries(sp)) {
+      if (key === "sayfa") continue;
       for (const x of arr(val)) if (!(key === k && x === v)) q.append(key, x);
     }
     return `?${q}`;
   };
   const addHref = (k: string, v: string) => {
     const q = new URLSearchParams();
-    for (const [key, val] of Object.entries(sp)) for (const x of arr(val)) q.append(key, x);
+    for (const [key, val] of Object.entries(sp)) if (key !== "sayfa") for (const x of arr(val)) q.append(key, x);
     if (["stok", "hafif", "max"].includes(k)) q.delete(k);
     q.append(k, v);
     return `?${q}`;
   };
+  const moreHref = (() => {
+    const q = new URLSearchParams();
+    for (const [key, val] of Object.entries(sp)) if (key !== "sayfa") for (const x of arr(val)) q.append(key, x);
+    q.set("sayfa", String(page + 1));
+    return `?${q}`;
+  })();
   const on = (k: string, v: string) => arr(sp[k]).includes(v);
   const has = (m: Map<string, number>, k: string) => (m.get(k) ?? 0) > 0;
   const focus = s.merch.focusBrand;
@@ -107,7 +119,7 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
           tech={[...facets.tech].map(([k, n]) => ({ k, n, l: enumLabel(t.locale, "tech", k) }))}
           water={[...facets.water].map(([k, n]) => ({ k, n, l: enumLabel(t.locale, "water", k) }))}
           exp={[...facets.exp].map(([k, n]) => ({ k, n, l: enumLabel(t.locale, "exp", k) }))}
-          count={items.length}
+          count={total}
         />
         <div>
           {/* Hızlı filtreler: en çok kullanılanlar, tek dokunuşla açılır/kapanır */}
@@ -133,7 +145,7 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
               <Link key={a.k + a.v} href={removeHref(a.k, a.v)} className="rounded-full bg-deep px-3 py-1.5 text-[13px] font-bold text-white">{a.l} ×</Link>
             ))}
             {active.length ? <Link href="?" className="text-[13px] font-bold text-link underline">{t("cat.clear")}</Link> : null}
-            <span className="ml-auto text-[13px] font-semibold text-mute">{t("cat.count", { n: items.length })}</span>
+            <span className="ml-auto text-[13px] font-semibold text-mute">{t("cat.count", { n: total })}</span>
           </div>
           {items.length ? (
             <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
@@ -141,6 +153,9 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
                 <ProductCard key={p.id} p={p} ctx={cardCtx(s)} compare />
               ))}
             </div>
+          ) : null}
+          {items.length ? (
+            <LoadMore shown={items.length} total={total} href={moreHref} />
           ) : (
             <div className="rounded-xl bg-soft p-10 text-center">
               <p className="font-bold">{t("cat.empty")}</p>

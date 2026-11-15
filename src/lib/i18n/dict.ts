@@ -160,6 +160,10 @@ const tr = {
   "filter.show": "{n} ürünü göster",
   "filter.close": "Kapat",
   "filter.apply": "Uygula",
+  // Sayfalama
+  "list.more": "Daha fazla göster",
+  "list.shown": "{b} üründen {a} tanesi gösteriliyor",
+  "list.shownPosts": "{b} yazıdan {a} tanesi gösteriliyor",
   // Ödeme
   "checkout.gateTitle": "Nasıl devam etmek istersin?",
   "checkout.gateItems": "Sepetinde {n} ürün var.",
@@ -353,6 +357,9 @@ const en: Partial<Record<DictKey, string>> = {
   "filter.show": "Show {n} products",
   "filter.close": "Close",
   "filter.apply": "Apply",
+  "list.more": "Show more",
+  "list.shown": "Showing {a} of {b} products",
+  "list.shownPosts": "Showing {a} of {b} posts",
   "checkout.gateTitle": "How would you like to continue?",
   "checkout.gateItems": "You have {n} items in your cart.",
   "checkout.gateNoAccount": "No account needed.",

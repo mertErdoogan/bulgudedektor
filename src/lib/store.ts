@@ -234,7 +234,8 @@ export async function listProducts(f: CatalogFilter) {
             : search
               ? sql`${search.score} desc, ${products.isFeatured} desc`
               : sql`(${products.stock} > 0) desc, ${products.isFeatured} desc, ${products.sortOrder} asc`;
-  const rows = await cardQuery().where(and(...conds)).orderBy(order).limit(120);
+  // Listeler sayfalanarak gösterilir (Catalog, 24'er); sıralama/vitrin ağırlığı tüm sonuç üzerinde yapılsın diye hepsi alınır
+  const rows = await cardQuery().where(and(...conds)).orderBy(order).limit(2000);
   // "Önerilen" sıralama (kullanıcı sıralama seçmediyse, arama değilse): vitrin önceliği. Stoktakiler yine önce.
   if (!f.sort && !search && !f.ids?.length) {
     const { getMerch, weigh } = await import("./merch");

@@ -3,6 +3,9 @@ import { Breadcrumbs } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PostCards } from "@/components/store/post-cards";
 import { getPublishedPosts } from "@/lib/content";
+import { LoadMore } from "@/components/store/load-more";
+
+const PER = 12;
 import { abs, graph, ORG_ID, pageMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +19,9 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   });
 }
 
-export default async function BlogIndex({ searchParams }: { searchParams: Promise<{ k?: string }> }) {
-  const k = (await searchParams).k;
+export default async function BlogIndex({ searchParams }: { searchParams: Promise<{ k?: string; sayfa?: string }> }) {
+  const { k, sayfa } = await searchParams;
+  const page = Math.max(1, Math.min(100, Number(sayfa) || 1));
   const all = await getPublishedPosts();
   const cats = [...new Set(all.map((p) => p.category))];
   const list = k ? all.filter((p) => p.category === k) : all;
@@ -45,7 +49,8 @@ export default async function BlogIndex({ searchParams }: { searchParams: Promis
           ))}
         </div>
       ) : null}
-      <div className="mt-6">{list.length ? <PostCards posts={list} /> : <p className="rounded-xl bg-soft p-8 text-center text-mute">Henüz yayınlanmış yazı yok.</p>}</div>
+      <div className="mt-6">{list.length ? <PostCards posts={list.slice(0, page * PER)} /> : <p className="rounded-xl bg-soft p-8 text-center text-mute">Henüz yayınlanmış yazı yok.</p>}</div>
+      {list.length > PER ? <LoadMore unit="post" shown={Math.min(list.length, page * PER)} total={list.length} href={`/blog?${new URLSearchParams({ ...(k ? { k } : {}), sayfa: String(page + 1) })}`} /> : null}
     </div>
   );
 }
