@@ -145,6 +145,8 @@ export type MerchSettings = {
   focusNote: string;
   /** Banner altındaki 3 kart: öncelikli markanın en yeni cihazları (otomatik) ya da paneldeki kampanya kartları */
   heroCards: "latest" | "banners";
+  /** "Rafa yeni giren" büyük mavi kartında elle seçilen ürün; boşsa en son eklenen gösterilir */
+  newSpotlight?: string | null;
 };
 
 /** Ana sayfada menü ile banner arasındaki kayan şerit */

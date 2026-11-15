@@ -4,6 +4,7 @@ import { q } from "@/db/q";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { saveEntityTranslations } from "@/lib/i18n/content";
+import { getSettings, saveSettings } from "@/lib/settings";
 import { z } from "zod";
 import { db } from "@/db";
 import { orderItems, productImages, products, serialNumbers, stockMovements, type Spec } from "@/db/schema";
@@ -127,6 +128,14 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
     });
 
     await saveEntityTranslations("product", productId, fd);
+    // "Rafa yeni giren" büyük kartı: işaretlenen ürün tek seçimdir; işaret kaldırılırsa otomatik akışa döner
+    {
+      const st = await getSettings();
+      const want = fd.get("newSpotlight") === "on";
+      const cur = st.merch.newSpotlight ?? null;
+      if (want && cur !== productId) await saveSettings("merch", { ...st.merch, newSpotlight: productId });
+      else if (!want && cur === productId) await saveSettings("merch", { ...st.merch, newSpotlight: null });
+    }
     await recordSlugChange("/urun", prevSlug, slug);
     if (status === "ACTIVE") await pingIndexNow([`/urun/${slug}`]);
     await audit(staff.id, id ? "update" : "create", "product", productId, `${name} ${id ? "güncellendi" : "eklendi"}`);

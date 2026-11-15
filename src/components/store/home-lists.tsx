@@ -46,7 +46,7 @@ export function BestSellers({ items, ctx }: { items: P[]; ctx: CardCtx }) {
  * Yeni gelenler: açık, sıcak→soğuk degrade zemin (kırmızıdan Minelab mavisine) ve bulanık renk lekeleri;
  * öne çıkan yeni ürün banner altı kartlarıyla aynı dilde (mavi degrade, beyaz ürün dairesi, YENİ etiketi).
  */
-export function NewArrivals({ items, ctx }: { items: P[]; ctx: CardCtx }) {
+export function NewArrivals({ items, ctx, spotlight = false }: { items: P[]; ctx: CardCtx; spotlight?: boolean }) {
   if (!items.length) return null;
   const lead = items[0];
   return (
@@ -66,7 +66,7 @@ export function NewArrivals({ items, ctx }: { items: P[]; ctx: CardCtx }) {
           <Link href={`/urun/${lead.slug}`} className="group relative hidden flex-col overflow-hidden rounded-[22px] bg-gradient-to-br from-[#2f56c8] via-[#1f3b8f] to-[#0c1838] p-6 text-white shadow-[0_22px_44px_-20px_rgba(15,30,80,.6)] transition duration-300 hover:-translate-y-1 lg:flex" data-testid="new-lead">
             <span aria-hidden className="absolute -right-14 -bottom-16 h-52 w-52 rounded-full bg-white/10 transition duration-500 group-hover:scale-110" />
             <span aria-hidden className="card-shine pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-            <span className="relative w-fit rounded-full bg-white px-2.5 py-1 text-[11px] font-extrabold tracking-wider text-deep">SON EKLENEN</span>
+            <span className="relative w-fit rounded-full bg-white px-2.5 py-1 text-[11px] font-extrabold tracking-wider text-deep">{spotlight ? "ÖNE ÇIKAN" : "SON EKLENEN"}</span>
             {/* Beyaz ürün sahnesi + YENİ etiketi */}
             <span className="relative mx-auto my-5 grid h-[210px] w-[210px] place-items-center rounded-full bg-white shadow-[0_16px_34px_-12px_rgba(0,0,0,.5)] ring-8 ring-white/15 transition duration-500 group-hover:scale-105">
               <span className="grid h-full w-full place-items-center overflow-hidden rounded-full">

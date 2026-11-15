@@ -64,7 +64,9 @@ export function ProductForm({
   canDelete,
   translations,
   locales,
+  spotlight,
 }: {
+  spotlight?: boolean;
   translations?: Record<string, Record<string, string>>;
   locales?: string[];
   product?: Product;
@@ -358,6 +360,8 @@ export function ProductForm({
             <div className="flex flex-col gap-3 p-5">
               <Checkbox name="isFeatured" defaultChecked={product?.isFeatured} label="Ana sayfa 'Çok satanlar'da göster" />
               <Checkbox name="isPro" defaultChecked={product?.isPro} label="'Profesyonel ve derin arama' bölümünde göster" />
+              <Checkbox name="newSpotlight" defaultChecked={spotlight} label="Ana sayfa 'Rafa yeni giren' büyük mavi kartında göster" />
+              <p className="-mt-1.5 pl-7 text-xs text-mute">Tek ürün seçilebilir; işaretlenince önceki seçimin yerine geçer. Hiçbiri işaretli değilse en son eklenen ürün gösterilir.</p>
               <Field label="Rozetler" hint="Virgülle ayırın: Yeni, Fırsat, Sınırlı stok">
                 <Input name="badges" defaultValue={product?.badges.join(", ")} />
               </Field>

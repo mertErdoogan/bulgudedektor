@@ -75,9 +75,11 @@ export default async function Home() {
     (top ??= (async () => {
       const hasTabs = sections.some((x) => x.type === "PRODUCT_TABS");
       if (!hasTabs) return { best: [], fresh: [], deals: [], seen: new Set<string>() };
-      const [best, fresh0, deals0] = await Promise.all([bestSellers(8), productsFor("new", 22), productsFor("deals", 20)]);
+      const spotId = s.merch.newSpotlight;
+      const [best, fresh0, deals0, spot] = await Promise.all([bestSellers(8), productsFor("new", 22), productsFor("deals", 20), spotId ? railWhere(eq(products.id, spotId), 1) : Promise.resolve([])]);
       const seen = new Set(best.map((p) => p.id));
-      const fresh = unseen(fresh0, seen).slice(0, 10);
+      // Panelde "Rafa yeni giren" kartı için seçilen ürün (yayındaysa) en başa gelir; değilse otomatik akış sürer
+      const fresh = spot[0] ? [spot[0], ...unseen(fresh0, new Set([...seen, spot[0].id]))].slice(0, 10) : unseen(fresh0, seen).slice(0, 10);
       fresh.forEach((p) => seen.add(p.id));
       const deals = unseen(deals0, seen).slice(0, 10);
       deals.forEach((p) => seen.add(p.id));
@@ -109,7 +111,7 @@ export default async function Home() {
           return (
             <div key={sec.id}>
               <BestSellers items={best} ctx={ctx} />
-              {fresh.length >= 3 ? <NewArrivals items={fresh} ctx={ctx} /> : null}
+              {fresh.length >= 3 ? <NewArrivals items={fresh} ctx={ctx} spotlight={!!s.merch.newSpotlight && fresh[0]?.id === s.merch.newSpotlight} /> : null}
               <ExploreTabs tabs={explore} ctx={ctx} />
               {deals.length >= 3 ? <Deals items={deals} ctx={ctx} /> : null}
             </div>

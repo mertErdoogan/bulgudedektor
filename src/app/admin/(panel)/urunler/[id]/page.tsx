@@ -40,6 +40,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
           canDelete={can(staff.permissions, "products.delete")}
           translations={tr}
           locales={st.i18n.locales}
+          spotlight={st.merch.newSpotlight === p.id}
         />
       </fieldset>
     </>
