@@ -75,7 +75,7 @@ type Model = { id: string; name: string; slug: string; image: string | null; pri
  * Ana sayfa "Markaya göre": öncelikli marka (Minelab) koyu, büyük bir vitrinde — kategorileri ve öne çıkan
  * 4 modeliyle; diğer markalar yanında sade karolar halinde (görünür ama ikinci planda).
  */
-export function BrandShowcase({ focus, models, note, rest }: { focus: BrandGroup; models: Model[]; note?: string; rest: BrandGroup[] }) {
+export function BrandShowcase({ focus, models, note, rest, full = false }: { focus: BrandGroup; models: Model[]; note?: string; rest: BrandGroup[]; full?: boolean }) {
   return (
     <div className="grid gap-4 lg:grid-cols-[1.75fr_1fr]" data-testid="brand-showcase">
       <div className="relative isolate overflow-hidden rounded-[28px] bg-[#141416] p-5 text-white md:p-8">
@@ -122,7 +122,7 @@ export function BrandShowcase({ focus, models, note, rest }: { focus: BrandGroup
       <div className="flex flex-col gap-3">
         <span className="px-1 text-[11.5px] font-extrabold tracking-[.14em] text-mute">DİĞER MARKALAR</span>
         <div data-stagger="" className="grid grid-cols-2 content-start gap-3">
-          {rest.slice(0, 6).map((b) => (
+          {(full ? rest : rest.slice(0, 6)).map((b) => (
             <Link key={b.id} href={`/marka/${b.slug}`} className="group relative isolate flex min-h-[96px] flex-col justify-between overflow-hidden rounded-2xl border border-line bg-white p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#d6d6db] hover:shadow-[0_16px_30px_-20px_rgba(20,20,22,.4)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {b.image ? <img src={imgUrl(b.image, 128)} alt="" loading="lazy" className="absolute -right-2 -bottom-2 -z-10 h-[70px] w-[90px] object-contain opacity-80 mix-blend-multiply transition duration-500 group-hover:-translate-y-1 group-hover:opacity-100" /> : null}
@@ -135,9 +135,12 @@ export function BrandShowcase({ focus, models, note, rest }: { focus: BrandGroup
               <span className="text-[12.5px] text-mute">{b.total} ürün</span>
             </Link>
           ))}
-          <Link href="/markalar" className="flex min-h-[96px] flex-col justify-between rounded-2xl bg-soft p-4 text-[14px] font-bold transition hover:bg-[#ececee]">
-            Tüm markalar <ArrowRight size={18} />
-          </Link>
+          {/* Ana sayfada özet; Markalar ve Kategoriler sayfasında zaten tüm markalar listelendiği için gösterilmez */}
+          {!full ? (
+            <Link href="/markalar" className="flex min-h-[96px] flex-col justify-between rounded-2xl bg-soft p-4 text-[14px] font-bold transition hover:bg-[#ececee]">
+              Tüm markalar <ArrowRight size={18} />
+            </Link>
+          ) : null}
         </div>
       </div>
     </div>
@@ -155,5 +158,5 @@ export async function FocusBrands({ brands }: { brands: BrandGroup[] }) {
   const f = brands.find((g) => g.slug === m.focusBrand);
   if (!f) return <BrandGrid brands={brands} />;
   const models = await latestFocus(m, 4);
-  return <BrandShowcase focus={f} models={models} note={m.focusNote || undefined} rest={brands.filter((g) => g !== f)} />;
+  return <BrandShowcase full focus={f} models={models} note={m.focusNote || undefined} rest={brands.filter((g) => g !== f)} />;
 }
