@@ -1,60 +1,88 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "@/components/locale-link";
 import { cn } from "@/lib/utils";
 import type { TickerSettings } from "@/lib/settings";
 
 const THEME = {
-  soft: { bar: "border-b border-line bg-[#fbf8f7] text-deep", hl: "bg-brand text-white", sep: "text-brand/50" },
-  brand: { bar: "bg-brand text-white", hl: "bg-white text-brand", sep: "text-white/60" },
-  dark: { bar: "bg-deep text-white", hl: "bg-brand text-white", sep: "text-brand" },
-  gold: { bar: "bg-[#ffcf3d] text-deep", hl: "bg-deep text-white", sep: "text-deep/50" },
+  soft: { bar: "border-b border-line bg-[#fbf8f7] text-deep", hl: "bg-brand text-white", dot: "bg-deep" },
+  brand: { bar: "bg-brand text-white", hl: "bg-white text-brand", dot: "bg-white" },
+  dark: { bar: "bg-deep text-white", hl: "bg-brand text-white", dot: "bg-white" },
+  gold: { bar: "bg-[#ffcf3d] text-deep", hl: "bg-deep text-white", dot: "bg-deep" },
 } as const;
-// Saniyede kat edilen yol (px): animasyon süresi içerik uzunluğuna göre hesaplanır, hız sabit kalır
-const PX_PER_SEC = { slow: 40, normal: 70, fast: 110 } as const;
+// Her maddenin ekranda kaldığı süre
+const HOLD_MS = { slow: 6000, normal: 4200, fast: 3000 } as const;
 
 /**
- * Kayan şerit (menü ile banner arası). Panelden yönetilir: maddeler, yön, hız, renk.
- * Saf CSS animasyonu: içerik iki kez yazılır, şerit yarısı kadar kayınca başa sarar (dikişsiz döngü).
- * Fare üstündeyken durur; "hareketi azalt" tercihinde kaymaz, elle kaydırılır.
+ * Duyuru şeridi (menü ile banner arası). Kaymaz: tek satır, maddeler sırayla yumuşakça yer değiştirir.
+ * Sadece telefonda görünür; masaüstünde aynı güven mesajları üstteki siyah şeritte zaten var, banner yukarıda kalır.
+ * "Öne çıkar" işaretli maddeler (kampanya) önce gelir ve vurgulu gösterilir.
+ * Panelden: maddeler, geçiş yönü, hız, renk. "Hareketi azalt" tercihinde geçiş animasyonsuzdur.
  */
-export function Ticker({ t }: { t: TickerSettings }) {
-  const items = t.items.filter((i) => i.text.trim());
-  if (!t.enabled || !items.length) return null;
+export function Ticker({ t, preview = false }: { t: TickerSettings; preview?: boolean }) {
+  const items = t.items.filter((i) => i.text.trim()).sort((a, b) => Number(b.highlight) - Number(a.highlight));
+  const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const n = items.length;
+  useEffect(() => {
+    if (n < 2 || paused) return;
+    const id = setInterval(() => setI((k) => (k + 1) % n), HOLD_MS[t.speed] ?? HOLD_MS.normal);
+    return () => clearInterval(id);
+  }, [n, paused, t.speed]);
+  if (!t.enabled || !n) return null;
   const th = THEME[t.theme] ?? THEME.brand;
-  // Dikişsiz döngü için şeridin yarısı en geniş ekrandan (≈2560 px) uzun olmalı; yoksa sonda boşluk görünür ve şerit
-  // başa "zıplar". ~400 karakter ≈ 3000 px'e kadar maddeleri çoğalt.
-  const len = items.reduce((n, i) => n + i.text.length + 6, 0);
-  const reps = Math.max(2, Math.ceil(400 / len));
-  const half = Array.from({ length: reps }, () => items).flat();
-  const dur = Math.round((len * reps * 8.5) / PX_PER_SEC[t.speed] || 30);
-
-  const row = (hidden: boolean) =>
-    half.map((i, k) => {
-      const body = (
-        <span className={cn("inline-flex items-center gap-2 whitespace-nowrap", i.highlight && cn("rounded-full px-3 py-1 font-extrabold", th.hl))}>
-          {i.text}
-          {i.href ? <span aria-hidden>→</span> : null}
-        </span>
-      );
-      return (
-        <span key={`${hidden}-${k}`} className="inline-flex items-center">
-          {i.href ? (
-            <Link href={i.href} tabIndex={hidden ? -1 : undefined} className="rounded-full outline-offset-2 hover:underline hover:underline-offset-4">
-              {body}
-            </Link>
-          ) : (
-            body
-          )}
-          <span aria-hidden className={cn("mx-5 text-[10px] md:mx-7", th.sep)}>✦</span>
-        </span>
-      );
-    });
+  // Yön: soldan sağa → yeni madde soldan gelir; sağdan sola → sağdan
+  const enter = t.direction === "ltr" ? "-translate-x-6" : "translate-x-6";
+  const leave = t.direction === "ltr" ? "translate-x-6" : "-translate-x-6";
 
   return (
-    <div className={cn("ticker group relative overflow-hidden text-[13px] font-bold md:text-sm", th.bar)} data-dir={t.direction} data-testid="ticker" aria-label="Duyurular" role="region">
-      <div className="ticker-track flex w-max items-center py-2 md:py-2.5" style={{ ["--ticker-dur" as string]: `${dur}s` }}>
-        <div className="flex items-center pr-0">{row(false)}</div>
-        <div className="flex items-center" aria-hidden>{row(true)}</div>
+    <div
+      className={cn("ticker relative overflow-hidden text-[12.5px] font-bold", th.bar, !preview && "md:hidden")}
+      data-dir={t.direction}
+      data-testid="ticker"
+      role="region"
+      aria-label="Duyurular"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
+      <div className="relative h-8">
+        {items.map((it, k) => {
+          const on = k === i;
+          const was = k === (i - 1 + n) % n;
+          const body = (
+            <span className={cn("inline-flex max-w-full items-center gap-1.5 truncate", it.highlight && cn("rounded-full px-2.5 py-0.5 font-extrabold", th.hl))}>
+              <span className="truncate">{it.text}</span>
+              {it.href ? <span aria-hidden>→</span> : null}
+            </span>
+          );
+          return (
+            <div
+              key={k}
+              aria-hidden={!on}
+              className={cn(
+                "ticker-item absolute inset-0 flex items-center justify-center px-4 transition-[opacity,transform] duration-500 ease-out",
+                on ? "translate-x-0 opacity-100" : cn("pointer-events-none opacity-0", was ? leave : enter),
+              )}
+            >
+              {it.href ? (
+                <Link href={it.href} tabIndex={on ? undefined : -1} className="max-w-full rounded-full outline-offset-2 hover:underline hover:underline-offset-4">
+                  {body}
+                </Link>
+              ) : (
+                body
+              )}
+            </div>
+          );
+        })}
       </div>
+      {n > 1 ? (
+        <span aria-hidden className="absolute right-2.5 bottom-1 flex gap-1">
+          {items.map((_, k) => <span key={k} className={cn("h-1 rounded-full transition-all", th.dot, k === i ? "w-3 opacity-80" : "w-1 opacity-30")} />)}
+        </span>
+      ) : null}
     </div>
   );
 }

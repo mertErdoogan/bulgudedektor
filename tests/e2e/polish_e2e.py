@@ -75,8 +75,16 @@ async def main():
 
         # ── Ana sayfa bölümleri
         await pg.goto(B + "/", wait_until="networkidle")
-        half = await pg.evaluate("() => document.querySelector('.ticker-track')?.scrollWidth / 2")
-        chk("Şerit dikişsiz (yarısı ≥ 2560 px)", half and half >= 2560, half)
+        chk("Duyuru şeridi masaüstünde gizli (banner yukarıda)", not await pg.locator("[data-testid=ticker]").is_visible())
+        mp = await (await b.new_context(viewport={"width": 390, "height": 844})).new_page()
+        await mp.goto(B + "/", wait_until="networkidle")
+        tk = mp.locator("[data-testid=ticker]")
+        h = (await tk.bounding_box())["height"] if await tk.count() else 0
+        first = await tk.locator(".ticker-item[aria-hidden=false]").inner_text()
+        await mp.wait_for_timeout(5000)
+        second = await tk.locator(".ticker-item[aria-hidden=false]").inner_text()
+        chk(f"Duyuru şeridi telefonda tek satır ({h}px) ve sırayla değişir", 0 < h <= 34 and first != second, (first, second))
+        await mp.close()
         chk("Nav'da kurumsal link yok (üst şeritte)", await pg.locator("nav[aria-label='Ana menü'] a[href='/sayfa/hakkimizda']").count() == 0 and await pg.locator("header a[href='/sayfa/hakkimizda']").count() == 1)
         chk("Test bandı: ilk soru cevapları", await pg.locator("[data-testid=wizard-band] a[href='/sihirbaz?amac=altin']").count() == 1)
         ex = pg.locator("[data-testid=explore]")

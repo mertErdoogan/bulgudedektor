@@ -24,11 +24,11 @@ export async function TickerCard() {
   );
   return (
     <Card>
-      <CardHeader title="Kayan şerit" description="Ana sayfada menü ile banner arasında kayan duyuru şeridi. Kampanya, yeni ürün, taksit… Maddelere bağlantı verilebilir; 'öne çıkar' işaretli madde rozet gibi görünür." />
+      <CardHeader title="Duyuru şeridi" description="Telefonda menü ile banner arasında tek satır; maddeler sırayla değişir (masaüstünde gösterilmez, aynı bilgiler üst siyah şeritte var). 'Öne çıkar' işaretli madde (kampanya) önce gelir ve vurgulu görünür. Maddelere bağlantı verilebilir." />
       <div className="border-b border-line px-5 py-4">
         <span className="mb-2 block text-xs font-bold text-mute">Önizleme (kaydedilen hali)</span>
         <div className="overflow-hidden rounded-xl">
-          {t.enabled && t.items.length ? <Ticker t={t} /> : <div className="rounded-xl bg-soft p-3 text-sm text-mute">Şerit kapalı ya da boş.</div>}
+          {t.enabled && t.items.length ? <Ticker t={t} preview /> : <div className="rounded-xl bg-soft p-3 text-sm text-mute">Şerit kapalı ya da boş.</div>}
         </div>
       </div>
       <ActionForm action={saveTicker} className="flex flex-col gap-4 p-5">
@@ -46,8 +46,8 @@ export async function TickerCard() {
           <span className="text-xs text-mute">Daha fazla madde için kaydedin; her kayıttan sonra 2 boş satır daha gelir. En fazla 12 madde.</span>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          <fieldset><legend className="mb-2 text-sm font-bold">Yön</legend><div className="grid grid-cols-2 gap-2">{radio("direction", "ltr", "Soldan sağa →", t.direction === "ltr")}{radio("direction", "rtl", "← Sağdan sola", t.direction === "rtl")}</div></fieldset>
-          <fieldset><legend className="mb-2 text-sm font-bold">Hız</legend><div className="grid grid-cols-3 gap-2">{radio("speed", "slow", "Yavaş", t.speed === "slow")}{radio("speed", "normal", "Normal", t.speed === "normal")}{radio("speed", "fast", "Hızlı", t.speed === "fast")}</div></fieldset>
+          <fieldset><legend className="mb-2 text-sm font-bold">Geçiş yönü</legend><div className="grid grid-cols-2 gap-2">{radio("direction", "ltr", "Soldan sağa →", t.direction === "ltr")}{radio("direction", "rtl", "← Sağdan sola", t.direction === "rtl")}</div></fieldset>
+          <fieldset><legend className="mb-2 text-sm font-bold">Değişme hızı</legend><div className="grid grid-cols-3 gap-2">{radio("speed", "slow", "Yavaş", t.speed === "slow")}{radio("speed", "normal", "Normal", t.speed === "normal")}{radio("speed", "fast", "Hızlı", t.speed === "fast")}</div></fieldset>
           <fieldset><legend className="mb-2 text-sm font-bold">Renk</legend><div className="grid grid-cols-2 gap-2 xl:grid-cols-4">{THEMES.map(([v, l, c]) => radio("theme", v, <><span className={`h-3.5 w-3.5 rounded-full ring-1 ring-black/10 ${c}`} />{l}</>, t.theme === v))}</div></fieldset>
         </div>
         <SubmitButton className="self-start">Kaydet</SubmitButton>

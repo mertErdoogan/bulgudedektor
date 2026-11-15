@@ -137,17 +137,8 @@
   }
 }
 
-/* Kayan şerit (components/store/ticker.tsx) */
-@keyframes ticker-rtl { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
-@keyframes ticker-ltr { from { transform: translate3d(-50%, 0, 0); } to { transform: translate3d(0, 0, 0); } }
-.ticker { mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent); }
-.ticker-track { animation: ticker-rtl var(--ticker-dur, 40s) linear infinite; will-change: transform; backface-visibility: hidden; }
-.ticker[data-dir="ltr"] .ticker-track { animation-name: ticker-ltr; }
-.ticker:hover .ticker-track, .ticker:focus-within .ticker-track { animation-play-state: paused; }
-@media (prefers-reduced-motion: reduce) {
-  .ticker { overflow-x: auto; mask-image: none; -webkit-mask-image: none; }
-  .ticker-track { animation: none; }
-}
+/* Duyuru şeridi (components/store/ticker.tsx): hareketi azalt tercihinde geçiş animasyonsuz */
+@media (prefers-reduced-motion: reduce) { .ticker-item { transition: none !important; } }
 
 /* Ana sayfa banner'ı: dönen renkli kenar ışığı, hikâye tarzı ilerleme çubukları, hafif yakınlaşma */
 @property --hero-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
