@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, inArray } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidateStore } from "@/lib/revalidate";
 import { db } from "@/db";
 import { products, serialNumbers } from "@/db/schema";
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
@@ -28,7 +28,7 @@ export async function adjustStockAction(_: ActionResult | null, fd: FormData): P
     await db.transaction((tx) => adjustStock(tx, productId, delta, reason, staff.id, note ?? undefined));
     await audit(staff.id, "stock", "product", productId, `${p.name} stok ${delta > 0 ? "+" : ""}${delta} (${reason})`);
     if (p.stock <= 0 && p.stock + delta > 0) void import("@/lib/mail").then((m) => m.notifyStockAlerts(productId));
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok(`Stok güncellendi: ${p.stock} → ${p.stock + delta}`);
   });
 }
@@ -50,7 +50,7 @@ export async function addSerials(_: ActionResult | null, fd: FormData): Promise<
     });
     await audit(staff.id, "stock", "product", productId, `${p.name}: ${list.length} seri no eklendi`, { serials: list });
     if (p.stock <= 0) void import("@/lib/mail").then((m) => m.notifyStockAlerts(productId));
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok(`${list.length} seri numarası eklendi, stok ${list.length} arttı.`);
   });
 }
@@ -68,7 +68,7 @@ export async function setSerialStatus(id: string, status: "IN_STOCK" | "DEFECTIV
       if (wasInStock !== willBeInStock) await adjustStock(tx, s.productId, willBeInStock ? 1 : -1, "SERIAL_STATUS", staff.id, `${s.serial} → ${status}`);
     });
     await audit(staff.id, "stock", "serial", id, `${s.serial} durumu ${status}`);
-    revalidatePath("/admin/stok");
+    revalidateStore("/admin/stok");
     return ok("Seri no durumu güncellendi.");
   });
 }
@@ -84,7 +84,7 @@ export async function deleteSerial(id: string): Promise<ActionResult> {
       if (s.status === "IN_STOCK") await adjustStock(tx, s.productId, -1, "SERIAL_DELETE", staff.id, `${s.serial} silindi`);
     });
     await audit(staff.id, "delete", "serial", id, `${s.serial} silindi`);
-    revalidatePath("/admin/stok");
+    revalidateStore("/admin/stok");
     return ok("Seri numarası silindi.");
   });
 }

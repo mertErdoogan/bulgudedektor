@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateStore } from "@/lib/revalidate";
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { audit } from "@/lib/audit";
 import { assertStaff } from "@/lib/auth";
@@ -10,7 +10,7 @@ import { lines, str, toNum } from "@/lib/utils";
 
 const fin = async (staffId: string, key: string) => {
   await audit(staffId, "settings", key, null, `Ayarlar güncellendi: ${key}`);
-  revalidatePath("/", "layout");
+  revalidateStore("/", "layout");
   return ok("Ayarlar kaydedildi.");
 };
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, ne, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidateStore } from "@/lib/revalidate";
 import { saveEntityTranslations } from "@/lib/i18n/content";
 import { db } from "@/db";
 import { brands, categories, products } from "@/db/schema";
@@ -28,7 +28,7 @@ export async function saveBrand(_: ActionResult | null, fd: FormData): Promise<A
       await recordSlugChange("/marka", prev?.slug, slug);
     } else await db.insert(brands).values(values);
     await audit(staff.id, id ? "update" : "create", "brand", id, `Marka ${name} kaydedildi`);
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok("Marka kaydedildi.", { redirect: "/admin/markalar" });
   });
 }
@@ -40,7 +40,7 @@ export async function deleteBrand(id: string): Promise<ActionResult> {
     if (n) return fail(`Bu markada ${n} ürün var. Önce ürünleri başka markaya taşıyın veya markayı pasifleştirin.`);
     await db.delete(brands).where(eq(brands.id, id));
     await audit(staff.id, "delete", "brand", id, "Marka silindi");
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok("Marka silindi.", { redirect: "/admin/markalar" });
   });
 }
@@ -79,7 +79,7 @@ export async function saveCategory(_: ActionResult | null, fd: FormData): Promis
     await saveEntityTranslations("category", catId!, fd);
     await pingIndexNow([`/kategori/${slug}`]);
     await audit(staff.id, id ? "update" : "create", "category", id, `Kategori ${name} kaydedildi`);
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok("Kategori kaydedildi.", { redirect: "/admin/kategoriler" });
   });
 }
@@ -92,7 +92,7 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
     await db.update(categories).set({ parentId: null }).where(eq(categories.parentId, id));
     await db.delete(categories).where(eq(categories.id, id));
     await audit(staff.id, "delete", "category", id, "Kategori silindi");
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok("Kategori silindi.", { redirect: "/admin/kategoriler" });
   });
 }

@@ -32,6 +32,14 @@ export function CampaignForm({ campaign: c, brands, categories, products }: { ca
             {mode === "code" ? (
               <Field label="Kupon kodu" hint="Büyük harf, boşluksuz"><Input name="code" defaultValue={c?.code ?? ""} required className="font-mono uppercase" placeholder="BAHAR10" /></Field>
             ) : <div />}
+            {/* Mağazada nerede görüneceği: karışıklığın en sık sebebi kodlu kampanyanın kartlarda görünmemesi */}
+            <p className="rounded-xl bg-soft px-3.5 py-2.5 text-[12.5px] leading-relaxed text-mute md:col-span-2" data-testid="campaign-visibility">
+              {mode === "code" ? (
+                <><b className="text-deep">Kupon kodlu:</b> yalnızca müşteri sepette kodu girince uygulanır. Ürün kartlarında ve ürün sayfasında indirimli fiyat <b>görünmez</b>. Herkese görünsün istiyorsan &quot;Otomatik&quot;i seç.</>
+              ) : (
+                <><b className="text-deep">Otomatik:</b> koşulu sağlayan ürünlerin kartında ve ürün sayfasında &quot;Sepette X TL&quot; olarak görünür, sepette kendiliğinden düşer. Kargo bedava kampanyası ve <b>minimum sepet</b> şartı, tek ürünün fiyatı o tutarın altındaysa kartlarda görünmez (sepette tutar aşılınca uygulanır). Stokta olmayan üründe gösterilmez.</>
+              )}
+            </p>
             <Field label="İndirim türü">
               <Select name="type" value={type} onChange={(e) => setType(e.target.value as typeof type)}>
                 <option value="PERCENT">Yüzde (%)</option>

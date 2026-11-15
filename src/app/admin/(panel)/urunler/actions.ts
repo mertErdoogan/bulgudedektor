@@ -2,7 +2,7 @@
 
 import { q } from "@/db/q";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidateStore } from "@/lib/revalidate";
 import { saveEntityTranslations } from "@/lib/i18n/content";
 import { getSettings, saveSettings } from "@/lib/settings";
 import { z } from "zod";
@@ -139,7 +139,7 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
     await recordSlugChange("/urun", prevSlug, slug);
     if (status === "ACTIVE") await pingIndexNow([`/urun/${slug}`]);
     await audit(staff.id, id ? "update" : "create", "product", productId, `${name} ${id ? "güncellendi" : "eklendi"}`);
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok(id ? "Ürün kaydedildi." : "Ürün eklendi.", id ? {} : { redirect: `/admin/urunler/${productId}` });
   });
 }
@@ -173,12 +173,12 @@ export async function deleteProduct(id: string): Promise<ActionResult> {
     if (n > 0) {
       await db.update(products).set({ status: "ARCHIVED" }).where(eq(products.id, id));
       await audit(staff.id, "update", "product", id, `${p.name} arşivlendi (siparişi olduğu için silinmedi)`);
-      revalidatePath("/", "layout");
+      revalidateStore("/", "layout");
       return ok("Bu ürünün geçmiş siparişleri var; silmek yerine arşivlendi ve mağazadan kaldırıldı.", { redirect: "/admin/urunler" });
     }
     await db.delete(products).where(eq(products.id, id));
     await audit(staff.id, "delete", "product", id, `${p.name} silindi`);
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok("Ürün silindi.", { redirect: "/admin/urunler" });
   });
 }
@@ -218,7 +218,7 @@ export async function bulkProducts(_: ActionResult | null, fd: FormData): Promis
         .where(inArray(products.id, ids));
     } else return fail("Bilinmeyen işlem.");
     await audit(staff.id, "update", "product", null, `Toplu işlem: ${op} (${ids.length} ürün)`, { ids, op });
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok(`${ids.length} ürün güncellendi.`);
   });
 }
@@ -299,7 +299,7 @@ export async function importProductsCsv(_: ActionResult | null, fd: FormData): P
       }
     }
     await audit(staff.id, "update", "product", null, `CSV içe aktarma: ${updated} güncellendi, ${created} eklendi`);
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok(`${updated} ürün güncellendi, ${created} yeni taslak ürün eklendi.${errors.length ? ` ${errors.length} uyarı: ${errors.slice(0, 3).join("; ")}` : ""}`);
   });
 }
@@ -314,7 +314,7 @@ export async function quickUpdate(_: ActionResult | null, fd: FormData): Promise
       await db.update(products).set({ price }).where(eq(products.id, id));
       await audit(staff.id, "update", "product", id, `Fiyat ${price} TL yapıldı`);
     }
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok("Fiyat güncellendi.");
   });
 }

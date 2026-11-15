@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, ne } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidateStore } from "@/lib/revalidate";
 import { db } from "@/db";
 import { campaigns } from "@/db/schema";
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
@@ -50,7 +50,7 @@ export async function saveCampaign(_: ActionResult | null, fd: FormData): Promis
     if (id) await db.update(campaigns).set(values).where(eq(campaigns.id, id));
     else await db.insert(campaigns).values(values);
     await audit(staff.id, id ? "update" : "create", "campaign", id, `Kampanya ${name}`);
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok("Kampanya kaydedildi.", { redirect: "/admin/kampanyalar" });
   });
 }
@@ -60,7 +60,7 @@ export async function toggleCampaign(id: string, active: boolean): Promise<Actio
     const staff = await assertStaff("campaigns.manage");
     await db.update(campaigns).set({ isActive: active }).where(eq(campaigns.id, id));
     await audit(staff.id, "update", "campaign", id, active ? "Kampanya açıldı" : "Kampanya durduruldu");
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok(active ? "Kampanya açıldı." : "Kampanya durduruldu.");
   });
 }
@@ -70,7 +70,7 @@ export async function deleteCampaign(id: string): Promise<ActionResult> {
     const staff = await assertStaff("campaigns.manage");
     await db.delete(campaigns).where(eq(campaigns.id, id));
     await audit(staff.id, "delete", "campaign", id, "Kampanya silindi");
-    revalidatePath("/", "layout");
+    revalidateStore("/", "layout");
     return ok("Kampanya silindi.", { redirect: "/admin/kampanyalar" });
   });
 }
