@@ -4,11 +4,12 @@ import { imgUrl } from "@/lib/img";
 import Link from "@/components/locale-link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Check, ChevronRight, Compass, Grid2X2, Heart, Home, Menu, Scale, Search, ShoppingCart, User, X } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Compass, Grid2X2, Heart, Home, Menu, Scale, Search, ShoppingCart, User, X } from "lucide-react";
 import { cn, formatTL } from "@/lib/utils";
 import { Button } from "@/components/ui";
 import { Logo } from "@/components/logo";
 import { useCart } from "./cart";
+import { BrandMark } from "./brand-mark";
 import { useT } from "@/components/i18n";
 import { splitLocale } from "@/lib/i18n/config";
 
@@ -128,7 +129,7 @@ export function CompareBar() {
 
 type Cat = { id: string; name: string; slug: string; shortText: string | null; imageUrl: string | null; description: string | null };
 
-export function MegaMenu({ categories, brands, variant = "nav" }: { categories: Cat[]; brands: { name: string; slug: string }[]; variant?: "nav" | "compact" }) {
+export function MegaMenu({ categories, brands, variant = "nav" }: { categories: Cat[]; brands: { name: string; slug: string; logoUrl?: string | null }[]; variant?: "nav" | "compact" }) {
   const [open, setOpen] = useState(false);
   const [cur, setCur] = useState(0);
   const c = categories[cur];
@@ -173,10 +174,12 @@ export function MegaMenu({ categories, brands, variant = "nav" }: { categories: 
               <p className="font-display text-2xl font-extrabold">{c.name}</p>
               <p className="mt-1 max-w-lg text-sm text-mute">{c.description}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-3" data-testid="mega-brands">
               {brands.map((b) => (
-                <Link key={b.slug} href={`/kategori/${c.slug}?marka=${b.slug}`} className="rounded-lg border border-line px-3 py-1.5 text-sm font-bold hover:border-brand">
-                  {b.name}
+                <Link key={b.slug} href={`/kategori/${c.slug}?marka=${b.slug}`} className="group flex items-center gap-2.5 rounded-2xl border border-line bg-white p-2 pr-3 transition hover:-translate-y-0.5 hover:border-deep hover:shadow-[0_12px_22px_-18px_rgba(20,20,22,.6)]">
+                  <BrandMark name={b.name} logoUrl={b.logoUrl} size={38} />
+                  <span className="min-w-0 truncate text-sm font-bold">{b.name}</span>
+                  <ArrowRight size={14} className="ml-auto shrink-0 text-mute opacity-0 transition group-hover:opacity-100" />
                 </Link>
               ))}
             </div>

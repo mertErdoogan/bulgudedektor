@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "@/components/locale-link";
+import { BrandMark } from "./brand-mark";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, BadgeCheck, ChevronDown, Compass, Flame } from "lucide-react";
@@ -19,7 +20,7 @@ const INFO = INFO_LINK;
  * Ana menü: sade metin linkler. Öncelikli marka (Minelab) ve kategori linkleri üzerine gelince görselli menü açar.
  * Açılış 120 ms gecikmeli (fare üstünden geçerken yanlışlıkla açılmasın), kapanış 160 ms (panele geçerken kapanmasın).
  */
-export function NavBar({ items, categories, brands, focus, cats }: { items: Item[]; categories: Cat; brands: { name: string; slug: string }[]; focus: FocusMenu | null; cats: Record<string, CatMenu> }) {
+export function NavBar({ items, categories, brands, focus, cats }: { items: Item[]; categories: Cat; brands: { name: string; slug: string; logoUrl?: string | null }[]; focus: FocusMenu | null; cats: Record<string, CatMenu> }) {
   const path = usePathname();
   const [open, setOpen] = useState<string | null>(null);
   const t = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -206,8 +207,9 @@ function CatPanel({ c, href, label, close }: { c: CatMenu; href: string; label: 
           <>
             <p className="px-3 pb-2 text-[11px] font-extrabold tracking-[.1em] text-mute">MARKAYA GÖRE</p>
             {c.brands.map((b) => (
-              <Link key={b.slug} href={`${href}?marka=${b.slug}`} onClick={close} className="flex items-center justify-between rounded-xl px-3 py-2 text-[14px] font-medium hover:bg-soft">
-                {b.name} <span className="text-xs font-semibold text-mute">{b.count}</span>
+              <Link key={b.slug} href={`${href}?marka=${b.slug}`} onClick={close} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-[14px] font-medium hover:bg-soft">
+                <BrandMark name={b.name} logoUrl={b.logoUrl} size={28} className="rounded-lg" />
+                <span className="min-w-0 flex-1 truncate">{b.name}</span> <span className="text-xs font-semibold text-mute">{b.count}</span>
               </Link>
             ))}
           </>

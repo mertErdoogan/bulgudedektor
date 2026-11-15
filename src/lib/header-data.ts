@@ -8,7 +8,7 @@ import { categoryRail, getBrandGroups, getNav, type ProductCard } from "./store"
 
 /** Menülerde gösterilen sade ürün kartı (önbelleğe JSON olarak girer; Date yok). */
 export type NavCard = { id: string; name: string; slug: string; image: string | null; price: number; compareAtPrice: number | null; isNew: boolean; line: string | null };
-export type CatMenu = { subs: { name: string; slug: string }[]; brands: { name: string; slug: string; count: number }[]; products: NavCard[] };
+export type CatMenu = { subs: { name: string; slug: string }[]; brands: { name: string; slug: string; logoUrl: string | null; count: number }[]; products: NavCard[] };
 export type FocusMenu = {
   brand: { name: string; slug: string };
   total: number;
@@ -42,7 +42,7 @@ async function build(_key: string): Promise<HeaderData> {
       if (!c) return;
       const subs = nav.categories.filter((x) => x.parentId === c.id).map((x) => ({ name: x.name, slug: x.slug }));
       const brands = groups
-        .map((g) => ({ name: g.name, slug: g.slug, count: g.categories.find((k) => k.slug === slug)?.count ?? 0 }))
+        .map((g) => ({ name: g.name, slug: g.slug, logoUrl: g.logoUrl, count: g.categories.find((k) => k.slug === slug)?.count ?? 0 }))
         .filter((b) => b.count > 0);
       const products = (await categoryRail(c.id, 3)).map(card);
       cats[slug] = { subs, brands, products };
@@ -79,7 +79,7 @@ async function build(_key: string): Promise<HeaderData> {
  * Header menüleri her sayfada çizilir; veriyi 60 sn önbellekte tutar (sayfa açılışı hızlı kalsın).
  * Paneldeki kayıtlar revalidatePath("/", "layout") ile önbelleği hemen tazeler.
  */
-const cached = unstable_cache(build, ["header-data-v1"], { revalidate: 60, tags: ["header"] });
+const cached = unstable_cache(build, ["header-data-v2"], { revalidate: 60, tags: ["header"] });
 /** Vitrin/menü kartı ayarları önbellek anahtarına girer: ayar değişince eski menü hiç gösterilmez. */
 export async function getHeaderData() {
   const s = await getSettings();

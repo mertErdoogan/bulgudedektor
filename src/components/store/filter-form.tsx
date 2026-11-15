@@ -60,8 +60,9 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
           <option value="hafif">{t("filter.sortLight")}</option>
         </select>
       </div>
-      <aside className={cn("md:block", open ? "fixed inset-0 z-50 flex flex-col justify-end bg-black/40 md:static md:bg-transparent" : "hidden")}>
-        <div className={cn("md:static md:max-h-none md:rounded-none md:p-0", open && "max-h-[90vh] overflow-y-auto rounded-t-2xl bg-white p-4")}>
+      {/* Masaüstünde yapışkan: liste kaydırılırken filtreler ekranda kalır; uzunsa kendi içinde kayar */}
+      <aside className={cn("md:sticky md:top-[84px] md:z-10 md:block md:self-start", open ? "fixed inset-0 z-50 flex flex-col justify-end bg-black/40 md:bg-transparent" : "hidden")} data-testid="filter-aside">
+        <div className={cn("scrollbar-thin md:max-h-[calc(100vh-104px)] md:overflow-y-auto md:overscroll-contain md:rounded-none md:p-0 md:pr-2", open && "max-h-[90vh] overflow-y-auto rounded-t-2xl bg-white p-4")}>
           {open ? (
             <div className="mb-2 flex items-center justify-between md:hidden">
               <b className="text-lg">{t("filter.filter")}</b>

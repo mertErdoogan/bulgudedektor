@@ -1,5 +1,5 @@
 import Link from "@/components/locale-link";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { Plus, ChevronDown, Sparkles } from "lucide-react";
 import { breadcrumbLd, faqLd, graph } from "@/lib/seo";
 import { JsonLd } from "./json-ld";
 
@@ -40,8 +40,28 @@ export function AnswerBox({ title = "Kısa cevap", children, updated }: { title?
 }
 
 /** Görünür SSS listesi + FAQPage şeması. Cevaplar HTML'de açık durur (details içinde de indekslenir). */
-export function FaqSection({ items, title = "Sık sorulan sorular", id = "sss", schema = true, className = "" }: { items: { q: string; a: string }[]; title?: string; id?: string; schema?: boolean; className?: string }) {
+export function FaqSection({ items, title = "Sık sorulan sorular", id = "sss", schema = true, className = "", variant = "list" }: { items: { q: string; a: string }[]; title?: string; id?: string; schema?: boolean; className?: string; variant?: "list" | "cards" }) {
   if (!items.length) return null;
+  if (variant === "cards")
+    return (
+      <section id={id} className={`scroll-mt-40 ${className}`}>
+        {schema ? <JsonLd data={graph(faqLd(items))} /> : null}
+        <span className="inline-flex items-center rounded-full bg-soft px-3 py-1 text-[11px] font-extrabold tracking-[.14em] text-mute">SIK SORULANLAR</span>
+        <h2 className="font-display mt-3 mb-5 text-[24px] leading-tight font-extrabold">{title}</h2>
+        <div className="flex flex-col gap-2.5">
+          {items.map((f, i) => (
+            <details key={i} className="group rounded-2xl border border-line bg-white px-4 py-3.5 transition open:border-transparent open:bg-soft open:shadow-[inset_0_0_0_1px_rgba(20,20,22,.04)] md:px-5" open={i === 0}>
+              <summary className="flex cursor-pointer list-none items-center gap-3 font-bold [&::-webkit-details-marker]:hidden">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-deep text-[12px] font-extrabold text-white tabular-nums group-open:bg-brand">{i + 1}</span>
+                <h3 className="min-w-0 flex-1 text-[15px] md:text-[15.5px]">{f.q}</h3>
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-soft transition group-open:rotate-45 group-open:bg-white"><Plus size={16} /></span>
+              </summary>
+              <p className="mt-2.5 pl-10 text-[14.5px] leading-relaxed whitespace-pre-line text-[#3f3f46]">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+    );
   return (
     <section id={id} className={`scroll-mt-40 ${className}`}>
       {schema ? <JsonLd data={graph(faqLd(items))} /> : null}
