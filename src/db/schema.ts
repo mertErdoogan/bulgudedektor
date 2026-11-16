@@ -515,6 +515,9 @@ export const orderEvents = pgTable("order_events", {
   createdAt: createdAt(),
 });
 
+/** İade edilen birimler. Seri numaralı cihazda hangi cihaz olduğu serials'ta durur. Boş dizi = eski kayıt, tüm sipariş. */
+export type ReturnItem = { orderItemId: string; name: string; quantity: number; unitPrice: number; serials: string[] };
+
 export const returnRequests = pgTable("return_requests", {
   id: id(),
   orderId: text("order_id")
@@ -523,6 +526,7 @@ export const returnRequests = pgTable("return_requests", {
   customerId: text("customer_id").references(() => customers.id, { onDelete: "set null" }),
   reason: text("reason").notNull(),
   details: text("details"),
+  items: jsonb("items").$type<ReturnItem[]>().notNull().default([]),
   status: returnStatus("status").notNull().default("REQUESTED"),
   refundAmount: money("refund_amount"),
   returnCode: text("return_code"),

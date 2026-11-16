@@ -115,7 +115,7 @@ async def main():
         pid = sql(q_pid)
         if not pid:
             # Başka bir test (ör. features: toplu kargoya ver) uygun siparişi tüketmiş olabilir: ödenmiş bir kargo siparişini "Ödendi"ye geri al
-            back = sql("select o.id from orders o where o.delivery_method='CARGO' and o.payment_status='PAID' and exists (select 1 from order_items i where i.order_id=o.id and i.product_id is not null and not exists (select 1 from serial_numbers s where s.order_item_id=i.id)) order by o.created_at desc limit 1")
+            back = sql(f"select o.id from orders o where o.id <> '{oid}' and o.status <> 'DELIVERED' and o.delivery_method='CARGO' and o.payment_status='PAID' and exists (select 1 from order_items i where i.order_id=o.id and i.product_id is not null and not exists (select 1 from serial_numbers s where s.order_item_id=i.id)) order by o.created_at desc limit 1")
             if back:
                 sql(f"update orders set status='PAID', tracking_number=null, shipped_at=null where id='{back}'")
             pid = sql(q_pid)
@@ -219,7 +219,7 @@ async def main():
         check("Misafir siparişleri hesaba bağlandı", (await cp.inner_text("main")).count("BD-") >= 2)
         await cp.goto(B + f"/hesabim?iade={oid}", wait_until="networkidle")
         await cp.select_option("select[name=reason]", "Beklentimi karşılamadı")
-        await cp.click("button:has-text('Talebi gönder')")
+        await cp.click("button:has-text('İade talebini gönder')")
         await cp.wait_for_timeout(2500)
         check("İade talebi oluştu", sql(f"select count(*) from return_requests where order_id='{oid}'") == "1")
         # iade onay + para iadesi (admin)

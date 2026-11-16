@@ -147,19 +147,25 @@ export async function requestReturn(_: ActionResult | null, fd: FormData): Promi
   return safe(async () => {
     const c = await me();
     const orderId = str(fd.get("orderId"));
-    const o = await db.query.orders.findFirst({ where: and(eq(orders.id, orderId), eq(orders.customerId, c.id)), with: { returns: true } });
+    const o = await db.query.orders.findFirst({ where: and(eq(orders.id, orderId), eq(orders.customerId, c.id)), with: { returns: true, items: { with: { serials: true } } } });
     if (!o) return fail("Sipariş bulunamadı.");
-    if (!["DELIVERED", "SHIPPED"].includes(o.status)) return fail("Bu sipariş için iade talebi açılamaz. Kargoya verilmemiş siparişi iptal için bize yaz.");
+    if (o.status !== "DELIVERED") return fail("İade talebi teslim edilmiş siparişler için açılır. Henüz yoldaysa teslim aldıktan sonra açabilir, kargoya verilmemiş siparişi iptal için bize yazabilirsin.");
     if (o.deliveredAt && Date.now() - o.deliveredAt.getTime() > 14 * 86400000) return fail("14 günlük iade süresi dolmuş. Arıza varsa servis kaydı açabilirsin.");
-    if (o.returns.some((r) => !["REJECTED"].includes(r.status))) return fail("Bu sipariş için zaten açık bir iade talebin var.");
+    const { describeReturn, pickUnits, unitGroups } = await import("@/lib/returns");
+    const items = pickUnits(fd.getAll("unit").map(String), unitGroups(o.items, o.returns));
+    if (typeof items === "string") return fail(items);
     const reason = str(fd.get("reason"));
     if (!reason) return fail("İade sebebini seç.");
-    await db.insert(returnRequests).values({ orderId, customerId: c.id, reason, details: strOrNull(fd.get("details")) });
-    await addOrderEvent(db, orderId, "return", "İade talebin alındı. Onaylanınca ücretsiz kargo kodu göndereceğiz.");
+    await db.insert(returnRequests).values({ orderId, customerId: c.id, reason, details: strOrNull(fd.get("details")), items });
+    await addOrderEvent(db, orderId, "return", `İade talebin alındı: ${describeReturn(items)}. Onaylanınca ücretsiz kargo kodu göndereceğiz.`);
     const { notifyStaff } = await import("@/lib/notify");
-    await notifyStaff({ perm: "orders.view", kind: "return", title: `İade talebi · ${c.name}`, body: reason, href: "/admin/iadeler" });
+    await notifyStaff({ perm: "orders.view", kind: "return", title: `İade talebi · ${c.name}`, body: `${describeReturn(items)} · ${reason}`.slice(0, 160), href: "/admin/iadeler" });
     revalidatePath("/hesabim");
-    return ok("İade talebin alındı. 1 iş günü içinde ücretsiz kargo kodunu ileteceğiz.", { redirect: "/hesabim?t=siparisler" });
+    revalidatePath(`/siparis/${orderId}`);
+    // Sunucu tarafı yönlendirme: talep sonrası form sayfadan kalkabildiği için istemci yönlendirmesine güvenilmez
+    const { orderKey } = await import("@/lib/store");
+    const { redirect } = await import("next/navigation");
+    return redirect(`/siparis/${orderId}?k=${orderKey(orderId)}&iade=alindi#iade-durumu`);
   });
 }
 

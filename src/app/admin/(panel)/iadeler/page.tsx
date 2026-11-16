@@ -8,6 +8,7 @@ import { ReturnStatusBadge } from "@/components/admin/status";
 import { Card, CardHeader, EmptyState, Field, Input, Select, Table, Td, Textarea, Th } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { describeReturn, returnValue } from "@/lib/returns";
 import { formatDate, formatTL, orderNo, PAYMENT_METHOD_LABEL } from "@/lib/utils";
 import { updateReturn } from "./actions";
 
@@ -47,7 +48,10 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
                       <span className="block text-xs text-mute">{r.order.shippingAddress.fullName}</span>
                     </Td>
                     <Td>{orderNo(r.order.number)}</Td>
-                    <Td className="max-w-[240px] truncate">{r.reason}</Td>
+                    <Td className="max-w-[260px]">
+                      <span className="block truncate">{r.reason}</span>
+                      <span className="block truncate text-xs text-mute">{describeReturn(r.items)}</span>
+                    </Td>
                     <Td><ReturnStatusBadge status={r.status} /></Td>
                   </tr>
                 ))}
@@ -63,7 +67,27 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
             <div className="flex flex-col gap-3 p-5 text-sm">
               <p><b>Sebep:</b> {sel.reason}</p>
               {sel.details ? <p className="rounded-lg bg-soft p-3">{sel.details}</p> : null}
-              <p><b>Ürünler:</b> {sel.order.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}</p>
+              <div className="rounded-lg border border-line p-3" data-testid="return-items">
+                <b className="text-xs uppercase tracking-wide text-mute">İade edilen</b>
+                {sel.items.length ? (
+                  <ul className="mt-1 flex flex-col gap-1">
+                    {sel.items.map((x) => (
+                      <li key={x.orderItemId} className="flex justify-between gap-2">
+                        <span>
+                          <b>{x.quantity}×</b> {x.name}
+                          {x.serials.length ? <span className="block font-mono text-xs text-mute">seri {x.serials.join(", ")}</span> : null}
+                        </span>
+                        <span>{formatTL(x.unitPrice * x.quantity)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-1">Siparişin tamamı ({sel.order.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")})</p>
+                )}
+                {sel.items.length && sel.items.reduce((n, x) => n + x.quantity, 0) < sel.order.items.reduce((n, i) => n + i.quantity, 0) ? (
+                  <p className="mt-2 text-xs font-bold text-warn">Kısmi iade: siparişteki diğer ürünler müşteride kalıyor. Yalnızca bu adetler stoğa döner.</p>
+                ) : null}
+              </div>
               <p>
                 <b>Sipariş tutarı:</b> {formatTL(sel.order.total)} · {PAYMENT_METHOD_LABEL[sel.order.paymentMethod]}
               </p>
@@ -91,8 +115,8 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
                   {can(staff.permissions, "orders.refund") ? (
                     // Yalnızca "Para iadesini yap" seçiliyken görünür; onaylarken "para mı iade ediyorum?" karışıklığı olmasın
                     <div className="refund-amt hidden">
-                      <Field label="İade tutarı (TL)" hint="Kısmi iade için düşür. Kartla ödendiyse PayTR'ye otomatik iade gider.">
-                        <Input name="refundAmount" defaultValue={sel.order.total} inputMode="decimal" />
+                      <Field label="İade tutarı (TL)" hint={sel.items.length ? "İade edilen ürünlerin tutarı yazıldı; kargo ücreti dahil değil. Kartla ödendiyse otomatik iade gider." : "Kısmi iade için düşür. Kartla ödendiyse otomatik iade gider."}>
+                        <Input name="refundAmount" defaultValue={sel.items.length ? Math.min(returnValue(sel.items), sel.order.total) : sel.order.total} inputMode="decimal" />
                       </Field>
                     </div>
                   ) : null}

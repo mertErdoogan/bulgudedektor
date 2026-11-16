@@ -10,11 +10,11 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { ActionButton } from "@/components/admin/delete-button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 import { getCustomer } from "@/lib/auth";
-import { getSettings } from "@/lib/settings";
+import { describeReturn, hasReturnableUnit, unitGroups } from "@/lib/returns";
 import { orderKey } from "@/lib/store";
 import { ORDER_STATUS_LABEL, RETURN_STATUS_LABEL, SERVICE_STATUS_LABEL, formatDate, formatTL, orderNo, serviceNo } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { customerLogout, deleteAddress, deleteMyAccount, requestReturn, requestService, resendVerification, saveAddress, updateProfile } from "./actions";
+import { customerLogout, deleteAddress, deleteMyAccount, requestService, resendVerification, saveAddress, updateProfile } from "./actions";
 
 export const metadata = { title: "Hesabım", robots: { index: false } };
 
@@ -31,11 +31,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   if (!me) redirect("/giris?next=/hesabim");
   const sp = await searchParams;
   const tab = sp.iade ? "siparisler" : sp.ariza ? "servis" : (sp.t ?? "cihazlar");
-  const [myOrders, services, addrs, s] = await Promise.all([
-    db.query.orders.findMany({ where: eq(orders.customerId, me.id), orderBy: desc(orders.createdAt), with: { items: true, returns: true } }),
+  const [myOrders, services, addrs] = await Promise.all([
+    db.query.orders.findMany({ where: eq(orders.customerId, me.id), orderBy: desc(orders.createdAt), with: { items: { with: { serials: true } }, returns: true } }),
     db.select().from(serviceRecords).where(eq(serviceRecords.customerId, me.id)).orderBy(desc(serviceRecords.createdAt)),
     db.select().from(addresses).where(eq(addresses.customerId, me.id)),
-    getSettings(),
   ]);
   const itemIds = myOrders.flatMap((o) => o.items.map((i) => i.id));
   const devices = itemIds.length
@@ -45,7 +44,9 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         .innerJoin(orderItems, eq(orderItems.id, serialNumbers.orderItemId))
         .where(inArray(serialNumbers.orderItemId, itemIds))
     : [];
+  // İade formu artık sipariş detayında: eski bağlantılar oraya gider
   const returnOrder = sp.iade ? myOrders.find((o) => o.id === sp.iade) : undefined;
+  if (returnOrder) redirect(`/siparis/${returnOrder.id}?k=${orderKey(returnOrder.id)}&iade=1#iade`);
   const openService = services.filter((x) => x.status !== "CLOSED").length;
 
   return (
@@ -111,35 +112,16 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
       {tab === "siparisler" ? (
         <div className="flex flex-col gap-3">
-          {returnOrder ? (
-            <ActionForm action={requestReturn} className="flex flex-col gap-3 rounded-2xl border-2 border-brand p-5">
-              <input type="hidden" name="orderId" value={returnOrder.id} />
-              <b>İade talebi · {orderNo(returnOrder.number)}</b>
-              <Field label="Sebep">
-                <Select name="reason" required defaultValue="">
-                  <option value="" disabled>Seç</option>
-                  <option>Beklentimi karşılamadı</option>
-                  <option>Yanlış ürün seçtim</option>
-                  <option>Kusurlu / hasarlı geldi</option>
-                  <option>Başka yerden daha uygununu buldum</option>
-                  <option>Diğer</option>
-                </Select>
-              </Field>
-              <Field label="Açıklama (isteğe bağlı)"><Textarea name="details" /></Field>
-              <p className="text-xs text-mute">Ürünü kutusu ve aksesuarlarıyla göndermen gerekir. Onaydan sonra ücretsiz kargo kodu iletilir.</p>
-              <SubmitButton className="self-start">Talebi gönder</SubmitButton>
-            </ActionForm>
-          ) : null}
           {myOrders.map((o) => (
             <div key={o.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-line p-4 text-sm">
               <div className="flex-1">
                 <Link href={`/siparis/${o.id}?k=${orderKey(o.id)}`} className="font-bold text-link">{orderNo(o.number)}</Link>
                 <span className="block text-mute">{formatDate(o.createdAt)} · {o.items.map((i) => i.name).join(", ")}</span>
-                {o.returns.map((r) => <span key={r.id} className="mt-1 block text-xs font-bold text-warn">İade: {RETURN_STATUS_LABEL[r.status]}{r.returnCode ? ` · kargo kodu ${r.returnCode}` : ""}</span>)}
+                {o.returns.map((r) => <span key={r.id} className="mt-1 block text-xs font-bold text-warn">İade: {RETURN_STATUS_LABEL[r.status]} · {describeReturn(r.items)}{r.returnCode ? ` · kargo kodu ${r.returnCode}` : ""}</span>)}
               </div>
               <span className="rounded-md bg-soft px-2 py-1 text-xs font-bold">{ORDER_STATUS_LABEL[o.status]}</span>
               <b>{formatTL(o.total)}</b>
-              {o.status === "DELIVERED" && !o.returns.length ? <Link href={`/hesabim?iade=${o.id}`} className="text-xs font-bold text-link">İade et</Link> : null}
+              {o.status === "DELIVERED" && o.deliveredAt && Date.now() - o.deliveredAt.getTime() < 14 * 86400000 && hasReturnableUnit(unitGroups(o.items, o.returns)) ? <Link href={`/siparis/${o.id}?k=${orderKey(o.id)}&iade=1#iade`} className="text-xs font-bold text-link">İade et</Link> : null}
             </div>
           ))}
           {!myOrders.length ? <p className="rounded-xl bg-soft p-6 text-sm text-mute">Henüz siparişin yok.</p> : null}

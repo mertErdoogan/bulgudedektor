@@ -4,7 +4,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { customers, orderItems, orders, products, serialNumbers } from "@/db/schema";
+import { customers, orderItems, orders, products, serialNumbers, type ReturnItem } from "@/db/schema";
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { audit } from "@/lib/audit";
 import { assertStaff, type StaffSession } from "@/lib/auth";
@@ -13,7 +13,8 @@ import { ORDER_FLOW, addOrderEvent, adjustStock, restockOrder } from "@/lib/orde
 import { can } from "@/lib/permissions";
 import { quoteCart } from "@/lib/pricing";
 import { getSettings } from "@/lib/settings";
-import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL, normalizePhone, orderNo, str, strOrNull, toNum } from "@/lib/utils";
+import { describeReturn } from "@/lib/returns";
+import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL, formatTL, normalizePhone, orderNo, str, strOrNull, toNum } from "@/lib/utils";
 
 type Status = (typeof orders.$inferSelect)["status"];
 
@@ -104,6 +105,39 @@ async function transition(orderId: string, to: Status, staff: StaffSession, extr
       void smsOrderEvent(to === "SHIPPED" ? "shipped" : "delivered", { phone: o.phone, number: o.number, link, carrier: extra.carrier, tracking: extra.tracking });
     }
   }
+  return info;
+}
+
+/**
+ * Ürün bazlı (kısmi) iade: yalnızca iade edilen adetler stoğa döner, yalnızca o cihazların seri
+ * numarası "iade" olur, para yalnızca bu tutar kadar geri ödenir. Sipariş "teslim edildi" kalır;
+ * siparişin bütün adetleri iade edildiyse sipariş "iade edildi" olur.
+ * Yetkiyi kendisi kontrol eder (sunucu eylemi olarak dışarıdan çağrılsa bile güvenli).
+ */
+export async function refundReturnItems(orderId: string, amount: number, items: ReturnItem[], closesOrder: boolean): Promise<string | null> {
+  const staff = await assertStaff("orders.refund");
+  const o = await db.query.orders.findFirst({ where: eq(orders.id, orderId), with: { items: true } });
+  if (!o) throw new Error("Sipariş bulunamadı.");
+  if (!items.length || items.some((x) => !o.items.some((i) => i.id === x.orderItemId))) throw new Error("İade kalemleri siparişle eşleşmiyor.");
+  const paid = o.paymentStatus === "PAID" || o.paymentStatus === "PARTIALLY_REFUNDED";
+  const info = paid ? await doRefund(o, amount, staff) : null;
+  await db.transaction(async (tx) => {
+    for (const x of items) {
+      const it = o.items.find((i) => i.id === x.orderItemId)!;
+      if (it.productId) await adjustStock(tx, it.productId, x.quantity, "RETURN", staff.id, `Sipariş ${orderNo(o.number)} · iade`);
+      if (x.serials.length)
+        await tx
+          .update(serialNumbers)
+          .set({ status: "RETURNED", orderItemId: null, soldAt: null, warrantyUntil: null })
+          .where(and(eq(serialNumbers.orderItemId, it.id), inArray(serialNumbers.serial, x.serials)));
+    }
+    const patch: Partial<typeof orders.$inferInsert> = {};
+    if (paid) patch.paymentStatus = closesOrder ? "REFUNDED" : "PARTIALLY_REFUNDED";
+    if (closesOrder) patch.status = "REFUNDED";
+    if (Object.keys(patch).length) await tx.update(orders).set(patch).where(eq(orders.id, o.id));
+    await addOrderEvent(tx, o.id, "refund", `İade tamamlandı: ${describeReturn(items)} · ${formatTL(amount)} geri ödendi.`, staff.id, true);
+  });
+  await audit(staff.id, "status", "order", o.id, `${orderNo(o.number)} kısmi iade ${formatTL(amount)}`);
   return info;
 }
 
