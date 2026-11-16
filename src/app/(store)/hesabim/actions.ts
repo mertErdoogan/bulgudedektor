@@ -5,7 +5,7 @@ import { and, eq, inArray, ne, or } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { addresses, customers, orders, returnRequests, serviceRecords } from "@/db/schema";
+import { addresses, customers, orderItems, orders, returnRequests, serialNumbers, serviceRecords } from "@/db/schema";
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { getCustomer } from "@/lib/auth";
 import { addOrderEvent } from "@/lib/orders";
@@ -172,10 +172,30 @@ export async function requestReturn(_: ActionResult | null, fd: FormData): Promi
 export async function requestService(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
     const c = await me();
-    const productName = str(fd.get("productName"));
+    const device = str(fd.get("device"));
+    let productName = str(fd.get("productName"));
+    let serial = strOrNull(fd.get("serial"));
+    if (device && device !== "other") {
+      // Hesaptaki cihaz: model adı ve seri no kayıttan gelir (seçilen ad ile yazılan seri no birbirini tutmazsa yanlış kayıt açılmasın)
+      const [d] = await db
+        .select({ serial: serialNumbers.serial, name: orderItems.name })
+        .from(serialNumbers)
+        .innerJoin(orderItems, eq(orderItems.id, serialNumbers.orderItemId))
+        .innerJoin(orders, eq(orders.id, orderItems.orderId))
+        .where(and(eq(serialNumbers.serial, device), eq(orders.customerId, c.id)));
+      if (!d) return fail("Bu cihaz hesabında bulunamadı. Sayfayı yenileyip tekrar dene.");
+      productName = d.name;
+      serial = d.serial;
+    } else if (!device) {
+      return fail("Hangi cihazında sorun olduğunu seç.");
+    }
     const issue = str(fd.get("issue"));
-    if (!productName || issue.length < 10) return fail("Ürünü seç ve arızayı biraz detaylı anlat.");
-    const serial = strOrNull(fd.get("serial"));
+    if (!productName) return fail("Cihaz modelini yaz.");
+    if (issue.length < 10) return fail("Arızayı biraz daha detaylı anlat (en az 10 karakter).");
+    if (serial) {
+      const open = await db.query.serviceRecords.findFirst({ where: and(eq(serviceRecords.customerId, c.id), eq(serviceRecords.serial, serial), ne(serviceRecords.status, "CLOSED")) });
+      if (open) return fail(`Bu cihaz için zaten açık bir servis kaydın var (#${open.number}). Durumunu Servis sekmesinden izleyebilirsin.`);
+    }
     const [r] = await db
       .insert(serviceRecords)
       .values({ customerId: c.id, contactName: c.name, contact: c.phone ?? c.email ?? "", productName, serial, issue, status: "AWAITING_DEVICE", history: [{ status: "RECEIVED", at: new Date().toISOString() }, { status: "AWAITING_DEVICE", at: new Date().toISOString(), note: "Ücretsiz kargo kodun hazırlanıyor." }] })
@@ -183,7 +203,7 @@ export async function requestService(_: ActionResult | null, fd: FormData): Prom
     const { notifyStaff } = await import("@/lib/notify");
     await notifyStaff({ perm: "service.manage", kind: "service", title: `Servis talebi #${r.number} · ${productName}`, body: `${c.name}: ${issue.slice(0, 140)}`, href: `/admin/servis?id=${r.id}` });
     revalidatePath("/hesabim");
-    return ok(`Servis kaydın açıldı (#${r.number}). Ücretsiz kargo kodunu SMS ile göndereceğiz.`, { redirect: "/hesabim?t=servis" });
+    return redirect(`/hesabim?t=servis&yeni=${r.number}`);
   });
 }
 

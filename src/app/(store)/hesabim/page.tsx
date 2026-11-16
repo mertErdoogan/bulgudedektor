@@ -8,13 +8,15 @@ import { db } from "@/db";
 import { addresses, orderItems, orders, serialNumbers, serviceRecords } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { ActionButton } from "@/components/admin/delete-button";
-import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
+import { Checkbox, Field, Input, Textarea } from "@/components/ui";
 import { getCustomer } from "@/lib/auth";
+import { getSettings } from "@/lib/settings";
 import { describeReturn, hasReturnableUnit, unitGroups } from "@/lib/returns";
 import { orderKey } from "@/lib/store";
-import { ORDER_STATUS_LABEL, RETURN_STATUS_LABEL, SERVICE_STATUS_LABEL, formatDate, formatTL, orderNo, serviceNo } from "@/lib/utils";
+import { ORDER_STATUS_LABEL, RETURN_STATUS_LABEL, formatDate, formatTL, orderNo } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { customerLogout, deleteAddress, deleteMyAccount, requestService, resendVerification, saveAddress, updateProfile } from "./actions";
+import { ServiceTab } from "./service-tab";
+import { customerLogout, deleteAddress, deleteMyAccount, resendVerification, saveAddress, updateProfile } from "./actions";
 
 export const metadata = { title: "Hesabım", robots: { index: false } };
 
@@ -26,15 +28,16 @@ const TABS = [
   ["profil", "Bilgilerim"],
 ];
 
-export default async function AccountPage({ searchParams }: { searchParams: Promise<{ t?: string; iade?: string; ariza?: string }> }) {
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ t?: string; iade?: string; ariza?: string; yeni?: string }> }) {
   const me = await getCustomer();
   if (!me) redirect("/giris?next=/hesabim");
   const sp = await searchParams;
-  const tab = sp.iade ? "siparisler" : sp.ariza ? "servis" : (sp.t ?? "cihazlar");
-  const [myOrders, services, addrs] = await Promise.all([
+  const tab = sp.iade ? "siparisler" : sp.ariza !== undefined ? "servis" : (sp.t ?? "cihazlar");
+  const [myOrders, services, addrs, settings] = await Promise.all([
     db.query.orders.findMany({ where: eq(orders.customerId, me.id), orderBy: desc(orders.createdAt), with: { items: { with: { serials: true } }, returns: true } }),
     db.select().from(serviceRecords).where(eq(serviceRecords.customerId, me.id)).orderBy(desc(serviceRecords.createdAt)),
     db.select().from(addresses).where(eq(addresses.customerId, me.id)),
+    getSettings(),
   ]);
   const itemIds = myOrders.flatMap((o) => o.items.map((i) => i.id));
   const devices = itemIds.length
@@ -54,7 +57,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3 rounded-2xl bg-deep p-5 text-white">
         <div>
           <h1 className="font-display text-2xl font-extrabold">Merhaba, {me.name.split(" ")[0]}</h1>
-          <p className="text-sm opacity-75">{devices.length} cihaz · {myOrders.length} sipariş{openService ? ` · ${openService} açık servis kaydı` : ""}</p>
+          <p className="text-sm opacity-75">{devices.length} cihaz · {myOrders.length} sipariş</p>
         </div>
         <form action={customerLogout}><button className="rounded-lg bg-white/10 px-4 py-2 text-sm font-bold">Çıkış yap</button></form>
       </div>
@@ -69,9 +72,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </ActionButton>
         </div>
       ) : null}
-      <nav className="scrollbar-none mb-5 flex gap-2 overflow-x-auto">
+      <nav className="scrollbar-none mb-5 flex gap-2 overflow-x-auto" data-testid="account-tabs">
         {TABS.map(([k, l]) => (
-          <Link key={k} href={`/hesabim?t=${k}`} className={cn("shrink-0 rounded-full px-4 py-2 text-sm font-bold", tab === k ? "bg-deep text-white" : "border border-line")}>{l}</Link>
+          <Link key={k} href={`/hesabim?t=${k}`} className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold", tab === k ? "bg-deep text-white" : "border border-line")}>
+            {l}
+            {k === "servis" && openService ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] text-white">{openService}</span> : null}
+          </Link>
         ))}
       </nav>
 
@@ -97,7 +103,11 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                     <div className="mt-1.5 h-1.5 rounded-full bg-line"><div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (left / total) * 100)}%` }} /></div>
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs font-bold">
-                    <Link href={`/hesabim?ariza=${d.serial}`} className="rounded-lg bg-soft p-2.5">Arıza bildir</Link>
+                    {services.some((x) => x.status !== "CLOSED" && x.serial === d.serial) ? (
+                      <Link href="/hesabim?t=servis" className="rounded-lg bg-warn-bg p-2.5 text-warn">Serviste · durum</Link>
+                    ) : (
+                      <Link href={`/hesabim?ariza=${d.serial}#ariza`} className="rounded-lg bg-soft p-2.5">Arıza bildir</Link>
+                    )}
                     <Link href={`/siparis/${orderId}?k=${orderKey(orderId)}`} className="rounded-lg bg-soft p-2.5">Sipariş / fatura</Link>
                     <Link href="/kategori/baslik-ve-aksesuar" className="rounded-lg bg-soft p-2.5">Aksesuarlar</Link>
                   </div>
@@ -128,37 +138,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </div>
       ) : null}
 
-      {tab === "servis" ? (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-          <div className="flex flex-col gap-3">
-            {services.map((x) => (
-              <div key={x.id} className="rounded-xl border border-line p-4 text-sm">
-                <div className="flex justify-between"><b>{serviceNo(x.number)} · {x.productName}</b><span className="rounded-md bg-[#fff4f2] px-2 py-0.5 text-xs font-bold text-[#7a2a20]">{SERVICE_STATUS_LABEL[x.status]}</span></div>
-                <p className="text-mute">{x.issue}</p>
-                <ol className="mt-3 flex flex-col gap-2">
-                  {x.history.map((h, i) => <li key={i} className="border-l-2 border-brand pl-3"><b>{SERVICE_STATUS_LABEL[h.status]}</b> <span className="text-xs text-mute">{formatDate(h.at, true)}</span>{h.note ? <p className="text-mute">{h.note}</p> : null}</li>)}
-                </ol>
-                {x.cost && !x.underWarranty ? <p className="mt-2 font-bold">Ücret: {formatTL(x.cost)}</p> : null}
-              </div>
-            ))}
-            {!services.length ? <p className="rounded-xl bg-soft p-6 text-sm text-mute">Servis kaydın yok.</p> : null}
-          </div>
-          <ActionForm action={requestService} className="flex flex-col gap-3 self-start rounded-2xl border border-line p-5">
-            <b>Arıza bildir</b>
-            <Field label="Cihaz">
-              <Select name="productName" required defaultValue={devices.find((d) => d.s.serial === sp.ariza)?.name ?? ""}>
-                <option value="" disabled>Seç</option>
-                {devices.map((d) => <option key={d.s.id} value={d.name}>{d.name} ({d.s.serial})</option>)}
-                <option value="Diğer">Listede yok</option>
-              </Select>
-            </Field>
-            <Field label="Seri no"><Input name="serial" defaultValue={sp.ariza ?? ""} /></Field>
-            <Field label="Ne oluyor?"><Textarea name="issue" required placeholder="Örn. açılıyor ama ses gelmiyor, ekranda hata kodu var…" /></Field>
-            <p className="text-xs text-mute">Kısa bir video çekip WhatsApp&apos;tan gönderirsen teknisyen önceden bakar; çoğu sorun cihaz gelmeden çözülür.</p>
-            <SubmitButton>Kaydı aç</SubmitButton>
-          </ActionForm>
-        </div>
-      ) : null}
+      {tab === "servis" ? <ServiceTab services={services} devices={devices} ariza={sp.ariza} created={sp.yeni} whatsapp={settings.store.whatsapp || null} /> : null}
 
       {tab === "adresler" ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
