@@ -7,7 +7,8 @@ import { formatTL, orderNo } from "./utils";
 export async function sendMail(to: string, subject: string, html: string, opts: { headers?: Record<string, string>; attachments?: { filename: string; content: Buffer | string; contentType?: string }[] } = {}) {
   const s = await getSettings();
   const i = s.integrations;
-  if (!i.smtpHost || !i.smtpUser || !i.smtpPass || !to) return false;
+  // Showroom/telefon satışında e-postası olmayan müşteriye verilen iç adres: gerçek bir adres değil, gönderilmez
+  if (!i.smtpHost || !i.smtpUser || !i.smtpPass || !to || to.endsWith("@telefon.siparis")) return false;
   try {
     const [host, portStr] = i.smtpHost.split(":");
     const port = Number(portStr) || 465;

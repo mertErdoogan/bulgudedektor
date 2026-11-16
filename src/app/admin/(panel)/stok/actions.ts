@@ -29,7 +29,8 @@ export async function adjustStockAction(_: ActionResult | null, fd: FormData): P
     await audit(staff.id, "stock", "product", productId, `${p.name} stok ${delta > 0 ? "+" : ""}${delta} (${reason})`);
     if (p.stock <= 0 && p.stock + delta > 0) void import("@/lib/mail").then((m) => m.notifyStockAlerts(productId));
     revalidateStore("/", "layout");
-    return ok(`Stok güncellendi: ${p.stock} → ${p.stock + delta}`);
+    // Seçili ürün sabit kalsın: liste stoğa göre yeniden sıralansa da form başka ürüne kaymasın
+    return ok(`${p.name}: stok ${p.stock} → ${p.stock + delta}`, { redirect: `/admin/stok?urun=${productId}` });
   });
 }
 
@@ -51,11 +52,11 @@ export async function addSerials(_: ActionResult | null, fd: FormData): Promise<
     await audit(staff.id, "stock", "product", productId, `${p.name}: ${list.length} seri no eklendi`, { serials: list });
     if (p.stock <= 0) void import("@/lib/mail").then((m) => m.notifyStockAlerts(productId));
     revalidateStore("/", "layout");
-    return ok(`${list.length} seri numarası eklendi, stok ${list.length} arttı.`);
+    return ok(`${p.name}: ${list.length} seri numarası eklendi, stok ${list.length} arttı.`, { redirect: `/admin/stok?urun=${productId}` });
   });
 }
 
-export async function setSerialStatus(id: string, status: "IN_STOCK" | "DEFECTIVE" | "IN_SERVICE" | "RETURNED"): Promise<ActionResult> {
+export async function setSerialStatus(id: string, status: "IN_STOCK" | "DEFECTIVE" | "IN_SERVICE" | "RETURNED" | "LOST"): Promise<ActionResult> {
   return safe(async () => {
     const staff = await assertStaff("inventory.manage");
     const s = await db.query.serialNumbers.findFirst({ where: eq(serialNumbers.id, id) });
@@ -67,9 +68,9 @@ export async function setSerialStatus(id: string, status: "IN_STOCK" | "DEFECTIV
       await tx.update(serialNumbers).set({ status }).where(eq(serialNumbers.id, id));
       if (wasInStock !== willBeInStock) await adjustStock(tx, s.productId, willBeInStock ? 1 : -1, "SERIAL_STATUS", staff.id, `${s.serial} → ${status}`);
     });
-    await audit(staff.id, "stock", "serial", id, `${s.serial} durumu ${status}`);
+    await audit(staff.id, "stock", "serial", id, `${s.serial} durumu ${status === "LOST" ? "KAYIP (sayımda bulunamadı)" : status}`);
     revalidateStore("/admin/stok");
-    return ok("Seri no durumu güncellendi.");
+    return ok(status === "LOST" ? `${s.serial} kayıp olarak işaretlendi, stoktan düştü.` : "Seri no durumu güncellendi.");
   });
 }
 
@@ -86,5 +87,34 @@ export async function deleteSerial(id: string): Promise<ActionResult> {
     await audit(staff.id, "delete", "serial", id, `${s.serial} silindi`);
     revalidateStore("/admin/stok");
     return ok("Seri numarası silindi.");
+  });
+}
+
+/**
+ * Sayım modu: rafta okutulan seri numaralarını sistemdeki "stokta" kayıtlarla karşılaştırır. Hiçbir şeyi değiştirmez;
+ * sonuçtan eksik cihazlar tek tek "kayıp" olarak işaretlenebilir.
+ */
+export async function reconcileSerials(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("inventory.manage");
+    const productId = strOrNull(fd.get("productId"));
+    const scanned = [...new Set(lines(fd.get("serials")).flatMap((l) => l.split(/[,;\s]+/)).map((x) => x.trim().toUpperCase()).filter(Boolean))];
+    const expected = await db
+      .select({ id: serialNumbers.id, serial: serialNumbers.serial, product: products.name })
+      .from(serialNumbers)
+      .innerJoin(products, eq(products.id, serialNumbers.productId))
+      .where(and(eq(serialNumbers.status, "IN_STOCK"), productId ? eq(serialNumbers.productId, productId) : undefined));
+    const set = new Set(scanned);
+    const missing = expected.filter((e) => !set.has(e.serial));
+    const known = scanned.length
+      ? await db.select({ serial: serialNumbers.serial, status: serialNumbers.status, product: products.name, productId: serialNumbers.productId }).from(serialNumbers).innerJoin(products, eq(products.id, serialNumbers.productId)).where(inArray(serialNumbers.serial, scanned))
+      : [];
+    const unknown = scanned.filter((x) => !known.some((k) => k.serial === x));
+    const odd = known.filter((k) => k.status !== "IN_STOCK" || (productId && k.productId !== productId));
+    const found = expected.length - missing.length;
+    await audit(staff.id, "stock", "count", null, `Seri no sayımı: ${scanned.length} okutuldu, ${found}/${expected.length} bulundu, ${missing.length} eksik, ${unknown.length} tanımsız`);
+    return ok(missing.length || unknown.length || odd.length ? "Sayım bitti: farklar aşağıda." : "Sayım tutuyor: sistemdeki tüm cihazlar rafta.", {
+      data: { expected: expected.length, found, missing, unknown, odd: odd.map((o) => ({ serial: o.serial, status: o.status, product: o.product })) },
+    });
   });
 }

@@ -38,6 +38,8 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
         with: { messages: { orderBy: asc(messages.createdAt), with: { user: { columns: { name: true } } } }, customer: true, product: { columns: { name: true, slug: true } } },
       })
     : null;
+  const isMail = !!sel?.contact.includes("@");
+  const waNo = sel && !isMail ? sel.contact.replace(/\D/g, "") : "";
   return (
     <>
       <PageHeader title="Mesajlar" description="Web formu, ürün soruları ve kayda geçirilen telefon/WhatsApp konuşmaları tek yerde." actions={<Link href="/admin/mesajlar?yeni=1" className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white">+ Konuşma kaydet</Link>} />
@@ -99,7 +101,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <ActionForm action={setConversation} className="flex gap-2">
+                <ActionForm key={`set-${sel.id}`} action={setConversation} className="flex gap-2">
                   <input type="hidden" name="id" value={sel.id} />
                   <Select name="assigneeId" defaultValue={sel.assigneeId ?? ""} className="h-9 w-44">
                     <option value="">Atanmadı</option>
@@ -119,12 +121,20 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                 <div key={m.id} className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${m.fromStaff ? "self-end bg-brand text-white" : "self-start bg-white"}`}>
                   <p className="whitespace-pre-wrap">{m.body}</p>
                   <p className={`mt-1 text-[11px] ${m.fromStaff ? "text-white/70" : "text-mute"}`}>{m.fromStaff ? m.user?.name ?? "Ekip" : sel.contactName} · {formatDate(m.createdAt, true)}</p>
+                  {m.fromStaff && waNo ? (
+                    <a href={`https://wa.me/${waNo}?text=${encodeURIComponent(m.body)}`} target="_blank" rel="noopener" className="mt-1 inline-block text-[11px] font-bold text-white underline" data-testid="wa-send">WhatsApp&apos;ta bu metinle gönder →</a>
+                  ) : null}
                 </div>
               ))}
             </div>
-            <ActionForm action={reply} resetOnSuccess className="flex flex-col gap-2 border-t border-line p-4">
+            <ActionForm key={`reply-${sel.id}`} action={reply} resetOnSuccess className="flex flex-col gap-2 border-t border-line p-4">
               <input type="hidden" name="conversationId" value={sel.id} />
-              <Textarea name="body" placeholder="Yanıtını yaz… (WhatsApp/telefon konuşmalarında yanıtını buraya da not et)" required />
+              <p className={`rounded-lg px-3 py-2 text-xs font-semibold ${isMail ? "bg-ok-bg text-ok" : "bg-warn-bg text-warn"}`} data-testid="reply-mode">
+                {isMail
+                  ? `Yazdığın yanıt ${sel.contact} adresine e-postayla gönderilir.`
+                  : `Bu konuşma ${CHANNEL_LABEL[sel.channel]} üzerinden. Panel buradan otomatik mesaj göndermez: yanıtını not olarak kaydet, sonra "WhatsApp'ta bu metinle gönder" ile ilet ya da müşteriyi ara.`}
+              </p>
+              <Textarea name="body" placeholder={isMail ? "Müşteriye gidecek yanıtını yaz…" : "Müşteriye ne cevap verdiğini yaz (kayıt için)…"} required />
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <TemplateInsert templates={templates} vars={{ ...storeVars(settings.store, settings.payment.bankAccounts, staff.name), ad: sel.contactName.split(" ")[0], ad_soyad: sel.contactName }} />
                 <Link href="/admin/sablonlar" className="text-xs font-semibold text-link">Şablonları düzenle</Link>
@@ -132,11 +142,9 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
               <div className="flex flex-wrap items-center justify-end gap-2">
                 {sel.contact.startsWith("+") && settings.store.whatsapp ? (
                   <a href={`https://wa.me/${sel.contact.replace(/\D/g, "")}`} target="_blank" className="mr-auto text-sm font-bold text-[#128c4a]">WhatsApp&apos;ta aç →</a>
-                ) : sel.contact.includes("@") ? (
-                  <a href={`mailto:${sel.contact}?subject=${encodeURIComponent("Re: " + sel.subject)}`} className="mr-auto text-sm font-bold text-link">E-posta ile yanıtla →</a>
                 ) : null}
-                <SubmitButton variant="outline" name="close" value="1">Yanıtla ve kapat</SubmitButton>
-                <SubmitButton>Yanıtla</SubmitButton>
+                <SubmitButton variant="outline" name="close" value="1">{isMail ? "Gönder ve kapat" : "Kaydet ve kapat"}</SubmitButton>
+                <SubmitButton>{isMail ? "E-postayla gönder" : "Not olarak kaydet"}</SubmitButton>
               </div>
             </ActionForm>
           </Card>

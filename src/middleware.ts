@@ -7,7 +7,11 @@ import { DEFAULT_LOCALE, splitLocale } from "@/lib/i18n/config";
  *    tarayıcı olmadan çağrılır; bu uçlar kendi anahtar/imza kontrolünü yapar.
  *    Görsel dosyaları (/demo, /media, /brand) da açıktır; aşağıdaki nota bakın.
  * 2) Hafif admin kontrolü: admin çerezi yoksa girişe yönlendir. Asıl doğrulama sunucuda (layout/action) yapılır.
+ * 3) Hareketsizlikte çıkış: panelde ADMIN_IDLE_MINUTES (varsayılan 60) dakika işlem yapılmazsa oturum kapanır.
+ *    Showroom'daki ortak bilgisayarda açık kalan yönetici oturumunu başkası kullanamasın diye.
  */
+const IDLE_COOKIE = "bulgu_seen";
+const idleSeconds = () => Math.max(5, Number(process.env.ADMIN_IDLE_MINUTES) || 60) * 60;
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const preprod = process.env.PREPROD === "1";
@@ -45,16 +49,25 @@ export function middleware(req: NextRequest) {
   reqHeaders.set("x-pathname", path);
 
   let res: NextResponse;
-  if (path.startsWith("/admin") && !path.startsWith("/admin/giris") && !req.cookies.get("bulgu_admin")) {
+  const adminArea = path.startsWith("/admin") && !path.startsWith("/admin/giris");
+  const hasAdmin = !!req.cookies.get("bulgu_admin");
+  const idleExpired = adminArea && hasAdmin && !req.cookies.get(IDLE_COOKIE);
+  if (adminArea && (!hasAdmin || idleExpired)) {
     const url = req.nextUrl.clone();
     url.pathname = "/admin/giris";
+    url.search = "";
     url.searchParams.set("next", path);
+    if (idleExpired) url.searchParams.set("sure", "1");
     res = NextResponse.redirect(url);
+    if (idleExpired) res.cookies.delete("bulgu_admin");
   } else if (locale !== DEFAULT_LOCALE) {
     const url = req.nextUrl.clone();
     url.pathname = path;
     res = NextResponse.rewrite(url, { request: { headers: reqHeaders } });
   } else res = NextResponse.next({ request: { headers: reqHeaders } });
+  // Panelde her istek hareketsizlik sayacını yeniler
+  if (adminArea && hasAdmin && !idleExpired)
+    res.cookies.set(IDLE_COOKIE, "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: idleSeconds() });
   if (preprod) res.headers.set("X-Robots-Tag", "noindex, nofollow");
   return res;
 }

@@ -2,7 +2,9 @@ import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { conversations, orders, products, returnRequests, reviews, productQuestions, serviceRecords } from "@/db/schema";
 import { AdminShell } from "@/components/admin/shell";
-import { requireStaff } from "@/lib/auth";
+import { needs2fa, requireStaff } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { getSettings } from "@/lib/settings";
 import { logoutAction } from "../giris/actions";
 
@@ -29,6 +31,11 @@ export default async function PanelLayout({ children }: { children: React.ReactN
     count(db.select({ n }).from(conversations).where(and(eq(conversations.assigneeId, staff.id), eq(conversations.status, "OPEN")))),
     count(db.select({ n }).from(serviceRecords).where(and(eq(serviceRecords.assigneeId, staff.id), inArray(serviceRecords.status, ["RECEIVED", "READY"])))),
   ]);
+  // Ayarlar > Güvenlik: para/ekip yetkisi olan, iki adımlı doğrulama açmadan Hesabım dışına geçemez
+  if (settings.security.require2fa && !staff.totpEnabled && needs2fa(staff.permissions)) {
+    const path = (await headers()).get("x-pathname") ?? "";
+    if (!path.startsWith("/admin/hesap")) redirect("/admin/hesap?2fa=zorunlu");
+  }
   return (
     <AdminShell
       user={{ name: staff.name, roleName: staff.roleName, permissions: staff.permissions }}

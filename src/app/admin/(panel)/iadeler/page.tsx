@@ -8,7 +8,7 @@ import { ReturnStatusBadge } from "@/components/admin/status";
 import { Card, CardHeader, EmptyState, Field, Input, Select, Table, Td, Textarea, Th } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
-import { formatDate, formatTL, orderNo } from "@/lib/utils";
+import { formatDate, formatTL, orderNo, PAYMENT_METHOD_LABEL } from "@/lib/utils";
 import { updateReturn } from "./actions";
 
 export const metadata = { title: "İadeler" };
@@ -65,7 +65,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
               {sel.details ? <p className="rounded-lg bg-soft p-3">{sel.details}</p> : null}
               <p><b>Ürünler:</b> {sel.order.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}</p>
               <p>
-                <b>Sipariş tutarı:</b> {formatTL(sel.order.total)} · {sel.order.paymentMethod === "CARD" ? "Kart" : "Havale"}
+                <b>Sipariş tutarı:</b> {formatTL(sel.order.total)} · {PAYMENT_METHOD_LABEL[sel.order.paymentMethod]}
               </p>
               <p>
                 <b>Teslimden bu yana:</b>{" "}
@@ -78,7 +78,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
               {sel.returnCode ? <p><b>İade kargo kodu:</b> <span className="font-mono">{sel.returnCode}</span></p> : null}
               {sel.refundAmount ? <p><b>İade edilen:</b> {formatTL(sel.refundAmount)}</p> : null}
               {can(staff.permissions, "orders.manage") && !["REFUNDED", "REJECTED"].includes(sel.status) ? (
-                <ActionForm action={updateReturn} key={sel.id} className="mt-2 flex flex-col gap-3 border-t border-line pt-4">
+                <ActionForm action={updateReturn} key={sel.id} className="mt-2 flex flex-col gap-3 border-t border-line pt-4 [&:has(option[value=REFUNDED]:checked)_.refund-amt]:block">
                   <input type="hidden" name="id" value={sel.id} />
                   <Field label="İşlem">
                     <Select name="to" defaultValue={sel.status === "REQUESTED" ? "APPROVED" : sel.status === "APPROVED" ? "RECEIVED" : "REFUNDED"}>
@@ -88,9 +88,14 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
                       <option value="REJECTED">Reddet</option>
                     </Select>
                   </Field>
-                  <Field label="İade tutarı (para iadesi için)">
-                    <Input name="refundAmount" defaultValue={sel.order.total} inputMode="decimal" />
-                  </Field>
+                  {can(staff.permissions, "orders.refund") ? (
+                    // Yalnızca "Para iadesini yap" seçiliyken görünür; onaylarken "para mı iade ediyorum?" karışıklığı olmasın
+                    <div className="refund-amt hidden">
+                      <Field label="İade tutarı (TL)" hint="Kısmi iade için düşür. Kartla ödendiyse PayTR'ye otomatik iade gider.">
+                        <Input name="refundAmount" defaultValue={sel.order.total} inputMode="decimal" />
+                      </Field>
+                    </div>
+                  ) : null}
                   <Field label="Açıklama" hint="Reddederken zorunlu; müşteriye gösterilir.">
                     <Textarea name="resolution" defaultValue={sel.resolution ?? ""} className="min-h-[60px]" />
                   </Field>

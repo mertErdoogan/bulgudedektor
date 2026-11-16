@@ -9,7 +9,7 @@ export const CUSTOMER_COOKIE = "bulgu_customer";
 /** Şifre doğru, iki adımlı doğrulama kodu bekleniyor (10 dk) */
 export const TWOFA_COOKIE = "bulgu_2fa";
 
-type Payload = { sub: string; kind: "staff" | "customer" | "staff-2fa" };
+type Payload = { sub: string; kind: "staff" | "customer" | "staff-2fa"; iat?: number };
 
 export async function signToken(payload: Payload, days = 7, ttl?: string) {
   return new SignJWT({ kind: payload.kind })
@@ -25,7 +25,7 @@ export async function verifyToken(token: string | undefined): Promise<Payload | 
   try {
     const { payload } = await jwtVerify(token, secret());
     if (!payload.sub) return null;
-    return { sub: payload.sub, kind: payload.kind as Payload["kind"] };
+    return { sub: payload.sub, kind: payload.kind as Payload["kind"], iat: payload.iat };
   } catch {
     return null;
   }
@@ -45,4 +45,10 @@ export async function setSessionCookie(name: string, token: string, days = 7, ma
 export async function clearSessionCookie(name: string) {
   const jar = await cookies();
   jar.delete(name);
+}
+
+/** Panel hareketsizlik çerezi (middleware her istekte yeniler; süresi dolunca oturum kapanır) */
+export async function touchIdleCookie() {
+  const minutes = Math.max(5, Number(process.env.ADMIN_IDLE_MINUTES) || 60);
+  await setSessionCookie("bulgu_seen", "1", 0, minutes * 60);
 }

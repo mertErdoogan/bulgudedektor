@@ -81,7 +81,8 @@ export function ProductForm({
   const [price, setPrice] = useState(String(product?.price ?? ""));
   const [cost, setCost] = useState(String(product?.costPrice ?? ""));
   const [tax, setTax] = useState(String(product?.taxRate ?? 20));
-  const [trackSerial, setTrackSerial] = useState(product?.trackSerial ?? false);
+  // Yeni üründe seri takibi açık gelir: dedektörlerin neredeyse hepsi seri numaralı (garanti ve orijinallik sorgusu buna bağlı)
+  const [trackSerial, setTrackSerial] = useState(product?.trackSerial ?? true);
   const [name, setName] = useState(product?.name ?? "");
   const [seoDesc, setSeoDesc] = useState(product?.seoDescription ?? "");
 
@@ -204,6 +205,11 @@ export function ProductForm({
                 </>
               ) : null}
             </div>
+          {product && (Number(price.replace(",", ".")) < product.price || (!!cost && Number(price.replace(",", ".")) < Number(cost.replace(",", ".")))) ? (
+              <div className="border-t border-line px-5 py-3" data-testid="price-confirm">
+                <Checkbox name="priceConfirm" label={<>Bu fiyat değişikliğini onaylıyorum <span className="text-mute">· büyük düşüş ya da alışın altı fiyat için gerekli (yazım hatasına karşı)</span></>} />
+              </div>
+            ) : null}
           </Card>
 
           <Card>
@@ -232,7 +238,7 @@ export function ProductForm({
                 <Input name="weightKg" inputMode="decimal" defaultValue={product?.weightKg ?? ""} />
               </Field>
               <div className="flex flex-col gap-3 md:col-span-3">
-                <Checkbox name="trackSerial" checked={trackSerial} onChange={(e) => setTrackSerial(e.target.checked)} label={<><b>Seri numarası takibi</b> — her cihaz seri no ile satılır, garanti ve orijinallik sorgusu çalışır.</>} />
+                <Checkbox name="trackSerial" checked={trackSerial} onChange={(e) => setTrackSerial(e.target.checked)} label={<><b>Seri numarası takibi</b> — her cihaz seri no ile satılır, garanti ve orijinallik sorgusu çalışır. <span className="text-mute">Pil, kulaklık gibi seri numarasız aksesuarlarda kapat.</span></>} />
                 <Checkbox name="sameDayShipping" defaultChecked={product?.sameDayShipping ?? true} label="Aynı gün kargo (kesim saatinden önce verilen siparişler)" />
                 <Checkbox name="allowBackorder" defaultChecked={product?.allowBackorder} label="Stok bitince de sipariş alınsın (ön sipariş)" />
               </div>

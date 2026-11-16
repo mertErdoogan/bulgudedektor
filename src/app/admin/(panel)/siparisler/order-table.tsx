@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/status";
 import { Badge, Card, EmptyState, Select, Table, Td, Th } from "@/components/ui";
-import { formatDate, formatTL, orderNo } from "@/lib/utils";
+import { formatDate, formatTL, orderNo, PAYMENT_METHOD_LABEL } from "@/lib/utils";
 import { bulkStatus } from "./actions";
 
 type Row = {
@@ -118,7 +118,7 @@ export function OrderTable({ rows, canManage, team = [], me = "", carriers = [] 
               </Td>
               <Td className="max-w-[260px] truncate text-mute">{o.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}</Td>
               <Td>
-                <PaymentStatusBadge status={o.paymentStatus} /> <Badge>{o.paymentMethod === "CARD" ? "Kart" : "Havale"}</Badge>
+                <PaymentStatusBadge status={o.paymentStatus} /> <Badge>{PAYMENT_METHOD_LABEL[o.paymentMethod]}</Badge>
               </Td>
               <Td><OrderStatusBadge status={o.status} /></Td>
               <Td className="text-right font-bold">{formatTL(o.total)}</Td>

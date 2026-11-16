@@ -7,7 +7,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { ActionButton } from "@/components/admin/delete-button";
 import { PageHeader } from "@/components/admin/shell";
 import { Card, CardHeader, Field, Input } from "@/components/ui";
-import { requireStaff } from "@/lib/auth";
+import { needs2fa, requireStaff } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { openSecret, otpauthUri } from "@/lib/totp";
 import { changeMyPassword, confirm2fa, disable2fa, start2fa } from "./actions";
@@ -22,6 +22,12 @@ export default async function MyAccountPage() {
   return (
     <>
       <PageHeader title="Hesabım" description={`${staff.name} · ${staff.email} · ${staff.roleName}`} />
+      {s.security.require2fa && !u?.totpEnabled && needs2fa(staff.permissions) ? (
+        <p className="mb-5 max-w-4xl rounded-xl border border-warn/30 bg-warn-bg p-4 text-sm font-semibold text-warn" data-testid="2fa-required">
+          Mağaza ayarlarına göre hesabın için iki adımlı doğrulama zorunlu. Aşağıdan telefonuna doğrulama uygulamasını (Google Authenticator, Microsoft
+          Authenticator vb.) kurup kodu onaylayınca panelin geri kalanı açılır.
+        </p>
+      ) : null}
       <div className="grid max-w-4xl gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader title="İki adımlı doğrulama" description="Şifren ele geçse bile telefonundaki kod olmadan panele girilemez. Yönetici ve muhasebe hesaplarında mutlaka aç." />

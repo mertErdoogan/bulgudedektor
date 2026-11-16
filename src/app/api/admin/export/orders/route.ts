@@ -5,7 +5,7 @@ import { audit } from "@/lib/audit";
 import { getStaff } from "@/lib/auth";
 import { csvResponse } from "@/lib/csv";
 import { can } from "@/lib/permissions";
-import { ORDER_STATUS_LABEL, PAYMENT_STATUS_LABEL, orderNo } from "@/lib/utils";
+import { ORDER_STATUS_LABEL, PAYMENT_STATUS_LABEL, orderNo, PAYMENT_METHOD_LABEL } from "@/lib/utils";
 
 export async function GET(req: Request) {
   const staff = await getStaff();
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
       o.createdAt.toISOString().replace("T", " ").slice(0, 16),
       ORDER_STATUS_LABEL[o.status],
       PAYMENT_STATUS_LABEL[o.paymentStatus],
-      o.paymentMethod === "CARD" ? "Kart" : "Havale",
+      PAYMENT_METHOD_LABEL[o.paymentMethod],
       o.installments,
       o.shippingAddress.fullName,
       o.phone,

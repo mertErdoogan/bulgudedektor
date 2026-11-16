@@ -147,6 +147,9 @@ async def main():
         await ap.fill("input[name=name]", "E2E Test Dedektör")
         await ap.fill("input[name=sku]", "E2E-001")
         await ap.fill("input[name=price]", "12345")
+        # Yeni üründe seri takibi varsayılan açık; bu test seri numarasız (adetle stoklanan) ürün açıyor
+        if await ap.is_checked("input[name=trackSerial]"):
+            await ap.uncheck("input[name=trackSerial]")
         await ap.fill("input[name=stock]", "4")
         await ap.set_input_files("input[type=file]", "/home/claude/bulgu/public/demo/x-terra-pro.jpg")
         await ap.wait_for_selector("text=KAPAK", timeout=20000)

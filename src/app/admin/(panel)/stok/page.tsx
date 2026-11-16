@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { and, asc, desc, eq, ilike, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { products, serialNumbers, stockAlerts, stockMovements, users } from "@/db/schema";
@@ -25,7 +26,7 @@ const REASON: Record<string, string> = {
   SERIAL_STATUS: "Seri no durumu",
   SERIAL_DELETE: "Seri no silindi",
 };
-const SERIAL_LABEL: Record<string, string> = { IN_STOCK: "Stokta", RESERVED: "Ayrıldı", SOLD: "Satıldı", RETURNED: "İade", IN_SERVICE: "Serviste", DEFECTIVE: "Arızalı" };
+const SERIAL_LABEL: Record<string, string> = { IN_STOCK: "Stokta", RESERVED: "Ayrıldı", SOLD: "Satıldı", RETURNED: "İade", IN_SERVICE: "Serviste", DEFECTIVE: "Arızalı", LOST: "Kayıp" };
 
 export default async function StockPage({ searchParams }: { searchParams: Promise<{ urun?: string; q?: string; az?: string }> }) {
   await requireStaff("inventory.manage");
@@ -35,6 +36,8 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
     .from(products)
     .where(and(sp.q ? ilike(products.name, `%${sp.q}%`) : undefined, sp.az ? lte(products.stock, products.lowStockThreshold) : undefined))
     .orderBy(asc(products.stock), asc(products.name));
+  // Seçili ürün her zaman adreste dursun: liste stoğa göre sıralı olduğu için girişten sonra "ilk ürün" değişir ve form başka ürüne kayardı
+  if (!sp.urun && list[0]) redirect(`/admin/stok?urun=${list[0].id}${sp.q ? `&q=${encodeURIComponent(sp.q)}` : ""}${sp.az ? "&az=1" : ""}`);
   const selId = sp.urun ?? list[0]?.id;
   const sel = selId ? await db.query.products.findFirst({ where: eq(products.id, selId) }) : null;
   const alerts = sel ? await db.select().from(stockAlerts).where(eq(stockAlerts.productId, sel.id)).orderBy(desc(stockAlerts.createdAt)) : [];
@@ -47,7 +50,11 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader title="Stok ve seri no" description="Mal girişi, sayım düzeltmesi ve seri numarası takibi. Her değişiklik hareket kaydına yazılır." />
+      <PageHeader
+        title="Stok ve seri no"
+        description="Mal girişi, sayım düzeltmesi ve seri numarası takibi. Her değişiklik hareket kaydına yazılır."
+        actions={<Link href="/admin/stok/sayim" className="rounded-lg bg-deep px-4 py-2 text-sm font-bold text-white" data-testid="count-mode-link">Seri no sayımı yap</Link>}
+      />
       <div className="grid gap-5 xl:grid-cols-[380px_minmax(0,1fr)]">
         <Card className="self-start">
           <form className="flex gap-2 border-b border-line p-3">
@@ -84,8 +91,8 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
               {sel.trackSerial ? (
                 <ActionForm action={addSerials} resetOnSuccess className="grid gap-3 p-5 md:grid-cols-[1fr_auto] md:items-end">
                   <input type="hidden" name="productId" value={sel.id} />
-                  <Field label="Mal girişi: seri numaraları" hint="Her satıra bir seri no (veya virgülle ayırın). Barkod okuyucu ile art arda okutabilirsiniz.">
-                    <Textarea name="serials" placeholder={"3820-0009-2001\n3820-0009-2002"} className="font-mono" />
+                  <Field label={`Mal girişi: ${sel.name} seri numaraları`} hint="Her satıra bir seri no (veya virgülle ayırın). Barkod okuyucu ile art arda okutabilirsiniz.">
+                    <Textarea key={`sn-${sel.id}`} name="serials" placeholder={"3820-0009-2001\n3820-0009-2002"} className="font-mono" />
                   </Field>
                   <SubmitButton>Seri no ekle</SubmitButton>
                 </ActionForm>
@@ -100,7 +107,7 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
                     </Select>
                   </Field>
                   <Field label="Adet">
-                    <Input name="qty" type="number" min={0} required />
+                    <Input key={`qty-${sel.id}`} name="qty" type="number" min={0} required />
                   </Field>
                   <Field label="Sebep">
                     <Select name="reason" defaultValue="PURCHASE">

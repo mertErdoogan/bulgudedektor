@@ -31,6 +31,28 @@ export async function allow(key: string, max: number, windowMs: number) {
   }
 }
 
+/** Sayacı artırmadan okur (yalnızca hatalı denemeleri sayan sınırlar için). */
+export async function peek(key: string, windowMs: number) {
+  const win = new Date(Math.floor(Date.now() / windowMs) * windowMs);
+  try {
+    const r = await db.query.rateHits.findFirst({ where: (t, { and, eq }) => and(eq(t.key, key), eq(t.windowStart, win)) });
+    return r?.count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Yalnızca HATALI denemeleri sayan IP sınırı. Mağazada herkes aynı Wi-Fi'dan (aynı IP) girdiği için
+ * başarılı girişler sayılmaz; aksi halde doğru şifreyle giren ekip birbirini kilitler.
+ */
+export async function ipFailures(scope: string, windowMs: number) {
+  return peek(`${scope}:${await clientIp()}`, windowMs);
+}
+export async function recordIpFailure(scope: string, windowMs: number) {
+  await allow(`${scope}:${await clientIp()}`, Number.MAX_SAFE_INTEGER, windowMs);
+}
+
 /** IP bazlı sınır: aynı IP'den çok fazla deneme. */
 export async function allowIp(scope: string, max: number, windowMs: number) {
   return allow(`${scope}:${await clientIp()}`, max, windowMs);

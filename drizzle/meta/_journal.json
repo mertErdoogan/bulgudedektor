@@ -134,6 +134,13 @@
       "when": 1794692392279,
       "tag": "0018_translations",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794817420400,
+      "tag": "0019_staff_controls",
+      "breakpoints": true
     }
   ]
 }

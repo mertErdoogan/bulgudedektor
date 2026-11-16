@@ -92,7 +92,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                     {roleRows.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                   </Select>
                 </Field>
-                <Field label={editUser ? "Yeni şifre (değiştirmek için)" : "Şifre"} hint="En az 8 karakter"><Input name="password" type="text" autoComplete="new-password" required={!editUser} /></Field>
+                <Field label={editUser ? "Yeni şifre (değiştirmek için)" : "Şifre"} hint="En az 10 karakter. Kişi ilk girişte Hesabım sayfasından kendi şifresini belirlemeli."><Input name="password" type="text" autoComplete="new-password" required={!editUser} /></Field>
                 <Field label="Satışta en fazla indirim %" hint="Telefon/showroom siparişlerinde uygulayabileceği indirim"><Input name="maxDiscountPct" type="number" min={0} max={100} defaultValue={editUser?.maxDiscountPct ?? 0} /></Field>
                 <Checkbox name="isActive" defaultChecked={editUser?.isActive ?? true} label="Aktif (pasif kişi giriş yapamaz)" />
                 <SubmitButton>{editUser ? "Kaydet" : "Ekle"}</SubmitButton>

@@ -3,7 +3,7 @@ import { and, asc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { conversations, orders, products, productQuestions, returnRequests, reviews, serviceRecords, stockAlerts, users } from "@/db/schema";
 import { can } from "./permissions";
-import { formatTL, orderNo } from "./utils";
+import { CHANNEL_LABEL, formatTL, orderNo } from "./utils";
 
 /**
  * "Bugün yapılacaklar": ekibin bekleyen işleri tek listede.
@@ -159,7 +159,7 @@ export async function getWorklist(perms: string[]): Promise<WorkItem[]> {
         key: `cv-${c.id}`,
         kind: "message",
         title: `${c.contactName}: ${c.subject}`,
-        detail: `${c.channel === "WHATSAPP" ? "WhatsApp" : c.channel === "PHONE" ? "Telefon" : c.channel === "EMAIL" ? "E-posta" : "Site"} · ${c.contact}`,
+        detail: `${CHANNEL_LABEL[c.channel] ?? "Site"} · ${c.contact}`,
         href: `/admin/mesajlar?id=${c.id}&durum=OPEN`,
         at: c.updatedAt,
         late: ago(c.updatedAt) > 4 * H,

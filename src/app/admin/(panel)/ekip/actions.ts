@@ -30,8 +30,8 @@ export async function saveUser(_: ActionResult | null, fd: FormData): Promise<Ac
     const password = str(fd.get("password"));
     const isActive = fd.get("isActive") === "on";
     if (!name || !email || !roleId) return fail("Ad, e-posta ve rol zorunlu.");
-    if (!id && password.length < 8) return fail("Şifre en az 8 karakter olmalı.");
-    if (password && password.length < 8) return fail("Yeni şifre en az 8 karakter olmalı.");
+    if (!id && password.length < 10) return fail("Şifre en az 10 karakter olmalı.");
+    if (password && password.length < 10) return fail("Yeni şifre en az 10 karakter olmalı.");
     const dupe = await db.query.users.findFirst({ where: id ? and(eq(users.email, email), ne(users.id, id)) : eq(users.email, email) });
     if (dupe) return fail("Bu e-posta ile bir ekip üyesi zaten var.");
     if (id) {
@@ -40,7 +40,7 @@ export async function saveUser(_: ActionResult | null, fd: FormData): Promise<Ac
       if (!stillAdmin && (await adminCount(id)) === 0) return fail("Sistemde en az bir aktif yönetici kalmalı.");
       if (id === staff.id && !isActive) return fail("Kendi hesabını pasifleştiremezsin.");
     }
-    const values = { name, email, roleId, isActive, maxDiscountPct: Math.max(0, Math.min(100, toNum(fd.get("maxDiscountPct"), 0))), ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}) };
+    const values = { name, email, roleId, isActive, maxDiscountPct: Math.max(0, Math.min(100, toNum(fd.get("maxDiscountPct"), 0))), ...(password ? { passwordHash: await bcrypt.hash(password, 10), passwordChangedAt: new Date() } : {}) };
     if (id) await db.update(users).set(values).where(eq(users.id, id));
     else await db.insert(users).values({ ...values, passwordHash: await bcrypt.hash(password, 10) });
     await audit(staff.id, id ? "update" : "create", "user", id, `Ekip üyesi ${name}${password && id ? " (şifre sıfırlandı)" : ""}`);

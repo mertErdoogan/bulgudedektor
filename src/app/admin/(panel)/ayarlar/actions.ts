@@ -7,6 +7,9 @@ import { assertStaff } from "@/lib/auth";
 import { testConnection } from "@/lib/iyzico";
 import { getSettings, saveSettings } from "@/lib/settings";
 import { lines, str, toNum } from "@/lib/utils";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 
 const fin = async (staffId: string, key: string) => {
   await audit(staffId, "settings", key, null, `Ayarlar güncellendi: ${key}`);
@@ -182,6 +185,7 @@ export async function saveIntegrations(_: ActionResult | null, fd: FormData): Pr
       trendyolApiKey: keep("trendyolApiKey"),
       trendyolApiSecret: keep("trendyolApiSecret"),
       trendyolPriceMarkupPct: Math.max(-50, Math.min(100, toNum(fd.get("trendyolPriceMarkupPct"), 0))),
+      marketplaceStockBuffer: Math.max(0, Math.min(10, Math.round(toNum(fd.get("marketplaceStockBuffer"), 1)))),
       hbEnabled: fd.get("hbEnabled") === "on",
       hbMerchantId: str(fd.get("hbMerchantId")),
       hbUser: str(fd.get("hbUser")),
@@ -258,5 +262,22 @@ export async function saveI18n(_: ActionResult | null, fd: FormData): Promise<Ac
     const locales = [DEFAULT_LOCALE, ...LOCALES.filter((l) => l !== DEFAULT_LOCALE && fd.get(`locale_${l}`) === "on")];
     await saveSettings("i18n", { locales, switcher: fd.get("switcher") === "on" });
     return fin(staff.id, "i18n");
+  });
+}
+
+/** Güvenlik ve iç kontrol: yalnızca ekip yöneticisi değiştirebilir */
+export async function saveSecurity(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("users.manage");
+    const pct = Math.round(Number(fd.get("priceDropConfirmPct")));
+    const digest = String(fd.get("digestEmail") ?? "").trim();
+    if (digest && !/^\S+@\S+\.\S+$/.test(digest)) return fail("Özet e-postası için geçerli bir adres girin.");
+    const require2fa = fd.get("require2fa") === "on";
+    if (require2fa) {
+      const me = await db.query.users.findFirst({ where: eq(users.id, staff.id) });
+      if (!me?.totpEnabled) return fail("Önce kendi hesabında iki adımlı doğrulamayı aç (Hesabım). Aksi halde sen de panele giremezsin.");
+    }
+    await saveSettings("security", { require2fa, digestEmail: digest, priceDropConfirmPct: Number.isFinite(pct) ? Math.min(90, Math.max(5, pct)) : 30 });
+    return fin(staff.id, "security");
   });
 }

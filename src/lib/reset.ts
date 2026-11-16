@@ -51,7 +51,7 @@ export async function consumeReset(kind: "customer" | "staff", raw: string, pass
   await db.transaction(async (tx) => {
     await tx.update(passwordResets).set({ usedAt: new Date() }).where(eq(passwordResets.id, r.id));
     if (kind === "customer") await tx.update(customers).set({ passwordHash: pw }).where(eq(customers.id, r.subjectId));
-    else await tx.update(users).set({ passwordHash: pw }).where(eq(users.id, r.subjectId));
+    else await tx.update(users).set({ passwordHash: pw, passwordChangedAt: new Date() }).where(eq(users.id, r.subjectId));
   });
   return r.subjectId;
 }

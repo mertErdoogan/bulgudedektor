@@ -4,7 +4,7 @@ import { orders } from "@/db/schema";
 import { Logo } from "@/components/logo";
 import { requireStaff } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
-import { formatDate, formatTL, orderNo } from "@/lib/utils";
+import { formatDate, formatTL, orderNo, PAYMENT_METHOD_LABEL } from "@/lib/utils";
 import { PrintButton } from "./print-button";
 
 export const metadata = { title: "Paket fişi" };
@@ -80,7 +80,7 @@ export default async function PrintPage({ searchParams }: { searchParams: Promis
             </tbody>
           </table>
           <p className="mt-4 text-right text-base font-extrabold">Toplam: {formatTL(o.total)}</p>
-          <p className="mt-2 text-right">{o.paymentMethod === "CARD" ? `Kart · ${o.installments > 1 ? o.installments + " taksit" : "tek çekim"}` : "Havale / EFT"}</p>
+          <p className="mt-2 text-right">{o.paymentMethod === "CARD" ? `Kart · ${o.installments > 1 ? o.installments + " taksit" : "tek çekim"}` : PAYMENT_METHOD_LABEL[o.paymentMethod]}</p>
           <div className="mt-8 rounded border p-3">
             <p className="font-bold">Kutu kontrol</p>
             <p>☐ Cihaz ve aksesuarlar ☐ Fatura ☐ Garanti belgesi ☐ Kurulum QR kartı</p>

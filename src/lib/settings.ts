@@ -111,6 +111,8 @@ export type IntegrationSettings = {
   trendyolApiSecret: string;
   /** Trendyol'da fiyat site fiyatından % kaç farklı olsun (komisyon için, örn. 8) */
   trendyolPriceMarkupPct: number;
+  /** Pazaryerine stoktan bu kadar eksik gönderilir: senkron 15 dakikada bir olduğu için son cihaz iki kanalda birden satılmasın */
+  marketplaceStockBuffer: number;
   /** Hepsiburada pazaryeri */
   hbEnabled: boolean;
   hbMerchantId: string;
@@ -173,6 +175,16 @@ export type NavSettings = {
 /** Diller: Türkçe her zaman açık; diğerleri admin > Ayarlar > Diller'den açılır */
 export type I18nSettings = { locales: string[]; switcher: boolean };
 
+/** Güvenlik ve iç kontrol (Ayarlar > Güvenlik, yalnızca ekip yöneticisi) */
+export type SecuritySettings = {
+  /** Yönetici, para iadesi veya havale onayı yetkisi olanlar iki adımlı doğrulama açmadan panele giremez */
+  require2fa: boolean;
+  /** Haftalık "dikkat isteyen işlemler" e-postasının gideceği adres (boşsa mağaza e-postası) */
+  digestEmail: string;
+  /** Fiyat bu oranın üstünde düşürülürse onay istenir (%) */
+  priceDropConfirmPct: number;
+};
+
 export type AllSettings = {
   store: StoreSettings;
   shipping: ShippingSettings;
@@ -184,6 +196,7 @@ export type AllSettings = {
   ticker: TickerSettings;
   nav: NavSettings;
   i18n: I18nSettings;
+  security: SecuritySettings;
 };
 
 export const DEFAULT_SETTINGS: AllSettings = {
@@ -287,6 +300,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     trendyolApiKey: "",
     trendyolApiSecret: "",
     trendyolPriceMarkupPct: 0,
+    marketplaceStockBuffer: 1,
     hbEnabled: false,
     hbMerchantId: "",
     hbUser: "",
@@ -307,6 +321,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
   setup: { completed: false, completedSteps: [] },
   merch: { focusBrand: "minelab", weight: "balanced", pinned: [], badge: true, focusNote: "Türkiye distribütörü", heroCards: "latest" },
   i18n: { locales: ["tr"], switcher: true },
+  security: { require2fa: false, digestEmail: "", priceDropConfirmPct: 30 },
   ticker: {
     enabled: true,
     items: [

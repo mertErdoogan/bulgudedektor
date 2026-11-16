@@ -10,10 +10,12 @@ export const PERMISSIONS = {
   "orders.view": "Siparişleri görür",
   "orders.manage": "Sipariş durumunu ve kargoyu yönetir",
   "orders.refund": "İade ve iptal onaylar, para iadesi yapar",
+  "payments.confirm": "Havale/EFT ödemesini onaylar (para hesaba geçti)",
   "campaigns.manage": "Kampanya ve kupon yönetir",
   "cms.manage": "Vitrin, banner, sayfa ve menü yönetir",
   "customers.view": "Müşterileri görür",
   "customers.manage": "Müşteri düzenler, not ekler",
+  "customers.export": "Müşteri listesini dosya olarak indirir",
   "inbox.manage": "Mesajları yanıtlar",
   "service.manage": "Servis kayıtlarını yönetir",
   "reviews.manage": "Yorum ve soruları onaylar / yanıtlar",
@@ -29,8 +31,8 @@ export const ALL_PERMISSIONS = Object.keys(PERMISSIONS) as Permission[];
 export const PERMISSION_GROUPS: { label: string; items: Permission[] }[] = [
   { label: "Genel", items: ["dashboard.view", "reports.finance", "audit.view"] },
   { label: "Katalog", items: ["products.view", "products.edit", "products.delete", "products.cost", "catalog.manage", "inventory.manage"] },
-  { label: "Satış", items: ["orders.view", "orders.manage", "orders.refund", "campaigns.manage"] },
-  { label: "Müşteri", items: ["customers.view", "customers.manage", "inbox.manage", "service.manage", "reviews.manage"] },
+  { label: "Satış", items: ["orders.view", "orders.manage", "orders.refund", "payments.confirm", "campaigns.manage"] },
+  { label: "Müşteri", items: ["customers.view", "customers.manage", "customers.export", "inbox.manage", "service.manage", "reviews.manage"] },
   { label: "Vitrin ve sistem", items: ["cms.manage", "settings.manage", "payments.manage", "users.manage"] },
 ];
 
@@ -41,6 +43,12 @@ export const DEFAULT_ROLES: { key: string; name: string; description: string; pe
     name: "Satış uzmanı",
     description: "Mesajlar, siparişler ve ürünler. Maliyet ve ciroyu görmez.",
     permissions: ["dashboard.view", "products.view", "orders.view", "orders.manage", "customers.view", "customers.manage", "inbox.manage", "reviews.manage"],
+  },
+  {
+    key: "store",
+    name: "Mağaza personeli",
+    description: "Showroom çalışanı: satış, mesaj, stok, seri no ve servis. Maliyet, ciro, havale onayı ve müşteri listesi indirme yok.",
+    permissions: ["dashboard.view", "products.view", "orders.view", "orders.manage", "customers.view", "customers.manage", "inbox.manage", "reviews.manage", "inventory.manage", "service.manage"],
   },
   {
     key: "warehouse",

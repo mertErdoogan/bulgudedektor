@@ -37,7 +37,7 @@ export async function pushPriceAndStock() {
     .map((r) => {
       const sale = marketPrice(r.price, i.trendyolPriceMarkupPct);
       const list = Math.max(sale, marketPrice(r.compareAtPrice ?? 0, i.trendyolPriceMarkupPct));
-      return { barcode: r.barcode!, quantity: r.status === "ACTIVE" ? Math.max(0, Math.min(20000, r.stock)) : 0, salePrice: sale, listPrice: list };
+      return { barcode: r.barcode!, quantity: r.status === "ACTIVE" ? Math.max(0, Math.min(20000, r.stock - (i.marketplaceStockBuffer ?? 1))) : 0, salePrice: sale, listPrice: list };
     });
   if (!items.length) return { ok: true, message: "Barkodu olan ürün yok; gönderilecek bir şey bulunamadı." };
   const ids: string[] = [];

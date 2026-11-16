@@ -8,9 +8,9 @@ import { loginAction } from "./actions";
 
 export const metadata = { title: "Yönetim girişi" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; sure?: string }> }) {
   if (await getStaff()) redirect("/admin");
-  const { next } = await searchParams;
+  const { next, sure } = await searchParams;
   return (
     <main className="grid min-h-screen place-items-center bg-soft px-4">
       <div className="w-full max-w-sm">
@@ -20,6 +20,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="rounded-2xl border border-line bg-white p-6 shadow-sm">
           <h1 className="text-lg font-extrabold">Yönetim paneli</h1>
           <p className="mt-1 text-sm text-mute">Ekip hesabınla giriş yap.</p>
+          {sure ? (
+            <p className="mt-3 rounded-lg bg-warn-bg px-3 py-2 text-xs font-semibold text-warn" data-testid="idle-logout">
+              Bir süredir işlem yapılmadığı için oturum güvenlik amacıyla kapatıldı. Tekrar giriş yap.
+            </p>
+          ) : null}
           <ActionForm action={loginAction} className="mt-5 flex flex-col gap-4">
             <input type="hidden" name="next" value={next ?? "/admin"} />
             <Field label="E-posta">

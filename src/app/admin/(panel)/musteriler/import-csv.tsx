@@ -1,5 +1,6 @@
 "use client";
 
+import { FileInput } from "@/components/file-input";
 import { useState } from "react";
 import { Upload } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
@@ -25,7 +26,7 @@ export function ImportCustomers() {
             </p>
             <p>Şifreler taşınamaz; müşteriler ilk girişte &quot;Şifremi unuttum&quot; ile yeni şifre belirler. Aktarılanlar &quot;Eski site&quot; etiketi alır.</p>
           </div>
-          <input type="file" name="file" accept=".csv,text/csv" required className="text-sm" />
+          <FileInput name="file" accept=".csv,text/csv" required />
           <label className="flex items-start gap-2 text-sm">
             <input type="checkbox" name="consent" className="mt-1" />
             <span>

@@ -108,7 +108,14 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
       seoDescription: strOrNull(fd.get("seoDescription")),
     };
 
-    const prevSlug = id ? (await db.query.products.findFirst({ where: eq(products.id, id), columns: { slug: true } }))?.slug : null;
+    const prev = id ? await db.query.products.findFirst({ where: eq(products.id, id), columns: { slug: true, price: true, costPrice: true, compareAtPrice: true } }) : null;
+    const prevSlug = prev?.slug ?? null;
+    {
+      const { priceWarning } = await import("@/lib/price-guard");
+      const st = await getSettings();
+      const warn = priceWarning(prev, price, st.security.priceDropConfirmPct, "costPrice" in values ? (values.costPrice as number | null) : undefined);
+      if (warn && fd.get("priceConfirm") !== "on") return fail(`${warn} Doğruysa fiyatın altındaki "Bu fiyat değişikliğini onaylıyorum" kutusunu işaretleyip tekrar kaydet.`);
+    }
     const productId = await db.transaction(async (tx) => {
       let pid = id;
       if (pid) {
@@ -138,7 +145,9 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
     }
     await recordSlugChange("/urun", prevSlug, slug);
     if (status === "ACTIVE") await pingIndexNow([`/urun/${slug}`]);
-    await audit(staff.id, id ? "update" : "create", "product", productId, `${name} ${id ? "güncellendi" : "eklendi"}`);
+    const { priceChangeNote } = await import("@/lib/price-guard");
+    const changes = prev ? priceChangeNote(prev.price, price) + priceChangeNote(prev.compareAtPrice, compareAt, "liste fiyatı") + ("costPrice" in values ? priceChangeNote(prev.costPrice, values.costPrice as number | null, "alış") : "") : "";
+    await audit(staff.id, id ? "update" : "create", "product", productId, `${name} ${id ? "güncellendi" : "eklendi"}${changes}`, prev && prev.price !== price ? { priceFrom: prev.price, priceTo: price } : undefined);
     revalidateStore("/", "layout");
     return ok(id ? "Ürün kaydedildi." : "Ürün eklendi.", id ? {} : { redirect: `/admin/urunler/${productId}` });
   });
@@ -255,6 +264,8 @@ export async function importProductsCsv(_: ActionResult | null, fd: FormData): P
     const head = parseLine(rows[0]).map((h) => h.toLowerCase());
     const idx = (k: string) => head.indexOf(k);
     if (idx("sku") < 0) return fail('İlk satırda "sku" sütunu olmalı.');
+    const dropPct = (await getSettings()).security.priceDropConfirmPct;
+    const priceLog: string[] = [];
     let updated = 0;
     let created = 0;
     const errors: string[] = [];
@@ -282,6 +293,15 @@ export async function importProductsCsv(_: ActionResult | null, fd: FormData): P
       if (status && ["DRAFT", "ACTIVE", "ARCHIVED"].includes(status)) patch.status = status as "DRAFT";
       const stock = num("stock");
       const existing = await db.query.products.findFirst({ where: eq(products.sku, sku) });
+      if (existing && patch.price !== undefined) {
+        const { priceWarning } = await import("@/lib/price-guard");
+        const warn = priceWarning(existing, patch.price, dropPct, patch.costPrice);
+        if (warn && fd.get("priceConfirm") !== "on") {
+          errors.push(`${sku} atlandı: ${warn}`);
+          continue;
+        }
+        if (existing.price !== patch.price) priceLog.push(`${sku} ${existing.price}→${patch.price}`);
+      }
       if (existing) {
         if (Object.keys(patch).length) await db.update(products).set(patch).where(eq(products.id, existing.id));
         if (stock !== undefined && !existing.trackSerial && stock !== existing.stock) {
@@ -298,7 +318,7 @@ export async function importProductsCsv(_: ActionResult | null, fd: FormData): P
         created++;
       }
     }
-    await audit(staff.id, "update", "product", null, `CSV içe aktarma: ${updated} güncellendi, ${created} eklendi`);
+    await audit(staff.id, "update", "product", null, `CSV içe aktarma: ${updated} güncellendi, ${created} eklendi${priceLog.length ? ` · fiyat değişen: ${priceLog.slice(0, 20).join(", ")}` : ""}`, priceLog.length ? { prices: priceLog } : undefined);
     revalidateStore("/", "layout");
     return ok(`${updated} ürün güncellendi, ${created} yeni taslak ürün eklendi.${errors.length ? ` ${errors.length} uyarı: ${errors.slice(0, 3).join("; ")}` : ""}`);
   });
@@ -311,8 +331,13 @@ export async function quickUpdate(_: ActionResult | null, fd: FormData): Promise
     const price = toNumOrNull(fd.get("price"));
     if (price !== null) {
       if (price <= 0) return fail("Fiyat 0'dan büyük olmalı.");
+      const prev = await db.query.products.findFirst({ where: eq(products.id, id), columns: { name: true, price: true, costPrice: true } });
+      if (!prev) return fail("Ürün bulunamadı.");
+      const { priceWarning, priceChangeNote } = await import("@/lib/price-guard");
+      const warn = priceWarning(prev, price, (await getSettings()).security.priceDropConfirmPct);
+      if (warn) return fail(`${warn} Bu değişikliği ürün düzenleme ekranından onaylayarak yap.`);
       await db.update(products).set({ price }).where(eq(products.id, id));
-      await audit(staff.id, "update", "product", id, `Fiyat ${price} TL yapıldı`);
+      await audit(staff.id, "update", "product", id, `${prev.name}${priceChangeNote(prev.price, price)}`, { priceFrom: prev.price, priceTo: price });
     }
     revalidateStore("/", "layout");
     return ok("Fiyat güncellendi.");

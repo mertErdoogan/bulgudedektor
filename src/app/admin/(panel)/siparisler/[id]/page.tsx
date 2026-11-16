@@ -1,3 +1,4 @@
+import { FileInput } from "@/components/file-input";
 import { sourceLabel } from "@/lib/attribution";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -19,7 +20,7 @@ import { TemplateComposer } from "@/components/admin/template-composer";
 import { orderVars } from "@/lib/templates";
 import { sendOrderMessage } from "../../sablonlar/actions";
 import { orderKey } from "@/lib/store";
-import { ORDER_STATUS_LABEL, formatDate, formatTL, orderNo } from "@/lib/utils";
+import { ORDER_STATUS_LABEL, formatDate, formatTL, orderNo, PAYMENT_METHOD_LABEL } from "@/lib/utils";
 import { assignSerials, changeStatus, saveInternalNote, saveInvoice, unassignSerial, updateShippingAddress } from "../actions";
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -33,6 +34,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
       customer: true,
       returns: true,
       campaign: true,
+      salesUser: { columns: { name: true } },
     },
   });
   if (!o) notFound();
@@ -69,6 +71,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
       .filter((i) => i.product?.trackSerial && i.productId && i.serials.length < i.quantity)
       .map(async (i) => ({ itemId: i.id, serials: await db.select().from(serialNumbers).where(and(eq(serialNumbers.productId, i.productId!), eq(serialNumbers.status, "IN_STOCK"))).orderBy(asc(serialNumbers.serial)) })),
   );
+  const missingSerials = o.items.filter((i) => i.product?.trackSerial).reduce((s, i) => s + Math.max(0, i.quantity - i.serials.length), 0);
   const a = o.shippingAddress;
   const trackUrl = o.carrier && o.trackingNumber ? settings.shipping.trackingUrlTemplate[o.carrier]?.replace("{code}", o.trackingNumber) : null;
   const profit = o.items.reduce((s, i) => s + (i.unitCost ? (i.unitPrice - i.unitCost) * i.quantity : 0), 0);
@@ -103,6 +106,13 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             <Card className="border-brand">
               <CardHeader title="Sıradaki adım" description="Durumu değiştirdiğinde müşterinin sipariş takip sayfası güncellenir." />
               <div className="flex flex-col gap-4 p-5">
+                {missingSerials > 0 && (next.includes("SHIPPED") || next.includes("DELIVERED")) ? (
+                  <a href="#seri" className="flex items-center gap-3 rounded-xl border border-warn/30 bg-warn-bg p-3.5 text-sm font-semibold text-warn" data-testid="serial-first">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-warn text-xs font-extrabold text-white">1</span>
+                    Önce {missingSerials} cihazın seri numarasını seç (aşağıda, Ürünler tablosunda). Seri no girilmeden kargoya verilemez ve teslim edilemez.
+                    <span className="ml-auto whitespace-nowrap underline">Seri no seç ↓</span>
+                  </a>
+                ) : null}
                 {next.includes("PAID") ? (
                   <ActionForm action={changeStatus} className="flex flex-wrap items-center gap-3">
                     <input type="hidden" name="orderId" value={o.id} />
@@ -128,7 +138,11 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                         <p className="mt-1 text-xs text-mute">Müşteri henüz ödeme bildirimi göndermedi. Açıklamada sipariş no: {orderNo(o.number)}</p>
                       ) : null}
                     </div>
-                    <SubmitButton>Ödeme alındı</SubmitButton>
+                    {can(staff.permissions, "payments.confirm") ? (
+                      <SubmitButton>Ödeme alındı</SubmitButton>
+                    ) : (
+                      <span className="rounded-lg bg-soft px-3 py-2 text-xs font-semibold text-mute" data-testid="confirm-locked">Ödemeyi yöneticin onaylar</span>
+                    )}
                   </ActionForm>
                 ) : null}
                 {next.includes("PREPARING") ? (
@@ -278,10 +292,16 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                 <span className="text-mute">Ara toplam</span>
                 <span>{formatTL(o.subtotal)}</span>
               </div>
-              {o.discountTotal ? (
+              {o.discountTotal - o.manualDiscount > 0 ? (
                 <div className="flex justify-between text-ok">
                   <span>İndirim {o.couponCode ? `(${o.couponCode})` : o.campaign ? `(${o.campaign.name})` : ""}</span>
-                  <span>−{formatTL(o.discountTotal)}</span>
+                  <span>−{formatTL(o.discountTotal - o.manualDiscount)}</span>
+                </div>
+              ) : null}
+              {o.manualDiscount > 0 ? (
+                <div className="flex justify-between text-ok" data-testid="manual-discount">
+                  <span>Satış indirimi{o.salesUser ? ` (${o.salesUser.name})` : ""}</span>
+                  <span>−{formatTL(o.manualDiscount)}</span>
                 </div>
               ) : null}
               <div className="flex justify-between">
@@ -318,7 +338,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                   phone={o.phone}
                   action={sendOrderMessage}
                   hidden={{ orderId: o.id }}
-                  canEmail={!o.email.endsWith(".local")}
+                  canEmail={!o.email.endsWith(".local") && !o.email.endsWith("@telefon.siparis")}
                   suggest={o.status === "PENDING_PAYMENT" && o.paymentMethod === "TRANSFER" ? "havale" : o.status === "SHIPPED" ? "kargo" : o.status === "DELIVERED" ? "satis" : "siparis"}
                 />
               </div>
@@ -332,7 +352,8 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             <div className="flex flex-col gap-1 p-5 text-sm">
               <b>{a.fullName}</b>
               <a href={`tel:${o.phone}`} className="text-link">{o.phone}</a>
-              <a href={`mailto:${o.email}`} className="text-link">{o.email}</a>
+              {o.email.endsWith("@telefon.siparis") ? <span className="text-mute">E-posta verilmedi</span> : <a href={`mailto:${o.email}`} className="text-link">{o.email}</a>}
+              {o.salesUser ? <span className="mt-1 text-xs text-mute">Satışı yapan: <b className="text-deep">{o.salesUser.name}</b></span> : null}
               <a href={`https://wa.me/${waNo}?text=${encodeURIComponent(waText)}`} target="_blank" className="mt-1 font-bold text-[#128c4a]">WhatsApp&apos;tan durum bildir →</a>
               {o.customerNote ? <p className="mt-2 rounded-lg bg-warn-bg p-2 text-warn">Müşteri notu: {o.customerNote}</p> : null}
             </div>
@@ -380,7 +401,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             <CardHeader title="Ödeme ve fatura" />
             <div className="flex flex-col gap-1.5 p-5 text-sm">
               <p>
-                {o.paymentMethod === "CARD" ? "Kredi / banka kartı" : "Havale / EFT"} · {o.installments > 1 ? `${o.installments} taksit` : "Tek çekim"}
+                {o.paymentMethod === "CARD" ? `Kredi / banka kartı · ${o.installments > 1 ? `${o.installments} taksit` : "Tek çekim"}` : PAYMENT_METHOD_LABEL[o.paymentMethod]}
               </p>
               {o.paymentRef ? <p className="text-xs text-mute">{(o.paymentMeta as { provider?: string } | null)?.provider === "paytr" ? "PayTR" : "iyzico"} ödeme no: {o.paymentRef}</p> : null}
               <p className="text-xs text-mute">
@@ -416,7 +437,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                   <ActionForm action={saveInvoice} className="mt-3 flex flex-col gap-2">
                     <input type="hidden" name="orderId" value={o.id} />
                     <Input name="invoiceNo" defaultValue={o.invoiceNo ?? ""} placeholder="Fatura no (örn. ARN2026000001234)" />
-                    <input type="file" name="file" accept="application/pdf" className="text-xs" />
+                    <FileInput name="file" accept="application/pdf" label="PDF seç" />
                     <Input name="invoiceLink" placeholder="veya e-fatura portalı bağlantısı (https://…)" />
                     {o.invoiceUrl ? (
                       <label className="flex items-center gap-2 text-xs">

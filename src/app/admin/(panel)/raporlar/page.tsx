@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/admin/shell";
 import { Button, Card, CardHeader, Input, Stat, Table, Td, Th } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { cityBreakdown, dailySeries, paymentBreakdown, rangeFromParam, salesByGroup, salesSummary, sourceBreakdown, topProducts } from "@/lib/reports";
-import { formatTL } from "@/lib/utils";
+import { formatTL, PAYMENT_METHOD_LABEL } from "@/lib/utils";
 
 export const metadata = { title: "Raporlar" };
 const RANGES = [["1", "Bugün"], ["7", "7 gün"], ["30", "30 gün"], ["90", "90 gün"], ["365", "1 yıl"]];
@@ -110,7 +110,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             <tbody>
               {pay.map((p) => (
                 <tr key={`${p.method}${p.installments}`}>
-                  <Td>{p.method === "CARD" ? (p.installments > 1 ? `Kart · ${p.installments} taksit` : "Kart · tek çekim") : "Havale / EFT"}</Td>
+                  <Td>{p.method === "CARD" ? (p.installments > 1 ? `Kart · ${p.installments} taksit` : "Kart · tek çekim") : PAYMENT_METHOD_LABEL[p.method]}</Td>
                   <Td className="text-right">{p.n}</Td>
                   <Td className="text-right">{formatTL(p.value)}</Td>
                 </tr>

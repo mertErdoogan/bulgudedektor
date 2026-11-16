@@ -46,7 +46,7 @@ export async function pushPriceAndStock() {
   const rows = await db.select({ sku: products.sku, price: products.price, stock: products.stock, status: products.status }).from(products);
   if (!rows.length) return { ok: true, message: "Gönderilecek ürün yok." };
   // Hepsiburada'da listelenmemiş SKU'lar yükleme raporunda hata olarak döner; sipariş akışını etkilemez
-  await upload(i, "inventory-uploads", rows.map((r) => ({ merchantSku: r.sku, availableStock: r.status === "ACTIVE" ? Math.max(0, r.stock) : 0 })));
+  await upload(i, "inventory-uploads", rows.map((r) => ({ merchantSku: r.sku, availableStock: r.status === "ACTIVE" ? Math.max(0, r.stock - (i.marketplaceStockBuffer ?? 1)) : 0 })));
   await upload(i, "price-uploads", rows.map((r) => ({ merchantSku: r.sku, price: marketPrice(r.price, i.hbPriceMarkupPct) })));
   return { ok: true, message: `${rows.length} ürünün stok ve fiyatı Hepsiburada'ya gönderildi.` };
 }

@@ -19,7 +19,7 @@ const iysDate = (d: Date | null | undefined) => {
  */
 export async function GET(req: Request) {
   const staff = await getStaff();
-  if (!staff || !can(staff.permissions, "customers.manage")) return new Response("Yetkisiz", { status: 403 });
+  if (!staff || !can(staff.permissions, "customers.export")) return new Response("Müşteri listesini indirme yetkin yok. Gerekirse yöneticinden iste.", { status: 403 });
   const format = new URL(req.url).searchParams.get("format");
   const rows = await db.select().from(customers).where(eq(customers.marketingConsent, true)).orderBy(desc(customers.createdAt));
 

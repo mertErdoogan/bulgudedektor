@@ -16,6 +16,7 @@ export type StaffSession = {
   roleName: string;
   permissions: string[];
   maxDiscountPct: number;
+  totpEnabled: boolean;
 };
 
 export const getStaff = cache(async (): Promise<StaffSession | null> => {
@@ -24,6 +25,8 @@ export const getStaff = cache(async (): Promise<StaffSession | null> => {
   if (!payload || payload.kind !== "staff") return null;
   const user = await db.query.users.findFirst({ where: eq(users.id, payload.sub), with: { role: true } });
   if (!user || !user.isActive) return null;
+  // Şifre değiştiyse ondan önce açılmış oturumlar geçersiz (çalınan/paylaşılan şifreye karşı)
+  if (user.passwordChangedAt && payload.iat && payload.iat * 1000 < user.passwordChangedAt.getTime() - 1000) return null;
   return {
     id: user.id,
     name: user.name,
@@ -32,6 +35,7 @@ export const getStaff = cache(async (): Promise<StaffSession | null> => {
     roleName: user.role.name,
     permissions: user.role.permissions,
     maxDiscountPct: user.maxDiscountPct,
+    totpEnabled: user.totpEnabled,
   };
 });
 
@@ -59,3 +63,8 @@ export const getCustomer = cache(async () => {
   if (!c || c.isBlocked) return null;
   return c;
 });
+
+/** İki adımlı doğrulama zorunluysa bu kişiye uygulanır mı? (para ve ekip yetkisi olanlar) */
+export function needs2fa(perms: readonly string[]) {
+  return ["users.manage", "orders.refund", "payments.confirm"].some((p) => perms.includes(p));
+}

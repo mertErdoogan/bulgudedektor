@@ -32,7 +32,7 @@ export const productStatus = pgEnum("product_status", ["DRAFT", "ACTIVE", "ARCHI
 export const technology = pgEnum("technology", ["MULTI", "VLF", "PI", "IMAGING", "OTHER"]);
 export const waterproof = pgEnum("waterproof", ["NONE", "COIL_ONLY", "FULL"]);
 export const experience = pgEnum("experience", ["BEGINNER", "INTERMEDIATE", "PRO"]);
-export const serialStatus = pgEnum("serial_status", ["IN_STOCK", "RESERVED", "SOLD", "RETURNED", "IN_SERVICE", "DEFECTIVE"]);
+export const serialStatus = pgEnum("serial_status", ["IN_STOCK", "RESERVED", "SOLD", "RETURNED", "IN_SERVICE", "DEFECTIVE", "LOST"]);
 export const channel = pgEnum("channel", ["WHATSAPP", "WEB", "PHONE", "EMAIL", "INSTAGRAM"]);
 export const conversationStatus = pgEnum("conversation_status", ["OPEN", "PENDING", "CLOSED"]);
 export const serviceStatus = pgEnum("service_status", [
@@ -54,7 +54,7 @@ export const orderStatus = pgEnum("order_status", [
   "REFUNDED",
 ]);
 export const paymentStatus = pgEnum("payment_status", ["PENDING", "PAID", "FAILED", "REFUNDED", "PARTIALLY_REFUNDED"]);
-export const paymentMethod = pgEnum("payment_method", ["CARD", "TRANSFER"]);
+export const paymentMethod = pgEnum("payment_method", ["CARD", "TRANSFER", "CASH"]);
 export const deliveryMethod = pgEnum("delivery_method", ["CARGO", "PICKUP"]);
 export const returnStatus = pgEnum("return_status", ["REQUESTED", "APPROVED", "RECEIVED", "REFUNDED", "REJECTED"]);
 export const campaignType = pgEnum("campaign_type", ["PERCENT", "FIXED", "FREE_SHIPPING"]);
@@ -88,6 +88,8 @@ export const users = pgTable("users", {
   /** Son kabul edilen TOTP adımı: aynı kodun ikinci kez kullanılmasını engeller */
   totpLastStep: integer("totp_last_step"),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+  /** Şifre en son ne zaman değişti: bundan önce açılmış oturumlar geçersiz sayılır */
+  passwordChangedAt: timestamp("password_changed_at", { withTimezone: true }),
   /** Panel bildirimlerini en son gördüğü an; bundan sonrakiler okunmamış sayılır */
   notificationsSeenAt: timestamp("notifications_seen_at", { withTimezone: true }),
   createdAt: createdAt(),
@@ -155,6 +157,9 @@ export const products = pgTable(
     price: money("price").notNull(),
     compareAtPrice: money("compare_at_price"),
     costPrice: money("cost_price"),
+    /** Döviz bazlı fiyat: satış fiyatının dövizdeki karşılığı (ör. 899 USD). Kur değişince TL fiyat önerisi buradan hesaplanır. */
+    fxCurrency: text("fx_currency"),
+    fxPrice: numeric("fx_price", { precision: 12, scale: 2, mode: "number" }),
     taxRate: integer("tax_rate").notNull().default(20),
     stock: integer("stock").notNull().default(0),
     lowStockThreshold: integer("low_stock_threshold").notNull().default(2),
@@ -315,6 +320,8 @@ export const serviceRecords = pgTable("service_records", {
   productName: text("product_name").notNull(),
   serial: text("serial"),
   issue: text("issue").notNull(),
+  /** Teslim alınan aksesuarlar / cihazın görünür durumu (kabul fişine yazılır) */
+  accessories: text("accessories"),
   status: serviceStatus("status").notNull().default("RECEIVED"),
   underWarranty: boolean("under_warranty").notNull().default(true),
   cost: money("cost"),
@@ -440,6 +447,10 @@ export const orders = pgTable(
     /** Satış kanalı: WEB (site), TRENDYOL, MANUAL (panelden). Pazaryeri siparişlerinde externalRef = paket no */
     channel: text("channel").notNull().default("WEB"),
     externalRef: text("external_ref").unique(),
+    /** Satışı yapan personel (showroom/telefon satışları; prim ve gün sonu raporu) */
+    salesUserId: text("sales_user_id").references(() => users.id, { onDelete: "set null" }),
+    /** Personelin verdiği satış indirimi (kampanya indiriminden ayrı gösterilir; discountTotal ikisini birden içerir) */
+    manualDiscount: money("manual_discount").notNull().default(0),
     /** Siparişle ilgilenen ekip üyesi (iş listesi ataması) */
     assigneeId: text("assignee_id").references(() => users.id, { onDelete: "set null" }),
     paymentMeta: jsonb("payment_meta").$type<{ provider?: "iyzico" | "paytr"; paymentId?: string; transactions?: { itemId: string; transactionId: string; price: number }[]; raw?: unknown; transferNotice?: { sender: string; note?: string; receiptUrl?: string | null; at: string } }>(),
@@ -717,7 +728,8 @@ export const alertsRelations = relations(stockAlerts, ({ one }) => ({
 }));
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   customer: one(customers, { fields: [orders.customerId], references: [customers.id] }),
-  assignee: one(users, { fields: [orders.assigneeId], references: [users.id] }),
+  assignee: one(users, { fields: [orders.assigneeId], references: [users.id], relationName: "orderAssignee" }),
+  salesUser: one(users, { fields: [orders.salesUserId], references: [users.id], relationName: "orderSalesUser" }),
   campaign: one(campaigns, { fields: [orders.campaignId], references: [campaigns.id] }),
   items: many(orderItems),
   events: many(orderEvents),

@@ -1,5 +1,6 @@
 "use client";
 
+import { FileInput } from "@/components/file-input";
 import { useState } from "react";
 import { Truck } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
@@ -31,7 +32,7 @@ export function ImportTracking({ carriers }: { carriers: string[] }) {
             <Textarea name="text" rows={6} placeholder={"1042;7300012345678\n1043;7300012345679;Aras Kargo"} className="font-mono text-sm" />
           </Field>
           <Field label="veya CSV dosyası">
-            <input type="file" name="file" accept=".csv,.txt,text/csv" className="text-sm" />
+            <FileInput name="file" accept=".csv,.txt,text/csv" />
           </Field>
           <SubmitButton pendingText="İşleniyor…">Kargoya verildi yap</SubmitButton>
         </ActionForm>

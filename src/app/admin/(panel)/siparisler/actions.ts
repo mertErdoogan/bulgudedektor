@@ -13,7 +13,7 @@ import { ORDER_FLOW, addOrderEvent, adjustStock, restockOrder } from "@/lib/orde
 import { can } from "@/lib/permissions";
 import { quoteCart } from "@/lib/pricing";
 import { getSettings } from "@/lib/settings";
-import { ORDER_STATUS_LABEL, normalizePhone, orderNo, str, strOrNull, toNum } from "@/lib/utils";
+import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL, normalizePhone, orderNo, str, strOrNull, toNum } from "@/lib/utils";
 
 type Status = (typeof orders.$inferSelect)["status"];
 
@@ -46,9 +46,11 @@ async function transition(orderId: string, to: Status, staff: StaffSession, extr
   if (o.status === to) throw new Error("Sipariş zaten bu durumda.");
   if (!ORDER_FLOW[o.status]?.includes(to)) throw new Error(`"${ORDER_STATUS_LABEL[o.status]}" durumundan "${ORDER_STATUS_LABEL[to]}" durumuna geçilemez.`);
 
+  // Havale/EFT onayı = "para hesaba geçti" beyanı: yalnızca bu yetkisi olan (sahip/muhasebe) verebilir
+  if (to === "PAID" && !can(staff.permissions, "payments.confirm")) throw new Error("Ödemeyi onaylama yetkin yok. Havalenin hesaba geçtiğini yöneticin kontrol edip onaylamalı.");
   let info = "";
-  if (to === "SHIPPED") {
-    if (o.deliveryMethod === "CARGO" && (!extra.carrier || !extra.tracking)) throw new Error("Kargo firması ve takip numarası girin.");
+  if (to === "SHIPPED" || to === "DELIVERED") {
+    if (to === "SHIPPED" && o.deliveryMethod === "CARGO" && (!extra.carrier || !extra.tracking)) throw new Error("Kargo firması ve takip numarası girin.");
     const missing = o.items.filter((i) => i.product?.trackSerial && i.serials.length < i.quantity);
     if (missing.length) throw new Error(`Seri numarası atanmamış ürün var: ${missing.map((m) => m.name).join(", ")}`);
   }
@@ -58,7 +60,10 @@ async function transition(orderId: string, to: Status, staff: StaffSession, extr
 
   await db.transaction(async (tx) => {
     const patch: Partial<typeof orders.$inferInsert> = { status: to };
-    if (to === "PAID") patch.paymentStatus = "PAID";
+    if (to === "PAID") {
+      patch.paymentStatus = "PAID";
+      patch.paidAt = new Date();
+    }
     if (to === "SHIPPED") {
       patch.carrier = extra.carrier ?? null;
       patch.trackingNumber = extra.tracking ?? null;
@@ -267,39 +272,70 @@ export async function updateShippingAddress(_: ActionResult | null, fd: FormData
 export async function createManualOrder(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
     const staff = await assertStaff("orders.manage");
-    const items = JSON.parse(str(fd.get("items")) || "[]") as { productId: string; quantity: number }[];
+    const items = JSON.parse(str(fd.get("items")) || "[]") as { productId: string; quantity: number; serials?: string[] }[];
     if (!items.length) return fail("En az bir ürün ekleyin.");
     const name = str(fd.get("name"));
     const phone = normalizePhone(str(fd.get("phone")));
-    const email = str(fd.get("email")).toLowerCase() || `${phone.replace("+", "")}@telefon.siparis`;
+    const realEmail = str(fd.get("email")).toLowerCase();
+    // orders.email zorunlu alan: e-postası olmayan müşteride iç adres tutulur; bu adrese hiçbir e-posta gönderilmez ve panelde gösterilmez
+    const email = realEmail || `${phone.replace("+", "")}@telefon.siparis`;
     if (!name || !phone) return fail("Müşteri adı ve telefonu zorunlu.");
-    const deliveryMethod = str(fd.get("deliveryMethod")) === "PICKUP" ? "PICKUP" : "CARGO";
-    const paymentMethod = str(fd.get("paymentMethod")) === "CARD" ? "CARD" : "TRANSFER";
-    const paid = fd.get("paid") === "on";
+    const deliveryMethod = str(fd.get("deliveryMethod")) === "CARGO" ? "CARGO" : "PICKUP";
+    const pm = str(fd.get("paymentMethod"));
+    const paymentMethod: "CARD" | "TRANSFER" | "CASH" = pm === "TRANSFER" ? "TRANSFER" : pm === "CASH" ? "CASH" : "CARD";
+    let paid = fd.get("paid") === "on";
+    let note = "";
+    // Havale "ödendi" = para hesaba geçti beyanı; onay yetkisi yoksa ödeme bekliyor olarak açılır
+    if (paymentMethod === "TRANSFER" && paid && !can(staff.permissions, "payments.confirm")) {
+      paid = false;
+      note = " Havale onayı yöneticide: sipariş 'ödeme bekleniyor' olarak açıldı.";
+    }
+    const handover = deliveryMethod === "PICKUP" && fd.get("handover") === "on";
+    if (handover && !paid) return fail("Elden teslim için önce ödemenin alınmış olması gerekir (nakit veya kart).");
     const discountPct = Math.max(0, toNum(fd.get("discountPct"), 0));
     if (discountPct > staff.maxDiscountPct) return fail(`En fazla %${staff.maxDiscountPct} indirim yapabilirsin.`);
 
-    const q = await quoteCart(items, { couponCode: strOrNull(fd.get("coupon")), deliveryMethod, paymentMethod });
+    const q = await quoteCart(items, { couponCode: strOrNull(fd.get("coupon")), deliveryMethod, paymentMethod: paymentMethod === "TRANSFER" ? "TRANSFER" : "CARD" });
     if (!q.lines.length) return fail(q.errors[0] ?? "Ürün stokta yok.");
     if (q.errors.length) return fail(q.errors.join(" "));
+
+    // Seri numaraları: satış anında okutulduysa (barkod okuyucu ya da listeden) doğrulanır ve hemen satışa bağlanır
+    const prodRows = await db.select({ id: products.id, trackSerial: products.trackSerial, warrantyMonths: products.warrantyMonths, name: products.name }).from(products).where(inArray(products.id, items.map((i) => i.productId)));
+    const serialPlan: { productId: string; ids: string[]; serials: string[] }[] = [];
+    for (const it of items) {
+      const pr = prodRows.find((p) => p.id === it.productId);
+      const wanted = [...new Set((it.serials ?? []).map((x) => x.trim().toUpperCase()).filter(Boolean))];
+      if (!pr?.trackSerial) continue;
+      if (wanted.length > it.quantity) return fail(`${pr.name}: ${it.quantity} adet için ${wanted.length} seri no girildi.`);
+      if (handover && wanted.length < it.quantity) return fail(`${pr.name}: elden teslim için ${it.quantity} seri numarasının hepsini okut.`);
+      if (!wanted.length) continue;
+      const rows = await db.select({ id: serialNumbers.id, serial: serialNumbers.serial }).from(serialNumbers).where(and(eq(serialNumbers.productId, it.productId), eq(serialNumbers.status, "IN_STOCK"), inArray(serialNumbers.serial, wanted)));
+      const missing = wanted.filter((w) => !rows.some((r) => r.serial === w));
+      if (missing.length) return fail(`${pr.name}: ${missing.join(", ")} stokta bu ürüne ait bir seri no değil (satılmış, başka ürünün ya da hiç girilmemiş olabilir).`);
+      serialPlan.push({ productId: it.productId, ids: rows.map((r) => r.id), serials: rows.map((r) => r.serial) });
+    }
+
     const manualDiscount = Math.round(((q.subtotal - q.discountTotal) * discountPct) / 100);
     const total = Math.max(0, q.total - manualDiscount);
-
+    const now = new Date();
     const addr = { fullName: name, phone, city: str(fd.get("city")) || "—", district: str(fd.get("district")) || "—", line: str(fd.get("line")) || "Showroom teslim" };
     const orderId = await db.transaction(async (tx) => {
       let customer = await tx.query.customers.findFirst({ where: eq(customers.phone, phone) });
-      if (!customer) [customer] = await tx.insert(customers).values({ name, phone, email: fd.get("email") ? email : null }).returning();
+      if (!customer) [customer] = await tx.insert(customers).values({ name, phone, email: realEmail || null }).returning();
       const [o] = await tx
         .insert(orders)
         .values({
           customerId: customer.id,
           email,
           phone,
-          status: paid ? "PAID" : "PENDING_PAYMENT",
+          status: handover ? "DELIVERED" : paid ? "PAID" : "PENDING_PAYMENT",
           paymentStatus: paid ? "PAID" : "PENDING",
           paymentMethod,
+          paidAt: paid ? now : null,
+          deliveredAt: handover ? now : null,
           subtotal: q.subtotal,
           discountTotal: q.discountTotal + manualDiscount,
+          manualDiscount,
           shippingTotal: q.shippingTotal,
           total,
           couponCode: q.campaign?.code ?? null,
@@ -307,28 +343,48 @@ export async function createManualOrder(_: ActionResult | null, fd: FormData): P
           deliveryMethod,
           shippingAddress: addr,
           channel: "MANUAL",
+          salesUserId: staff.id,
           internalNote: `Panelden oluşturuldu (${staff.name})${discountPct ? ` · %${discountPct} satış indirimi` : ""}`,
           paymentMeta: paid ? { raw: "manual" } : null,
         })
         .returning();
-      await tx.insert(orderItems).values(q.lines.map((l) => ({ orderId: o.id, productId: l.productId, name: l.name, sku: l.sku, imageUrl: l.imageUrl, unitPrice: l.unitPrice, unitCost: l.unitCost, quantity: l.quantity, total: l.total })));
+      const inserted = await tx
+        .insert(orderItems)
+        .values(q.lines.map((l) => ({ orderId: o.id, productId: l.productId, name: l.name, sku: l.sku, imageUrl: l.imageUrl, unitPrice: l.unitPrice, unitCost: l.unitCost, quantity: l.quantity, total: l.total })))
+        .returning({ id: orderItems.id, productId: orderItems.productId });
       for (const l of q.lines) await adjustStock(tx, l.productId, -l.quantity, "SALE", staff.id, `Panel siparişi`);
       await addOrderEvent(tx, o.id, "created", "Sipariş oluşturuldu.", staff.id);
+      for (const sp of serialPlan) {
+        const item = inserted.find((x) => x.productId === sp.productId);
+        const pr = prodRows.find((p) => p.id === sp.productId);
+        if (!item) continue;
+        const until = new Date(now);
+        until.setMonth(until.getMonth() + (pr?.warrantyMonths ?? 24));
+        await tx.update(serialNumbers).set({ status: "SOLD", orderItemId: item.id, soldAt: now, warrantyUntil: until }).where(inArray(serialNumbers.id, sp.ids));
+        await addOrderEvent(tx, o.id, "serial", `Seri no atandı: ${sp.serials.join(", ")}`, staff.id, false);
+      }
+      if (handover) await addOrderEvent(tx, o.id, "status", "Showroom'da elden teslim edildi.", staff.id);
       return o.id;
     });
-    await audit(staff.id, "create", "order", orderId, "Panelden sipariş oluşturuldu");
+    await audit(staff.id, "create", "order", orderId, `Panelden sipariş: ${PAYMENT_METHOD_LABEL[paymentMethod]}${paid ? " (ödendi)" : ""}${handover ? ", elden teslim" : ""}${discountPct ? `, %${discountPct} indirim` : ""}`);
     revalidatePath("/admin", "layout");
-    return ok("Sipariş oluşturuldu.", { redirect: `/admin/siparisler/${orderId}` });
+    return ok(`${handover ? "Satış tamamlandı, cihaz teslim edildi olarak işlendi." : "Sipariş oluşturuldu."}${note}`, { redirect: `/admin/siparisler/${orderId}` });
   });
 }
 
 export async function searchProductsForOrder(q: string) {
   await assertStaff("orders.manage");
   return db
-    .select({ id: products.id, name: products.name, sku: products.sku, price: products.price, stock: products.stock })
+    .select({ id: products.id, name: products.name, sku: products.sku, price: products.price, stock: products.stock, trackSerial: products.trackSerial })
     .from(products)
     .where(and(eq(products.status, "ACTIVE"), sql`(${products.name} ilike ${"%" + q + "%"} or ${products.sku} ilike ${"%" + q + "%"})`))
     .limit(8);
+}
+
+/** Showroom satışında seri no önerisi: ürünün stoktaki seri numaraları */
+export async function inStockSerials(productId: string) {
+  await assertStaff("orders.manage");
+  return (await db.select({ serial: serialNumbers.serial }).from(serialNumbers).where(and(eq(serialNumbers.productId, productId), eq(serialNumbers.status, "IN_STOCK"))).orderBy(serialNumbers.serial).limit(200)).map((r) => r.serial);
 }
 
 export async function getCarriers() {

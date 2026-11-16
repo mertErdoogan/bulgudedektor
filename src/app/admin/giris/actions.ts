@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { fail, type ActionResult } from "@/lib/action";
 import { audit } from "@/lib/audit";
-import { ADMIN_COOKIE, TWOFA_COOKIE, clearSessionCookie, setSessionCookie, signToken, verifyToken } from "@/lib/session";
+import { ADMIN_COOKIE, TWOFA_COOKIE, clearSessionCookie, setSessionCookie, signToken, touchIdleCookie, verifyToken } from "@/lib/session";
 
 const attempts = new Map<string, { n: number; until: number }>();
 
@@ -17,10 +17,13 @@ export async function loginAction(_: ActionResult | null, fd: FormData): Promise
   const next = String(fd.get("next") ?? "/admin");
   const a = attempts.get(email);
   if (a && a.until > Date.now()) return fail("Çok fazla hatalı deneme. 5 dakika sonra tekrar deneyin.");
-  const { allowIp } = await import("@/lib/guard");
-  if (!(await allowIp("admin-login", 15, 15 * 60 * 1000))) return fail("Çok fazla deneme. 15 dakika sonra tekrar deneyin.");
+  const { ipFailures, recordIpFailure } = await import("@/lib/guard");
+  const WIN = 15 * 60 * 1000;
+  // Yalnızca hatalı denemeler sayılır: aynı Wi-Fi'daki ekip doğru şifreyle birbirini kilitlemez
+  if ((await ipFailures("admin-login-fail", WIN)) >= 15) return fail("Bu bağlantıdan çok fazla hatalı deneme yapıldı. 15 dakika sonra tekrar deneyin.");
   const user = await db.query.users.findFirst({ where: eq(sql`lower(${users.email})`, email) });
   if (!user || !user.isActive || !(await bcrypt.compare(password, user.passwordHash))) {
+    await recordIpFailure("admin-login-fail", WIN);
     const n = (a?.n ?? 0) + 1;
     attempts.set(email, { n, until: n >= 5 ? Date.now() + 5 * 60 * 1000 : 0 });
     return fail("E-posta veya şifre hatalı.");
@@ -39,6 +42,7 @@ export async function loginAction(_: ActionResult | null, fd: FormData): Promise
 async function finishLogin(id: string, name: string) {
   await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, id));
   await setSessionCookie(ADMIN_COOKIE, await signToken({ sub: id, kind: "staff" }, 7), 7);
+  await touchIdleCookie();
   await audit(id, "login", "user", id, `${name} giriş yaptı`);
 }
 
@@ -65,6 +69,7 @@ export async function verify2faAction(_: ActionResult | null, fd: FormData): Pro
 
 export async function logoutAction() {
   await clearSessionCookie(ADMIN_COOKIE);
+  await clearSessionCookie("bulgu_seen");
   redirect("/admin/giris");
 }
 

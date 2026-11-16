@@ -7,7 +7,7 @@ import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSettings } from "@/lib/settings";
 import { DEFAULT_LOCALE, LOCALES, LOCALE_LABEL } from "@/lib/i18n/config";
-import { saveI18n, generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
+import { saveI18n, saveSecurity, generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
 
 export const metadata = { title: "Ayarlar" };
 const mask = (v: string) => (v ? `${v.slice(0, 4)}••••••••${v.slice(-3)}` : "");
@@ -23,6 +23,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     ["entegrasyon", "Entegrasyonlar"],
     ["seo", "SEO"],
     ["diller", "Diller"],
+    ...(can(staff.permissions, "users.manage") ? [["guvenlik", "Güvenlik"]] : []),
   ];
   return (
     <>
@@ -194,11 +195,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <Checkbox name="smsOnDelivered" defaultChecked={s.integrations.smsOnDelivered} label="Teslim edildi" />
               </div>
               <p className="mt-2 font-bold md:col-span-2">Trendyol pazaryeri</p>
-              <Checkbox name="trendyolEnabled" defaultChecked={s.integrations.trendyolEnabled} label="Fiyat/stok senkronu ve sipariş aktarımı açık (her saat)" className="md:col-span-2" />
+              <Checkbox name="trendyolEnabled" defaultChecked={s.integrations.trendyolEnabled} label="Fiyat/stok senkronu ve sipariş aktarımı açık (15 dakikada bir)" className="md:col-span-2" />
               <Field label="Satıcı ID (supplierId)"><Input name="trendyolSupplierId" defaultValue={s.integrations.trendyolSupplierId} /></Field>
               <Field label="Fiyat farkı %" hint="Komisyon için Trendyol fiyatı site fiyatından bu kadar yüksek gönderilir."><Input name="trendyolPriceMarkupPct" inputMode="decimal" defaultValue={s.integrations.trendyolPriceMarkupPct} /></Field>
               <Field label="API key"><Input name="trendyolApiKey" defaultValue={mask(s.integrations.trendyolApiKey)} autoComplete="off" /></Field>
               <Field label="API secret"><Input name="trendyolApiSecret" defaultValue={mask(s.integrations.trendyolApiSecret)} autoComplete="off" /></Field>
+              <Field label="Pazaryeri stok tamponu (adet)" hint="Trendyol ve Hepsiburada'ya stoktan bu kadar eksik gönderilir. Stok 15 dakikada bir eşitlendiği için son cihaz hem sitede hem pazaryerinde satılıp iptal (ceza) çıkmasın. 1 önerilir." className="md:col-span-2">
+                <Input name="marketplaceStockBuffer" type="number" min={0} max={10} defaultValue={s.integrations.marketplaceStockBuffer} className="w-28" />
+              </Field>
               <p className="mt-2 font-bold md:col-span-2">Hepsiburada pazaryeri</p>
               <Checkbox name="hbEnabled" defaultChecked={s.integrations.hbEnabled} label="Fiyat/stok senkronu ve sipariş aktarımı açık (15 dakikada bir)" className="md:col-span-2" />
               <Field label="Merchant ID" hint="Hepsiburada satıcı panelindeki mağaza kimliği (GUID)"><Input name="hbMerchantId" defaultValue={s.integrations.hbMerchantId} /></Field>
@@ -260,6 +264,30 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 </ul>
                 <p className="mt-2"><Link href="/admin/seo" className="font-bold text-link">SEO sağlık kontrolü →</Link></p>
               </div>
+            </ActionForm>
+          </Card>
+        ) : null}
+        {tab === "guvenlik" && can(staff.permissions, "users.manage") ? (
+          <Card>
+            <CardHeader title="Güvenlik ve iç kontrol" description="Para ve müşteri verisine dokunan hesapları korur; dikkat isteyen işlemleri sana bildirir." />
+            <ActionForm action={saveSecurity} className="flex flex-col gap-5 p-5" data-testid="security-settings">
+              <Checkbox
+                name="require2fa"
+                defaultChecked={s.security.require2fa}
+                label={<><b>İki adımlı doğrulama zorunlu</b> <span className="text-mute">· yönetici, para iadesi veya havale onayı yetkisi olanlar telefondaki kod olmadan giremez</span></>}
+              />
+              <Field label="Fiyat düşüşünde onay eşiği (%)" hint="Fiyat bundan fazla düşürülürse ya da alış fiyatının altına inerse kaydetmeden önce onay istenir. Yazım hatasına (49.990 yerine 4.999) karşı fren.">
+                <Input name="priceDropConfirmPct" type="number" min={5} max={90} defaultValue={s.security.priceDropConfirmPct} className="w-32" />
+              </Field>
+              <Field label="Haftalık özet e-postası" hint="Her pazartesi sabahı: silinen/arızalıya çekilen seri no, iptal edilen ödenmiş sipariş, yüksek indirimler, müşteri listesi indirmeleri, fiyat düşüşleri. Boşsa mağaza e-postasına gider.">
+                <Input name="digestEmail" type="email" defaultValue={s.security.digestEmail} placeholder={s.store.email} />
+              </Field>
+              <div className="rounded-xl bg-soft p-3.5 text-[13px] leading-relaxed text-mute">
+                <b className="text-deep">Her zaman açık olanlar:</b> panelde {Number(process.env.ADMIN_IDLE_MINUTES) || 60} dakika işlem yapılmazsa oturum kapanır;
+                şifre değişince diğer cihazlardaki oturumlar kapanır; aynı internetten 15 dakikada 15 hatalı giriş denemesi o bağlantıyı 15 dakika durdurur
+                (doğru şifreyle girişler sayılmaz).
+              </div>
+              <SubmitButton className="self-start">Kaydet</SubmitButton>
             </ActionForm>
           </Card>
         ) : null}

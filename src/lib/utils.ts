@@ -132,4 +132,7 @@ export const USE_CASES: { key: string; label: string }[] = [
   { key: "derin", label: "Derin arama" },
   { key: "pointer", label: "Nokta tespiti" },
 ];
+/** Ödeme yöntemi (panel ve belgelerde) */
+export const PAYMENT_METHOD_LABEL: Record<string, string> = { CARD: "Kart", TRANSFER: "Havale / EFT", CASH: "Nakit" };
+
 export const CHANNEL_LABEL: Record<string, string> = { WHATSAPP: "WhatsApp", WEB: "Web", PHONE: "Telefon", EMAIL: "E-posta", INSTAGRAM: "Instagram" };

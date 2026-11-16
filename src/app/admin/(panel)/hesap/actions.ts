@@ -19,9 +19,13 @@ export async function changeMyPassword(_: ActionResult | null, fd: FormData): Pr
     const next = str(fd.get("password"));
     if (next.length < 10) return fail("Yeni şifre en az 10 karakter olmalı.");
     if (next !== str(fd.get("password2"))) return fail("Şifreler aynı değil.");
-    await db.update(users).set({ passwordHash: await bcrypt.hash(next, 10) }).where(eq(users.id, staff.id));
-    await audit(staff.id, "update", "user", staff.id, "Şifresini değiştirdi");
-    return ok("Şifren güncellendi.");
+    await db.update(users).set({ passwordHash: await bcrypt.hash(next, 10), passwordChangedAt: new Date() }).where(eq(users.id, staff.id));
+    // Diğer cihazlardaki oturumlar kapanır; bu cihazda yeni oturum açılır
+    const { ADMIN_COOKIE, setSessionCookie, signToken, touchIdleCookie } = await import("@/lib/session");
+    await setSessionCookie(ADMIN_COOKIE, await signToken({ sub: staff.id, kind: "staff" }, 7), 7);
+    await touchIdleCookie();
+    await audit(staff.id, "update", "user", staff.id, "Şifresini değiştirdi (diğer oturumlar kapatıldı)");
+    return ok("Şifren güncellendi. Diğer cihazlardaki oturumların kapatıldı.");
   });
 }
 
@@ -56,6 +60,9 @@ export async function disable2fa(_: ActionResult | null, fd: FormData): Promise<
     const staff = await assertStaff();
     const u = await db.query.users.findFirst({ where: eq(users.id, staff.id) });
     if (!u || !(await bcrypt.compare(str(fd.get("current")), u.passwordHash))) return fail("Şifre hatalı.");
+    const { getSettings } = await import("@/lib/settings");
+    const { needs2fa } = await import("@/lib/auth");
+    if ((await getSettings()).security.require2fa && needs2fa(staff.permissions)) return fail("İki adımlı doğrulama mağaza ayarlarında zorunlu; kapatılamaz.");
     await db.update(users).set({ totpEnabled: false, totpSecret: null, totpLastStep: null }).where(eq(users.id, staff.id));
     await audit(staff.id, "update", "user", staff.id, "İki adımlı doğrulamayı kapattı");
     revalidatePath("/admin/hesap");

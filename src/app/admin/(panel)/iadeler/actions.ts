@@ -47,7 +47,8 @@ export async function updateReturn(_: ActionResult | null, fd: FormData): Promis
     }
     await audit(staff.id, "status", "return", id, `İade → ${to}`);
     revalidatePath("/admin", "layout");
-    return ok("İade talebi güncellendi.");
+    const DONE: Record<string, string> = { APPROVED: "İade onaylandı; müşteriye kargo kodu gönderildi.", RECEIVED: "Ürünün bize ulaştığı kaydedildi.", REFUNDED: "Para iadesi yapıldı.", REJECTED: "İade talebi reddedildi; müşteriye sebep gösterildi." };
+    return ok(DONE[to] ?? "İade talebi güncellendi.");
   });
 }
 

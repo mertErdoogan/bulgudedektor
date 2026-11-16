@@ -44,14 +44,14 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
         description={`${total} müşteri`}
         actions={
           <>
-            {can(staff.permissions, "customers.manage") ? (
+            {can(staff.permissions, "customers.export") ? (
               <Button variant="outline" asChild>
                 <a href={`/api/admin/export/customers?segment=${sp.segment ?? ""}`}>
                   <Download size={16} /> CSV (izinliler)
                 </a>
               </Button>
             ) : null}
-            {can(staff.permissions, "customers.manage") ? (
+            {can(staff.permissions, "customers.export") ? (
               <Button variant="outline" asChild>
                 {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- dosya indirme */}
                 <a href="/api/admin/export/customers?format=iys" download title="İleti Yönetim Sistemi'ne toplu izin yüklemek için">
