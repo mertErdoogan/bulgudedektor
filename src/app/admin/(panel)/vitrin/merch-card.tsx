@@ -81,6 +81,25 @@ export async function MerchCard() {
               ))}
             </div>
           </fieldset>
+          <fieldset className="flex flex-col gap-2" data-testid="wizard-mode">
+            <legend className="mb-2 text-sm font-bold">“Bana hangisi?” sihirbazı <span className="font-normal text-mute">— öncelikli markanın öneri sırasındaki yeri</span></legend>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {([
+                ["priority", "Öncelikli (önerilen)", "Uyan öncelikli marka cihazları hep üstte. Diğer markalar boşluk kalırsa ya da daha uygun fiyatlı alternatif olarak çıkar."],
+                ["only", "Sadece bu marka", "Diğer markalar hiç önerilmez. Uyan cihaz yoksa müşteri uzmana yönlendirilir."],
+                ["all", "Tarafsız", "Marka gözetmeden, cevaplara en uyan cihazlar."],
+              ] as const).map(([v, l, d]) => (
+                <label key={v} className="cursor-pointer">
+                  <input type="radio" name="wizard" value={v} defaultChecked={(m.wizard ?? "priority") === v} className="peer sr-only" />
+                  <span className="flex h-full flex-col gap-0.5 rounded-xl border-2 border-line bg-white p-3 text-sm font-bold transition peer-checked:border-deep peer-focus-visible:ring-2 peer-focus-visible:ring-brand">
+                    {l}
+                    <span className="text-xs font-normal text-mute">{d}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            {!m.focusBrand ? <span className="text-xs font-bold text-warn">Öncelikli marka seçilmediği için sihirbaz şu an tarafsız çalışır.</span> : null}
+          </fieldset>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Marka kartındaki not" hint="Sözleşmedeki ifadeyle aynı olmalı. Boşsa gösterilmez."><Input name="focusNote" defaultValue={m.focusNote} maxLength={60} placeholder="Türkiye distribütörü" /></Field>
             <Checkbox name="badge" defaultChecked={m.badge} label="Ürün sayfasında 'Distribütör garantili' rozeti" className="sm:pt-7" />

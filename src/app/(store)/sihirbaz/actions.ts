@@ -2,7 +2,8 @@
 
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { products } from "@/db/schema";
+import { brands, products } from "@/db/schema";
+import { getSettings } from "@/lib/settings";
 import { cardQuery, type ProductCard } from "@/lib/store";
 
 export type Answers = { amac: string; seviye: string; butce: string; toprak: string; agirlik: string; su: string };
@@ -10,8 +11,15 @@ export type Pick = { p: ProductCard; why: string[]; caveat: string | null; label
 
 const BUDGET: Record<string, [number, number]> = { "0-25": [0, 25000], "25-60": [25000, 60000], "60-150": [60000, 150000], "150+": [150000, 10_000_000] };
 
-export async function recommend(a: Answers): Promise<{ picks: Pick[]; total: number }> {
+export type Result = { picks: Pick[]; total: number; brand: string | null; only: boolean };
+
+export async function recommend(a: Answers): Promise<Result> {
   const rows = await db.query.products.findMany({ where: eq(products.status, "ACTIVE") });
+  // Öncelikli marka (Vitrin ayarı): priority → uyanlar hep üstte; only → yalnız o marka; all → tarafsız
+  const { merch } = await getSettings();
+  const mode = merch.focusBrand ? (merch.wizard ?? "priority") : "all";
+  const focus = mode === "all" ? null : await db.query.brands.findFirst({ where: eq(brands.slug, merch.focusBrand) });
+  const isFocus = (brandId: string | null) => !!focus && brandId === focus.id;
   const cards = await cardQuery().where(eq(products.status, "ACTIVE"));
   const [lo, hi] = BUDGET[a.butce] ?? [0, 10_000_000];
   const scored = rows
@@ -63,15 +71,18 @@ export async function recommend(a: Answers): Promise<{ picks: Pick[]; total: num
         } else score -= 5;
       }
       if (p.stock > 0) score += 4;
-      return { id: p.id, score, why, caveat, price: p.price };
+      return { id: p.id, score, why, caveat, price: p.price, focus: isFocus(p.brandId) };
     })
-    .filter((x) => x.score > 20)
-    .sort((x, y) => y.score - x.score);
+    // Önce uygunluk eşiği (öncelik, uymayan cihazı öneriye sokmaz); sonra öncelikli marka sıralamada öne geçer
+    .filter((x) => x.score > 20 && (mode !== "only" || x.focus))
+    .sort((x, y) => (mode === "priority" ? Number(y.focus) - Number(x.focus) : 0) || y.score - x.score);
   const top = scored.slice(0, 3);
   const cheaper = scored.filter((x) => top[0] && x.price < top[0].price && !top.slice(0, 1).some((t) => t.id === x.id))[0];
   const ordered = top.length >= 2 && cheaper && !top.some((t) => t.id === cheaper.id) ? [top[0], cheaper, top[1]] : top;
   const labels = ["EN UYGUN", "DAHA UYGUN FİYATLI", "ALTERNATİF"];
   return {
+    brand: focus?.name ?? null,
+    only: mode === "only" && !!focus,
     total: scored.length,
     picks: ordered.map((x, i) => ({
       p: cards.find((c) => c.id === x.id)!,

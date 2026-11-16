@@ -7,7 +7,7 @@ import { ArrowLeft, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui";
 import { AddToCart } from "@/components/store/bits";
 import { cn, formatTL } from "@/lib/utils";
-import { recommend, type Answers, type Pick } from "./actions";
+import { recommend, type Answers, type Result } from "./actions";
 
 type Q = { key: keyof Answers; title: string; hint?: string; opts: { v: string; l: string; d?: string }[] };
 const QS: Q[] = [
@@ -22,7 +22,7 @@ const QS: Q[] = [
 export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsapp: string }) {
   const [a, setA] = useState<Partial<Answers>>(initialAmac ? { amac: initialAmac } : {});
   const [step, setStep] = useState(initialAmac ? 1 : 0);
-  const [res, setRes] = useState<{ picks: Pick[]; total: number } | null>(null);
+  const [res, setRes] = useState<Result | null>(null);
   const [pending, start] = useTransition();
   const q = QS[step];
 
@@ -39,6 +39,7 @@ export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsa
     return (
       <div className="container-x max-w-5xl py-8">
         <h1 className="font-display text-2xl font-extrabold md:text-3xl">Sana {res.picks.length} önerimiz var</h1>
+        {res.only && res.brand ? <p className="mt-1 text-sm font-bold" data-testid="wizard-brand-note">{res.brand} modelleri arasından önerimiz</p> : null}
         <p className="mt-1 text-sm text-mute">{summary} · <button onClick={() => { setRes(null); setStep(0); }} className="font-bold text-link">Cevapları değiştir</button></p>
         {res.picks.length ? (
           <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -63,7 +64,7 @@ export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsa
             ))}
           </div>
         ) : (
-          <p className="mt-6 rounded-xl bg-soft p-6">Bu seçimlere tam uyan cihaz bulamadık. Bir uzmanla konuşalım; seçeneklerini birlikte netleştirelim.</p>
+          <p className="mt-6 rounded-xl bg-soft p-6" data-testid="wizard-empty">{res.only && res.brand ? `Bu seçimlere tam uyan bir ${res.brand} modeli bulamadık.` : "Bu seçimlere tam uyan cihaz bulamadık."} Bir uzmanla konuşalım; seçeneklerini birlikte netleştirelim.</p>
         )}
         <div className="mt-6 flex flex-wrap gap-2">
           {whatsapp ? <a href={`https://wa.me/${whatsapp}?text=${waText}`} target="_blank" className="flex h-12 items-center gap-2 rounded-lg bg-[#15803d] px-5 font-extrabold text-white"><MessageCircle size={18} /> Sonucu uzmana gönder</a> : null}

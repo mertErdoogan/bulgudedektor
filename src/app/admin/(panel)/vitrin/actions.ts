@@ -180,6 +180,8 @@ export async function saveMerch(_: ActionResult | null, fd: FormData): Promise<A
     const weight = str(fd.get("weight"));
     if (!["off", "light", "balanced", "high"].includes(weight)) return fail("Ağırlık seçin.");
     const focusBrand = str(fd.get("focusBrand"));
+    const wizardRaw = str(fd.get("wizard"));
+    const wizard = (["priority", "only", "all"] as const).find((x) => x === wizardRaw) ?? "priority";
     if (focusBrand) {
       const { brands } = await import("@/db/schema");
       const b = await db.query.brands.findFirst({ where: eq(brands.slug, focusBrand) });
@@ -204,8 +206,8 @@ export async function saveMerch(_: ActionResult | null, fd: FormData): Promise<A
       if (found.length !== pinned.length) return fail("Sabitlenen ürünlerden biri bulunamadı.");
     }
     const heroCards = fd.get("heroCards") === "banners" ? "banners" : "latest";
-    await saveSettings("merch", { focusBrand, weight: weight as "off", badge: fd.get("badge") === "on", focusNote: str(fd.get("focusNote")).slice(0, 60), pinned, heroCards });
-    await audit(staff.id, "settings", "merch", null, `Vitrin önceliği: ${focusBrand || "kapalı"} / ${weight} / ${pinned.length} sabit`);
+    await saveSettings("merch", { focusBrand, weight: weight as "off", badge: fd.get("badge") === "on", focusNote: str(fd.get("focusNote")).slice(0, 60), pinned, heroCards, wizard });
+    await audit(staff.id, "settings", "merch", null, `Vitrin önceliği: ${focusBrand || "kapalı"} / ${weight} / ${pinned.length} sabit / sihirbaz ${wizard}`);
     return done("Vitrin önceliği kaydedildi.");
   });
 }
