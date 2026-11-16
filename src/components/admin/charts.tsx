@@ -2,7 +2,8 @@
 
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const fmt = (v: number) => (v >= 1000 ? `${Math.round(v / 1000).toLocaleString("tr-TR")}b` : String(v));
+// Eksen etiketi: "800 bin", "1,2 mn" (yalnız "b" harfi anlaşılmıyordu)
+const fmt = (v: number) => (v >= 1_000_000 ? `${(v / 1_000_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} mn` : v >= 1000 ? `${Math.round(v / 1000).toLocaleString("tr-TR")} bin` : String(v));
 const tl = (v: number) => `${Math.round(v).toLocaleString("tr-TR")} TL`;
 
 export function SalesChart({ data, money = true }: { data: { label: string; value: number; orders: number }[]; money?: boolean }) {

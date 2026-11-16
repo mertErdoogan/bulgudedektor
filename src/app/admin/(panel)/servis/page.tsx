@@ -3,6 +3,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { serviceRecords, users } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { SerialLookup } from "./serial-lookup";
 import { PageHeader } from "@/components/admin/shell";
 import { ServiceStatusBadge } from "@/components/admin/status";
 import { Badge, Card, CardHeader, Checkbox, EmptyState, Field, Input, Select, Table, Td, Textarea, Th } from "@/components/ui";
@@ -56,12 +57,13 @@ export default async function ServicePage({ searchParams }: { searchParams: Prom
           <Card className="self-start">
             <CardHeader title="Yeni servis kaydı" />
             <ActionForm action={createService} className="flex flex-col gap-3 p-5">
+              <Field label="Seri no" hint="Önce okut: bizden alınmışsa müşteri, telefon ve ürün kendiliğinden dolar, garanti kontrol edilir."><SerialLookup /></Field>
               <Field label="Müşteri adı"><Input name="contactName" required /></Field>
               <Field label="Telefon veya e-posta"><Input name="contact" required /></Field>
               <Field label="Ürün"><Input name="productName" required placeholder="Örn. Equinox 900" /></Field>
-              <Field label="Seri no" hint="Girilirse garanti durumu otomatik kontrol edilir"><Input name="serial" className="font-mono" /></Field>
               <Field label="Arıza"><Textarea name="issue" required /></Field>
-              <Checkbox name="underWarranty" defaultChecked label="Garanti kapsamında" />
+              <Field label="Teslim alınanlar ve cihazın durumu" hint="Kabul fişine yazılır. Örn. Cihaz + 2 bobin + şarj kablosu, çanta yok. Kasada çizik var."><Textarea name="accessories" className="min-h-[60px]" /></Field>
+              <Checkbox name="underWarranty" label="Garanti kapsamında (seri no varsa sistem kendisi belirler)" />
               <SubmitButton>Kaydı aç</SubmitButton>
             </ActionForm>
           </Card>
@@ -70,6 +72,8 @@ export default async function ServicePage({ searchParams }: { searchParams: Prom
             <CardHeader title={`${serviceNo(sel.number)} · ${sel.productName}`} description={`${sel.contactName} · ${sel.contact}`} action={sel.customer ? <Link href={`/admin/musteriler/${sel.customer.id}`} className="text-sm font-bold text-link">Müşteri →</Link> : null} />
             <div className="flex flex-col gap-4 p-5 text-sm">
               <p className="rounded-lg bg-soft p-3"><b>Arıza:</b> {sel.issue}</p>
+              {sel.accessories ? <p className="rounded-lg bg-soft p-3"><b>Teslim alınanlar:</b> {sel.accessories}</p> : null}
+              <a href={`/admin/servis-fis/${sel.id}`} target="_blank" className="self-start rounded-lg border border-line px-3 py-2 text-sm font-bold hover:bg-soft" data-testid="svc-receipt">Kabul fişini yazdır</a>
               <ol className="flex flex-col gap-2">
                 {sel.history.map((h, i) => (
                   <li key={i} className="border-l-2 border-brand pl-3">

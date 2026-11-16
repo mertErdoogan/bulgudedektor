@@ -18,7 +18,8 @@ const tt = (k: DictKey, v?: Record<string, string | number>) => {
 const label = (el: HTMLElement) => {
   const box = el.closest("[data-field]");
   const t = box?.querySelector("[data-field-label]")?.textContent ?? el.getAttribute("aria-label") ?? "";
-  return t.replace(/\(.*?\)/g, "").trim();
+  // "(…)" açıklamaları ve zorunluluk yıldızı mesaja girmesin: "Stok kodu * boş bırakılamaz" yerine "Stok kodu boş bırakılamaz"
+  return t.replace(/\(.*?\)/g, "").replace(/\s*\*+\s*/g, " ").replace(/\s+/g, " ").trim();
 };
 
 function message(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) {

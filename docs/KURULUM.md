@@ -49,7 +49,32 @@ Servisler:
 - `db`: PostgreSQL 17 (veriler `pgdata` biriminde)
 - `caddy`: HTTPS ve `arenadedektor.com → www` yönlendirmesi
 - `cron`: 15 dakikada bir zamanlanmış işler (ödeme zaman aşımı, sepet hatırlatma, yorum daveti, Trendyol senkronu)
-- `backup`: her gece 03:30 veritabanı yedeği, `./backups` klasörüne, 14 gün saklanır. Bu klasörü haftada bir sunucu dışına (ör. Google Drive, R2) kopyalayın.
+- `backup`: her gece 03:30 veritabanı yedeği (`deploy/backup.sh`), pazar günleri yüklenen görseller de. `./backups` klasöründe 14 gün saklanır.
+  `.env` içinde `BACKUP_S3_BUCKET` (+ uç nokta ve anahtarlar) tanımlıysa **her gece kendiliğinden sunucu dışına** (Cloudflare R2 / S3) kopyalanır ve orada 30 gün saklanır.
+  Tanımlı değilse yedek yalnızca sunucuda durur: sunucu bozulursa yedek de gider. Canlıya geçmeden mutlaka tanımlayın.
+
+### Yedekten geri dönüş (ayda bir deneyin)
+
+Yedeğin işe yaradığını ancak geri yükleyerek anlarsınız. Ayda bir, canlıya dokunmadan deneyin:
+
+```sh
+# 1) Son yedeği seç
+ls -lh backups/
+# 2) Geçici bir veritabanına yükle (canlı veritabanı "arena", deneme "arena_test")
+docker compose exec db createdb -U arena arena_test
+docker compose exec -T db pg_restore -U arena -d arena_test --no-owner < backups/arena-YYYY-AA-GG.dump
+# 3) Kontrol et: sipariş ve seri no sayıları canlıyla aynı mı?
+docker compose exec db psql -U arena -d arena_test -c "select count(*) from orders; select count(*) from serial_numbers;"
+# 4) Denemeyi sil
+docker compose exec db dropdb -U arena arena_test
+```
+
+Gerçek bir felakette (veritabanı bozuldu): siteyi bakıma al, `arena` veritabanını silip aynı `pg_restore` komutuyla son yedeği yükle, `docker compose up -d` ile aç.
+
+### "Site çöktü" uyarısı
+
+`/api/health` adresi sunucu ve veritabanı ayaktaysa 200 döner. Ücretsiz bir izleme servisinde (ör. UptimeRobot, Better Stack) bu adresi
+5 dakikada bir kontrol eden bir izleme açın ve uyarıyı sahibin telefonuna (SMS/e-posta) yönlendirin.
 
 Güncelleme: `git pull && docker compose up -d --build`
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { and, desc, eq, ilike, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { auditLogs, users } from "@/db/schema";
@@ -28,7 +29,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   ]);
   return (
     <>
-      <PageHeader title="İşlem kayıtları" description="Kim, ne zaman, neyi değiştirdi. Silinemez." />
+      <PageHeader title="İşlem kayıtları" description="Kim, ne zaman, neyi değiştirdi. Silinemez." actions={<Link href="/admin/kayitlar/ozet" className="rounded-lg bg-deep px-4 py-2 text-sm font-bold text-white">Haftalık dikkat özeti</Link>} />
       <Card className="mb-4 p-3">
         <form className="grid gap-2 md:grid-cols-[1fr_200px_200px_auto]">
           <Input name="q" defaultValue={sp.q} placeholder="Açıklamada ara" />

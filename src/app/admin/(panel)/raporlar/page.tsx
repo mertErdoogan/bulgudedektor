@@ -3,7 +3,7 @@ import Link from "next/link";
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 import { Download } from "lucide-react";
 import { db } from "@/db";
-import { customers, orders, products } from "@/db/schema";
+import { customers, orders, products, users } from "@/db/schema";
 import { BarList, SalesChart } from "@/components/admin/charts";
 import { PageHeader } from "@/components/admin/shell";
 import { Button, Card, CardHeader, Input, Stat, Table, Td, Th } from "@/components/ui";
@@ -37,6 +37,22 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     db.select({ cost: sql<number>`coalesce(sum(${products.stock} * coalesce(${products.costPrice},0)),0)::float`, retail: sql<number>`coalesce(sum(${products.stock} * ${products.price}),0)::float`, units: sql<number>`coalesce(sum(${products.stock}),0)::int` }).from(products).where(eq(products.status, "ACTIVE")),
     sourceBreakdown(start, end),
   ]);
+  // Personel bazında mağaza/telefon satışı ve verdikleri satış indirimi (prim ve indirim kontrolü)
+  const bySeller = await db
+    .select({ name: users.name, n: sql<number>`count(*)::int`, total: sql<number>`coalesce(sum(${orders.total}),0)::float`, discount: sql<number>`coalesce(sum(${orders.manualDiscount}),0)::float`, maxPct: sql<number>`coalesce(max(${orders.manualDiscount} * 100.0 / nullif(${orders.subtotal},0)),0)::float` })
+    .from(orders)
+    .innerJoin(users, eq(users.id, orders.salesUserId))
+    .where(and(gte(orders.createdAt, start), lt(orders.createdAt, end), sql`${orders.paymentStatus} in ('PAID','PARTIALLY_REFUNDED')`))
+    .groupBy(users.name)
+    .orderBy(sql`3 desc`);
+  // Ölü stok: stokta olan ama 90 gündür hiç satılmayan ürünler (bağlı para)
+  const dead = await db.execute<{ id: string; name: string; stock: number; value: number; last: Date | null }>(sql`
+    select p.id, p.name, p.stock, (p.stock * coalesce(p.cost_price, p.price))::float as value,
+      (select max(o.created_at) from order_items oi join orders o on o.id = oi.order_id where oi.product_id = p.id and o.payment_status = 'PAID') as last
+    from products p
+    where p.stock > 0 and p.status <> 'ARCHIVED'
+      and not exists (select 1 from order_items oi join orders o on o.id = oi.order_id where oi.product_id = p.id and o.payment_status = 'PAID' and o.created_at > now() - interval '90 days')
+    order by value desc limit 15`);
   const pct = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
   const delta = (a: number, b: number) => {
     const p = pct(a, b);
@@ -102,6 +118,33 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           </tbody>
         </Table>
       </Card>
+      <div className="mt-5 grid gap-5 xl:grid-cols-2">
+        <Card>
+          <CardHeader title="Personel bazında mağaza satışı" description="Showroom ve telefon satışları; verilen satış indirimi ve en yüksek indirim oranı" />
+          <Table data-testid="report-sellers">
+            <thead><tr><Th>Personel</Th><Th className="text-right">Satış</Th><Th className="text-right">Tutar</Th><Th className="text-right">İndirim</Th><Th className="text-right">En yüksek</Th></tr></thead>
+            <tbody>
+              {bySeller.map((b) => (
+                <tr key={b.name}><Td className="font-semibold">{b.name}</Td><Td className="text-right">{b.n}</Td><Td className="text-right font-bold">{formatTL(b.total)}</Td><Td className="text-right">{b.discount ? formatTL(b.discount) : "—"}</Td><Td className="text-right">{b.maxPct ? `%${b.maxPct.toFixed(1)}` : "—"}</Td></tr>
+              ))}
+              {!bySeller.length ? <tr><Td colSpan={5} className="py-6 text-center text-mute">Bu dönemde panelden satış yok.</Td></tr> : null}
+            </tbody>
+          </Table>
+        </Card>
+        <Card>
+          <CardHeader title="Ölü stok" description="Stokta olan ama 90 gündür satılmayan ürünler; bağlı para (alış, yoksa satış fiyatıyla)" />
+          <Table data-testid="report-dead">
+            <thead><tr><Th>Ürün</Th><Th className="text-right">Stok</Th><Th className="text-right">Bağlı para</Th><Th className="text-right">Son satış</Th></tr></thead>
+            <tbody>
+              {dead.map((d) => (
+                <tr key={d.id}><Td className="font-semibold"><Link href={`/admin/urunler/${d.id}`} className="hover:text-link">{d.name}</Link></Td><Td className="text-right">{d.stock}</Td><Td className="text-right font-bold">{formatTL(d.value)}</Td><Td className="text-right text-mute">{d.last ? new Date(d.last).toLocaleDateString("tr-TR") : "hiç"}</Td></tr>
+              ))}
+              {!dead.length ? <tr><Td colSpan={4} className="py-6 text-center text-mute">90 gündür satılmayan stoklu ürün yok.</Td></tr> : null}
+            </tbody>
+          </Table>
+          {dead.length ? <p className="px-5 py-3 text-xs text-mute">Toplam bağlı para: <b className="text-deep">{formatTL(dead.reduce((s, d) => s + Number(d.value), 0))}</b>. Kampanyaya almak ya da bayiye toplu satmak için aday.</p> : null}
+        </Card>
+      </div>
       <div className="mt-5 grid gap-5 xl:grid-cols-3">
         <Card>
           <CardHeader title="Ödeme ve taksit" />

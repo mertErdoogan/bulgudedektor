@@ -22,18 +22,23 @@ export async function createService(_: ActionResult | null, fd: FormData): Promi
     const contact = contactRaw.includes("@") ? contactRaw.toLowerCase() : normalizePhone(contactRaw);
     const serial = strOrNull(fd.get("serial"))?.toUpperCase() ?? null;
     let underWarranty = fd.get("underWarranty") === "on";
+    let warrantyNote = "";
     if (serial) {
       const sn = await db.query.serialNumbers.findFirst({ where: eq(serialNumbers.serial, serial) });
-      if (sn?.warrantyUntil) underWarranty = sn.warrantyUntil > new Date();
+      if (sn?.warrantyUntil) {
+        const auto = sn.warrantyUntil > new Date();
+        if (auto !== underWarranty) warrantyNote = auto ? " Seri numarasına göre garanti devam ediyor; garanti kapsamında işaretlendi." : " Seri numarasına göre garanti bitmiş; ücretli olarak işaretlendi.";
+        underWarranty = auto;
+      }
     }
     const cust = await db.query.customers.findFirst({ where: contact.includes("@") ? eq(customers.email, contact) : eq(customers.phone, contact) });
     const [r] = await db
       .insert(serviceRecords)
-      .values({ contactName, contact, productName, serial, issue, underWarranty, customerId: cust?.id ?? null, assigneeId: staff.id, history: [{ status: "RECEIVED", at: new Date().toISOString(), by: staff.name }] })
+      .values({ contactName, contact, productName, serial, issue, accessories: strOrNull(fd.get("accessories")), underWarranty, customerId: cust?.id ?? null, assigneeId: staff.id, history: [{ status: "RECEIVED", at: new Date().toISOString(), by: staff.name }] })
       .returning();
     await audit(staff.id, "create", "service", r.id, `Servis kaydı ${serviceNo(r.number)}`);
     revalidatePath("/admin", "layout");
-    return ok(`Servis kaydı açıldı: ${serviceNo(r.number)}`, { redirect: `/admin/servis?id=${r.id}` });
+    return ok(`Servis kaydı açıldı: ${serviceNo(r.number)}.${warrantyNote} Kabul fişini yazdırıp müşteriye ver.`, { redirect: `/admin/servis?id=${r.id}` });
   });
 }
 
@@ -60,4 +65,22 @@ export async function updateService(_: ActionResult | null, fd: FormData): Promi
     revalidatePath("/admin", "layout");
     return ok("Servis kaydı güncellendi.");
   });
+}
+
+/** Servis kaydı açarken seri numarasından satış bilgisini getirir (müşteri, telefon, ürün, garanti) */
+export async function lookupSerial(serial: string) {
+  await assertStaff("service.manage");
+  const sn = await db.query.serialNumbers.findFirst({
+    where: eq(serialNumbers.serial, serial.trim().toUpperCase()),
+    with: { product: { columns: { name: true } }, orderItem: { with: { order: { columns: { phone: true, email: true, shippingAddress: true } } } } },
+  });
+  if (!sn) return null;
+  const o = sn.orderItem?.order;
+  return {
+    productName: sn.product?.name ?? "",
+    contactName: o?.shippingAddress?.fullName ?? "",
+    contact: o?.phone ?? "",
+    status: sn.status,
+    warrantyUntil: sn.warrantyUntil ? sn.warrantyUntil.toISOString() : null,
+  };
 }

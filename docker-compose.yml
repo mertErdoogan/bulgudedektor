@@ -63,15 +63,26 @@ services:
     depends_on:
       - app
 
-  # Her gece 03:30 veritabanı yedeği (14 gün saklanır) → ./backups
+  # Her gece 03:30 yedek: veritabanı (+ pazar günleri görseller) → ./backups ve BACKUP_S3_BUCKET tanımlıysa sunucu dışı (R2/S3).
+  # Ayrıntı ve geri yükleme: deploy/backup.sh ve docs/KURULUM.md
   backup:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      BACKUP_S3_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_REGION: ${S3_REGION:-auto}
+      TZ: Europe/Istanbul
     volumes:
       - ./backups:/backups
-    entrypoint: ["/bin/sh", "-c", "while true; do now=$$(date +%H%M); if [ \"$$now\" = \"0330\" ]; then pg_dump -h db -U arena -Fc arena > /backups/arena-$$(date +%F).dump && find /backups -name '*.dump' -mtime +14 -delete; sleep 60; fi; sleep 30; done"]
+      - ./deploy:/deploy:ro
+      - uploads:/uploads:ro
+    entrypoint: ["/bin/sh", "-c", "while true; do now=$$(date +%H%M); if [ \"$$now\" = \"0330\" ]; then sh /deploy/backup.sh || echo '[yedek] HATA'; sleep 60; fi; sleep 30; done"]
     depends_on:
       - db
 

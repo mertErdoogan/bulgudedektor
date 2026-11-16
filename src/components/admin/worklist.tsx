@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertTriangle, Banknote, Barcode, CheckCircle2, FileText, Inbox, MessageCircle, Package, PackageCheck, Star, Truck, Undo2, UserRound, Wrench } from "lucide-react";
+import { AlertTriangle, Banknote, Barcode, CheckCircle2, FileText, Inbox, MessageCircle, Package, PackageCheck, Star, Truck, Undo2, Wrench } from "lucide-react";
 import { assignWork } from "@/app/admin/(panel)/isler/actions";
 
 type Item = {
@@ -154,7 +154,7 @@ function AssignMenu({ it, me, staff, disabled, onAssign }: { it: Item; me: strin
       <span
         className={`grid h-8 w-8 place-items-center rounded-full text-[11px] font-bold ${it.assignee ? (it.assignee.id === me ? "bg-brand text-white" : "bg-deep text-white") : "border border-dashed border-mute text-mute"}`}
       >
-        {it.assignee ? initials(it.assignee.name) : <UserRound size={14} />}
+        {it.assignee ? initials(it.assignee.name) : "Ata"}
       </span>
       <select
         aria-label="Ata"

@@ -281,3 +281,15 @@ export async function saveSecurity(_: ActionResult | null, fd: FormData): Promis
     return fin(staff.id, "security");
   });
 }
+
+/** Haftalık özeti beklemeden şimdi gönder (deneme / kontrol) */
+export async function sendDigestNow(): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("users.manage");
+    const { sendDigest } = await import("@/lib/digest");
+    const r = await sendDigest();
+    await audit(staff.id, "settings", "security", null, `Haftalık özet elle gönderildi (${r.total} işlem)`);
+    if (!r.sent) return fail(`Özet hazır (${r.total} işlem) ama e-posta gönderilemedi: Entegrasyonlar sekmesindeki e-posta (SMTP) ayarlarını kontrol et. Önizleme için İşlem kayıtları > Haftalık özet.`);
+    return ok(`Özet ${r.to} adresine gönderildi (${r.total} işlem).`);
+  });
+}

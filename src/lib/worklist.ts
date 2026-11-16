@@ -132,8 +132,9 @@ export async function getWorklist(perms: string[]): Promise<WorkItem[]> {
         });
     }
 
-    // Kargolanmış/teslim edilmiş ama faturası eklenmemiş site siparişleri (pazaryerleri kendi faturasını keser)
-    const noInvoice = await db.query.orders.findMany({
+    // Kargolanmış/teslim edilmiş ama faturası eklenmemiş site siparişleri (pazaryerleri kendi faturasını keser).
+    // Fatura muhasebe/sahip işi: yalnızca para yetkisi olanlara gösterilir, satışçının listesini kalabalıklaştırmaz.
+    const noInvoice = !(can(perms, "payments.confirm") || can(perms, "reports.finance")) ? [] : await db.query.orders.findMany({
       where: and(inArray(orders.status, ["SHIPPED", "DELIVERED"]), isNull(orders.invoiceUrl), inArray(orders.channel, ["WEB", "MANUAL"]), gt(orders.createdAt, new Date(Date.now() - 60 * 24 * H))),
       orderBy: asc(orders.createdAt),
       limit: 50,
@@ -199,6 +200,29 @@ export async function getWorklist(perms: string[]): Promise<WorkItem[]> {
         assignee: who(s.assigneeId),
         target: { type: "service", id: s.id },
       });
+  }
+
+  if (can(perms, "service.manage")) {
+    // Yasal azami tamir süresi 20 iş günü (~28 takvim günü). 15. günden itibaren uyar; aşılırsa müşteri değişim/iade isteyebilir.
+    const old = await db.query.serviceRecords.findMany({
+      where: and(inArray(serviceRecords.status, ["RECEIVED", "AWAITING_DEVICE", "IN_REPAIR", "WAITING_PART"]), sql`${serviceRecords.createdAt} < now() - interval '15 days'`),
+      orderBy: asc(serviceRecords.createdAt),
+      limit: 30,
+    });
+    for (const s of old) {
+      const days = Math.floor(ago(s.createdAt) / (24 * H));
+      items.push({
+        key: `sd-${s.id}`,
+        kind: "service",
+        title: `Servis #${s.number} ${days}. gün: yasal süre dolmak üzere`,
+        detail: `${s.contactName} · ${s.productName} — 20 iş günü aşılırsa müşteri değişim/iade isteyebilir`,
+        href: `/admin/servis?id=${s.id}`,
+        at: s.createdAt,
+        late: true,
+        assignee: who(s.assigneeId),
+        target: { type: "service", id: s.id },
+      });
+    }
   }
 
   if (can(perms, "inventory.manage")) {

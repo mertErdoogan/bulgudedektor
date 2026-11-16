@@ -23,12 +23,20 @@ export default async function SetupPage() {
     db.select().from(pages),
   ]);
   const legalOk = legal.length >= 3 && legal.filter((x) => ["mesafeli-satis-sozlesmesi", "on-bilgilendirme-formu", "kvkk-aydinlatma-metni"].includes(x.slug)).every((x) => !x.content.includes("Bu metin örnektir")) && !!(s.store.taxNumber && s.store.mersis);
+  // Her adım için "neden tamamlanmadı": eksik alanların adı (yeni çalışan neyi doldurması gerektiğini görsün)
+  const miss = (pairs: [unknown, string][]) => pairs.filter(([v]) => !v).map(([, n]) => n);
+  const missing: Record<string, string[]> = {
+    store: miss([[s.store.legalName && !s.store.legalName.startsWith("["), "ticari unvan"], [s.store.phone, "telefon"], [s.store.address, "adres"], [s.store.etbis, "ETBİS no"]]),
+    pay: s.payment.provider === "paytr" ? miss([[s.payment.paytrMerchantId, "PayTR mağaza no"], [s.payment.paytrMerchantKey, "PayTR key"], [s.payment.paytrMerchantSalt, "PayTR salt"]]) : miss([[s.payment.iyzicoApiKey, "iyzico API key"], [s.payment.iyzicoSecretKey, "iyzico secret"]]),
+    ship: miss([[s.shipping.carriers.length, "kargo firması"], [!s.shipping.pickupEnabled || s.shipping.pickupAddress, "showroom teslim adresi"]]),
+    legal: miss([[s.store.taxNumber, "vergi no"], [s.store.mersis, "MERSİS no"], [legal.filter((x) => ["mesafeli-satis-sozlesmesi", "on-bilgilendirme-formu", "kvkk-aydinlatma-metni"].includes(x.slug)).every((x) => !x.content.includes("Bu metin örnektir")), "sözleşmelerdeki 'örnek metin' notu"]]),
+  };
   const steps = [
-    { done: !!(s.store.legalName && !s.store.legalName.startsWith("[") && s.store.phone && s.store.address && s.store.etbis), title: "Mağaza bilgileri", desc: "Unvan, adres, telefon, WhatsApp, vergi no, MERSİS ve ETBİS. Footer ve sözleşmelerde kullanılır.", href: "/admin/ayarlar?t=magaza", time: "3 dk" },
-    { done: s.payment.provider === "paytr" ? !!(s.payment.paytrMerchantId && s.payment.paytrMerchantKey && s.payment.paytrMerchantSalt) : !!(s.payment.iyzicoApiKey && s.payment.iyzicoSecretKey), title: `Ödeme altyapısı (${s.payment.provider === "paytr" ? "PayTR" : "iyzico"})`, desc: "Kartla ödemeyi alacak kuruluşu (iyzico veya PayTR) seç, panelinden anahtarları yapıştır, 'Bağlantıyı test et' de. Havale için IBAN ekle.", href: "/admin/ayarlar?t=odeme", time: "5 dk" },
-    { done: s.shipping.carriers.length > 0 && (s.shipping.pickupEnabled ? !!s.shipping.pickupAddress : true), title: "Kargo ve teslimat", desc: "Kargo firmaları, ücret kuralı, aynı gün kargo saati ve showroom teslim adresi.", href: "/admin/ayarlar?t=kargo", time: "2 dk" },
+    { done: !!(s.store.legalName && !s.store.legalName.startsWith("[") && s.store.phone && s.store.address && s.store.etbis), title: "Mağaza bilgileri", miss: missing.store, desc: "Unvan, adres, telefon, WhatsApp, vergi no, MERSİS ve ETBİS. Footer ve sözleşmelerde kullanılır.", href: "/admin/ayarlar?t=magaza", time: "3 dk" },
+    { done: s.payment.provider === "paytr" ? !!(s.payment.paytrMerchantId && s.payment.paytrMerchantKey && s.payment.paytrMerchantSalt) : !!(s.payment.iyzicoApiKey && s.payment.iyzicoSecretKey), title: `Ödeme altyapısı (${s.payment.provider === "paytr" ? "PayTR" : "iyzico"})`, miss: missing.pay, desc: "Kartla ödemeyi alacak kuruluşu (iyzico veya PayTR) seç, panelinden anahtarları yapıştır, 'Bağlantıyı test et' de. Havale için IBAN ekle.", href: "/admin/ayarlar?t=odeme", time: "5 dk" },
+    { done: s.shipping.carriers.length > 0 && (s.shipping.pickupEnabled ? !!s.shipping.pickupAddress : true), title: "Kargo ve teslimat", miss: missing.ship, desc: "Kargo firmaları, ücret kuralı, aynı gün kargo saati ve showroom teslim adresi.", href: "/admin/ayarlar?t=kargo", time: "2 dk" },
     { done: c.n > 0 && p.n > 0, title: "Kategori ve ilk ürünler", desc: `${c.n} kategori, ${p.n} yayında ürün. CSV ile toplu yükleyebilirsin.`, href: "/admin/urunler", time: "—" },
-    { done: legalOk, title: "Sözleşmeler ve KVKK", desc: "Metinler hazır; unvan, adres, IBAN gibi bilgiler ayarlardan otomatik dolar. Vergi no ve MERSİS'i Mağaza bilgilerine gir, metinleri bir hukukçuya kontrol ettir.", href: "/admin/sayfalar", time: "10 dk" },
+    { done: legalOk, title: "Sözleşmeler ve KVKK", miss: missing.legal, desc: "Metinler hazır; unvan, adres, IBAN gibi bilgiler ayarlardan otomatik dolar. Vergi no ve MERSİS'i Mağaza bilgilerine gir, metinleri bir hukukçuya kontrol ettir.", href: "/admin/sayfalar", time: "10 dk" },
     { done: u.n > 1, title: "Ekibini davet et", desc: "Satış, depo ve servis için hesap aç; her biri sadece kendi işini görür.", href: "/admin/ekip", time: "2 dk" },
     { done: !!(s.integrations.gaMeasurementId || s.integrations.notifyEmail), title: "Bildirim ve analitik (isteğe bağlı)", desc: "Yeni sipariş e-postası, Google Analytics ve Meta Pixel.", href: "/admin/ayarlar?t=entegrasyon", time: "3 dk" },
   ];
@@ -46,6 +54,9 @@ export default async function SetupPage() {
                 <span className="flex-1">
                   <b className={x.done ? "text-mute line-through" : ""}>{i + 1}. {x.title}</b>
                   <span className="block text-sm text-mute">{x.desc}</span>
+                  {!x.done && "miss" in x && x.miss?.length ? (
+                    <span className="mt-1 block text-xs font-semibold text-warn" data-testid="setup-missing">Eksik: {x.miss.join(", ")}</span>
+                  ) : null}
                 </span>
                 <span className="text-xs whitespace-nowrap text-mute">{x.time}</span>
               </Link>

@@ -7,7 +7,7 @@ import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSettings } from "@/lib/settings";
 import { DEFAULT_LOCALE, LOCALES, LOCALE_LABEL } from "@/lib/i18n/config";
-import { saveI18n, saveSecurity, generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
+import { saveI18n, saveSecurity, sendDigestNow, generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
 
 export const metadata = { title: "Ayarlar" };
 const mask = (v: string) => (v ? `${v.slice(0, 4)}••••••••${v.slice(-3)}` : "");
@@ -16,6 +16,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const staff = await requireStaff("settings.manage");
   const tab = (await searchParams).t ?? "magaza";
   const s = await getSettings();
+  // Çalışma saati metni ile Google/rozet saatleri aynı saatleri içermeli
+  const times = (t: string) => [...new Set((t || "").match(/\b\d{1,2}[:.]\d{2}\b/g)?.map((x) => x.replace(".", ":").padStart(5, "0")) ?? [])].sort().join(" ");
+  const hoursMismatch = s.store.workingHours && s.store.openingHours && times(s.store.workingHours) !== times(s.store.openingHours) ? `${times(s.store.workingHours)} ≠ ${times(s.store.openingHours)}` : "";
   const tabs = [
     ["magaza", "Mağaza"],
     ["kargo", "Kargo ve teslimat"],
@@ -62,12 +65,17 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <Field label="Kuruluş yılı"><Input name="foundingYear" defaultValue={s.store.foundingYear} placeholder="2015" /></Field>
               <Field label="Enlem" hint="Google Haritalar'da konuma sağ tıkla → ilk sayı"><Input name="latitude" defaultValue={s.store.latitude} placeholder="41.0082" /></Field>
               <Field label="Boylam"><Input name="longitude" defaultValue={s.store.longitude} placeholder="28.9784" /></Field>
-              <Field label="Açılış saatleri (şema biçimi)" hint="Mo-Fr 09:00-20:00, Sa 10:00-18:00"><Input name="openingHours" defaultValue={s.store.openingHours} /></Field>
+              <Field label="Saatler (Google ve 'şu an açık' rozeti için)" hint="Yukarıdaki çalışma saatleriyle aynı saatleri yaz. Gün kısaltmaları: Mo Tu We Th Fr Sa Su. Örnek: Mo-Fr 09:00-19:00, Sa 10:00-18:00"><Input name="openingHours" defaultValue={s.store.openingHours} placeholder="Mo-Fr 09:00-19:00, Sa 10:00-18:00" /></Field>
+              {hoursMismatch ? (
+                <p className="rounded-lg bg-warn-bg p-3 text-sm font-semibold text-warn md:col-span-2" data-testid="hours-mismatch">
+                  İki saat alanı birbirini tutmuyor ({hoursMismatch}). Müşteri sitede bir saati, Google&apos;da ve &quot;şu an açık&quot; rozetinde başka saati görür. İkisini aynı yap.
+                </p>
+              ) : null}
               <Field label="Fiyat aralığı"><Input name="priceRange" defaultValue={s.store.priceRange} placeholder="₺₺₺" /></Field>
 
               <div className="mt-3 md:col-span-2">
                 <p className="font-bold">Dijital ayak izi (sosyal kanıt)</p>
-                <p className="text-sm text-mute">Bu profiller şemaya “sameAs” olarak eklenir; AI motorları markayı bu kaynaklarla doğrular. Sadece aktif kullandığın hesapları gir.</p>
+                <p className="text-sm text-mute">Bu hesaplar Google&apos;a ve yapay zekâ arama motorlarına &quot;bu mağazanın resmi hesapları&quot; olarak bildirilir. Sadece aktif kullandığın hesapları gir.</p>
               </div>
               <Field label="Google İşletme Profili (Haritalar) linki"><Input name="googleBusinessUrl" defaultValue={s.store.googleBusinessUrl} placeholder="https://maps.app.goo.gl/…" /></Field>
               <Field label="Google yorum bırakma linki" hint="Teslimattan sonra müşteriye e-postayla gönderilir"><Input name="googleReviewUrl" defaultValue={s.store.googleReviewUrl} placeholder="https://g.page/r/…/review" /></Field>
@@ -99,7 +107,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <Textarea name="tracking" defaultValue={Object.entries(s.shipping.trackingUrlTemplate).map(([k, v]) => `${k} | ${v}`).join("\n")} className="font-mono text-[12px]" />
               </Field>
               <Checkbox name="pickupEnabled" defaultChecked={s.shipping.pickupEnabled} label="Showroom'dan teslim alma seçeneği" className="md:col-span-2" />
-              <Field label="Teslim alma adresi" className="md:col-span-2"><Textarea name="pickupAddress" defaultValue={s.shipping.pickupAddress} className="min-h-[60px]" /></Field>
+              <Field label="Teslim alma adresi" hint={s.shipping.pickupAddress ? undefined : "Boştu; mağaza adresi önerildi. Farklıysa düzelt ve kaydet."} className="md:col-span-2"><Textarea name="pickupAddress" defaultValue={s.shipping.pickupAddress || s.store.address} className="min-h-[60px]" /></Field>
               <SubmitButton className="md:col-span-2 md:justify-self-start">Kaydet</SubmitButton>
             </ActionForm>
           </Card>
@@ -287,7 +295,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 şifre değişince diğer cihazlardaki oturumlar kapanır; aynı internetten 15 dakikada 15 hatalı giriş denemesi o bağlantıyı 15 dakika durdurur
                 (doğru şifreyle girişler sayılmaz).
               </div>
-              <SubmitButton className="self-start">Kaydet</SubmitButton>
+              <div className="flex flex-wrap items-center gap-3">
+                <SubmitButton>Kaydet</SubmitButton>
+                <ActionButton variant="outline" run={sendDigestNow}>Özeti şimdi gönder</ActionButton>
+                <Link href="/admin/kayitlar/ozet" className="text-sm font-bold text-link">Özeti önizle →</Link>
+              </div>
             </ActionForm>
           </Card>
         ) : null}

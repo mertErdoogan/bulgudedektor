@@ -105,6 +105,22 @@ export async function GET(req: Request) {
     return a.length + b.length;
   });
 
+  // 4b) Haftalık dikkat özeti: pazartesi 08:00'den sonraki ilk çalışmada bir kez (İstanbul saati)
+  await run("weeklyDigest", async () => {
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Istanbul", weekday: "short", hour: "2-digit", hourCycle: "h23" }).formatToParts(now);
+    const wd = parts.find((p) => p.type === "weekday")?.value;
+    const hour = Number(parts.find((p) => p.type === "hour")?.value);
+    if (wd !== "Mon" || hour < 8) return 0;
+    const { allow } = await import("@/lib/guard");
+    const week = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(now);
+    // Aynı pazartesi ikinci kez gönderilmesin (sayaç günlük anahtarla bir kez izin verir)
+    if (!(await allow(`digest:${week}`, 1, 24 * H))) return 0;
+    const { sendDigest } = await import("@/lib/digest");
+    const r = await sendDigest();
+    return r.sent ? r.total : -1;
+  });
+
   // 5) Trendyol: yeni siparişleri al, fiyat/stok gönder (ayarlarda açıksa)
   await run("trendyol", async () => {
     const { isTrendyolOn, trendyolSync } = await import("@/lib/trendyol");
