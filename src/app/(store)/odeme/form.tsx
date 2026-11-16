@@ -41,7 +41,7 @@ function Opt({ checked, onClick, icon, title, desc }: { checked: boolean; onClic
 }
 
 export function CheckoutForm({ settings: s, bankAccounts, me, address }: { settings: PS; bankAccounts: { bank: string; iban: string; holder: string }[]; me: { name: string; email: string; phone: string } | null; address: { city: string; district: string; line: string; zip: string } | null }) {
-  const { items, ready } = useCart();
+  const { items, ready, applyFixes } = useCart();
   const [delivery, setDelivery] = useState<"CARGO" | "PICKUP">("CARGO");
   const [pay, setPay] = useState<"CARD" | "TRANSFER">(s.payment.cardEnabled ? "CARD" : "TRANSFER");
   const [invoice, setInvoice] = useState<"INDIVIDUAL" | "CORPORATE">("INDIVIDUAL");
@@ -59,6 +59,13 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
   useEffect(() => {
     if (ready) start(async () => setQ(await getCartQuote(items, coupon, pay, delivery)));
   }, [items, coupon, pay, delivery, ready]);
+  // Satıştan kalkan / stoğu biten ürünü sepetten bir kez düzelt; yeniden hesaplanan sepette uyarı kalmaz
+  const fixedFor = useRef<Quote | null>(null);
+  useEffect(() => {
+    if (!q?.fixes?.length || fixedFor.current === q) return;
+    fixedFor.current = q;
+    applyFixes(q.fixes);
+  }, [q, applyFixes]);
   const begun = useRef(false);
   useEffect(() => {
     if (!q || begun.current || !items.length) return;
@@ -182,7 +189,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
               </li>
             ))}
           </ul>
-          {q?.errors.map((e) => <p key={e} className="mt-2 text-sm text-danger">{e}</p>)}
+          {(q?.fixes?.length ? [] : q?.errors ?? []).map((e) => <p key={e} className="mt-2 text-sm text-danger">{e}</p>)}
           <dl className="mt-4 flex flex-col gap-1.5 border-t border-line pt-3 text-sm">
             <div className="flex justify-between"><dt>Ara toplam</dt><dd>{formatTL(q?.subtotal)}</dd></div>
             {q?.discountTotal ? <div className="flex justify-between text-ok"><dt>İndirim{q.campaign ? ` (${q.campaign.name})` : ""}</dt><dd>−{formatTL(q.discountTotal)}</dd></div> : null}

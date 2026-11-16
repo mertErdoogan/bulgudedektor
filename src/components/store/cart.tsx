@@ -13,6 +13,8 @@ type Ctx = {
   setQty: (productId: string, qty: number) => void;
   remove: (productId: string) => void;
   clear: () => void;
+  /** Sunucunun bildirdiği satılamayan ürünleri sepetten çıkarır / adedi düşürür ve bir kez bildirir */
+  applyFixes: (fixes: { productId: string; quantity: number; message: string }[]) => void;
   compare: string[];
   toggleCompare: (productId: string) => void;
   favorites: string[];
@@ -90,6 +92,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setQty: (productId, qty) => persist(qty <= 0 ? items.filter((i) => i.productId !== productId) : items.map((i) => (i.productId === productId ? { ...i, quantity: Math.min(99, qty) } : i))),
       remove: (productId) => persist(items.filter((i) => i.productId !== productId)),
       clear: () => persist([]),
+      applyFixes: (fixes) => {
+        if (!fixes.length) return;
+        const cur = read<CartItem[]>(KEY, items);
+        const next = cur
+          .map((i) => {
+            const f = fixes.find((x) => x.productId === i.productId);
+            return f ? { ...i, quantity: f.quantity } : i;
+          })
+          .filter((i) => i.quantity > 0);
+        persist(next);
+        for (const m of new Set(fixes.map((f) => f.message))) toast.info(m, { duration: 6000 });
+      },
       compare,
       toggleCompare: (productId) => {
         const next = compare.includes(productId) ? compare.filter((x) => x !== productId) : [...compare, productId].slice(-4);

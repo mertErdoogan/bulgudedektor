@@ -32,6 +32,11 @@ export type Quote = {
   campaign: { id: string; name: string; code: string | null } | null;
   couponError?: string;
   errors: string[];
+  /**
+   * Sepette durup satılamayan ürünler için düzeltme: istemci bunları sepetten çıkarır / adedi düşürür ve
+   * kullanıcıya bir kez bildirir. Böylece uyarı her yeniden hesaplamada tekrar çıkmaz ve ödeme kilitlenmez.
+   */
+  fixes: { productId: string; quantity: number; message: string }[];
 };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -86,11 +91,13 @@ export async function quoteCart(
     : [];
 
   const errors: string[] = [];
+  const fixes: Quote["fixes"] = [];
   const lines: PricedLine[] = [];
   for (const [pid, qty] of merged) {
     const p = rows.find((r) => r.id === pid);
     if (!p) {
       errors.push("Sepetteki bir ürün artık satışta değil, sepetten çıkarıldı.");
+      fixes.push({ productId: pid, quantity: 0, message: "Sepetindeki bir ürün artık satışta olmadığı için sepetten çıkarıldı." });
       continue;
     }
     let quantity = qty;
@@ -99,6 +106,7 @@ export async function quoteCart(
       quantity = Math.max(0, p.stock);
       error = p.stock <= 0 ? "Stokta yok" : `Stokta ${p.stock} adet var`;
       errors.push(`${p.name}: ${error}`);
+      fixes.push({ productId: pid, quantity, message: p.stock <= 0 ? `${p.name} stokta kalmadığı için sepetten çıkarıldı.` : `${p.name}: stokta ${p.stock} adet kaldığı için adet ${p.stock} yapıldı.` });
     }
     if (quantity <= 0) continue;
     lines.push({
@@ -182,6 +190,7 @@ export async function quoteCart(
     total,
     campaign: campaign ? { id: campaign.id, name: campaign.name, code: campaign.code } : null,
     couponError,
+    fixes,
     errors,
   };
 }

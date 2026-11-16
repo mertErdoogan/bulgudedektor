@@ -4,7 +4,7 @@ import { imgUrl } from "@/lib/img";
 import { CartUpsell } from "@/components/store/rails";
 
 import Link from "@/components/locale-link";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Minus, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useCart } from "@/components/store/cart";
 import { Button, Input } from "@/components/ui";
@@ -13,7 +13,7 @@ import { formatTL } from "@/lib/utils";
 import { getCartQuote } from "../actions";
 
 export function CartView({ inst, freeThreshold, flatRate }: { inst: number; freeThreshold: number; flatRate: number }) {
-  const { items, setQty, remove, ready } = useCart();
+  const { items, setQty, remove, ready, applyFixes } = useCart();
   const [q, setQ] = useState<Quote | null>(null);
   const [coupon, setCoupon] = useState("");
   const [applied, setApplied] = useState<string | null>(null);
@@ -29,6 +29,13 @@ export function CartView({ inst, freeThreshold, flatRate }: { inst: number; free
     start(async () => setQ(await getCartQuote(items, applied)));
   }, [items, applied, ready]);
 
+  // Satıştan kalkan / stoğu biten ürünü sepetten bir kez düzelt; yeniden hesaplanan sepette uyarı kalmaz
+  const fixedFor = useRef<Quote | null>(null);
+  useEffect(() => {
+    if (!q?.fixes?.length || fixedFor.current === q) return;
+    fixedFor.current = q;
+    applyFixes(q.fixes);
+  }, [q, applyFixes]);
   if (ready && !items.length)
     return (
       <div className="container-x py-16 text-center">
@@ -55,7 +62,7 @@ export function CartView({ inst, freeThreshold, flatRate }: { inst: number; free
       <h1 className="font-display mb-4 text-2xl font-extrabold">Sepetin</h1>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex flex-col gap-3">
-          {q?.errors.map((e) => <p key={e} className="rounded-lg bg-warn-bg p-3 text-sm font-semibold text-warn">{e}</p>)}
+          {(q?.fixes?.length ? [] : q?.errors ?? []).map((e) => <p key={e} className="rounded-lg bg-warn-bg p-3 text-sm font-semibold text-warn">{e}</p>)}
           {(q?.lines ?? []).map((l) => (
             <div key={l.productId} className="flex gap-3 rounded-xl border border-line p-3">
               <Link href={`/urun/${l.slug}`} className="grid h-24 w-24 shrink-0 place-items-center rounded-lg bg-white">
