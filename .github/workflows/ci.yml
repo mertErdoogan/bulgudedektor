@@ -54,7 +54,7 @@ jobs:
       - name: Bağımlılıklar
         run: |
           npm ci
-          pip install playwright==1.63.0
+          pip install playwright==1.63.0 pillow==12.3.0
           python -m playwright install --with-deps chromium
           sudo apt-get install -y postgresql-client >/dev/null
           printenv | grep -E '^(DATABASE_URL|AUTH_SECRET|APP_URL|UPLOAD_DIR|CRON_SECRET)=' > .env
