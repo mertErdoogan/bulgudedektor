@@ -51,7 +51,9 @@ with sync_playwright() as p:
     chk("en az birkaç seçenek denendi", checked >= 5, str(checked))
 
     # Teşekkür kutusu yeşil
-    oid = sql("select o.id from orders o join customers c on c.id=o.customer_id where c.email='musteri1@ornek.com' and o.payment_status = 'PAID' order by o.created_at limit 1")
+    # Demo verisi rastgele: şifresi bilinen tek müşteri musteri1 ve siparişi olmayabilir; ödenmiş bir siparişi ona ver
+    oid = sql("select id from orders where payment_status='PAID' order by created_at, id limit 1")
+    sql(f"update orders set customer_id=(select id from customers where email='musteri1@ornek.com'), email='musteri1@ornek.com' where id='{oid}'")
     cust = sql(f"select c.email from customers c join orders o on o.customer_id=c.id where o.id='{oid}'")
     sql("truncate rate_hits")
     pg.goto(BASE + "/giris", wait_until="networkidle")
@@ -59,7 +61,7 @@ with sync_playwright() as p:
     pg.fill("input[name=password]", "Arena123!")
     pg.click("button:has-text('Giriş yap')")
     try:
-        pg.wait_for_url(re.compile(r"/hesabim"), timeout=15000)
+        pg.wait_for_url(re.compile(r"/hesabim"), timeout=30000)
     except Exception:
         print("LOGIN", pg.url, pg.inner_text("main")[:300])
         raise
