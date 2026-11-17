@@ -39,7 +39,12 @@ async def main():
         t = await lead(pg)
         chk("Başka ürünün işaretini kaldırmak seçimi bozmaz", "Vanquish 560" in t, t[:80])
         await toggle(ap, "vanquish-560-pro-pack", False)
-        t = await lead(pg)
+        # Ana sayfa önbelleği kaydın hemen ardından yenilenir; birkaç saniye içinde eski haline dönmesini bekle
+        for _ in range(6):
+            t = await lead(pg)
+            if t == before:
+                break
+            await pg.wait_for_timeout(1500)
         chk("İşaret kalkınca otomatiğe döner", t == before, t[:80])
         await b.close()
     bad = [n for n, ok in res if not ok]
