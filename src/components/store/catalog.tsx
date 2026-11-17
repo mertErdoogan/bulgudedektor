@@ -37,7 +37,7 @@ export function parseFilter(sp: SP, base: Partial<CatalogFilter> = {}): CatalogF
 
 export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, children }: { title: string; intro?: React.ReactNode; crumbs?: { href: string; label: string }[]; sp: SP; base?: Partial<CatalogFilter>; hideBrand?: boolean; top?: React.ReactNode; children?: React.ReactNode }) {
   const f = parseFilter(sp, base);
-  const [all, facets, s, t] = await Promise.all([listProducts(f), facetCounts(base?.category), getSettings(), getT()]);
+  const [all, facets, s, t] = await Promise.all([listProducts(f), facetCounts(f), getSettings(), getT()]);
   // Sayfalama: ?sayfa=N ilk N×24 ürünü gösterir (birikimli; "Daha fazla göster" bir sonrakine bağlanır)
   const page = Math.max(1, Math.min(100, Number(sp.sayfa) || 1));
   const total = all.length;

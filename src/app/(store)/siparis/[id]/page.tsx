@@ -124,9 +124,9 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           <div><b>Ödeme tamamlanamadı.</b><p className="text-sm">Kartından para çekilmedi. Tekrar deneyebilir, havale seçebilir veya bize yazabilirsin.</p><Link href="/sepet" className="mt-2 inline-block font-bold underline">Sepete dön</Link></div>
         </div>
       ) : sp.yeni ? (
-        <div className="mb-5 flex gap-3 rounded-2xl bg-tint p-5">
+        <div className="mb-5 flex gap-3 rounded-2xl border border-ok/25 bg-ok-bg p-5" data-testid="order-thanks">
           <ClearCart purchase={o.paymentStatus === "PAID" || o.paymentMethod === "TRANSFER" ? { id: orderNo(o.number), value: o.total, items: o.items.map((i) => ({ item_id: i.productId ?? i.name, item_name: i.name, price: i.unitPrice, quantity: i.quantity })) } : undefined} />
-          <CheckCircle2 className="shrink-0 text-brand" size={28} />
+          <CheckCircle2 className="shrink-0 text-ok" size={28} />
           <div>
             <b className="text-lg">Teşekkürler, siparişin alındı!</b>
             <p className="text-sm text-mute">Sipariş numaran <b className="text-deep">{orderNo(o.number)}</b>. Bilgileri {o.email} adresine ve telefonuna da gönderiyoruz.</p>

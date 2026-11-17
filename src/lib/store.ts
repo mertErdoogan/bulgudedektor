@@ -199,7 +199,8 @@ export type CatalogFilter = {
   ids?: string[];
 };
 
-export async function listProducts(f: CatalogFilter) {
+/** Liste filtresinin SQL koşulları. `skip` = sayımda kendi boyutu hariç tutulacak filtreler (facet sayıları için). */
+async function filterConds(f: CatalogFilter, skip: ReadonlySet<string> = new Set()) {
   const conds: SQL[] = [active];
   const search = f.q ? productSearch(f.q) : null;
   if (search) conds.push(search.where);
@@ -210,16 +211,21 @@ export async function listProducts(f: CatalogFilter) {
       conds.push(inArray(products.categoryId, [cat.id, ...children.map((c) => c.id)]));
     }
   }
-  if (f.brand?.length) conds.push(inArray(brands.slug, f.brand));
-  if (f.tech?.length) conds.push(inArray(products.technology, f.tech as ("MULTI" | "VLF")[]));
-  if (f.water?.length) conds.push(inArray(products.waterproof, f.water as "FULL"[]));
-  if (f.exp?.length) conds.push(inArray(products.experience, f.exp as "BEGINNER"[]));
+  if (f.brand?.length && !skip.has("brand")) conds.push(inArray(brands.slug, f.brand));
+  if (f.tech?.length && !skip.has("tech")) conds.push(inArray(products.technology, f.tech as ("MULTI" | "VLF")[]));
+  if (f.water?.length && !skip.has("water")) conds.push(inArray(products.waterproof, f.water as "FULL"[]));
+  if (f.exp?.length && !skip.has("exp")) conds.push(inArray(products.experience, f.exp as "BEGINNER"[]));
   if (f.use) conds.push(sql`${f.use} = any(${products.useCases})`);
-  if (f.min) conds.push(gte(products.price, f.min));
-  if (f.max) conds.push(lte(products.price, f.max));
+  if (f.min && !skip.has("price")) conds.push(gte(products.price, f.min));
+  if (f.max && !skip.has("price")) conds.push(lte(products.price, f.max));
   if (f.stock) conds.push(sql`${products.stock} > 0`);
   if (f.light) conds.push(lte(products.weightKg, 1.5));
   if (f.ids?.length) conds.push(inArray(products.id, f.ids));
+  return { conds, search };
+}
+
+export async function listProducts(f: CatalogFilter) {
+  const { conds, search } = await filterConds(f);
   const order =
     f.sort === "fiyat-artan"
       ? asc(products.price)
@@ -247,31 +253,42 @@ export async function listProducts(f: CatalogFilter) {
   return rows;
 }
 
-export async function facetCounts(category?: string) {
-  const conds: SQL[] = [active];
-  if (category) {
-    const cat = await db.query.categories.findFirst({ where: eq(categories.slug, category) });
-    if (cat) conds.push(eq(products.categoryId, cat.id));
-  }
+/**
+ * Filtre panelindeki sayılar: her seçeneğin yanındaki sayı, sayfadaki diğer bütün filtreler (marka sayfası, kategori,
+ * arama, fiyat, stok…) uygulanmışken o seçenek de işaretlenirse kaç ürün kalacağıdır. Bir boyutun kendi seçimi kendi
+ * sayısını daraltmaz (ör. "Çok frekans" seçiliyken "Tek frekans" sayısı yine görünür).
+ */
+export async function facetCounts(f: CatalogFilter = {}) {
+  const dims = new Set(["brand", "tech", "water", "exp", "price"]);
+  const { conds } = await filterConds(f, dims);
   const rows = await db
     .select({ brand: brands.slug, brandName: brands.name, tech: products.technology, water: products.waterproof, exp: products.experience, price: products.price })
     .from(products)
     .leftJoin(brands, eq(brands.id, products.brandId))
     .where(and(...conds));
-  const count = <K extends string>(key: (r: (typeof rows)[number]) => K | null) => {
+  type R = (typeof rows)[number];
+  const ok: Record<string, (r: R) => boolean> = {
+    brand: (r) => !f.brand?.length || (!!r.brand && f.brand.includes(r.brand)),
+    tech: (r) => !f.tech?.length || (!!r.tech && f.tech.includes(r.tech)),
+    water: (r) => !f.water?.length || (!!r.water && f.water.includes(r.water)),
+    exp: (r) => !f.exp?.length || (!!r.exp && f.exp.includes(r.exp)),
+    price: (r) => (!f.min || r.price >= f.min) && (!f.max || r.price <= f.max),
+  };
+  const except = (dim: string) => rows.filter((r) => Object.entries(ok).every(([k, fn]) => k === dim || fn(r)));
+  const count = <K extends string>(dim: string, key: (r: R) => K | null) => {
     const m = new Map<K, number>();
-    for (const r of rows) {
+    for (const r of except(dim)) {
       const k = key(r);
       if (k) m.set(k, (m.get(k) ?? 0) + 1);
     }
     return m;
   };
   return {
-    brands: [...count((r) => r.brand)].map(([slug, n]) => ({ slug, n, name: rows.find((r) => r.brand === slug)?.brandName ?? slug })),
-    tech: count((r) => r.tech),
-    water: count((r) => r.water),
-    exp: count((r) => r.exp),
-    maxPrice: Math.max(0, ...rows.map((r) => r.price)),
+    brands: [...count("brand", (r) => r.brand)].map(([slug, n]) => ({ slug, n, name: rows.find((r) => r.brand === slug)?.brandName ?? slug })),
+    tech: count("tech", (r) => r.tech),
+    water: count("water", (r) => r.water),
+    exp: count("exp", (r) => r.exp),
+    maxPrice: Math.max(0, ...except("price").map((r) => r.price)),
   };
 }
 
