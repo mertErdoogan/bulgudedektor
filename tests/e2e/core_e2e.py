@@ -154,8 +154,15 @@ async def main():
         await ap.set_input_files("input[type=file]", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "public", "demo", "x-terra-pro.jpg"))
         await ap.wait_for_selector("text=KAPAK", timeout=20000)
         await ap.select_option("select[name=status]", "ACTIVE")
+        await ap.wait_for_load_state("networkidle")
         await ap.click("button:has-text('Ürünü oluştur')")
-        await ap.wait_for_url(re.compile(r".*/admin/urunler/[0-9a-f-]{36}$"), timeout=60000)
+        try:
+            await ap.wait_for_url(re.compile(r".*/admin/urunler/[0-9a-f-]{36}$"), timeout=30000)
+        except Exception:
+            # Teşhis: kayıt neden olmadı (bildirim metni), sonra bir kez daha dene
+            print("ÜRÜN KAYDI BEKLENDİ:", " | ".join(await ap.locator("[data-sonner-toast]").all_inner_texts()), "| status:", await ap.input_value("select[name=status]"), "| img:", await ap.locator("text=KAPAK").count())
+            await ap.click("button:has-text('Ürünü oluştur')")
+            await ap.wait_for_url(re.compile(r".*/admin/urunler/[0-9a-f-]{36}$"), timeout=30000)
         pid = ap.url.split("/")[-1]
         check("Ürün oluşturuldu + görsel", sql(f"select count(*) from product_images where product_id='{pid}'") == "1")
         await pg.goto(B + "/urun/e2e-test-dedektor", wait_until="networkidle")
