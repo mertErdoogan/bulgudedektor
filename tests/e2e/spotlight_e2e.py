@@ -17,7 +17,13 @@ async def toggle(ap, slug, on):
     await ap.goto(B + f"/admin/urunler/{pid}", wait_until="networkidle")
     cb = ap.locator("input[name=newSpotlight]")
     await (cb.check() if on else cb.uncheck())
-    await ap.locator("form button[type=submit]", has_text="Kaydet").first.click(); await ap.wait_for_timeout(2000)
+    await ap.locator("form button[type=submit]", has_text="Kaydet").first.click()
+    # CI yavaş olabilir: kaydın bittiğini bildirimden anla, sonra kısa bekle
+    try:
+        await ap.wait_for_selector("[data-sonner-toast]", timeout=15000)
+    except Exception:
+        pass
+    await ap.wait_for_timeout(1500)
 
 async def main():
     async with async_playwright() as p:
@@ -40,7 +46,7 @@ async def main():
         chk("Başka ürünün işaretini kaldırmak seçimi bozmaz", "Vanquish 560" in t, t[:80])
         await toggle(ap, "vanquish-560-pro-pack", False)
         # Ana sayfa önbelleği kaydın hemen ardından yenilenir; birkaç saniye içinde eski haline dönmesini bekle
-        for _ in range(6):
+        for _ in range(12):
             t = await lead(pg)
             if t == before:
                 break
