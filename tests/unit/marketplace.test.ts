@@ -30,7 +30,7 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
   await db.update(products).set({ stock: 10 }).where(eq(products.id, p2.id));
   await db.delete(orders).where(inArray(orders.channel, ["TRENDYOL", "HEPSIBURADA"]));
   const cur = (await db.query.settings.findFirst({ where: eq(settings.key, "integrations") }))?.value ?? {};
-  const value = { ...cur, trendyolEnabled: true, trendyolSupplierId: "12345", trendyolApiKey: "k", trendyolApiSecret: "s", trendyolPriceMarkupPct: 10, hbEnabled: true, hbMerchantId: "m-1", hbUser: "u", hbPass: "p", hbPriceMarkupPct: 0 };
+  const value = { ...cur, trendyolEnabled: true, trendyolSupplierId: "12345", trendyolApiKey: "k", trendyolApiSecret: "s", trendyolPriceMarkupPct: 10, hbEnabled: true, hbMerchantId: "m-1", hbUser: "u", hbPass: "p", hbPriceMarkupPct: 0, marketplaceStockBuffer: 0 }; // güvenlik payı ayrı kontrol edilir (aşağıda)
   await db.insert(settings).values({ key: "integrations", value }).onConflictDoUpdate({ target: settings.key, set: { value } });
 
   // ── Trendyol
@@ -79,6 +79,16 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
   assert.ok(calls.some((c) => c.url.endsWith("/price-uploads")));
   r = await hb.hepsiburadaSync();
   assert.match(r.message, /0 yeni Hepsiburada/);
+
+  // ── Güvenlik payı: pazaryerine stoktan N eksik gönderilir (aynı son ürünün iki kanalda birden satılmasına karşı)
+  const buffered = { ...value, marketplaceStockBuffer: 2 };
+  await db.insert(settings).values({ key: "integrations", value: buffered }).onConflictDoUpdate({ target: settings.key, set: { value: buffered } });
+  calls.length = 0;
+  fake = (url) => (url.includes("/orders") ? { totalPages: 1, content: [] } : { batchRequestId: "b-2" });
+  await ty.trendyolSync();
+  const push2 = calls.find((c) => c.url.includes("price-and-inventory"))!;
+  const it2 = (push2.body as { items: { barcode: string; quantity: number }[] }).items.find((x) => x.barcode === "TEST-BARKOD-ARENA-1")!;
+  assert.equal(it2.quantity, 7 - 2, "güvenlik payı stoktan düşülerek gönderilmeli");
 
   // temizlik: demo ürünleri ve ayarları eski haline getir
   await db.update(products).set({ barcode: p1.barcode, stock: p1.stock }).where(eq(products.id, p1.id));

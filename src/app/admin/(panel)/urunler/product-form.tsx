@@ -32,6 +32,7 @@ type Product = {
   trackSerial: boolean;
   allowBackorder: boolean;
   sameDayShipping: boolean;
+  onDisplay?: boolean;
   weightKg: number | null;
   warrantyMonths: number;
   technology: string | null;
@@ -240,6 +241,7 @@ export function ProductForm({
               <div className="flex flex-col gap-3 md:col-span-3">
                 <Checkbox name="trackSerial" checked={trackSerial} onChange={(e) => setTrackSerial(e.target.checked)} label={<><b>Seri numarası takibi</b> — her cihaz seri no ile satılır, garanti ve orijinallik sorgusu çalışır. <span className="text-mute">Pil, kulaklık gibi seri numarasız aksesuarlarda kapat.</span></>} />
                 <Checkbox name="sameDayShipping" defaultChecked={product?.sameDayShipping ?? true} label="Aynı gün kargo (kesim saatinden önce verilen siparişler)" />
+                <Checkbox name="onDisplay" defaultChecked={product?.onDisplay ?? false} label="Showroom'da sergileniyor (müşteri gelip deneyebilir)" />
                 <Checkbox name="allowBackorder" defaultChecked={product?.allowBackorder} label="Stok bitince de sipariş alınsın (ön sipariş)" />
               </div>
             </div>

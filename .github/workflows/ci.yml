@@ -1,0 +1,98 @@
+# Her push ve pull request'te: tip kontrolü, lint, birim testleri, derleme ve bütün uçtan uca testler.
+# Bir adım kırmızıysa iş başarısız olur; main dalına "ci" kontrolü zorunlu tutulursa (branch protection)
+# testi geçmeyen kod main'e giremez ve Render otomatik dağıtımı da yalnızca yeşil commit'leri alır.
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bulgu
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/bulgu
+      AUTH_SECRET: ci-only-secret-not-used-anywhere-else
+      APP_URL: http://localhost:3000
+      UPLOAD_DIR: ./uploads
+      CRON_SECRET: test123
+      PAYMENT_SIMULATION: force-test-only
+      PAYTR_BASE_URL: http://127.0.0.1:4010
+      META_GRAPH_URL: http://127.0.0.1:4011
+      BASE_URL: http://localhost:3000
+      CHROME: /usr/bin/google-chrome
+      NEXT_TELEMETRY_DISABLED: "1"
+      TZ: Europe/Istanbul
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Bağımlılıklar
+        run: |
+          npm ci
+          pip install playwright==1.63.0
+          python -m playwright install --with-deps chromium
+          sudo apt-get install -y postgresql-client >/dev/null
+          printenv | grep -E '^(DATABASE_URL|AUTH_SECRET|APP_URL|UPLOAD_DIR|CRON_SECRET)=' > .env
+
+      - name: Tip kontrolü ve lint
+        run: |
+          npm run typecheck
+          npm run lint
+
+      - name: Veritabanı (migration + demo veri)
+        run: |
+          npm run db:migrate
+          npm run db:seed
+
+      - name: Birim testleri
+        run: |
+          for f in tests/unit/*.test.ts; do echo "▶ $f"; npx tsx "$f"; done
+
+      - name: Derleme
+        run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Sunucuyu başlat
+        run: |
+          nohup npm start > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/ >/dev/null && exit 0; sleep 2; done
+          echo "Sunucu açılmadı"; cat server.log; exit 1
+
+      - name: Uçtan uca testler
+        run: scripts/ci/e2e.sh
+
+      - name: Kayıtlar
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-kayitlari
+          path: |
+            test-results/
+            server.log
+          retention-days: 14

@@ -84,6 +84,7 @@ export async function saveProduct(_: ActionResult | null, fd: FormData): Promise
       trackSerial: fd.get("trackSerial") === "on",
       allowBackorder: fd.get("allowBackorder") === "on",
       sameDayShipping: fd.get("sameDayShipping") === "on",
+      onDisplay: fd.get("onDisplay") === "on",
       weightKg: toNumOrNull(fd.get("weightKg")),
       warrantyMonths: toNum(fd.get("warrantyMonths"), 24),
       variantGroup: strOrNull(fd.get("variantGroup"))?.toLowerCase().replace(/[^a-z0-9-]+/g, "-") ?? null,

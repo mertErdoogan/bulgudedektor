@@ -47,7 +47,8 @@ export function Attribution() {
       if (!a) return;
       const h = a.getAttribute("href") ?? "";
       const method = /wa\.me|whatsapp/i.test(h) ? "whatsapp" : h.startsWith("tel:") ? "phone" : h.startsWith("mailto:") ? "email" : "";
-      if (method) track("contact", { method, page: window.location.pathname });
+      // data-contact: tıklamanın bağlamı (ör. "showroom") — GA4'te hangi ürün için showroom sorulduğu görünür
+      if (method) track("contact", { method, page: window.location.pathname, context: a.dataset.contact });
     };
     document.addEventListener("click", onClick, { capture: true });
     return () => document.removeEventListener("click", onClick, { capture: true });

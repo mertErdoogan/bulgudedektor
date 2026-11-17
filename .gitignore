@@ -49,3 +49,7 @@ uploads/
 # içe aktarma ve yedek
 /data/
 /backups/
+
+# CI çıktıları
+test-results/
+server.log

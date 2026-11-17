@@ -1,5 +1,23 @@
 # Testler
 
+## Otomatik çalıştırma (CI)
+
+Her push ve pull request'te GitHub Actions (`.github/workflows/ci.yml`) şunları sırayla yapar: tip kontrolü,
+lint, migration + demo veri, birim testleri, derleme, sunucuyu başlatma ve **bütün** uçtan uca testler
+(`scripts/ci/e2e.sh`). Bir adım kırmızıysa iş başarısız olur; kayıtlar `test-kayitlari` artefaktında 14 gün durur.
+
+Yerelde aynı şey:
+
+```bash
+npm run build && CRON_SECRET=test123 PAYMENT_SIMULATION=force-test-only \
+  PAYTR_BASE_URL=http://127.0.0.1:4010 META_GRAPH_URL=http://127.0.0.1:4011 npm start &
+DATABASE_URL=postgresql://... scripts/ci/e2e.sh            # hepsi
+DATABASE_URL=postgresql://... SUITES="core returns" scripts/ci/e2e.sh
+```
+
+**Kural:** Bulunan her hata için önce onu yakalayan test yazılır, sonra düzeltilir. Yeni bir `tests/e2e/*_e2e.py`
+dosyası eklemek yeterli; betik onu kendiliğinden çalıştırır.
+
 ## Birim testleri (sunucu gerekmez)
 
 ```bash

@@ -183,6 +183,8 @@ export const products = pgTable(
     isFeatured: boolean("is_featured").notNull().default(false),
     isPro: boolean("is_pro").notNull().default(false),
     sameDayShipping: boolean("same_day_shipping").notNull().default(true),
+    /** Showroom'da sergileniyor: ürün sayfasında "Showroom'da deneyebilirsin" etiketi */
+    onDisplay: boolean("on_display").notNull().default(false),
     trialRentalPrice: money("trial_rental_price"),
     seoTitle: text("seo_title"),
     seoDescription: text("seo_description"),

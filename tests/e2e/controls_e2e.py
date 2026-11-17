@@ -203,7 +203,8 @@ with sync_playwright() as p:
     a.goto(f"{BASE}/admin/siparisler/{oid}")
     chk("dosya seçici Türkçe", "Choose File" not in a.inner_text("main"))
 
-    # 11) Hareketsizlikte çıkış
+    # 11) Hareketsizlikte çıkış (önce sayfadan çık: arka planda süren bir panel isteği çerezi yeniden yazmasın)
+    a.goto("about:blank")
     admin.clear_cookies(name="bulgu_seen")
     a.goto(f"{BASE}/admin/siparisler")
     chk("hareketsizlik çerezi yoksa girişe atar", "/admin/giris" in a.url and "sure=1" in a.url, a.url)

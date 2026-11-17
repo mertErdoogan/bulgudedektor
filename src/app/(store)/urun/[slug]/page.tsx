@@ -6,6 +6,7 @@ import { enumLabel } from "@/lib/i18n/dict";
 import { Suspense } from "react";
 import { redirectOrNotFound } from "@/lib/redirects";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
+import { ShowroomCard } from "@/components/store/showroom-card";
 import { Truck, BadgeCheck, Check, Cpu, CreditCard, Droplets, Headset, Info, Landmark, MessageCircle, PackageOpen, Phone, Play, RotateCcw, ShieldCheck, Star, ThumbsUp, UserRound, Weight, Wrench } from "lucide-react";
 import { db } from "@/db";
 import { productImages, productQuestions, products, reviews } from "@/db/schema";
@@ -342,6 +343,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               );
             })}
           </div>
+
+          {t.locale === "tr" ? <ShowroomCard productName={p.name} onDisplay={p.onDisplay} st={s.store} /> : null}
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <span className="text-mute">{t("pdp.question")}</span>
