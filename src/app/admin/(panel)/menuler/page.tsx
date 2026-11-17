@@ -7,6 +7,7 @@ import { DeleteButton } from "@/components/admin/delete-button";
 import { PageHeader } from "@/components/admin/shell";
 import { Badge, Card, CardHeader, Checkbox, Field, Input, Select } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
+import { INFO_LINK } from "@/lib/nav-links";
 import { deleteMenuItem, saveMenuItem } from "../vitrin/actions";
 
 export const metadata = { title: "Menüler" };
@@ -31,6 +32,7 @@ export default async function MenusPage({ searchParams }: { searchParams: Promis
                     <span className="w-6 text-mute">{m.sortOrder}</span>
                     <Link href={`/admin/menuler?id=${m.id}`} className="flex-1 font-semibold hover:text-link">{m.label} <span className="font-normal text-mute">{m.url}</span></Link>
                     {m.highlight ? <Badge tone="brand">Vurgulu</Badge> : null}
+                    {loc === "HEADER" && !m.highlight && INFO_LINK.test(m.url) ? <Badge>Üst şeritte</Badge> : null}
                     {!m.isActive ? <Badge>Kapalı</Badge> : null}
                     <DeleteButton run={deleteMenuItem.bind(null, m.id)} confirmText="Silinsin mi?" />
                   </li>
@@ -43,7 +45,7 @@ export default async function MenusPage({ searchParams }: { searchParams: Promis
           <CardHeader title={edit ? "Bağlantıyı düzenle" : "Yeni bağlantı"} />
           <ActionForm action={saveMenuItem} key={edit?.id ?? "new"} className="flex flex-col gap-3 p-5">
             {edit ? <input type="hidden" name="id" value={edit.id} /> : null}
-            <Field label="Yer"><Select name="location" defaultValue={edit?.location ?? "HEADER"}>{Object.entries(LOC).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
+            <Field label="Yer" hint="Üst menüye eklenen Hakkımızda, İletişim, Blog, SSS gibi bilgi sayfaları kategori çubuğunda değil, en üstteki koyu şeritte (sağda) (masaüstü) görünür."><Select name="location" defaultValue={edit?.location ?? "HEADER"}>{Object.entries(LOC).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Select></Field>
             <Field label="Etiket"><Input name="label" defaultValue={edit?.label} required /></Field>
             <Field label="Bağlantı" hint="/kategori/pointer, /kampanyalar, https://…"><Input name="url" defaultValue={edit?.url} required /></Field>
             <Field label="Sıra"><Input name="sortOrder" type="number" defaultValue={edit?.sortOrder ?? 0} /></Field>

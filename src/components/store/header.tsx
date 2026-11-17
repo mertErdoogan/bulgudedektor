@@ -22,7 +22,7 @@ export async function StoreHeader() {
   const info = header.filter((m) => !m.highlight && INFO_LINK.test(m.url));
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}` : "/iletisim";
   const notes = s.store.announcement.split("·").map((t) => t.trim()).filter(Boolean);
-  const brandList = brands.map((b) => ({ name: b.name, slug: b.slug }));
+  const brandList = brands.map((b) => ({ name: b.name, slug: b.slug, logoUrl: b.logoUrl }));
   return (
     <>
       {/* iOS Safari (26+) sayfayı durum çubuğunun arkasına da çizer; yapışkan başlığın üstünde kayan içerik görünmesin diye
@@ -31,8 +31,8 @@ export async function StoreHeader() {
           hemen üstüne sabitlenmiş beyaz şerit, kayan içeriğin orada görünmesini her sayfada engeller */}
       <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-full z-[29] h-[100vh] bg-white md:hidden" />
       <header data-site-header="" className="sticky top-0 z-30 bg-white before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-[100vh] before:bg-white md:static md:before:hidden">
-        {notes.length ? (
-          <div className="hidden bg-deep text-white/85 md:block">
+        {notes.length || info.length || s.store.phone ? (
+          <div className="hidden bg-deep text-white/85 md:block" data-testid="top-strip">
             {/* Masaüstü: solda güven notları, sağda kargo + sipariş takibi + telefon */}
             <div className="container-x hidden h-[34px] items-center justify-between gap-6 text-[12.5px] font-semibold md:flex">
               <div className="flex min-w-0 items-center gap-2.5 truncate">
@@ -48,9 +48,9 @@ export async function StoreHeader() {
               </div>
               <div className="flex shrink-0 items-center gap-5">
                 {info.map((m) => (
-                  <Link key={m.id} href={m.url} className="hidden hover:text-white lg:block">{m.label}</Link>
+                  <Link key={m.id} href={m.url} className="hover:text-white">{m.label}</Link>
                 ))}
-                {info.length ? <span className="hidden h-3.5 w-px bg-white/25 lg:block" /> : null}
+                {info.length ? <span className="h-3.5 w-px bg-white/25" /> : null}
                 {s.shipping.sameDayCutoff ? (
                   <span className="hidden items-center gap-1.5 2xl:flex"><Truck size={15} /> {t("nav.cutoff", { saat: s.shipping.sameDayCutoff })}</span>
                 ) : null}

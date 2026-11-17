@@ -146,6 +146,28 @@ with sync_playwright() as p:
         chk("servis güncellemesinde bildirim çıkar", "güncellendi" in t, t)
         chk("durum kutusu yeni durumu gösterir", a.input_value("select[name=status]") == nxt)
 
+    # Kategoriler açılır menüsü: logosu girilmiş marka logo ile görünür (baş harf değil)
+    logo = sql("select logo_url from brands where slug='minelab'")
+    sql("update brands set logo_url='/demo/x-terra-pro.jpg' where slug='minelab'")
+    sql("update menu_items set is_active=true where url like '/sayfa/hakkimizda%'")
+    store = sql("select value::text from settings where key='store'")
+    sql("""insert into settings(key, value) values ('store', '{"announcement": ""}') on conflict (key) do update set value = settings.value || '{"announcement": ""}'""")
+    h = b.new_context(viewport={"width": 1100, "height": 900}).new_page()
+    h.goto(BASE + "/")
+    h.locator("button:has-text('Kategoriler'), a:has-text('Kategoriler')").first.hover()
+    h.wait_for_timeout(1200)
+    grid = h.locator("[data-testid=mega-brands]")
+    imgs = grid.first.locator("img").count() if grid.count() else 0
+    chk("Kategoriler menüsünde marka logosu görünür", imgs >= 1, f"grid={grid.count()} img={imgs}")
+    has_about = sql("select count(*) from menu_items where location='HEADER' and is_active and url like '/sayfa/hakkimizda%'") != "0"
+    if has_about:
+        chk("duyuru boşken de üst şerit ve Hakkımızda görünür (1100px)", h.locator("[data-testid=top-strip] a[href^='/sayfa/hakkimizda']").is_visible())
+    sql(f"update brands set logo_url={'null' if not logo else repr(logo)} where slug='minelab'")
+    if store:
+        sql(f"update settings set value = $${store}$$::jsonb where key='store'")
+    else:
+        sql("delete from settings where key='store'")
+
     b.close()
 
 print(f"\n{ok} geçti, {fail} kaldı")
