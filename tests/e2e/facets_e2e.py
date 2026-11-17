@@ -51,7 +51,7 @@ with sync_playwright() as p:
     chk("en az birkaç seçenek denendi", checked >= 5, str(checked))
 
     # Teşekkür kutusu yeşil
-    oid = sql("select o.id from orders o join customers c on c.id=o.customer_id where c.email='musteri1@ornek.com' and o.status <> 'PENDING_PAYMENT' limit 1")
+    oid = sql("select o.id from orders o join customers c on c.id=o.customer_id where c.email='musteri1@ornek.com' and o.payment_status = 'PAID' order by o.created_at limit 1")
     cust = sql(f"select c.email from customers c join orders o on o.customer_id=c.id where o.id='{oid}'")
     sql("truncate rate_hits")
     pg.goto(BASE + "/giris", wait_until="networkidle")
