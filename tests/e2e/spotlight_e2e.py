@@ -48,10 +48,11 @@ async def main():
         # Ana sayfa önbelleği kaydın hemen ardından yenilenir; birkaç saniye içinde eski haline dönmesini bekle
         for _ in range(12):
             t = await lead(pg)
-            if t == before:
+            if "SON EKLENEN" in t and "ÖNE ÇIKAN" not in t:
                 break
             await pg.wait_for_timeout(1500)
-        chk("İşaret kalkınca otomatiğe döner", t == before, t[:80])
+        # Metnin tamamı (ürün adı) değil, mod karşılaştırılır: otomatik seçimde aynı anda yeni ürün de eklenmiş olabilir
+        chk("İşaret kalkınca otomatiğe döner", "SON EKLENEN" in t and "ÖNE ÇIKAN" not in t, t[:80])
         await b.close()
     bad = [n for n, ok in res if not ok]
     print(f"\n{len(res)-len(bad)}/{len(res)} geçti"); sys.exit(1 if bad else 0)
