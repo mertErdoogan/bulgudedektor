@@ -126,7 +126,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
         <Step n={2} title="Teslimat">
           <div className="flex flex-col gap-2">
             <Opt checked={delivery === "CARGO"} onClick={() => setDelivery("CARGO")} icon={<Truck />} title={<>Adrese kargo {q && q.shippingTotal === 0 ? "· ücretsiz" : ""}</>} desc={`Tahmini teslim ${s.shipping.deliveryEstimate}`} />
-            {s.shipping.pickupEnabled ? <Opt checked={delivery === "PICKUP"} onClick={() => setDelivery("PICKUP")} icon={<Store />} title="Showroom'dan teslim al" desc={s.shipping.pickupAddress || "Kurulumu birlikte yapalım"} /> : null}
+            {s.shipping.pickupEnabled ? <Opt checked={delivery === "PICKUP"} onClick={() => setDelivery("PICKUP")} icon={<Store />} title="Showroom'dan teslim al" desc={s.shipping.pickupAddress || s.store.address || "Kurulumu birlikte yapalım"} /> : null}
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Field label="Ad soyad" className="sm:col-span-2"><Input name="fullName" autoComplete="name" defaultValue={me?.name ?? ""} required /></Field>

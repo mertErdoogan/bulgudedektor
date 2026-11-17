@@ -7,7 +7,10 @@ import { banners, homeSections, mediaAssets, menuItems, pages } from "@/db/schem
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { audit } from "@/lib/audit";
 import { assertStaff } from "@/lib/auth";
-import { saveSettings, type Shortcut } from "@/lib/settings";
+import { getSettings, saveSettings, type Shortcut } from "@/lib/settings";
+import { fillLegal, legalTokens } from "@/lib/legal-tokens";
+import { renderContent } from "@/lib/markdown";
+import { siteUrl } from "@/lib/seo";
 import { deleteUpload } from "@/lib/storage";
 import { slugify, str, strOrNull, toNum } from "@/lib/utils";
 
@@ -146,6 +149,12 @@ export async function saveMenuItem(_: ActionResult | null, fd: FormData): Promis
     const url = str(fd.get("url"));
     if (!label || !url) return fail("Etiket ve bağlantı zorunlu.");
     const values = { label, url, location: str(fd.get("location")) || "HEADER", sortOrder: toNum(fd.get("sortOrder"), 0), isActive: fd.get("isActive") === "on", highlight: fd.get("highlight") === "on" };
+    // Aynı yerde aynı bağlantı ya da aynı etiket iki kez olmasın (menüde çift görünür)
+    const norm = (x: string) => x.trim().toLocaleLowerCase("tr-TR").replace(/\/+$/, "");
+    const same = (await db.select({ id: menuItems.id, label: menuItems.label, url: menuItems.url }).from(menuItems).where(eq(menuItems.location, values.location))).find(
+      (m) => m.id !== id && (norm(m.url) === norm(url) || norm(m.label) === norm(label)),
+    );
+    if (same) return fail(`Bu menüde zaten "${same.label}" (${same.url}) var. Onu düzenle ya da farklı bir etiket/bağlantı kullan.`);
     if (id) await db.update(menuItems).set(values).where(eq(menuItems.id, id));
     else await db.insert(menuItems).values(values);
     await audit(staff.id, "update", "menu", id, `Menü: ${label}`);
@@ -281,4 +290,11 @@ export async function saveNav(_: ActionResult | null, fd: FormData): Promise<Act
     await audit(staff.id, "settings", "nav", null, `Kısayollar: ${shortcuts.length}, kampanya kartı: ${mode}`);
     return done("Kısayollar ve menü kartı kaydedildi.");
   });
+}
+
+/** Sayfa düzenleyicideki "Önizle": sitede nasıl görüneceği (Markdown/HTML + {{unvan}} gibi alanlar dolu). Kaydetmez. */
+export async function previewContent(content: string): Promise<string> {
+  await assertStaff("cms.manage");
+  const s = await getSettings();
+  return fillLegal(renderContent(String(content ?? "").slice(0, 200_000)), legalTokens(s.store, s.payment, siteUrl()));
 }

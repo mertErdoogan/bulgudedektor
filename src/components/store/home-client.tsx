@@ -79,9 +79,9 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
                         <img {...imgProps(s.imageUrl, [640, 1080, 1600, 1920], "(min-width: 1400px) 1340px, 100vw", 80)} loading={k === 0 ? "eager" : "lazy"} fetchPriority={k === 0 ? "high" : "low"} alt={s.title} className={cn("h-full w-full", k === i && n > 1 && "hero-zoom", wide ? (hasMobile && !s.mobileImageUrl ? "object-contain md:object-cover" : "object-cover") : "bg-white object-contain p-6 md:pl-[45%]")} />
                       </picture>
                       {s.showText ? (
-                        <span className={cn("absolute inset-y-0 left-0 flex max-w-[60%] flex-col justify-end gap-1 p-5 md:justify-center md:p-12", wide ? "bg-gradient-to-r from-black/55 to-transparent text-white" : "text-deep")}>
+                        <span className={cn("absolute inset-y-0 left-0 flex max-w-[60%] flex-col justify-end gap-1 p-5 md:justify-center md:p-12", wide ? "bg-gradient-to-r from-black/55 to-transparent text-white" : "text-deep md:max-w-[45%] md:pr-6")} data-testid="hero-text">
                           {s.eyebrow ? <span className="text-xs font-extrabold tracking-wider opacity-80 md:text-sm">{s.eyebrow}</span> : null}
-                          <span className="font-display text-xl leading-tight font-extrabold md:text-[44px]">{s.title}</span>
+                          <span className="font-display text-xl leading-tight font-extrabold text-balance break-words md:text-[clamp(26px,3vw,44px)]">{s.title}</span>
                           {s.subtitle ? <span className="hidden text-sm opacity-90 md:block md:text-base">{s.subtitle}</span> : null}
                           {s.ctaLabel ? <span className={cn("mt-2 inline-flex w-fit rounded-lg px-4 py-2 text-sm font-extrabold", wide ? "bg-white text-deep" : "bg-brand text-white")}>{s.ctaLabel} →</span> : null}
                         </span>

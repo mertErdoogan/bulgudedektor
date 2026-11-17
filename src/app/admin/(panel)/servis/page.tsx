@@ -82,17 +82,18 @@ export default async function ServicePage({ searchParams }: { searchParams: Prom
                   </li>
                 ))}
               </ol>
-              <ActionForm action={updateService} key={sel.id + sel.status} className="flex flex-col gap-3 border-t border-line pt-4">
+              {/* Form durum değişince yeniden kurulmaz (kurulsaydı "güncellendi" bildirimi kaybolurdu); yalnız seçim kutuları yeni değeri alsın diye anahtarlı */}
+              <ActionForm action={updateService} key={sel.id} className="flex flex-col gap-3 border-t border-line pt-4">
                 <input type="hidden" name="id" value={sel.id} />
                 <Field label="Durum">
-                  <Select name="status" defaultValue={sel.status}>
+                  <Select key={sel.status} name="status" defaultValue={sel.status}>
                     {Object.entries(SERVICE_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </Select>
                 </Field>
                 <Field label="Not (müşteri görür)"><Textarea name="note" className="min-h-[60px]" placeholder="Örn. Bobin kablosu değiştirildi, test edildi." /></Field>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Sorumlu">
-                    <Select name="assigneeId" defaultValue={sel.assigneeId ?? ""}>
+                    <Select key={sel.assigneeId ?? ""} name="assigneeId" defaultValue={sel.assigneeId ?? ""}>
                       <option value="">—</option>
                       {team.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </Select>

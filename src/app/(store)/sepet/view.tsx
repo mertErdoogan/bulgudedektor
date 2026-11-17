@@ -93,6 +93,7 @@ export function CartView({ inst, freeThreshold, flatRate }: { inst: number; free
               <Button variant="outline" onClick={applyCoupon}>Uygula</Button>
             </div>
             {applied && q?.couponError ? <p className="mt-2 text-sm text-danger">{q.couponError}</p> : null}
+            {applied && q?.couponNote ? <p className="mt-2 text-sm font-semibold text-ok" data-testid="coupon-note">{q.couponNote}</p> : null}
             {q?.campaign ? <p className="mt-2 text-sm font-bold text-ok">✓ {q.campaign.name} uygulandı</p> : null}
             <dl className="mt-4 flex flex-col gap-2 text-sm">
               <div className="flex justify-between"><dt>Ara toplam</dt><dd>{formatTL(q?.subtotal)}</dd></div>

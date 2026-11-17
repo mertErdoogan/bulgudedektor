@@ -43,7 +43,7 @@ for s in $SUITES; do
 done
 
 # Mobilde yatay taşma: en çok girilen sayfalar
-for path in / /urunler /sepet /sihirbaz /hakkimizda; do
+for path in / /urunler /sepet /sihirbaz /sayfa/hakkimizda; do
   if ! python3 tests/e2e/mobile_overflow.py "$path" >>"$LOG_DIR/mobile_overflow.log" 2>&1; then
     failed+=("mobil-taşma:$path")
   fi

@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/admin/shell";
 import { Badge, Card, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
-import { getSettings } from "@/lib/settings";
+import { getSettings, rawSeoTexts } from "@/lib/settings";
 import { DEFAULT_LOCALE, LOCALES, LOCALE_LABEL } from "@/lib/i18n/config";
 import { saveI18n, saveSecurity, sendDigestNow, generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
 
@@ -15,7 +15,7 @@ const mask = (v: string) => (v ? `${v.slice(0, 4)}••••••••${v.sl
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ t?: string }> }) {
   const staff = await requireStaff("settings.manage");
   const tab = (await searchParams).t ?? "magaza";
-  const s = await getSettings();
+  const [s, seoRaw] = await Promise.all([getSettings(), rawSeoTexts()]);
   // Çalışma saati metni ile Google/rozet saatleri aynı saatleri içermeli
   const times = (t: string) => [...new Set((t || "").match(/\b\d{1,2}[:.]\d{2}\b/g)?.map((x) => x.replace(".", ":").padStart(5, "0")) ?? [])].sort().join(" ");
   const hoursMismatch = s.store.workingHours && s.store.openingHours && times(s.store.workingHours) !== times(s.store.openingHours) ? `${times(s.store.workingHours)} ≠ ${times(s.store.openingHours)}` : "";
@@ -248,10 +248,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <Card>
             <CardHeader title="Arama motoru" description="Ana sayfa başlığı ve açıklaması. Ürün ve kategori SEO'su kendi sayfalarında." />
             <ActionForm action={saveSeo} className="flex flex-col gap-4 p-5">
-              <Field label="Site başlığı" hint="50–60 karakter ideal"><Input name="title" defaultValue={s.seo.title} /></Field>
-              <Field label="Site açıklaması" hint="140–160 karakter ideal"><Textarea name="description" defaultValue={s.seo.description} /></Field>
+              <Field label="Site başlığı" hint="50–60 karakter ideal. {markalar} yazarsan satıştaki markalar otomatik yazılır."><Input name="title" defaultValue={seoRaw.title} /></Field>
+              <Field label="Site açıklaması" hint="140–160 karakter ideal. {markalar} = satıştaki markalar (otomatik)."><Textarea name="description" defaultValue={seoRaw.description} /></Field>
               <Field label="Mağaza tanımı (AI motorları için)" hint="ChatGPT, Perplexity, Claude ve Google AI'ın seni nasıl tanıtmasını istiyorsan 2–4 cümlede, somut bilgilerle yaz. Ana sayfada, llms.txt'de ve kurum şemasında kullanılır.">
-                <Textarea name="aboutForAi" defaultValue={s.seo.aboutForAi} className="min-h-[110px]" />
+                <Textarea name="aboutForAi" defaultValue={seoRaw.aboutForAi} className="min-h-[110px]" />
               </Field>
               <Field label="Paylaşım görseli (Open Graph)" hint="1200×630 px. WhatsApp/sosyal medya paylaşımlarında görünür."><Input name="ogImage" defaultValue={s.seo.ogImage} placeholder="/media/… veya https://…" /></Field>
               <p className="mt-2 font-bold">Arama motoru doğrulama</p>

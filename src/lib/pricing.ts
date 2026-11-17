@@ -31,6 +31,8 @@ export type Quote = {
   total: number;
   campaign: { id: string; name: string; code: string | null } | null;
   couponError?: string;
+  /** Kupon geçerli ama sepetteki otomatik kampanya daha avantajlı olduğu için uygulanmadı (bilgi; siparişi engellemez) */
+  couponNote?: string;
   errors: string[];
   /**
    * Sepette durup satılamayan ürünler için düzeltme: istemci bunları sepetten çıkarır / adedi düşürür ve
@@ -51,15 +53,16 @@ function campaignLive(c: CampaignRow, now = new Date()) {
   return true;
 }
 
+/** Satır bu kampanyanın kapsamında mı (marka / kategori / ürün) */
+export function lineEligible(c: Pick<CampaignRow, "scope" | "targetIds">, l: { productId: string | null; brandId: string | null; categoryId: string | null }) {
+  if (c.scope === "ALL") return true;
+  if (c.scope === "BRAND") return !!l.brandId && c.targetIds.includes(l.brandId);
+  if (c.scope === "CATEGORY") return !!l.categoryId && c.targetIds.includes(l.categoryId);
+  return !!l.productId && c.targetIds.includes(l.productId);
+}
+
 function eligibleSubtotal(c: CampaignRow, lines: PricedLine[]) {
-  return lines
-    .filter((l) => {
-      if (c.scope === "ALL") return true;
-      if (c.scope === "BRAND") return !!l.brandId && c.targetIds.includes(l.brandId);
-      if (c.scope === "CATEGORY") return !!l.categoryId && c.targetIds.includes(l.categoryId);
-      return c.targetIds.includes(l.productId);
-    })
-    .reduce((s, l) => s + l.total, 0);
+  return lines.filter((l) => lineEligible(c, l)).reduce((s, l) => s + l.total, 0);
 }
 
 function discountFor(c: CampaignRow, lines: PricedLine[], subtotal: number, shipping: number) {
@@ -135,9 +138,19 @@ export async function quoteCart(
   // Kampanya: önce kod, yoksa otomatik kampanyaların en avantajlısı
   let campaign: CampaignRow | null = null;
   let couponError: string | undefined;
+  let couponNote: string | undefined;
   let discountTotal = 0;
+  // Otomatik (kodsuz) kampanyaların müşteri için en avantajlısı
+  const autos = await db.query.campaigns.findMany({ where: and(isNull(campaigns.code), eq(campaigns.isActive, true)) });
+  let bestAuto: { c: CampaignRow; amount: number; free: boolean; value: number } | null = null;
+  for (const c of autos.filter((x) => campaignLive(x))) {
+    const d = discountFor(c, lines, subtotal, shippingTotal);
+    const value = d.amount + (d.freeShipping ? shippingTotal : 0);
+    if (value > 0 && (!bestAuto || value > bestAuto.value)) bestAuto = { c, amount: d.amount, free: d.freeShipping, value };
+  }
   const code = opts.couponCode?.trim().toUpperCase();
   if (code) {
+    let coupon: CampaignRow | null = null;
     const c = await db.query.campaigns.findFirst({ where: eq(sql`upper(${campaigns.code})`, code) });
     if (!c || !campaignLive(c)) couponError = "Kupon kodu geçersiz veya süresi dolmuş.";
     else if (subtotal < c.minSubtotal) couponError = `Bu kupon ${c.minSubtotal.toLocaleString("tr-TR")} TL ve üzeri sepette geçerli.`;
@@ -147,37 +160,32 @@ export async function quoteCart(
         .from(orders)
         .where(and(eq(orders.customerId, opts.customerId), eq(orders.campaignId, c.id), eq(orders.paymentStatus, "PAID")));
       if (n >= c.perCustomerLimit) couponError = "Bu kuponu kullanım hakkın doldu.";
-      else campaign = c;
-    } else campaign = c;
-    if (campaign) {
-      const d = discountFor(campaign, lines, subtotal, shippingTotal);
+      else coupon = c;
+    } else coupon = c;
+    if (coupon) {
+      const d = discountFor(coupon, lines, subtotal, shippingTotal);
+      const value = d.amount + (d.freeShipping ? shippingTotal : 0);
       if (!d.freeShipping && d.amount <= 0) {
         couponError = "Bu kupon sepetindeki ürünlerde geçerli değil.";
-        campaign = null;
+      } else if (bestAuto && bestAuto.value >= value) {
+        // Kampanyalar birleşmez: kupon, sepetteki kampanyadan az kazandırıyorsa müşteri aleyhine uygulanmaz
+        couponNote = `Sepetindeki "${bestAuto.c.name}" kampanyası daha avantajlı; kupon yerine o uygulandı. Kampanyalar birleştirilmez.`;
       } else {
+        campaign = coupon;
         discountTotal = d.amount;
         if (d.freeShipping) shippingTotal = 0;
       }
     }
   }
-  if (!campaign) {
-    const autos = await db.query.campaigns.findMany({ where: and(isNull(campaigns.code), eq(campaigns.isActive, true)) });
-    let best: { c: CampaignRow; amount: number; free: boolean } | null = null;
-    for (const c of autos.filter((x) => campaignLive(x))) {
-      const d = discountFor(c, lines, subtotal, shippingTotal);
-      const value = d.amount + (d.freeShipping ? shippingTotal : 0);
-      if (value > 0 && (!best || value > best.amount + (best.free ? shippingTotal : 0))) best = { c, amount: d.amount, free: d.freeShipping };
-    }
-    if (best) {
-      campaign = best.c;
-      discountTotal = best.amount;
-      if (best.free) shippingTotal = 0;
-    }
+  if (!campaign && bestAuto) {
+    campaign = bestAuto.c;
+    discountTotal = bestAuto.amount;
+    if (bestAuto.free) shippingTotal = 0;
   }
 
   let transferDiscount = 0;
   if (opts.paymentMethod === "TRANSFER" && s.payment.transferEnabled && s.payment.transferDiscountPct > 0) {
-    transferDiscount = r2(((subtotal - discountTotal) * s.payment.transferDiscountPct) / 100);
+    transferDiscount = Math.round(((subtotal - discountTotal) * s.payment.transferDiscountPct) / 100); // tam TL: havale tutarı kuruşlu olmasın
   }
 
   const total = r2(Math.max(0, subtotal - discountTotal - transferDiscount + shippingTotal));
@@ -190,6 +198,7 @@ export async function quoteCart(
     total,
     campaign: campaign ? { id: campaign.id, name: campaign.name, code: campaign.code } : null,
     couponError,
+    couponNote,
     fixes,
     errors,
   };

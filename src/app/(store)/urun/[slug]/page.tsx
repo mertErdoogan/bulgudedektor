@@ -1,4 +1,5 @@
 import { cardCtx } from "@/lib/card-ctx";
+import { cardReady } from "@/lib/card-ready";
 import Link from "@/components/locale-link";
 import { getT } from "@/lib/i18n/server";
 import { localize, localizeOne } from "@/lib/i18n/content";
@@ -92,7 +93,7 @@ function autoFaq(p: P, s: AllSettings) {
   if (p.waterproof) out.push({ q: `${n} su geçirmez mi?`, a: `${n} için su dayanımı: ${WATERPROOF_LABEL[p.waterproof]}.${p.waterproof === "NONE" ? " Yağmurda koruyucu kılıf kullanılması önerilir." : ""}` });
   if (p.weightKg) out.push({ q: `${n} kaç kilo?`, a: `${n} yaklaşık ${p.weightKg.toLocaleString("tr-TR")} kg ağırlığındadır.${p.weightKg <= 1.5 ? " Uzun süreli aramalarda yormayan hafif sınıftadır." : ""}` });
   if (p.experience) out.push({ q: `${n} yeni başlayanlar için uygun mu?`, a: p.experience === "BEGINNER" ? `Evet, ${n} kolay menüsü ve hazır programlarıyla yeni başlayanlar için uygundur.` : `${n} ${WHO[p.experience]} kullanıcılar için tasarlanmıştır. Yeni başlıyorsanız satın alma sonrası ücretsiz kurulum eğitimimizden yararlanabilirsiniz.` });
-  out.push({ q: `${n} taksitle alınabilir mi?`, a: `${n} kredi kartına ${s.payment.maxInstallment} taksite kadar alınabilir${s.payment.noInterestInstallments > 1 ? `; ${s.payment.noInterestInstallments} taksite kadar vade farkı yoktur` : ""}.${s.payment.transferEnabled && s.payment.transferDiscountPct ? ` Havale/EFT ile ödemede %${s.payment.transferDiscountPct} indirim uygulanır.` : ""}` });
+  if (s.payment.cardEnabled) out.push({ q: `${n} taksitle alınabilir mi?`, a: `${n} kredi kartına ${s.payment.maxInstallment} taksite kadar alınabilir${s.payment.noInterestInstallments > 1 ? `; ${s.payment.noInterestInstallments} taksite kadar vade farkı yoktur` : ""}.${s.payment.transferEnabled && s.payment.transferDiscountPct ? ` Havale/EFT ile ödemede %${s.payment.transferDiscountPct} indirim uygulanır.` : ""}` });
   out.push({ q: `${n} ne zaman kargoya verilir?`, a: p.sameDayShipping ? `Stoktaysa saat ${s.shipping.sameDayCutoff}'e kadar verilen siparişler aynı gün kargoya verilir; tahmini teslim süresi ${s.shipping.deliveryEstimate}.` : `Siparişler 1–2 iş günü içinde kargoya verilir; tahmini teslim süresi ${s.shipping.deliveryEstimate}.` });
   return out;
 }
@@ -106,7 +107,9 @@ function ytId(url: string | null) {
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const p = await getProduct((await params).slug);
   if (!p) return redirectOrNotFound(`/urun/${(await params).slug}`);
-  const s = await getSettings();
+  const raw = await getSettings();
+  // Kart ödemesi çalışmıyorsa (anahtar yok) sayfada hiçbir taksit vaadi olmasın: özet, SSS, bilgi satırı, tablo
+  const s: AllSettings = cardReady(raw) ? raw : { ...raw, payment: { ...raw.payment, cardEnabled: false, noInterestInstallments: 1 } };
   const t = await getT();
   const archived = p.status === "ARCHIVED";
   const out = archived || (p.stock <= 0 && !p.allowBackorder);
@@ -284,7 +287,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-ok-bg text-ok"><Landmark size={17} /></span>
 <div className="min-w-0 flex-1 md:flex md:items-center md:gap-3">
                   <dt className="text-[11.5px] font-semibold text-mute md:w-[74px] md:shrink-0 md:text-[12px]">{t("pdp.rowTransfer")}</dt>
-                  <dd className="min-w-0 md:flex-1 text-[13.5px]"><b>{t("pdp.transferValue", { n: s.payment.transferDiscountPct })}</b> <span className="text-mute">· {formatTL(p.price * (1 - s.payment.transferDiscountPct / 100))}</span></dd>
+                  <dd className="min-w-0 md:flex-1 text-[13.5px]"><b>{t("pdp.transferValue", { n: s.payment.transferDiscountPct })}</b> <span className="text-mute">· {formatTL(p.price - Math.round((p.price * s.payment.transferDiscountPct) / 100))}</span></dd>
 </div>
                 </div>
               ) : null}
@@ -518,7 +521,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </div>
             ))}
           </div>
-          {!out && p.price >= 1000 ? (
+          {!out && p.price >= 1000 && s.payment.cardEnabled ? (
             <div className="mt-6">
               <b className="flex items-center gap-2 text-[16px]"><CreditCard size={18} /> Taksit seçenekleri</b>
               <div className="mt-3"><InstallmentTable price={p.price} banks={banks} noInterest={s.payment.noInterestInstallments} max={s.payment.maxInstallment} rates={s.payment.installmentRates} /></div>

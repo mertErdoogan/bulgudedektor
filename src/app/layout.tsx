@@ -11,7 +11,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: { default: "Arena Dedektör", template: "%s · Arena Dedektör" },
-  description: "Minelab, XP, Nokta, Garrett dedektör modelleri ve fiyatları. Orijinal, faturalı, garantili.",
+  description: "Metal dedektörü modelleri ve fiyatları. Orijinal, faturalı, garantili.",
   applicationName: "Arena Dedektör",
   formatDetection: { telephone: false },
   alternates: { types: { "application/rss+xml": "/blog/rss.xml" } },

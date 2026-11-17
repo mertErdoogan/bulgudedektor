@@ -1,6 +1,7 @@
 import { asc, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { categories, products, type posts } from "@/db/schema";
+import { categoryOptions } from "@/lib/category-options";
+import { products, type posts } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { CountedField } from "@/components/admin/counted-field";
 import { SingleImageField } from "@/components/admin/single-image-field";
@@ -14,7 +15,7 @@ const local = (d: Date | null | undefined) => (d ? new Date(d.getTime() - d.getT
 export async function PostForm({ post }: { post?: Post }) {
   const [prods, cats] = await Promise.all([
     db.select({ id: products.id, name: products.name }).from(products).where(ne(products.status, "ARCHIVED")).orderBy(asc(products.name)),
-    db.select({ id: categories.id, name: categories.name }).from(categories).orderBy(asc(categories.sortOrder)),
+    categoryOptions(),
   ]);
   return (
     <ActionForm action={savePost} className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">

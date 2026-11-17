@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { asc, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { categories, faqs, products } from "@/db/schema";
+import { categoryOptions } from "@/lib/category-options";
+import { faqs, products } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { PageHeader } from "@/components/admin/shell";
@@ -18,7 +19,7 @@ export default async function FaqAdmin({ searchParams }: { searchParams: Promise
   const [rows, prods, cats] = await Promise.all([
     db.query.faqs.findMany({ where: eq(faqs.kind, kind), with: { product: { columns: { name: true } }, category: { columns: { name: true } } }, orderBy: [asc(faqs.group), asc(faqs.sortOrder), asc(faqs.question)] }),
     db.select({ id: products.id, name: products.name }).from(products).where(ne(products.status, "ARCHIVED")).orderBy(asc(products.name)),
-    db.select({ id: categories.id, name: categories.name }).from(categories).orderBy(asc(categories.sortOrder)),
+    categoryOptions(),
   ]);
   const groups = [...new Set(rows.map((r) => r.group))];
   const list = sp.g ? rows.filter((r) => r.group === sp.g) : rows;

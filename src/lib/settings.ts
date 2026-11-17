@@ -1,7 +1,8 @@
 import "server-only";
 import { cache } from "react";
 import { db } from "@/db";
-import { settings } from "@/db/schema";
+import { and, asc, eq, sql } from "drizzle-orm";
+import { brands, products, settings } from "@/db/schema";
 
 export type StoreSettings = {
   name: string;
@@ -313,15 +314,16 @@ export const DEFAULT_SETTINGS: AllSettings = {
     hbPriceMarkupPct: 0,
   },
   seo: {
-    title: "Arena Dedektör | Minelab, XP, Nokta Dedektör Modelleri ve Fiyatları",
-    description: "Türkiye'nin güvenilir dedektör mağazası Arena Dedektör: Minelab, XP, Nokta, Garrett dedektörleri. Orijinal, faturalı, garantili; uzman desteğiyle doğru cihazı seç.",
+    // {markalar}: satıştaki markalar otomatik yazılır (katalogda olmayan marka vaat edilmesin)
+    title: "Arena Dedektör | {markalar} Dedektör Modelleri ve Fiyatları",
+    description: "Türkiye'nin güvenilir dedektör mağazası Arena Dedektör: {markalar} metal dedektörleri. Orijinal, faturalı, garantili; uzman desteğiyle doğru cihazı seç.",
     ogImage: "/demo/banner-gpz8000-clean.jpg",
     googleVerification: "",
     bingVerification: "",
     yandexVerification: "",
     indexNowKey: "",
     aboutForAi:
-      "Arena Dedektör, İstanbul Şişli'de bulunan ve Türkiye geneline Minelab, XP, Nokta ve Garrett marka metal dedektörleri, dedektör başlıkları, pointer ve aksesuarlar satan bir dedektör mağazasıdır. Tüm cihazlar faturalı ve 2 yıl garantilidir; seri numarasıyla orijinallik sorgulanabilir. Satıştan önce uzman danışmanlık (WhatsApp ve telefon), 'Bana hangisi?' seçim sihirbazı ve showroomda deneme; satıştan sonra kurulum eğitimi ve teknik servis sunar.",
+      "Arena Dedektör, İstanbul Şişli'de bulunan ve Türkiye geneline {markalar} metal dedektörleri, dedektör başlıkları, pointer ve aksesuarlar satan bir dedektör mağazasıdır. Tüm cihazlar faturalı ve 2 yıl garantilidir; seri numarasıyla orijinallik sorgulanabilir. Satıştan önce uzman danışmanlık (WhatsApp ve telefon), 'Bana hangisi?' seçim sihirbazı ve showroomda deneme; satıştan sonra kurulum eğitimi ve teknik servis sunar.",
   },
   setup: { completed: false, completedSteps: [] },
   merch: { focusBrand: "minelab", weight: "balanced", pinned: [], badge: true, focusNote: "Türkiye distribütörü", heroCards: "latest", wizard: "priority" },
@@ -381,8 +383,44 @@ export const getSettings = cache(async (): Promise<AllSettings> => {
     const k = r.key as keyof AllSettings;
     if (k in out) (out as Record<string, unknown>)[k] = { ...(out[k] as object), ...(r.value as object) };
   }
+  const seo = out.seo;
+  if ([seo.title, seo.description, seo.aboutForAi].some((x) => x?.includes(BRAND_TOKEN))) {
+    const names = await activeBrandNames();
+    const fill = (x: string, max: number) => fillBrands(x, names, max);
+    seo.title = fill(seo.title, 3);
+    seo.description = fill(seo.description, 4);
+    seo.aboutForAi = fill(seo.aboutForAi, 6);
+  }
   return out;
 });
+
+export const BRAND_TOKEN = "{markalar}";
+
+/** Panelde düzenlemek için SEO metinlerinin ham hali ({markalar} yer tutucusu korunur). */
+export async function rawSeoTexts() {
+  const [row] = await db.select().from(settings).where(eq(settings.key, "seo"));
+  const v = { ...DEFAULT_SETTINGS.seo, ...((row?.value as Partial<AllSettings["seo"]>) ?? {}) };
+  return { title: v.title, description: v.description, aboutForAi: v.aboutForAi };
+}
+
+/** Yayında ürünü olan markalar, panel sırasıyla (odak marka önde). */
+export const activeBrandNames = cache(async (): Promise<string[]> => {
+  const rows = await db
+    .select({ name: brands.name })
+    .from(brands)
+    .innerJoin(products, and(eq(products.brandId, brands.id), eq(products.status, "ACTIVE")))
+    .where(eq(brands.isActive, true))
+    .groupBy(brands.id, brands.name, brands.sortOrder)
+    .orderBy(asc(brands.sortOrder), sql`count(*) desc`);
+  return rows.map((r) => r.name);
+});
+
+/** "{markalar}" yerine "A, B ve C" yazar; marka yoksa ifade boşluk bırakmadan düşer. */
+export function fillBrands(text: string, names: string[], max = 4) {
+  const n = names.slice(0, max);
+  const list = n.length <= 1 ? (n[0] ?? "") : `${n.slice(0, -1).join(", ")} ve ${n[n.length - 1]}`;
+  return text.split(BRAND_TOKEN).join(list).replace(/ {2,}/g, " ").replace(/ ([,.:])/g, "$1").trim();
+}
 
 export async function saveSettings<K extends keyof AllSettings>(key: K, value: Partial<AllSettings[K]>) {
   const current = (await getSettings())[key];

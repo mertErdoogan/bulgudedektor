@@ -76,7 +76,7 @@ export async function pageMeta(o: { title?: string; description?: string | null;
   };
 }
 
-export function organizationLd(s: AllSettings) {
+export function organizationLd(s: AllSettings, brandNames: string[] = []) {
   const st = s.store;
   return clean({
     "@type": "Organization",
@@ -95,7 +95,7 @@ export function organizationLd(s: AllSettings) {
       { "@type": "ContactPoint", contactType: "customer service", telephone: st.phone, email: st.email, areaServed: "TR", availableLanguage: ["Turkish"] },
       ...(st.whatsapp ? [{ "@type": "ContactPoint", contactType: "sales", url: `https://wa.me/${st.whatsapp}`, areaServed: "TR", availableLanguage: ["Turkish"] }] : []),
     ],
-    knowsAbout: ["Metal dedektörü", "Altın dedektörü", "Define arama cihazı", "Minelab", "Garrett", "Nokta", "XP Deus", "Pulse Induction", "VLF dedektör", "Çok frekanslı dedektör"],
+    knowsAbout: ["Metal dedektörü", "Altın dedektörü", "Define arama cihazı", ...brandNames, "Pulse Induction", "VLF dedektör", "Çok frekanslı dedektör"],
   });
 }
 

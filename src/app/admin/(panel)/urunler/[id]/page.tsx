@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { brands, categories, productImages, products } from "@/db/schema";
+import { categoryOptions } from "@/lib/category-options";
+import { brands, productImages, products } from "@/db/schema";
 import { PageHeader } from "@/components/admin/shell";
 import { ProductStatusBadge } from "@/components/admin/status";
 import { requireStaff } from "@/lib/auth";
@@ -16,7 +17,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const p = await db.query.products.findFirst({ where: eq(products.id, id), with: { images: { orderBy: asc(productImages.sortOrder) } } });
   if (!p) notFound();
-  const [tr, st, b, c] = await Promise.all([getEntityTranslations("product", p.id), getSettings(),db.select({ id: brands.id, name: brands.name }).from(brands).orderBy(asc(brands.sortOrder)), db.select({ id: categories.id, name: categories.name }).from(categories).orderBy(asc(categories.sortOrder))]);
+  const [tr, st, b, c] = await Promise.all([getEntityTranslations("product", p.id), getSettings(),db.select({ id: brands.id, name: brands.name }).from(brands).orderBy(asc(brands.sortOrder)), categoryOptions()]);
   const showCost = can(staff.permissions, "products.cost");
   const canEdit = can(staff.permissions, "products.edit");
   return (

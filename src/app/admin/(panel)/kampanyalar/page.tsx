@@ -2,7 +2,8 @@ import { q } from "@/db/q";
 import Link from "next/link";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { brands, campaigns, categories, orders, products } from "@/db/schema";
+import { categoryOptions } from "@/lib/category-options";
+import { brands, campaigns, orders, products } from "@/db/schema";
 import { ActionButton, DeleteButton } from "@/components/admin/delete-button";
 import { PageHeader } from "@/components/admin/shell";
 import { Badge, Button, Card, Table, Td, Th } from "@/components/ui";
@@ -31,7 +32,7 @@ export default async function CampaignsPage({ searchParams }: { searchParams: Pr
       .from(campaigns)
       .orderBy(desc(campaigns.createdAt)),
     db.select({ id: brands.id, name: brands.name }).from(brands).orderBy(asc(brands.name)),
-    db.select({ id: categories.id, name: categories.name }).from(categories).orderBy(asc(categories.name)),
+    categoryOptions(),
     db.select({ id: products.id, name: products.name }).from(products).where(eq(products.status, "ACTIVE")).orderBy(asc(products.name)),
   ]);
   const edit = sp.id ? rows.find((r) => r.c.id === sp.id)?.c : undefined;

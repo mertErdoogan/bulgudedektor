@@ -1,14 +1,19 @@
 import { Breadcrumbs } from "@/components/seo/blocks";
 import { FocusBrands } from "@/components/store/brand-cards";
 import { pageMeta } from "@/lib/seo";
+import { activeBrandNames, fillBrands } from "@/lib/settings";
 import { getBrandGroups } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
-export const generateMetadata = () => pageMeta({
-  title: "Dedektör Markaları — Minelab, Garrett, Nokta, XP",
-  description: "Markaya göre alışveriş: Minelab, Garrett, Nokta ve XP dedektörleri kategorilerine göre. Tüm modeller orijinal, faturalı ve garantili.",
-  path: "/markalar",
-});
+export const generateMetadata = async () => {
+  // Yalnız satıştaki markalar yazılır: katalogda olmayan marka başlıkta vaat edilmez
+  const names = await activeBrandNames();
+  return pageMeta({
+    title: names.length ? `Dedektör Markaları — ${names.slice(0, 4).join(", ")}` : "Dedektör Markaları",
+    description: fillBrands("Markaya göre alışveriş: {markalar} dedektörleri kategorilerine göre. Tüm modeller orijinal, faturalı ve garantili.", names, 4),
+    path: "/markalar",
+  });
+};
 
 export default async function BrandsPage() {
   const brands = await getBrandGroups();

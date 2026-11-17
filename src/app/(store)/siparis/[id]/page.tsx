@@ -257,7 +257,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       <section className="mt-5 grid gap-2.5 sm:grid-cols-2" data-testid="quick-actions" aria-label="Hızlı işlemler">
         {o.paymentMethod === "TRANSFER" && o.paymentStatus === "PENDING" ? <Tile href={`${self}#havale`} icon={<Landmark size={19} />} title="Havale bilgileri" sub={`${formatTL(o.total)} · açıklamaya ${orderNo(o.number)}`} tone="hot" /> : null}
         {onTheWay && trackUrl ? <Tile href={trackUrl} external icon={<Truck size={19} />} title="Kargom nerede?" sub={`${o.carrier} · ${o.trackingNumber}`} tone="hot" /> : null}
-        {pickup && o.status === "SHIPPED" ? <Tile href="/hakkimizda#showroom" icon={<Store size={19} />} title="Showroom yol tarifi" sub="Teslim almaya gelirken" tone="hot" /> : null}
+        {pickup && o.status === "SHIPPED" ? <Tile href="/sayfa/hakkimizda#showroom" icon={<Store size={19} />} title="Showroom yol tarifi" sub="Teslim almaya gelirken" tone="hot" /> : null}
         {openReturns.length ? <Tile href={`${self}#iade-durumu`} icon={<Undo2 size={19} />} title="İade durumum" sub={RETURN_STATUS_LABEL[openReturns[0].status]} tone="hot" testid="tile-return-status" /> : null}
         {canReturn && returnHref ? (
           <Tile href={returnHref} icon={<PackageOpen size={19} />} title={o.returns.some((r) => r.status !== "REJECTED") ? "Başka bir ürünü iade et" : "İade et"} sub={`Ücretsiz · ${daysLeft} gün kaldı`} testid="tile-return" />

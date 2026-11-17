@@ -19,6 +19,7 @@ export async function updateReturn(_: ActionResult | null, fd: FormData): Promis
     const to = str(fd.get("to")) as "APPROVED" | "RECEIVED" | "REFUNDED" | "REJECTED";
     const r = await db.query.returnRequests.findFirst({ where: eq(returnRequests.id, id), with: { order: { with: { items: { with: { serials: true } }, returns: true } } } });
     if (!r) return fail("İade talebi bulunamadı.");
+    let mailed = false;
     const resolution = strOrNull(fd.get("resolution"));
     if (to === "REJECTED" && !resolution) return fail("Reddetme sebebini yazın; müşteriye gösterilir.");
     if (to === "REFUNDED") {
@@ -56,10 +57,20 @@ export async function updateReturn(_: ActionResult | null, fd: FormData): Promis
             ? "İade ettiğin ürün bize ulaştı, kontrol ediliyor."
             : `İade talebin reddedildi: ${resolution}`;
       await addOrderEvent(db, r.orderId, "return", msg, staff.id, true);
+      if (to !== "RECEIVED") {
+        const { mailReady, mailStatus } = await import("@/lib/mail");
+        const { orderKey } = await import("@/lib/store");
+        if ((await mailReady()) && !r.order.email.endsWith("@telefon.siparis")) {
+          mailed = true;
+          void mailStatus(r.order.email, r.order.number, msg, `${process.env.APP_URL || ""}/siparis/${r.orderId}?k=${orderKey(r.orderId)}`);
+        }
+      }
     }
     await audit(staff.id, "status", "return", id, `İade → ${to}`);
     revalidatePath("/admin", "layout");
-    const DONE: Record<string, string> = { APPROVED: "İade onaylandı; müşteriye kargo kodu gönderildi.", RECEIVED: "Ürünün bize ulaştığı kaydedildi.", REFUNDED: "Para iadesi yapıldı.", REJECTED: "İade talebi reddedildi; müşteriye sebep gösterildi." };
+    const seen = mailed ? "e-postayla gönderildi ve sipariş sayfasında görünüyor" : "müşterinin sipariş sayfasında görünüyor (e-posta ayarlı değil; istersen WhatsApp'tan da ilet)";
+    const manual = r.order.paymentMethod === "CARD" ? "" : " Ödeme kartla yapılmadığı için parayı müşteriye sen göndermelisin.";
+    const DONE: Record<string, string> = { APPROVED: `İade onaylandı; kargo kodu ${seen}.`, RECEIVED: "Ürünün bize ulaştığı kaydedildi.", REFUNDED: `Para iadesi kaydedildi.${manual}`, REJECTED: `İade talebi reddedildi; sebep ${seen}.` };
     return ok(DONE[to] ?? "İade talebi güncellendi.");
   });
 }

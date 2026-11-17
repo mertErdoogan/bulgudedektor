@@ -59,7 +59,9 @@ export async function verify2faAction(_: ActionResult | null, fd: FormData): Pro
   if (!user || !user.isActive || !user.totpEnabled) return fail("Hesap bulunamadı.");
   const secret = openSecret(user.totpSecret);
   const step = secret ? verifyTotp(secret, String(fd.get("code") ?? "")) : null;
-  if (step === null || (user.totpLastStep !== null && step <= user.totpLastStep)) return fail("Kod hatalı veya süresi geçmiş.");
+  if (step === null) return fail("Kod hatalı veya süresi geçmiş.");
+  // Doğru ama az önce (kurulumda ya da son girişte) kullanılmış kod: tekrar kabul edilmez, kullanıcı ne yapacağını bilsin
+  if (user.totpLastStep !== null && step <= user.totpLastStep) return fail("Bu kod az önce kullanıldı. Uygulamada yeni kod çıkınca (en fazla 30 sn) onu gir.");
   await db.update(users).set({ totpLastStep: step }).where(eq(users.id, user.id));
   await clearSessionCookie(TWOFA_COOKIE);
   await finishLogin(user.id, user.name);

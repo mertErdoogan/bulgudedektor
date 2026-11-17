@@ -66,8 +66,9 @@ export async function customerRegister(_: ActionResult | null, fd: FormData): Pr
     await setSessionCookie(CUSTOMER_COOKIE, await signToken({ sub: id, kind: "customer" }, 30), 30);
     const { sendVerification } = await import("@/lib/account");
     void sendVerification({ name, email });
+    const { mailReady } = await import("@/lib/mail");
     const next = str(fd.get("next"));
-    return ok("Hesabın oluşturuldu. E-posta adresine doğrulama bağlantısı gönderdik.", { redirect: next.startsWith("/") && !next.startsWith("//") ? next : "/hesabim" });
+    return ok((await mailReady()) ? "Hesabın oluşturuldu. E-posta adresine doğrulama bağlantısı gönderdik." : "Hesabın oluşturuldu.", { redirect: next.startsWith("/") && !next.startsWith("//") ? next : "/hesabim" });
   });
 }
 
@@ -117,7 +118,8 @@ export async function updateProfile(_: ActionResult | null, fd: FormData): Promi
     if (email !== c.email) {
       const { sendVerification } = await import("@/lib/account");
       await sendVerification({ name, email });
-      return ok("Bilgilerin güncellendi. Yeni e-posta adresine doğrulama bağlantısı gönderdik.");
+      const { mailReady } = await import("@/lib/mail");
+      return ok((await mailReady()) ? "Bilgilerin güncellendi. Yeni e-posta adresine doğrulama bağlantısı gönderdik." : "Bilgilerin güncellendi.");
     }
     return ok("Bilgilerin güncellendi.");
   });

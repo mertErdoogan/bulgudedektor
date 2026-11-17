@@ -4,6 +4,12 @@ import { getSettings } from "./settings";
 import { formatTL, orderNo } from "./utils";
 
 /** SMTP ayarlanmışsa e-posta gönderir; ayarlı değilse veya hata olursa sessizce loglar (sipariş akışını asla bozmaz). */
+/** E-posta altyapısı (SMTP) panelde girilmiş mi. Personele "gönderildi" demeden önce bakılır. */
+export async function mailReady() {
+  const i = (await getSettings()).integrations;
+  return !!(i.smtpHost && i.smtpUser && i.smtpPass);
+}
+
 export async function sendMail(to: string, subject: string, html: string, opts: { headers?: Record<string, string>; attachments?: { filename: string; content: Buffer | string; contentType?: string }[] } = {}) {
   const s = await getSettings();
   const i = s.integrations;

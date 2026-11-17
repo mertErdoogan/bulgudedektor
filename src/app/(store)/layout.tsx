@@ -6,7 +6,7 @@ import { ConsentAndAnalytics } from "@/components/store/consent";
 import { Attribution } from "@/components/store/attribution";
 import { StoreHeader } from "@/components/store/header";
 import { JsonLd } from "@/components/seo/json-ld";
-import { getSettings } from "@/lib/settings";
+import { activeBrandNames, getSettings } from "@/lib/settings";
 import { abs, graph, organizationLd, websiteLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -41,7 +41,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
   const list = (v: string) => (v || "").split(",").map((x) => x.trim()).filter(Boolean);
   return (
     <CartProvider>
-      <JsonLd data={graph(organizationLd(s), websiteLd(s))} />
+      <JsonLd data={graph(organizationLd(s, await activeBrandNames()), websiteLd(s))} />
       {/* Dil alternatifleri (hreflang): her dilin karşılığı arama motoruna bildirilir */}
       {langs.length > 1 ? (
         <>

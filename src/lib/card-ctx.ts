@@ -1,3 +1,4 @@
+import { cardReady } from "./card-ready";
 import type { AllSettings } from "./settings";
 
 /** Ürün kartlarının ihtiyaç duyduğu ayar özeti (istemci bileşenlerine de güvenle geçirilebilir; gizli anahtar içermez). */
@@ -8,7 +9,8 @@ export type CardCtx = {
 };
 
 export const cardCtx = (s: AllSettings): CardCtx => ({
-  installments: s.payment.noInterestInstallments,
+  // Kart ödemesi çalışmıyorsa kartlarda "x taksit" vaadi gösterilmez
+  installments: cardReady(s) ? s.payment.noInterestInstallments : 1,
   social: s.store.socialProof !== false,
   ship: {
     sameDayCutoff: s.shipping.sameDayCutoff,

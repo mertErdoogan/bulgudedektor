@@ -449,11 +449,11 @@ export async function saveInvoice(_: ActionResult | null, fd: FormData): Promise
     await db.update(orders).set({ invoiceNo, invoiceUrl: url, invoicedAt: o.invoicedAt ?? new Date() }).where(eq(orders.id, id));
     await addOrderEvent(db, id, "invoice", `Fatura düzenlendi${invoiceNo ? ` (${invoiceNo})` : ""}.`, staff.id, true);
     await audit(staff.id, "update", "order", id, `Fatura ${first ? "eklendi" : "güncellendi"}`);
-    if (first || fd.get("notify") === "on") {
-      const { mailInvoice } = await import("@/lib/mail");
-      void mailInvoice({ id, number: o.number, email: o.email, invoiceNo, invoiceUrl: url });
-    }
+    const { mailInvoice, mailReady } = await import("@/lib/mail");
+    const canMail = (await mailReady()) && !o.email.endsWith("@telefon.siparis");
+    if (canMail && (first || fd.get("notify") === "on")) void mailInvoice({ id, number: o.number, email: o.email, invoiceNo, invoiceUrl: url });
     revalidatePath(`/admin/siparisler/${id}`);
-    return ok(first ? "Fatura eklendi, müşteriye e-posta gönderildi." : "Fatura güncellendi.");
+    const tail = canMail ? (first ? " Müşteriye e-postayla gönderiliyor." : "") : " E-posta gönderilmedi (e-posta ayarı yok veya müşterinin e-postası yok); müşteri sipariş sayfasından indirebilir.";
+    return ok(`${first ? "Fatura eklendi." : "Fatura güncellendi."}${tail}`);
   });
 }

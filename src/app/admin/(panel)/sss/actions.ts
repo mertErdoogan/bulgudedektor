@@ -32,6 +32,12 @@ export async function saveFaq(_: ActionResult | null, fd: FormData): Promise<Act
       showOnHome: kind === "FAQ" && fd.get("showOnHome") === "on",
       updatedAt: new Date(),
     };
+    // Aynı kapsamda (genel / aynı ürün / aynı kategori) aynı soru iki kez yayınlanmasın
+    const norm = (x: string) => x.toLocaleLowerCase("tr-TR").replace(/ı/g, "i").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+    const dup = (await db.select({ id: faqs.id, question: faqs.question, productId: faqs.productId, categoryId: faqs.categoryId }).from(faqs).where(eq(faqs.kind, values.kind))).find(
+      (f) => f.id !== id && norm(f.question) === norm(question) && (f.productId ?? null) === productId && (f.categoryId ?? null) === categoryId,
+    );
+    if (dup) return fail(`${kind === "FAQ" ? "Bu soru" : "Bu terim"} zaten kayıtlı: "${dup.question}". Var olanı düzenle.`);
     if (id) await db.update(faqs).set(values).where(eq(faqs.id, id));
     else await db.insert(faqs).values(values);
     await audit(staff.id, id ? "update" : "create", "faq", id, `${kind === "FAQ" ? "SSS" : "Sözlük"}: ${question}`);

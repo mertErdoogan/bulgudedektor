@@ -9,6 +9,7 @@ import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { getCustomer } from "@/lib/auth";
 import { initCheckoutForm, getIyzicoConfig, simulationAllowed } from "@/lib/iyzico";
 import { getPaytrConfig } from "@/lib/paytr";
+import { cardReady } from "@/lib/card-ready";
 import { readOrderAttribution } from "@/lib/attribution";
 import { addOrderEvent, failOrderPayment, notifyPlaced } from "@/lib/orders";
 import { quoteCart, type CartInput } from "@/lib/pricing";
@@ -32,7 +33,7 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
     const deliveryMethod = str(fd.get("deliveryMethod")) === "PICKUP" && s.shipping.pickupEnabled ? "PICKUP" : "CARGO";
     const paymentMethod = str(fd.get("paymentMethod")) === "TRANSFER" ? "TRANSFER" : "CARD";
     if (paymentMethod === "TRANSFER" && !s.payment.transferEnabled) return fail("Havale ile ödeme şu an kapalı.");
-    if (paymentMethod === "CARD" && !s.payment.cardEnabled) return fail("Kartla ödeme şu an kapalı.");
+    if (paymentMethod === "CARD" && !cardReady(s)) return fail("Kartla ödeme şu an kullanılamıyor. Havale/EFT ile devam edebilirsin.");
     const address = {
       fullName,
       phone,

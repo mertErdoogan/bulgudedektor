@@ -27,6 +27,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Geliştirme modunda sol alttaki Next.js göstergesini gizle (canlıda zaten çıkmaz)
   devIndicators: false,
+  // Sık tahmin edilen kısa adres: kurumsal sayfa /sayfa/ altında
+  async redirects() {
+    return [{ source: "/hakkimizda", destination: "/sayfa/hakkimizda", permanent: true }];
+  },
   async headers() {
     return [
       {

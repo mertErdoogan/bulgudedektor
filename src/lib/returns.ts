@@ -64,3 +64,46 @@ export const RETURN_STEPS = [
   { key: "RECEIVED", label: "Ürün bize ulaştı", hint: "Ürünü kontrol ediyoruz; genelde 2 iş günü sürer." },
   { key: "REFUNDED", label: "Para iadesi yapıldı", hint: "Karta yapılan iadenin hesabına geçmesi bankana göre 2–10 iş günü sürebilir." },
 ] as const;
+
+/**
+ * İade edilen kalemler için müşterinin gerçekten ödediği tutar. Siparişteki indirim satırlara dağıtılır:
+ * kampanya indirimi yalnızca kampanya kapsamındaki ürünlere (ör. sadece Minelab), kalan indirim (havale, personel
+ * indirimi) bütün ürünlere tutarları oranında. Böylece "listede 7.990 TL ama müşteri 7.830,20 TL ödedi" durumunda
+ * 7.830,20 TL önerilir; fazla para iadesi olmaz. Kargo ücreti dahil değildir.
+ */
+export async function paidShare(orderId: string, items: ReturnItem[]): Promise<number> {
+  const { db } = await import("@/db");
+  const { orders } = await import("@/db/schema");
+  const { eq } = await import("drizzle-orm");
+  const { lineEligible } = await import("./pricing");
+  const o = await db.query.orders.findFirst({ where: eq(orders.id, orderId), with: { items: { with: { product: true } }, campaign: true } });
+  if (!o) return returnValue(items);
+  const lines = o.items.map((i) => ({ id: i.id, total: i.total, productId: i.productId, brandId: i.product?.brandId ?? null, categoryId: i.product?.categoryId ?? null }));
+  const subtotal = lines.reduce((n, l) => n + l.total, 0);
+  if (subtotal <= 0 || o.discountTotal <= 0) return returnValue(items);
+  const c = o.campaign && o.campaign.type !== "FREE_SHIPPING" ? o.campaign : null;
+  const eligible = c ? lines.filter((l) => lineEligible(c, l)) : [];
+  const eligibleTotal = eligible.reduce((n, l) => n + l.total, 0);
+  let campaignAmt = 0;
+  if (c && eligibleTotal > 0) {
+    campaignAmt = c.type === "PERCENT" ? (eligibleTotal * c.value) / 100 : Math.min(c.value, eligibleTotal);
+    if (c.maxDiscount !== null) campaignAmt = Math.min(campaignAmt, c.maxDiscount);
+  }
+  campaignAmt = Math.min(campaignAmt, o.discountTotal);
+  const rest = o.discountTotal - campaignAmt;
+  const share = (lineId: string) => {
+    const l = lines.find((x) => x.id === lineId);
+    if (!l) return 0;
+    const camp = c && eligibleTotal > 0 && eligible.some((x) => x.id === lineId) ? (campaignAmt * l.total) / eligibleTotal : 0;
+    const afterCamp = subtotal - campaignAmt;
+    const other = afterCamp > 0 ? (rest * (l.total - camp)) / afterCamp : 0;
+    return l.total - camp - other; // satırın ödenen tutarı
+  };
+  let sum = 0;
+  for (const x of items) {
+    const it = o.items.find((i) => i.id === x.orderItemId);
+    if (!it || it.quantity <= 0) continue;
+    sum += (share(it.id) / it.quantity) * x.quantity;
+  }
+  return Math.round(sum * 100) / 100;
+}

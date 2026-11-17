@@ -3,12 +3,13 @@ import { asc } from "drizzle-orm";
 import { db } from "@/db";
 import { pages } from "@/db/schema";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { ContentEditor } from "@/components/admin/content-editor";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { PageHeader } from "@/components/admin/shell";
-import { Badge, Button, Card, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
+import { Badge, Button, Card, CardHeader, Checkbox, Field, Input, Select } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/utils";
-import { deletePage, savePage } from "../vitrin/actions";
+import { deletePage, previewContent, savePage } from "../vitrin/actions";
 
 export const metadata = { title: "Sayfalar" };
 
@@ -42,8 +43,8 @@ export default async function PagesPage({ searchParams }: { searchParams: Promis
               {edit ? <input type="hidden" name="id" value={edit.id} /> : null}
               <Field label="Başlık"><Input name="title" defaultValue={edit?.title} required /></Field>
               <Field label="URL"><Input name="slug" defaultValue={edit?.slug} /></Field>
-              <Field label="İçerik" hint="Markdown: ## Başlık, **kalın**, - madde. HTML ile başlarsanız HTML olarak gösterilir." className="md:col-span-2">
-                <Textarea name="content" defaultValue={edit?.content} className="min-h-[380px] font-mono text-[13px]" />
+              <Field label="İçerik" hint="Sade yazı: ## Başlık, **kalın**, - madde, [bağlantı](/adres). {{unvan}} gibi alanlar ayarlardan dolar. 'Önizle' ile sitede nasıl görüneceğini gör." className="md:col-span-2">
+                <ContentEditor name="content" defaultValue={edit?.content} preview={previewContent} />
               </Field>
               <Field label="Footer grubu">
                 <Select name="footerGroup" defaultValue={edit?.footerGroup ?? "Sözleşmeler"}>

@@ -97,7 +97,10 @@ with sync_playwright() as p:
     # Kurulum: eksik alan yazılır; kargo teslim adresi mağaza adresinden önerilir
     sql("""insert into settings(key, value) values ('shipping', '{"pickupAddress": ""}') on conflict (key) do update set value = settings.value || '{"pickupAddress": ""}'""")
     a.goto(f"{BASE}/admin/kurulum")
-    chk("kurulumda eksik alan adı", "showroom teslim adresi" in a.inner_text("main"))
+    m = a.inner_text("main")
+    chk("kurulumda eksik alan adı (SMTP zorunlu adım)", "SMTP sunucu" in m)
+    miss = " ".join(a.locator("[data-testid=setup-missing]").all_inner_texts())
+    chk("teslim adresi boşsa mağaza adresi sayılır, eksik denmez", "showroom teslim adresi" not in miss, miss)
     a.goto(f"{BASE}/admin/ayarlar?t=kargo")
     chk("teslim adresi mağaza adresiyle önerilir", a.input_value("textarea[name=pickupAddress]") != "")
 

@@ -8,7 +8,7 @@ import { ReturnStatusBadge } from "@/components/admin/status";
 import { Card, CardHeader, EmptyState, Field, Input, Select, Table, Td, Textarea, Th } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
-import { describeReturn, returnValue } from "@/lib/returns";
+import { describeReturn, paidShare } from "@/lib/returns";
 import { formatDate, formatTL, orderNo, PAYMENT_METHOD_LABEL } from "@/lib/utils";
 import { updateReturn } from "./actions";
 
@@ -24,6 +24,8 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
     limit: 200,
   });
   const sel = rows.find((r) => r.id === sp.id) ?? rows.find((r) => r.status === "REQUESTED");
+  // Önerilen iade: müşterinin bu ürünler için gerçekten ödediği tutar (kampanya + havale indirimi düşülmüş)
+  const suggested = sel ? (sel.items.length ? Math.min(await paidShare(sel.orderId, sel.items), sel.order.total) : sel.order.total) : 0;
   const days = (d: Date | null) => (d ? Math.floor((Date.now() - d.getTime()) / 86400000) : null);
   return (
     <>
@@ -115,9 +117,15 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
                   {can(staff.permissions, "orders.refund") ? (
                     // Yalnızca "Para iadesini yap" seçiliyken görünür; onaylarken "para mı iade ediyorum?" karışıklığı olmasın
                     <div className="refund-amt hidden">
-                      <Field label="İade tutarı (TL)" hint={sel.items.length ? "İade edilen ürünlerin tutarı yazıldı; kargo ücreti dahil değil. Kartla ödendiyse otomatik iade gider." : "Kısmi iade için düşür. Kartla ödendiyse otomatik iade gider."}>
-                        <Input name="refundAmount" defaultValue={sel.items.length ? Math.min(returnValue(sel.items), sel.order.total) : sel.order.total} inputMode="decimal" />
+                      <Field label="İade tutarı (TL)" hint={sel.items.length ? "Müşterinin bu ürünler için ödediği tutar yazıldı (kampanya ve havale indirimi düşülmüş, kargo hariç). Kartla ödendiyse otomatik iade gider." : "Kısmi iade için düşür. Kartla ödendiyse otomatik iade gider."}>
+                        <Input name="refundAmount" defaultValue={suggested} inputMode="decimal" data-testid="refund-amount" />
                       </Field>
+                      {sel.order.paymentMethod !== "CARD" ? (
+                        <p className="mt-2 rounded-lg bg-warn-bg p-2.5 text-xs font-bold text-warn" data-testid="manual-refund-note">
+                          Bu sipariş {sel.order.paymentMethod === "TRANSFER" ? "havale/EFT" : sel.order.paymentMethod === "CASH" ? "nakit" : "POS cihazından kart"} ile ödendi: para otomatik geri gitmez.
+                          {sel.order.paymentMethod === "TRANSFER" ? " Tutarı müşterinin IBAN'ına bankadan sen gönder" : sel.order.paymentMethod === "CASH" ? " Tutarı kasadan müşteriye ver" : " İadeyi POS cihazından yap"}; buradaki kayıt yalnızca işlemi deftere işler.
+                        </p>
+                      ) : null}
                     </div>
                   ) : null}
                   <Field label="Açıklama" hint="Reddederken zorunlu; müşteriye gösterilir.">
