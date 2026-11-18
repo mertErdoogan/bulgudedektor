@@ -176,7 +176,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <ActionForm action={saveIntegrations} className="grid gap-4 p-5 md:grid-cols-2">
               <p className="font-bold md:col-span-2">Analitik ve reklam</p>
               <Field label="Google Analytics 4 ölçüm kimliği"><Input name="gaMeasurementId" defaultValue={s.integrations.gaMeasurementId} placeholder="G-XXXXXXX" /></Field>
-              <Field label="Google Ads kimlikleri (virgülle)" hint="Eski sitede: AW-17112368707, AW-17135302190"><Input name="googleAdsIds" defaultValue={s.integrations.googleAdsIds} placeholder="AW-123456789" /></Field>
+              <Field label="Google Ads kimlikleri (virgülle)"><Input name="googleAdsIds" defaultValue={s.integrations.googleAdsIds} placeholder="AW-123456789" /></Field>
               <Field label="Satın alma dönüşüm etiketleri (virgülle)" hint="Google Ads → Hedefler → Dönüşümler → etiket kurulumu: AW-123/AbCd"><Input name="adsPurchaseLabels" defaultValue={s.integrations.adsPurchaseLabels} placeholder="AW-123456789/AbCdEfGh" /></Field>
               <Field label="Google Tag Manager (isteğe bağlı)" hint="Ajans GTM kullanıyorsa. Boşsa doğrudan gtag kullanılır."><Input name="gtmId" defaultValue={s.integrations.gtmId} placeholder="GTM-XXXXXXX" /></Field>
               <Field label="Meta Pixel ID"><Input name="metaPixelId" defaultValue={s.integrations.metaPixelId} /></Field>

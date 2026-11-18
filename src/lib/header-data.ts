@@ -4,11 +4,14 @@ import { db } from "@/db";
 import { campaigns } from "@/db/schema";
 import { latestFocus } from "./merch";
 import { getSettings } from "./settings";
+import { localize } from "./i18n/content";
+import { getLocale } from "./i18n/server";
+import { DEFAULT_LOCALE, type Locale } from "./i18n/config";
 import { categoryRail, getBrandGroups, getNav, type ProductCard } from "./store";
 
 /** Menülerde gösterilen sade ürün kartı (önbelleğe JSON olarak girer; Date yok). */
 export type NavCard = { id: string; name: string; slug: string; image: string | null; price: number; compareAtPrice: number | null; isNew: boolean; line: string | null };
-export type CatMenu = { subs: { name: string; slug: string }[]; brands: { name: string; slug: string; logoUrl: string | null; count: number }[]; products: NavCard[] };
+export type CatMenu = { subs: { id: string; name: string; slug: string }[]; brands: { name: string; slug: string; logoUrl: string | null; count: number }[]; products: NavCard[] };
 export type FocusMenu = {
   brand: { name: string; slug: string };
   total: number;
@@ -40,7 +43,7 @@ async function build(_key: string): Promise<HeaderData> {
     slugs.map(async (slug) => {
       const c = nav.categories.find((x) => x.slug === slug);
       if (!c) return;
-      const subs = nav.categories.filter((x) => x.parentId === c.id).map((x) => ({ name: x.name, slug: x.slug }));
+      const subs = nav.categories.filter((x) => x.parentId === c.id).map((x) => ({ id: x.id, name: x.name, slug: x.slug }));
       const brands = groups
         .map((g) => ({ name: g.name, slug: g.slug, logoUrl: g.logoUrl, count: g.categories.find((k) => k.slug === slug)?.count ?? 0 }))
         .filter((b) => b.count > 0);
@@ -79,9 +82,26 @@ async function build(_key: string): Promise<HeaderData> {
  * Header menüleri her sayfada çizilir; veriyi 60 sn önbellekte tutar (sayfa açılışı hızlı kalsın).
  * Paneldeki kayıtlar revalidatePath("/", "layout") ile önbelleği hemen tazeler.
  */
-const cached = unstable_cache(build, ["header-data-v2"], { revalidate: 60, tags: ["header"] });
+const cached = unstable_cache(build, ["header-data-v3"], { revalidate: 60, tags: ["header"] });
 /** Vitrin/menü kartı ayarları önbellek anahtarına girer: ayar değişince eski menü hiç gösterilmez. */
-export async function getHeaderData() {
+export async function getHeaderData(locale?: Locale): Promise<HeaderData> {
   const s = await getSettings();
-  return cached(JSON.stringify([s.merch, s.nav.promo]));
+  const hd = await cached(JSON.stringify([s.merch, s.nav.promo]));
+  const l = locale ?? (await getLocale());
+  if (l === DEFAULT_LOCALE) return hd;
+  // Önbellekteki Türkçe menüyü isteğin diline çevir (ürün adları, kısa açıklama, alt kategoriler, kampanya etiketi)
+  const allCards = [...(hd.focus?.models ?? []), ...Object.values(hd.cats).flatMap((c) => c.products)];
+  const allSubs = Object.values(hd.cats).flatMap((c) => c.subs);
+  const [lp, lc] = await Promise.all([
+    localize(allCards.map((p) => ({ id: p.id, name: p.name, shortDescription: p.line })), "product", l),
+    localize(allSubs, "category", l),
+  ]);
+  const pm = new Map(lp.map((p) => [p.id, p]));
+  const cm = new Map(lc.map((c) => [c.id, c.name]));
+  const tc = (p: NavCard): NavCard => ({ ...p, name: pm.get(p.id)?.name ?? p.name, line: pm.get(p.id)?.shortDescription ?? p.line });
+  const eyebrow = (e: string) => e.replace(/^SON (\d+) GÜN$/, "LAST $1 DAYS").replace(/^KAMPANYA$/, "OFFER");
+  return {
+    focus: hd.focus ? { ...hd.focus, models: hd.focus.models.map(tc), promo: hd.focus.promo ? { ...hd.focus.promo, eyebrow: eyebrow(hd.focus.promo.eyebrow) } : null } : null,
+    cats: Object.fromEntries(Object.entries(hd.cats).map(([k, c]) => [k, { ...c, subs: c.subs.map((x) => ({ ...x, name: cm.get(x.id) ?? x.name })), products: c.products.map(tc) }])),
+  };
 }

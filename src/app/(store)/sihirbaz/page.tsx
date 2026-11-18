@@ -1,8 +1,12 @@
+import { getT } from "@/lib/i18n/server";
 import { pageMeta } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
 import { Wizard } from "./wizard";
 
-export const generateMetadata = () => pageMeta({ title: "Hangi Dedektörü Almalıyım? 6 Soruda Dedektör Seçimi", description: "Ne arayacağını, bütçeni ve arazini söyle; sana en uygun 3 metal dedektörünü gerekçesiyle önerelim. Ücretsiz, 1 dakika.", path: "/sihirbaz" });
+export async function generateMetadata() {
+  const t = await getT();
+  return pageMeta({ title: t("wiz.meta_title"), description: t("wiz.meta_desc"), path: "/sihirbaz" });
+}
 
 export default async function WizardPage({ searchParams }: { searchParams: Promise<{ amac?: string }> }) {
   const s = await getSettings();

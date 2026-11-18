@@ -1,11 +1,12 @@
 import type { Locale } from "./config";
+import { PAIRS, pairsEn, pairsTr } from "./dict-pairs";
 
 /**
  * Arayüz metinleri. Yeni bir dil eklemek için: config.ts'teki LOCALES'e kodu ekle, burada aynı anahtarlarla bir
  * sözlük ekle. Eksik anahtar Türkçeye düşer, sayfa asla boş metin göstermez. {ad} biçimindeki yerler değişkendir.
  * Ürün, kategori ve sayfa içerikleri buradan değil, admin panelindeki çeviri alanlarından gelir.
  */
-const tr = {
+const trBase = {
   // Başlık ve menü
   "nav.categories": "Kategoriler",
   "nav.campaigns": "Kampanyalar",
@@ -206,9 +207,12 @@ const tr = {
   "v.check": "Bu alanı kontrol et.",
 };
 
+/** Ek metinler [Türkçe, İngilizce] çiftleri halinde: dict-pairs.ts */
+const tr = { ...trBase, ...pairsTr(PAIRS) };
+
 export type DictKey = keyof typeof tr;
 
-const en: Partial<Record<DictKey, string>> = {
+const enBase: Partial<Record<DictKey, string>> = {
   "nav.categories": "Categories",
   "nav.campaigns": "Deals",
   "nav.orderTracking": "Track order",
@@ -399,6 +403,8 @@ const en: Partial<Record<DictKey, string>> = {
   "v.rangeMax": "Must be at most {n}.",
   "v.check": "Please check this field.",
 };
+
+const en: Partial<Record<DictKey, string>> = { ...enBase, ...pairsEn(PAIRS) };
 
 export const DICTS: Record<Locale, Partial<Record<DictKey, string>>> = { tr, en };
 

@@ -131,6 +131,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
               enabled={st.i18n.locales}
               fields={[
                 { field: "name", label: "Kategori adı" },
+                { field: "slug", label: "Adres (slug) — ör. coins-and-relics; boşsa Türkçe slug kullanılır" },
                 { field: "shortText", label: "Kısa alt yazı" },
                 { field: "description", label: "Açıklama", multiline: true },
                 { field: "seoTitle", label: "SEO başlığı" },

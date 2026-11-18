@@ -1,8 +1,9 @@
 "use server";
+import { localRedirect } from "@/lib/i18n/server";
 
 import bcrypt from "bcryptjs";
 import { and, eq, inArray, ne, or } from "drizzle-orm";
-import { redirect } from "next/navigation";
+
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { addresses, customers, orderItems, orders, returnRequests, serialNumbers, serviceRecords } from "@/db/schema";
@@ -74,7 +75,7 @@ export async function customerRegister(_: ActionResult | null, fd: FormData): Pr
 
 export async function customerLogout() {
   await clearSessionCookie(CUSTOMER_COOKIE);
-  redirect("/");
+  await localRedirect("/");
 }
 
 async function me() {
@@ -166,8 +167,7 @@ export async function requestReturn(_: ActionResult | null, fd: FormData): Promi
     revalidatePath(`/siparis/${orderId}`);
     // Sunucu tarafı yönlendirme: talep sonrası form sayfadan kalkabildiği için istemci yönlendirmesine güvenilmez
     const { orderKey } = await import("@/lib/store");
-    const { redirect } = await import("next/navigation");
-    return redirect(`/siparis/${orderId}?k=${orderKey(orderId)}&iade=alindi#iade-durumu`);
+    return localRedirect(`/siparis/${orderId}?k=${orderKey(orderId)}&iade=alindi#iade-durumu`);
   });
 }
 
@@ -205,7 +205,7 @@ export async function requestService(_: ActionResult | null, fd: FormData): Prom
     const { notifyStaff } = await import("@/lib/notify");
     await notifyStaff({ perm: "service.manage", kind: "service", title: `Servis talebi #${r.number} · ${productName}`, body: `${c.name}: ${issue.slice(0, 140)}`, href: `/admin/servis?id=${r.id}` });
     revalidatePath("/hesabim");
-    return redirect(`/hesabim?t=servis&yeni=${r.number}`);
+    return localRedirect(`/hesabim?t=servis&yeni=${r.number}`);
   });
 }
 
@@ -264,6 +264,6 @@ export async function deleteMyAccount(_: ActionResult | null, fd: FormData): Pro
     return ok("Hesabın silindi.");
   });
   // Oturum kapandığı için Hesabım sayfası yeniden çizilemez; doğrudan ana sayfaya yönlendir
-  if (res.ok) redirect("/?hesap=silindi");
+  if (res.ok) await localRedirect("/?hesap=silindi");
   return res;
 }

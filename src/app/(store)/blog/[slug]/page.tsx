@@ -1,3 +1,4 @@
+import { getLocale } from "@/lib/i18n/server";
 import { imgProps } from "@/lib/img";
 import { cardCtx } from "@/lib/card-ctx";
 import { redirectOrNotFound } from "@/lib/redirects";
@@ -33,10 +34,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const p = await getPost((await params).slug);
   if (!p) return redirectOrNotFound(`/blog/${(await params).slug}`);
-  const [s, items, more] = await Promise.all([
+  const [s, items, more, loc] = await Promise.all([
     getSettings(),
     p.relatedProductIds.length ? cardQuery().where(and(eq(products.status, "ACTIVE"), inArray(products.id, p.relatedProductIds))).limit(4) : Promise.resolve([]),
     relatedPosts({ categoryId: p.relatedCategoryIds[0], excludeId: p.id, limit: 3 }),
+    getLocale(),
   ]);
   const words = wordCount(`${p.answer ?? ""} ${p.content}`);
   const minutes = Math.max(2, Math.round(words / 200));
@@ -101,7 +103,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       {items.length ? (
         <section className="mt-12">
           <h2 className="font-display mb-4 text-2xl font-extrabold">Yazıda geçen cihazlar</h2>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{items.map((r) => <ProductCard key={r.id} p={r} ctx={cardCtx(s)} />)}</div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{items.map((r) => <ProductCard key={r.id} p={r} ctx={cardCtx(s, loc)} />)}</div>
         </section>
       ) : null}
       {more.length ? (

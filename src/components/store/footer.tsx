@@ -11,11 +11,11 @@ export async function StoreFooter() {
   const [s, nav, pages, t, path] = await Promise.all([getSettings(), getNav(), getFooterPages(), getT(), getPathname()]);
   const langs = LOCALES.filter((l) => l === DEFAULT_LOCALE || s.i18n.locales.includes(l));
   const st = s.store;
-  const social = ([[st.instagram, "Instagram"], [st.youtube, "YouTube"], [st.tiktok, "TikTok"], [st.facebook, "Facebook"], [st.x, "X"], [st.linkedin, "LinkedIn"], [st.googleBusinessUrl, "Google Haritalar"]] as const).filter(([h]) => h) as unknown as [string, string][];
+  const social = ([[st.instagram, "Instagram"], [st.youtube, "YouTube"], [st.tiktok, "TikTok"], [st.facebook, "Facebook"], [st.x, "X"], [st.linkedin, "LinkedIn"], [st.googleBusinessUrl, t.locale === "en" ? "Google Maps" : "Google Haritalar"]] as const).filter(([h]) => h) as unknown as [string, string][];
   const help = nav.menu.filter((m) => m.location === "FOOTER_HELP");
   const groups = [
     { title: t("footer.categories"), links: nav.categories.map((c) => ({ href: `/kategori/${c.slug}`, label: c.name })) },
-    { title: t("footer.help"), links: [{ href: "/blog", label: t("footer.guides") }, { href: "/sss", label: t("footer.faq") }, { href: "/sozluk", label: t("footer.glossary") }, { href: "/sihirbaz", label: t("footer.whichDetector") }, ...help.map((m) => ({ href: m.url, label: m.label })), ...pages.filter((p) => p.group === "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title }))] },
+    { title: t("footer.help"), links: [...(t.locale === "tr" ? [{ href: "/blog", label: t("footer.guides") }] : []), { href: "/sss", label: t("footer.faq") }, { href: "/sozluk", label: t("footer.glossary") }, { href: "/sihirbaz", label: t("footer.whichDetector") }, ...help.map((m) => ({ href: m.url, label: m.label })), ...pages.filter((p) => p.group === "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title }))] },
     { title: t("footer.legal"), links: pages.filter((p) => p.group !== "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title })) },
   ];
   return (

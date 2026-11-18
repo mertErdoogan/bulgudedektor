@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { db } from "@/db";
 import { and, asc, eq, sql } from "drizzle-orm";
-import { brands, products, settings } from "@/db/schema";
+import { brands, products, settings, translations } from "@/db/schema";
 
 export type StoreSettings = {
   name: string;
@@ -384,10 +384,13 @@ export const getSettings = cache(async (): Promise<AllSettings> => {
     const k = r.key as keyof AllSettings;
     if (k in out) (out as Record<string, unknown>)[k] = { ...(out[k] as object), ...(r.value as object) };
   }
+  // İngilizce sayfalar: panelde serbest yazılan mağaza metinlerinin çevirisi (translations, entity "text")
+  const en = (await requestLocale()) === "en";
+  if (en) await applyTextTranslations(out);
   const seo = out.seo;
   if ([seo.title, seo.description, seo.aboutForAi].some((x) => x?.includes(BRAND_TOKEN))) {
     const names = await activeBrandNames();
-    const fill = (x: string, max: number) => fillBrands(x, names, max);
+    const fill = (x: string, max: number) => fillBrands(x, names, max, en ? "and" : "ve");
     seo.title = fill(seo.title, 3);
     seo.description = fill(seo.description, 4);
     seo.aboutForAi = fill(seo.aboutForAi, 6);
@@ -396,6 +399,30 @@ export const getSettings = cache(async (): Promise<AllSettings> => {
 });
 
 export const BRAND_TOKEN = "{markalar}";
+
+async function requestLocale() {
+  const { getLocale } = await import("./i18n/server");
+  return getLocale();
+}
+
+/** Çevrilebilen mağaza metinleri: anahtar → ayar alanı. Kayan duyurular "ticker:<metin>", kısayollar "nav:<etiket>" ile. */
+async function applyTextTranslations(out: AllSettings) {
+  const rows = await db
+    .select({ k: translations.entityId, v: translations.value })
+    .from(translations)
+    .where(and(eq(translations.entity, "text"), eq(translations.locale, "en"), eq(translations.field, "value")));
+  if (!rows.length) return;
+  const m = new Map(rows.map((r) => [r.k, r.v]));
+  const pick = (k: string, cur: string) => m.get(k) || cur;
+  out.store.announcement = pick("store.announcement", out.store.announcement);
+  out.store.workingHours = pick("store.workingHours", out.store.workingHours);
+  out.seo.title = pick("seo.title", out.seo.title);
+  out.seo.description = pick("seo.description", out.seo.description);
+  out.seo.aboutForAi = pick("seo.aboutForAi", out.seo.aboutForAi);
+  out.merch.focusNote = pick("merch.focusNote", out.merch.focusNote);
+  out.ticker = { ...out.ticker, items: out.ticker.items.map((i) => ({ ...i, text: pick(`ticker:${i.text}`, i.text) })) };
+  out.nav = { ...out.nav, shortcuts: out.nav.shortcuts.map((x) => ({ ...x, label: pick(`nav:${x.label}`, x.label) })) };
+}
 
 /** Panelde düzenlemek için SEO metinlerinin ham hali ({markalar} yer tutucusu korunur). */
 export async function rawSeoTexts() {
@@ -417,9 +444,9 @@ export const activeBrandNames = cache(async (): Promise<string[]> => {
 });
 
 /** "{markalar}" yerine "A, B ve C" yazar; marka yoksa ifade boşluk bırakmadan düşer. */
-export function fillBrands(text: string, names: string[], max = 4) {
+export function fillBrands(text: string, names: string[], max = 4, and = "ve") {
   const n = names.slice(0, max);
-  const list = n.length <= 1 ? (n[0] ?? "") : `${n.slice(0, -1).join(", ")} ve ${n[n.length - 1]}`;
+  const list = n.length <= 1 ? (n[0] ?? "") : `${n.slice(0, -1).join(", ")} ${and} ${n[n.length - 1]}`;
   return text.split(BRAND_TOKEN).join(list).replace(/ {2,}/g, " ").replace(/ ([,.:])/g, "$1").trim();
 }
 

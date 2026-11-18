@@ -43,7 +43,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
     <CartProvider>
       <JsonLd data={graph(organizationLd(s, await activeBrandNames()), websiteLd(s))} />
       {/* Dil alternatifleri (hreflang): her dilin karşılığı arama motoruna bildirilir */}
-      {langs.length > 1 ? (
+      {langs.length > 1 && !/^\/blog(\/|$)/.test(path) ? (
         <>
           {langs.map((l) => <link key={l} rel="alternate" hrefLang={HTML_LANG[l]} href={abs(localePath(path, l))} />)}
           <link rel="alternate" hrefLang="x-default" href={abs(path)} />

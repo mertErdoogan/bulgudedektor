@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Cookie } from "lucide-react";
 import { pageView } from "@/lib/track";
+import { T, useT } from "@/components/i18n";
 
 /**
  * KVKK çerez onayı. Analitik (GA4) ve pazarlama (Meta Pixel) çerezleri yalnızca açık onaydan sonra yüklenir.
@@ -32,6 +33,7 @@ export function openConsent() {
 type Tags = { ga?: string; ads?: string[]; labels?: string[]; gtm?: string; px?: string };
 
 export function ConsentAndAnalytics({ ga, ads = [], labels = [], gtm, px }: Tags) {
+  const t = useT();
   const [choice, setChoice] = useState<Choice | null>(null);
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState(false);
@@ -99,31 +101,31 @@ export function ConsentAndAnalytics({ ga, ads = [], labels = [], gtm, px }: Tags
         <Script id="px" strategy="afterInteractive">{`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${pxId}');window.dispatchEvent(new Event('site-tags'));`}</Script>
       ) : null}
       {open ? (
-        <div role="dialog" aria-label="Çerez tercihleri" className="fixed inset-x-3 bottom-[76px] z-[60] rounded-2xl border border-line bg-white/95 p-4 text-deep shadow-[0_20px_50px_-20px_rgba(20,20,22,.45)] backdrop-blur md:inset-x-auto md:bottom-5 md:left-5 md:w-[400px]">
+        <div role="dialog" aria-label={t("ck.prefs")} className="fixed inset-x-3 bottom-[76px] z-[60] rounded-2xl border border-line bg-white/95 p-4 text-deep shadow-[0_20px_50px_-20px_rgba(20,20,22,.45)] backdrop-blur md:inset-x-auto md:bottom-5 md:left-5 md:w-[400px]">
           <div className="flex items-center gap-2">
             <Cookie size={17} className="text-mute" />
-            <b className="text-[14.5px]">Çerez tercihlerin</b>
+            <b className="text-[14.5px]">{t("ck.yourPrefs")}</b>
           </div>
           <p className="mt-1.5 text-[13px] leading-relaxed text-mute">
-            Gerekli çerezler her zaman açık. İzin verirsen ziyaret istatistiği (Google Analytics) ve reklam ölçümü (Meta) için de kullanırız.{" "}
-            <Link href="/sayfa/cerez-politikasi" className="font-semibold text-deep underline underline-offset-2">Politika</Link>
+            {t("ck.text")}{" "}
+            <Link href="/sayfa/cerez-politikasi" className="font-semibold text-deep underline underline-offset-2">{t("ck.policy")}</Link>
           </p>
           {detail ? (
             <div className="mt-3 flex flex-col gap-2 rounded-xl bg-soft p-3 text-[13px]">
-              <label className="flex items-center gap-2"><input type="checkbox" checked disabled className="h-4 w-4" /> <b>Zorunlu</b> <span className="text-mute">— sepet, oturum, güvenlik</span></label>
-              <label className="flex items-center gap-2"><input type="checkbox" checked={draft.analytics} onChange={(e) => setDraft({ ...draft, analytics: e.target.checked })} className="h-4 w-4 accent-[#1d1d1f]" /> <b>Analitik</b> <span className="text-mute">— ziyaret istatistikleri</span></label>
-              <label className="flex items-center gap-2"><input type="checkbox" checked={draft.marketing} onChange={(e) => setDraft({ ...draft, marketing: e.target.checked })} className="h-4 w-4 accent-[#1d1d1f]" /> <b>Pazarlama</b> <span className="text-mute">— reklam ölçümü</span></label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked disabled className="h-4 w-4" /> <b>{t("ck.req")}</b> <span className="text-mute">— {t("ck.reqD")}</span></label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={draft.analytics} onChange={(e) => setDraft({ ...draft, analytics: e.target.checked })} className="h-4 w-4 accent-[#1d1d1f]" /> <b>{t("ck.an")}</b> <span className="text-mute">— {t("ck.anD")}</span></label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={draft.marketing} onChange={(e) => setDraft({ ...draft, marketing: e.target.checked })} className="h-4 w-4 accent-[#1d1d1f]" /> <b>{t("ck.mk")}</b> <span className="text-mute">— {t("ck.mkD")}</span></label>
             </div>
           ) : null}
           {/* Kabul ve ret aynı görünürlükte (KVKK/ GDPR: reddetmek kabul etmek kadar kolay olmalı) */}
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => decide({ analytics: true, marketing: true })} className="h-10 rounded-full bg-deep text-[13px] font-bold text-white hover:bg-black">Tümünü kabul et</button>
-            <button type="button" onClick={() => decide({ analytics: false, marketing: false })} className="h-10 rounded-full border border-[#d6d6db] text-[13px] font-bold hover:border-deep">Sadece zorunlu</button>
+            <button type="button" onClick={() => decide({ analytics: true, marketing: true })} className="h-10 rounded-full bg-deep text-[13px] font-bold text-white hover:bg-black">{t("ck.acceptAll")}</button>
+            <button type="button" onClick={() => decide({ analytics: false, marketing: false })} className="h-10 rounded-full border border-[#d6d6db] text-[13px] font-bold hover:border-deep">{t("ck.onlyReq")}</button>
           </div>
           {detail ? (
-            <button type="button" onClick={() => decide(draft)} className="mt-2 h-9 w-full rounded-full bg-soft text-[13px] font-bold">Seçimimi kaydet</button>
+            <button type="button" onClick={() => decide(draft)} className="mt-2 h-9 w-full rounded-full bg-soft text-[13px] font-bold">{t("ck.save")}</button>
           ) : (
-            <button type="button" onClick={() => setDetail(true)} className="mt-2 text-[12.5px] font-semibold text-mute underline underline-offset-2 hover:text-deep">Ayarla</button>
+            <button type="button" onClick={() => setDetail(true)} className="mt-2 text-[12.5px] font-semibold text-mute underline underline-offset-2 hover:text-deep">{t("ck.customize")}</button>
           )}
         </div>
       ) : null}
@@ -134,7 +136,7 @@ export function ConsentAndAnalytics({ ga, ads = [], labels = [], gtm, px }: Tags
 export function ConsentLink({ className }: { className?: string }) {
   return (
     <button type="button" onClick={openConsent} className={className}>
-      Çerez tercihleri
+      <T k="ck.prefs" />
     </button>
   );
 }

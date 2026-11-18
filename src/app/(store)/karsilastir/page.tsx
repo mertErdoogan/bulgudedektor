@@ -1,24 +1,34 @@
+import { getT } from "@/lib/i18n/server";
 import { imgUrl } from "@/lib/img";
 import Link from "@/components/locale-link";
 import { asc, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { AddToCart } from "@/components/store/bits";
-import { EXPERIENCE_LABEL, TECH_LABEL, WATERPROOF_LABEL, formatTL } from "@/lib/utils";
+import { formatTL } from "@/lib/utils";
+import { enumLabel } from "@/lib/i18n/dict";
+import { localize } from "@/lib/i18n/content";
 
-export const metadata = { title: "Karşılaştır", robots: { index: false } };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.karsilastir"), robots: { index: false } };
+}
 
 export default async function ComparePage({ searchParams }: { searchParams: Promise<{ ids?: string }> }) {
   const ids = ((await searchParams).ids ?? "").split(",").filter(Boolean).slice(0, 4);
-  const rows = ids.length ? await db.query.products.findMany({ where: inArray(products.id, ids), with: { brand: true, images: { orderBy: (i) => asc(i.sortOrder), limit: 1 } } }) : [];
+  const t = await getT();
+  const L = t.locale;
+  const rows0 = ids.length ? await db.query.products.findMany({ where: inArray(products.id, ids), with: { brand: true, images: { orderBy: (i) => asc(i.sortOrder), limit: 1 } } }) : [];
+  const rows = await localize(rows0, "product", L);
+  const brands = new Map((await localize(rows.flatMap((r) => (r.brand ? [r.brand] : [])), "brand", L)).map((b) => [b.id, b.name]));
   const specKeys = [...new Set(rows.flatMap((r) => r.specs.map((s) => s.key)))];
   const line = (label: string, get: (r: (typeof rows)[number]) => React.ReactNode) => (
     <tr className="border-b border-line"><th className="sticky left-0 bg-white py-3 pr-4 text-left text-sm font-semibold text-mute">{label}</th>{rows.map((r) => <td key={r.id} className="px-3 py-3 text-sm">{get(r) ?? "—"}</td>)}</tr>
   );
   return (
     <div className="container-x py-8">
-      <h1 className="font-display mb-5 text-2xl font-extrabold">Karşılaştır</h1>
-      {rows.length < 2 ? <p className="text-mute">Karşılaştırmak için ürün kartlarındaki &quot;Karşılaştır&quot; kutusundan en az 2 ürün seç. <Link href="/urunler" className="font-bold text-link">Ürünler →</Link></p> : (
+      <h1 className="font-display mb-5 text-2xl font-extrabold">{t("cmpp.title")}</h1>
+      {rows.length < 2 ? <p className="text-mute">{t("cmpp.empty")} <Link href="/urunler" className="font-bold text-link">{t("cmpp.products")} →</Link></p> : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px]">
             <thead>
@@ -36,15 +46,15 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
               </tr>
             </thead>
             <tbody>
-              {line("Marka", (r) => r.brand?.name)}
-              {line("Teknoloji", (r) => (r.technology ? TECH_LABEL[r.technology] : null))}
-              {line("Su geçirmezlik", (r) => (r.waterproof ? WATERPROOF_LABEL[r.waterproof] : null))}
-              {line("Kimin için", (r) => (r.experience ? EXPERIENCE_LABEL[r.experience] : null))}
-              {line("Ağırlık", (r) => (r.weightKg ? `${r.weightKg} kg` : null))}
-              {line("Garanti", (r) => `${r.warrantyMonths} ay`)}
-              {line("Stok", (r) => (r.stock > 0 ? "Stokta" : "Tükendi"))}
+              {line(t("cmpp.brand"), (r) => (r.brand ? brands.get(r.brand.id) ?? r.brand.name : null))}
+              {line(t("cmpp.tech"), (r) => enumLabel(L, "tech", r.technology) || null)}
+              {line(t("cmpp.water"), (r) => enumLabel(L, "water", r.waterproof) || null)}
+              {line(t("cmpp.exp"), (r) => enumLabel(L, "exp", r.experience) || null)}
+              {line(t("cmpp.weight"), (r) => (r.weightKg ? `${r.weightKg} kg` : null))}
+              {line(t("cmpp.warranty"), (r) => t("cmpp.months", { n: r.warrantyMonths }))}
+              {line(t("cmpp.stock"), (r) => (r.stock > 0 ? t("cmpp.in") : t("cmpp.out")))}
               {specKeys.map((k) => line(k, (r) => r.specs.find((s) => s.key === k)?.value))}
-              {line("Bilmen gereken", (r) => r.notFor.join("; ") || null)}
+              {line(t("cmpp.note"), (r) => r.notFor.join("; ") || null)}
             </tbody>
           </table>
         </div>

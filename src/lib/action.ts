@@ -5,6 +5,19 @@ export const fail = (error: string): ActionResult => ({ ok: false, error });
 
 /** Server action gövdesini sarar: beklenmeyen hataları kullanıcıya okunur mesaj olarak döndürür. */
 export async function safe(fn: () => Promise<ActionResult>): Promise<ActionResult> {
+  return toLocale(await safeInner(fn));
+}
+
+/** İngilizce sayfadan gelen istekte bilinen mağaza mesajlarını çevirir */
+async function toLocale(r: ActionResult): Promise<ActionResult> {
+  if (!r.message && !r.error) return r;
+  const { getLocale } = await import("./i18n/server");
+  if ((await getLocale()) !== "en") return r;
+  const { messageToEnglish } = await import("./i18n/action-messages");
+  return { ...r, message: messageToEnglish(r.message), error: messageToEnglish(r.error) };
+}
+
+async function safeInner(fn: () => Promise<ActionResult>): Promise<ActionResult> {
   try {
     return await fn();
   } catch (e) {

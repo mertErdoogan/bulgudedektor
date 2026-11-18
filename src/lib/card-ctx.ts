@@ -6,9 +6,12 @@ export type CardCtx = {
   installments: number;
   social: boolean;
   ship: { sameDayCutoff: string; transitMinDays: number; transitMaxDays: number; shipOnSaturday: boolean };
+  /** Kartlardaki hazır metinlerin (teslim tarihi vb.) dili */
+  locale: "tr" | "en";
 };
 
-export const cardCtx = (s: AllSettings): CardCtx => ({
+export const cardCtx = (s: AllSettings, locale: "tr" | "en" = "tr"): CardCtx => ({
+  locale,
   // Kart ödemesi çalışmıyorsa kartlarda "x taksit" vaadi gösterilmez
   installments: cardReady(s) ? s.payment.noInterestInstallments : 1,
   social: s.store.socialProof !== false,

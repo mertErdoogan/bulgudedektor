@@ -1,10 +1,14 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "@/components/locale-link";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Field, Input } from "@/components/ui";
 import { checkReset } from "@/lib/reset";
 import { customerResetPassword } from "../hesabim/actions";
 
-export const metadata = { title: "Yeni şifre", robots: { index: false } };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.sifre_yenile"), robots: { index: false } };
+}
 
 export default async function ResetPage({ searchParams }: { searchParams: Promise<{ t?: string }> }) {
   const { t = "" } = await searchParams;

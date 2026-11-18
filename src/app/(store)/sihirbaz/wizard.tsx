@@ -8,9 +8,10 @@ import { Button } from "@/components/ui";
 import { AddToCart } from "@/components/store/bits";
 import { cn, formatTL } from "@/lib/utils";
 import { recommend, type Answers, type Result } from "./actions";
+import { useT } from "@/components/i18n";
 
 type Q = { key: keyof Answers; title: string; hint?: string; opts: { v: string; l: string; d?: string }[] };
-const QS: Q[] = [
+const QS_TR: Q[] = [
   { key: "amac", title: "Ne arayacaksın?", opts: [{ v: "define", l: "Sikke, takı, define", d: "Tarla, bağ, harabe" }, { v: "altin", l: "Doğal altın", d: "Nugget, maden sahası" }, { v: "sahil", l: "Sahilde kayıp takı", d: "Kum, sığ su, dalış" }, { v: "derin", l: "Büyük ve derin hedef", d: "Görüntüleme, 3D" }, { v: "pointer", l: "Kazıda nokta tespiti", d: "Pointer" }] },
   { key: "seviye", title: "Deneyimin ne?", opts: [{ v: "BEGINNER", l: "İlk cihazım" }, { v: "INTERMEDIATE", l: "Daha önce kullandım" }, { v: "PRO", l: "Profesyonelim" }] },
   { key: "butce", title: "Bütçen ne kadar?", opts: [{ v: "0-25", l: "25 bin TL'ye kadar" }, { v: "25-60", l: "25–60 bin TL" }, { v: "60-150", l: "60–150 bin TL" }, { v: "150+", l: "150 bin TL üstü" }] },
@@ -18,8 +19,18 @@ const QS: Q[] = [
   { key: "agirlik", title: "Gün boyu taşıyacak mısın?", opts: [{ v: "onemli", l: "Evet, hafif olsun" }, { v: "farketmez", l: "Fark etmez" }] },
   { key: "su", title: "Suya girecek mi?", opts: [{ v: "hayir", l: "Hayır" }, { v: "kiyi", l: "Kıyıda, sığ suda" }, { v: "dalis", l: "Evet, dalış yapacağım" }] },
 ];
+const QS_EN: Q[] = [
+  { key: "amac", title: "What will you search for?", opts: [{ v: "define", l: "Coins, jewelry, relics", d: "Fields, vineyards, ruins" }, { v: "altin", l: "Natural gold", d: "Nuggets, goldfields" }, { v: "sahil", l: "Lost jewelry on the beach", d: "Sand, shallow water, diving" }, { v: "derin", l: "Large, deep targets", d: "Imaging, 3D" }, { v: "pointer", l: "Pinpointing while digging", d: "Pinpointer" }] },
+  { key: "seviye", title: "How experienced are you?", opts: [{ v: "BEGINNER", l: "This is my first detector" }, { v: "INTERMEDIATE", l: "I've used one before" }, { v: "PRO", l: "I'm a professional" }] },
+  { key: "butce", title: "What's your budget?", opts: [{ v: "0-25", l: "Up to 25,000 TL" }, { v: "25-60", l: "25,000–60,000 TL" }, { v: "60-150", l: "60,000–150,000 TL" }, { v: "150+", l: "Over 150,000 TL" }] },
+  { key: "toprak", title: "What's the ground like where you'll search?", hint: "Don't know? No problem: choose \"Not sure\".", opts: [{ v: "normal", l: "Normal fields, parks", d: "Brown, stone-free soil" }, { v: "demirli", l: "Red, iron-rich soil", d: "Mountainous regions; highly mineralized" }, { v: "sahil", l: "Beach and wet sand", d: "Salt water, the surf line" }, { v: "emin-degil", l: "Not sure", d: "We'll show detectors that handle both" }] },
+  { key: "agirlik", title: "Will you carry it all day?", opts: [{ v: "onemli", l: "Yes, keep it light" }, { v: "farketmez", l: "Doesn't matter" }] },
+  { key: "su", title: "Will it go in the water?", opts: [{ v: "hayir", l: "No" }, { v: "kiyi", l: "At the shore, in shallow water" }, { v: "dalis", l: "Yes, I'll be diving" }] },
+];
 
 export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsapp: string }) {
+  const t = useT();
+  const QS = t.locale === "en" ? QS_EN : QS_TR;
   const [a, setA] = useState<Partial<Answers>>(initialAmac ? { amac: initialAmac } : {});
   const [step, setStep] = useState(initialAmac ? 1 : 0);
   const [res, setRes] = useState<Result | null>(null);
@@ -35,12 +46,12 @@ export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsa
 
   if (res) {
     const summary = QS.map((x) => x.opts.find((o) => o.v === a[x.key])?.l).filter(Boolean).join(" · ");
-    const waText = encodeURIComponent(`Merhaba, sihirbazda şunları seçtim: ${summary}. Önerilenler: ${res.picks.map((p) => p.p.name).join(", ")}. Yardımcı olur musunuz?`);
+    const waText = encodeURIComponent(t("wiz.waText", { secim: summary, oneri: res.picks.map((p) => p.p.name).join(", ") }));
     return (
       <div className="container-x max-w-5xl py-8">
-        <h1 className="font-display text-2xl font-extrabold md:text-3xl">Sana {res.picks.length} önerimiz var</h1>
-        {res.only && res.brand ? <p className="mt-1 text-sm font-bold" data-testid="wizard-brand-note">{res.brand} modelleri arasından önerimiz</p> : null}
-        <p className="mt-1 text-sm text-mute">{summary} · <button onClick={() => { setRes(null); setStep(0); }} className="font-bold text-link">Cevapları değiştir</button></p>
+        <h1 className="font-display text-2xl font-extrabold md:text-3xl">{t("wiz.nPicks", { n: res.picks.length })}</h1>
+        {res.only && res.brand ? <p className="mt-1 text-sm font-bold" data-testid="wizard-brand-note">{t("wiz.brandNote", { marka: res.brand })}</p> : null}
+        <p className="mt-1 text-sm text-mute">{summary} · <button onClick={() => { setRes(null); setStep(0); }} className="font-bold text-link">{t("wiz.change")}</button></p>
         {res.picks.length ? (
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {res.picks.map((x, i) => (
@@ -53,22 +64,22 @@ export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsa
                 <div className="flex flex-1 flex-col gap-2 px-4 pb-4 text-sm">
                   <Link href={`/urun/${x.p.slug}`} className="text-lg font-extrabold hover:text-link">{x.p.name}</Link>
                   <b className="font-display text-xl">{formatTL(x.p.price)}</b>
-                  <p><b>Neden sana uygun:</b> {x.why.join("; ")}.</p>
-                  {x.caveat ? <p className="rounded-lg bg-[#fff4f2] p-2.5 text-[#7a2a20]"><b>Bunu bekleme:</b> {x.caveat}</p> : null}
+                  <p><b>{t("wiz.why")}</b> {x.why.join("; ")}.</p>
+                  {x.caveat ? <p className="rounded-lg bg-[#fff4f2] p-2.5 text-[#7a2a20]"><b>{t("wiz.caveat")}</b> {x.caveat}</p> : null}
                   <div className="mt-auto flex flex-col gap-2 pt-2">
                     <AddToCart productId={x.p.id} name={x.p.name} disabled={x.p.stock <= 0 && !x.p.allowBackorder} />
-                    <Link href={`/urun/${x.p.slug}`} className="text-center text-sm font-bold text-link">İncele →</Link>
+                    <Link href={`/urun/${x.p.slug}`} className="text-center text-sm font-bold text-link">{t("hl.view")} →</Link>
                   </div>
                 </div>
               </article>
             ))}
           </div>
         ) : (
-          <p className="mt-6 rounded-xl bg-soft p-6" data-testid="wizard-empty">{res.only && res.brand ? `Bu seçimlere tam uyan bir ${res.brand} modeli bulamadık.` : "Bu seçimlere tam uyan cihaz bulamadık."} Bir uzmanla konuşalım; seçeneklerini birlikte netleştirelim.</p>
+          <p className="mt-6 rounded-xl bg-soft p-6" data-testid="wizard-empty">{res.only && res.brand ? t("wiz.noneBrand", { marka: res.brand }) : t("wiz.none")} {t("wiz.noneD")}</p>
         )}
         <div className="mt-6 flex flex-wrap gap-2">
-          {whatsapp ? <a href={`https://wa.me/${whatsapp}?text=${waText}`} target="_blank" className="flex h-12 items-center gap-2 rounded-lg bg-[#15803d] px-5 font-extrabold text-white"><MessageCircle size={18} /> Sonucu uzmana gönder</a> : null}
-          <Link href={`/urunler?amac=${a.amac}`} className="flex h-12 items-center rounded-lg border border-deep px-5 font-extrabold">Tüm uygun cihazlar ({res.total})</Link>
+          {whatsapp ? <a href={`https://wa.me/${whatsapp}?text=${waText}`} target="_blank" className="flex h-12 items-center gap-2 rounded-lg bg-[#15803d] px-5 font-extrabold text-white"><MessageCircle size={18} /> {t("wiz.send")}</a> : null}
+          <Link href={`/urunler?amac=${a.amac}`} className="flex h-12 items-center rounded-lg border border-deep px-5 font-extrabold">{t("wiz.all", { n: res.total })}</Link>
         </div>
       </div>
     );
@@ -77,8 +88,8 @@ export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsa
   return (
     <div className="container-x max-w-2xl py-8 pb-28">
       <div className="flex items-center justify-between text-sm font-bold text-mute">
-        <span>Soru {step + 1} / {QS.length}</span>
-        <Link href="/">Çık ×</Link>
+        <span>{t("wiz.q", { n: step + 1, toplam: QS.length })}</span>
+        <Link href="/">{t("wiz.exit")}</Link>
       </div>
       <div className="mt-2 grid grid-cols-6 gap-1">{QS.map((_, i) => <span key={i} className={cn("h-1.5 rounded-full", i <= step ? "bg-brand" : "bg-line")} />)}</div>
       <h1 className="font-display mt-8 text-[26px] leading-tight font-extrabold md:text-3xl">{q.title}</h1>
@@ -92,9 +103,9 @@ export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsa
         ))}
       </div>
       {step > 0 ? (
-        <Button variant="ghost" className="mt-5" onClick={() => setStep(step - 1)}><ArrowLeft size={16} /> Geri</Button>
+        <Button variant="ghost" className="mt-5" onClick={() => setStep(step - 1)}><ArrowLeft size={16} /> {t("rail.prev")}</Button>
       ) : null}
-      {pending ? <p className="mt-4 text-sm font-bold text-link">Sana uygun cihazlar seçiliyor…</p> : null}
+      {pending ? <p className="mt-4 text-sm font-bold text-link">{t("wiz.loading")}</p> : null}
     </div>
   );
 }

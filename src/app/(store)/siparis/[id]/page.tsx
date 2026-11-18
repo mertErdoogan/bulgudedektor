@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import { imgUrl } from "@/lib/img";
 import Link from "@/components/locale-link";
 import { AutoRefresh } from "@/components/store/auto-refresh";
@@ -17,7 +18,10 @@ import { ReturnForm } from "@/components/store/return-form";
 import { TransferForm } from "./transfer-form";
 import { ORDER_STATUS_LABEL, RETURN_STATUS_LABEL, formatDate, formatTL, orderNo } from "@/lib/utils";
 
-export const metadata = { title: "Sipariş", robots: { index: false } };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.siparis__id_"), robots: { index: false } };
+}
 const STEPS = [
   { key: "PAID", label: "Alındı", icon: ClipboardCheck },
   { key: "PREPARING", label: "Hazırlanıyor", icon: Package },

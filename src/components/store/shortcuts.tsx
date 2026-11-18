@@ -3,6 +3,7 @@ import { ArrowRight, Flame, Sparkles, Star, Tag, TrendingUp } from "lucide-react
 import { imgUrl } from "@/lib/img";
 import type { Shortcut, ShortcutIcon } from "@/lib/settings";
 import { cn } from "@/lib/utils";
+import { T } from "@/components/i18n";
 
 const ICON: Record<Exclude<ShortcutIcon, "">, typeof Star> = { star: Star, trend: TrendingUp, flame: Flame, tag: Tag, sparkles: Sparkles };
 
@@ -35,7 +36,7 @@ export function Shortcuts({ title, items }: { title: string; items: ReturnType<t
       <div className="mb-4 flex items-baseline justify-between gap-3 md:mb-6">
         <h2 className="font-display text-[22px] font-extrabold tracking-tight md:text-[28px]">{title}</h2>
         <Link href="/kategoriler" className="flex items-center gap-1.5 text-sm font-bold hover:text-brand">
-          Tüm kategoriler <ArrowRight size={15} />
+          <T k="sc.allCats" /> <ArrowRight size={15} />
         </Link>
       </div>
       <div data-stagger="" className="scrollbar-none -mx-4 flex snap-x gap-1 overflow-x-auto px-4 pt-1 pb-2 md:mx-0 md:justify-between md:gap-2 md:overflow-visible md:px-0">

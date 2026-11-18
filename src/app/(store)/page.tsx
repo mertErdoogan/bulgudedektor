@@ -1,3 +1,4 @@
+import { getLocale } from "@/lib/i18n/server";
 import { imgProps } from "@/lib/img";
 import Link from "@/components/locale-link";
 import { HeroStage, type HeroCard } from "@/components/store/home-client";
@@ -11,9 +12,12 @@ import { PersonalPicks, RecentlyViewed } from "@/components/store/rails";
 import { HomeReviews } from "@/components/store/home-reviews";
 import { cardCtx } from "@/lib/card-ctx";
 import { getSettings } from "@/lib/settings";
-import { bestSellers, categoryRail, getActiveBrands, getBrandGroups, getHome, getNav, productsFor, railWhere, type ProductCard as ProductCardT } from "@/lib/store";
+import { bestSellers, categoryRail, getActiveBrands, getBrandGroups, getHome, getNav, productsFor, railWhere, withLocaleNames, type ProductCard as ProductCardT } from "@/lib/store";
 import { BlogShowcase, ExpertBand, TrustBand, WizardBand } from "@/components/store/home-sections";
 import { ExploreTabs } from "@/components/store/explore-tabs";
+import { getT } from "@/lib/i18n/server";
+import { localize, localizeText } from "@/lib/i18n/content";
+import type { DictKey } from "@/lib/i18n/dict";
 import { RevealSections } from "@/components/store/reveal";
 
 /** Ana sayfa "Amacına göre keşfet" sekmeleri */
@@ -44,12 +48,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [{ sections, banners }, nav, s, homeFaq, posts] = await Promise.all([getHome(), getNav(), getSettings(), getFaqs({ home: true }), getPublishedPosts()]);
+  const [{ sections: sections0, banners: banners0 }, nav, s, homeFaq, posts, t] = await Promise.all([getHome(), getNav(), getSettings(), getFaqs({ home: true }), getPublishedPosts(), getT()]);
+  const [sections, banners] = await Promise.all([localize(sections0, "section", t.locale), localize(banners0, "banner", t.locale)]);
   const hero = await heroSlides(banners.filter((b) => b.placement === "HERO"));
   const side = banners.filter((b) => b.placement === "SIDE").slice(0, 3);
   // Banner altı 3 kart: öncelikli markanın en yeni cihazları (panelden "kampanya kartları"na çevrilebilir).
   // Yeterli yeni cihaz yoksa kalan yer kampanya kartlarıyla dolar.
-  const latest = s.merch.heroCards === "latest" ? await latestFocus(s.merch, 3) : [];
+  const latest0 = s.merch.heroCards === "latest" ? await latestFocus(s.merch, 3) : [];
+  const latest = (await localize(latest0, "product", t.locale)).map((p, i) => ({ ...p, isNew: latest0[i].badges.some((b) => /^yeni/i.test(b)) }));
   const brandName = latest[0]?.brand ?? "";
   const cards: HeroCard[] = [
     ...latest.map((p) => ({
@@ -61,12 +67,12 @@ export default async function Home() {
       price: p.price,
       oldPrice: p.compareAtPrice,
       image: p.image,
-      isNew: p.badges.some((b) => /^yeni/i.test(b)),
+      isNew: p.isNew,
     })),
-    ...side.map((b) => ({ id: b.id, href: b.linkUrl || "#", eyebrow: b.eyebrow ?? "KAMPANYA", title: b.title, line: b.subtitle, image: b.imageUrl })),
+    ...side.map((b) => ({ id: b.id, href: b.linkUrl || "#", eyebrow: b.eyebrow ?? t("home.offer"), title: b.title, line: b.subtitle, image: b.imageUrl })),
   ].slice(0, 3);
   const strip = banners.find((b) => b.placement === "STRIP");
-  const ctx = cardCtx(s);
+  const ctx = cardCtx(s, await getLocale());
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}` : "/iletisim";
 
   // Ana sayfa üst rafları bir kez hesaplanır; alttaki raflar bunlarda görünen ürünleri tekrar etmez.
@@ -97,7 +103,7 @@ export default async function Home() {
             db.select({ slug: categories.slug, imageUrl: categories.imageUrl }).from(categories).where(eq(categories.isActive, true)),
             getActiveBrands(),
           ]);
-          return <Shortcuts key={sec.id} title={sec.title || "Ne arıyorsun?"} items={resolveShortcuts(s.nav.shortcuts, allCats, allBrands)} />;
+          return <Shortcuts key={sec.id} title={sec.title || t("home.shortcuts")} items={await Promise.all(resolveShortcuts(s.nav.shortcuts, allCats, allBrands).map(async (x) => ({ ...x, label: await localizeText(`nav:${x.label}`, x.label, t.locale) })))} />;
         }
         case "PRODUCT_TABS": {
           // Eski "sekmeli" bölüm artık alt alta listeler: çok satanlar, yeni gelenler, fırsatlar, aynı gün kargo
@@ -106,7 +112,7 @@ export default async function Home() {
           const { best, fresh, deals } = await topLists();
           // "Amacına göre keşfet": aynı katalog, müşterinin amacına göre sekmeli (tekrar değil, farklı bir bakış)
           const explore = await Promise.all(
-            EXPLORE.map(async (t) => ({ k: t.k, l: t.l, d: t.d, href: t.href, items: await railWhere(t.cond, 8) })),
+            EXPLORE.map(async (e) => ({ k: e.k, l: t(`home.ex_${e.k}` as DictKey), d: t(`home.ex_${e.k}D` as DictKey), href: e.href, items: await railWhere(e.cond, 8) })),
           );
           return (
             <div key={sec.id}>
@@ -120,16 +126,16 @@ export default async function Home() {
         case "PRODUCT_ROW": {
           const seen = (await topLists()).seen;
           const items = unseen(await productsFor("pro", Math.max(limit, 10) + seen.size), seen);
-          return items.length >= 4 ? <CategoryRail key={sec.id} title={sec.title || "Profesyonel seçim"} href="/kategori/derin-arama" items={items} ctx={ctx} /> : null;
+          return items.length >= 4 ? <CategoryRail key={sec.id} title={sec.title || t("home.pro")} href="/kategori/derin-arama" items={items} ctx={ctx} /> : null;
         }
         case "BRANDS": {
           const [groups, m] = await Promise.all([getBrandGroups(), getMerch()]);
           if (!groups.length) return null;
           const f = groups.find((g) => g.slug === m.focusBrand);
-          const models = f ? await latestFocus(m, 4) : [];
+          const models = f ? withLocaleNames(await latestFocus(m, 4), t.locale) : [];
           return (
             <section key={sec.id} className="container-x mt-14">
-              <Head title={sec.title || "Markaya göre alışveriş"} sub={sec.subtitle || "Markanı seç, kategorisine göre modelleri gör"} href="/markalar" cta="Tüm markalar" />
+              <Head title={sec.title || t("home.brands")} sub={sec.subtitle || t("home.brandsD")} href="/markalar" cta={t("home.allBrands")} />
               {f ? (
                 <BrandShowcase focus={f} models={models} note={m.focusNote || undefined} rest={groups.filter((g) => g !== f)} />
               ) : (
@@ -159,9 +165,10 @@ export default async function Home() {
     }),
   );
 
+  const ticker = { ...s.ticker, items: await Promise.all(s.ticker.items.map(async (i) => ({ ...i, text: await localizeText(`ticker:${i.text}`, i.text, t.locale) }))) };
   return (
     <>
-      <Ticker t={s.ticker} />
+      <Ticker t={ticker} />
       <HeroStage slides={hero} cards={cards} />
       {strip ? (
         <Link href={strip.linkUrl || "#"} className="container-x mt-4 block">
@@ -170,22 +177,22 @@ export default async function Home() {
         </Link>
       ) : null}
       <div className="container-x mt-4">
-        <h1 className="sr-only">{s.store.name} · Metal dedektörü ve define dedektörü modelleri — orijinal, faturalı, garantili</h1>
+        <h1 className="sr-only">{t("home.h1", { ad: s.store.name })}</h1>
       </div>
       <RecentlyViewed compact className="container-x mt-6" />
       <RevealSections>
       {rendered}
       <PersonalPicks className="container-x mt-12" />
       <HomeReviews googleReviewUrl={s.store.googleReviewUrl || undefined} />
-      <BlogShowcase posts={posts.slice(0, 3)} />
+      {t.locale === "tr" ? <BlogShowcase posts={posts.slice(0, 3)} /> : null}
       <section className="container-x mt-12 max-w-4xl">
-        <h2 className="font-display text-[22px] leading-tight font-extrabold md:text-[26px]">{s.store.name}: metal dedektörü ve define dedektörü, uzman desteğiyle</h2>
+        <h2 className="font-display text-[22px] leading-tight font-extrabold md:text-[26px]">{t("home.aboutTitle", { ad: s.store.name })}</h2>
         <p className="mt-2 text-[15px] leading-relaxed text-[#3f3f46]">{s.seo.aboutForAi}</p>
       </section>
       {homeFaq.length ? (
         <div className="container-x mt-12 max-w-4xl">
-          <FaqSection items={toQA(homeFaq)} title="Metal dedektörü hakkında sık sorulan sorular" />
-          <p className="mt-3 text-sm"><Link href="/sss" className="font-bold text-link">Tüm soruları gör →</Link> · <Link href="/sozluk" className="font-bold text-link">Dedektör sözlüğü →</Link></p>
+          <FaqSection items={toQA(homeFaq)} title={t("home.faqTitle")} />
+          <p className="mt-3 text-sm"><Link href="/sss" className="font-bold text-link">{t("home.allQ")}</Link> · <Link href="/sozluk" className="font-bold text-link">{t("home.glossary")}</Link></p>
         </div>
       ) : null}
       </RevealSections>

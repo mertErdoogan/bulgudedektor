@@ -1,8 +1,10 @@
 "use client";
+import { localePath } from "@/lib/i18n/config";
 
 import { imgUrl } from "@/lib/img";
 import Link from "@/components/locale-link";
-import { useLocaleRouter } from "@/components/i18n";
+import { useLocaleRouter, useT } from "@/components/i18n";
+import type { DictKey } from "@/lib/i18n/dict";
 import { useEffect, useId, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, Clock3, Compass, CornerDownLeft, Search, Sparkles, X } from "lucide-react";
 import { cn, formatTL } from "@/lib/utils";
@@ -53,7 +55,8 @@ function Hl({ text, q }: { text: string; q: string }) {
   );
 }
 
-const stockText = (p: Prod) => (p.stock === undefined ? null : p.stock > 0 ? (p.stock <= 2 ? `Son ${p.stock} adet` : "Stokta") : p.allowBackorder ? "Siparişle" : "Tükendi");
+const stockText = (p: Prod, t: (k: DictKey, v?: Record<string, string | number>) => string) =>
+  p.stock === undefined ? null : p.stock > 0 ? (p.stock <= 2 ? t("sb.lastN", { n: p.stock }) : t("pdp.inStock")) : p.allowBackorder ? t("sb.backorder") : t("card.soldOut");
 
 /**
  * Arama paleti. Tıklayınca (yazmadan): son aramalar, öne çıkan modeller, markalar, kullanım alanları.
@@ -61,6 +64,8 @@ const stockText = (p: Prod) => (p.stock === undefined ? null : p.stock > 0 ? (p.
  * Klavye: "/" ile açılır (hotkey), ↑↓ gezinir, Enter seçileni açar, Esc kapatır. Mobilde tam ekran açılır.
  */
 export function SearchBox({ defaultValue, className, hotkey, placeholder }: { defaultValue?: string; className?: string; hotkey?: boolean; placeholder?: string }) {
+  const t = useT();
+  const lang = t.locale;
   const [q, setQ] = useState(defaultValue ?? "");
   const [res, setRes] = useState<Res>(EMPTY);
   const [open, setOpen] = useState(false);
@@ -84,9 +89,9 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
     if (!open) return;
     setRecent(readRecent());
     const ctl = new AbortController();
-    const t = setTimeout(
+        const timer = setTimeout(
       () =>
-        fetch(`/api/ara?q=${encodeURIComponent(q)}`, { signal: ctl.signal })
+        fetch(`/api/ara?q=${encodeURIComponent(q)}&lang=${lang}`, { signal: ctl.signal })
           .then((r) => r.json())
           .then((d: Res) => {
             setRes({ ...EMPTY, ...d });
@@ -96,10 +101,10 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
       q.trim().length < 2 ? 0 : 120,
     );
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       ctl.abort();
     };
-  }, [q, open]);
+  }, [q, open, lang]);
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -169,7 +174,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
   return (
     <div ref={box} className={cn("relative", open && mobile ? "fixed inset-0 z-[70] flex flex-col bg-white" : "flex", className)}>
       <form
-        action="/ara"
+        action={localePath("/ara", lang)}
         role="search"
         className={cn(
           "relative flex h-12 w-full items-center gap-2.5 rounded-full border pr-1.5 pl-4 transition",
@@ -187,7 +192,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
         }}
       >
         {open && mobile ? (
-          <button type="button" aria-label="Aramayı kapat" onClick={() => setOpen(false)} className="-ml-2 grid h-10 w-9 shrink-0 place-items-center">
+          <button type="button" aria-label={t("sb.close")} onClick={() => setOpen(false)} className="-ml-2 grid h-10 w-9 shrink-0 place-items-center">
             <ArrowLeft size={20} />
           </button>
         ) : (
@@ -220,26 +225,26 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
           }}
           autoComplete="off"
           enterKeyHint="search"
-          placeholder={placeholder ?? "Marka, model veya ürün ara"}
+          placeholder={placeholder ?? t("sb.ph")}
           className="h-full w-full min-w-0 bg-transparent text-[15px] outline-none placeholder:text-mute"
-          aria-label="Ürün ara"
+          aria-label={t("sb.aria")}
           aria-expanded={!!show}
           role="combobox"
           aria-controls={listId}
           aria-autocomplete="list"
         />
         {q ? (
-          <button type="button" aria-label="Temizle" onClick={() => { setQ(""); input.current?.focus(); }} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-mute hover:bg-soft">
+          <button type="button" aria-label={t("search.clear")} onClick={() => { setQ(""); input.current?.focus(); }} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-mute hover:bg-soft">
             <X size={16} />
           </button>
         ) : hotkey && !open ? (
           <span className="hidden shrink-0 items-center gap-1.5 text-xs font-semibold text-mute lg:inline-flex" aria-hidden>
-            <kbd className={kbd}>/</kbd> ile ara
+            {t.locale === "en" ? <>Press <kbd className={kbd}>/</kbd> to search</> : <><kbd className={kbd}>/</kbd> ile ara</>}
           </span>
         ) : open ? (
           <kbd className={cn(kbd, "hidden bg-soft text-mute md:inline-grid")} aria-hidden>ESC</kbd>
         ) : null}
-        <button aria-label="Ara" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-deep text-white transition hover:bg-brand">
+        <button aria-label={t("sb.search")} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-deep text-white transition hover:bg-brand">
           <ArrowRight size={17} strokeWidth={2.3} />
         </button>
       </form>
@@ -248,7 +253,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
         <div
           id={listId}
           role="listbox"
-          aria-label="Arama önerileri"
+          aria-label={t("sb.suggestions")}
           className={cn(
             "text-deep",
             mobile ? "mt-2 flex-1 overflow-y-auto overscroll-contain pb-6" : "absolute top-full left-0 z-50 mt-2.5 w-[max(100%,780px)] overflow-hidden rounded-[22px] border border-line bg-white shadow-[0_30px_70px_-18px_rgba(20,20,22,.38)]",
@@ -274,7 +279,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
               ) : null}
               {res.models.length ? (
                 <div>
-                  <p className={sec}><Sparkles size={13} /> ÖNE ÇIKAN MODELLER</p>
+                  <p className={sec}><Sparkles size={13} /> {t("sb.featured")}</p>
                   <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
                     {res.models.slice(0, 6).map((p) => {
                       const i = next();
@@ -286,7 +291,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
                           </span>
                           <span className="min-w-0">
                             <span className="block truncate text-[14px] font-bold">{p.name}</span>
-                            <span className="text-[12.5px] text-mute">{formatTL(p.price)}{p.isNew ? <b className="ml-1.5 text-[10.5px] tracking-wider text-brand">YENİ</b> : null}</span>
+                            <span className="text-[12.5px] text-mute">{formatTL(p.price)}{p.isNew ? <b className="ml-1.5 text-[10.5px] tracking-wider text-brand">{t("card.new")}</b> : null}</span>
                           </span>
                         </Link>
                       );
@@ -296,7 +301,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
               ) : null}
               {res.popular.length && !res.models.length ? (
                 <div>
-                  <p className={sec}>ÇOK ARANANLAR</p>
+                  <p className={sec}>{t("sb.popular")}</p>
                   <div className="flex flex-wrap gap-2">
                     {res.popular.map((t) => (
                       <Link key={t} href={`/ara?q=${encodeURIComponent(t)}`} onClick={pick} className="rounded-full border border-line px-3.5 py-1.5 text-sm font-semibold hover:border-deep">{t}</Link>
@@ -332,10 +337,10 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
           ) : res.products.length || res.brands.length || res.categories.length || res.posts.length ? (
             <div className="grid md:grid-cols-[minmax(0,1fr)_240px]">
               <div className="p-2 md:p-3">
-                {res.products.length ? <p className={cn(sec, "px-2.5 pt-2")}>ÜRÜNLER · {res.total}</p> : null}
+                {res.products.length ? <p className={cn(sec, "px-2.5 pt-2")}>{t("sb.products")} · {res.total}</p> : null}
                 {res.products.map((p) => {
                   const i = next();
-                  const st = stockText(p);
+                  const st = stockText(p, t);
                   return (
                     <Link key={p.id} href={`/urun/${p.slug}`} onClick={pick} role="option" aria-selected={active(i)} className={cn("flex items-center gap-3.5 rounded-2xl px-2.5 py-2", active(i) ? "bg-soft" : "hover:bg-soft")}>
                       <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-line bg-white">
@@ -367,7 +372,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
                 ) : null}
                 {res.categories.length ? (
                   <div>
-                    <p className={sec}>KATEGORİLER</p>
+                    <p className={sec}>{t("sb.categories")}</p>
                     {res.categories.map((c) => {
                       const i = next();
                       return <Link key={c.slug} href={`/kategori/${c.slug}`} onClick={pick} className={cn("block rounded-lg px-1 py-1.5 text-[14px] font-semibold", active(i) ? "text-brand" : "hover:text-brand")}>{c.name}</Link>;
@@ -384,24 +389,24 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
                   </div>
                 ) : null}
                 {!res.brands.length && !res.categories.length && !res.posts.length ? (
-                  <Link href="/sihirbaz" onClick={pick} className="flex items-center gap-2.5 text-[13.5px] font-semibold"><Compass size={18} className="text-brand" /> Emin değil misin? Bana hangisi testi</Link>
+                  <Link href="/sihirbaz" onClick={pick} className="flex items-center gap-2.5 text-[13.5px] font-semibold"><Compass size={18} className="text-brand" /> {t("nav.unsureTest")}</Link>
                 ) : null}
               </div>
             </div>
           ) : (
-            <p className="p-5 text-sm text-mute">“{q.trim()}” için öneri bulunamadı. Enter ile tüm sonuçlara bakabilir ya da uzmana sorabilirsin.</p>
+            <p className="p-5 text-sm text-mute">{t("sb.none", { q: q.trim() })}</p>
           )}
           <div className="hidden h-12 items-center justify-between border-t border-line bg-soft px-5 text-[12px] font-semibold text-mute md:flex">
             {typed ? (
-              <button type="button" onClick={() => go(`/ara?q=${encodeURIComponent(q.trim())}`)} className="text-[13.5px] font-bold text-deep hover:text-brand">“{q.trim()}” için tüm sonuçlar{res.total ? ` (${res.total})` : ""} →</button>
+              <button type="button" onClick={() => go(`/ara?q=${encodeURIComponent(q.trim())}`)} className="text-[13.5px] font-bold text-deep hover:text-brand">{t("sb.all", { q: q.trim() })}{res.total ? ` (${res.total})` : ""} →</button>
             ) : (
-              <Link href="/sihirbaz" onClick={pick} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-deep hover:text-brand"><Compass size={15} /> Emin değil misin? Bana hangisi testi</Link>
+              <Link href="/sihirbaz" onClick={pick} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-deep hover:text-brand"><Compass size={15} /> {t("nav.unsureTest")}</Link>
             )}
-            <span className="flex gap-4"><span>↑ ↓ gez</span><span>↵ aç</span><span>esc kapat</span></span>
+            <span className="flex gap-4"><span>↑ ↓ {t("sb.kNav")}</span><span>↵ {t("sb.kOpen")}</span><span>esc {t("sb.kClose")}</span></span>
           </div>
           {typed && mobile ? (
             <div className="px-4 pt-2">
-              <button type="button" onClick={() => go(`/ara?q=${encodeURIComponent(q.trim())}`)} className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-deep text-[15px] font-bold text-white">“{q.trim()}” için tüm sonuçlar <ArrowRight size={17} /></button>
+              <button type="button" onClick={() => go(`/ara?q=${encodeURIComponent(q.trim())}`)} className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-deep text-[15px] font-bold text-white">{t("sb.all", { q: q.trim() })} <ArrowRight size={17} /></button>
             </div>
           ) : null}
         </div>

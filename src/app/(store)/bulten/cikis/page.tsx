@@ -1,15 +1,19 @@
+import { localRedirect } from "@/lib/i18n/server";
+import { getT } from "@/lib/i18n/server";
 import Link from "@/components/locale-link";
 import { revokeMarketing, unsubKey } from "@/lib/store";
 
-export const metadata = { title: "E-posta listesinden çık", robots: { index: false } };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.bulten_cikis"), robots: { index: false } };
+}
 
 async function unsubscribe(fd: FormData) {
   "use server";
-  const { redirect } = await import("next/navigation");
   const email = String(fd.get("e") ?? "").toLowerCase();
-  if (String(fd.get("k")) !== unsubKey(email)) redirect("/bulten/cikis?hata=1");
+  if (String(fd.get("k")) !== unsubKey(email)) await localRedirect("/bulten/cikis?hata=1");
   await revokeMarketing(email);
-  redirect("/bulten/cikis?tamam=1");
+  await localRedirect("/bulten/cikis?tamam=1");
 }
 
 /** Bağlantıya tıklamak tek başına listeden çıkarmaz (e-posta tarayıcıları linkleri otomatik açabilir); onay düğmesi gerekir. */

@@ -1,7 +1,9 @@
+import { localRedirect } from "@/lib/i18n/server";
+import { getT } from "@/lib/i18n/server";
 import { imgUrl } from "@/lib/img";
 import { CityDistrict } from "@/components/city-district";
 import Link from "@/components/locale-link";
-import { redirect } from "next/navigation";
+
 import { desc, eq, inArray } from "drizzle-orm";
 import { Download, MailWarning, ShieldCheck } from "lucide-react";
 import { db } from "@/db";
@@ -18,7 +20,10 @@ import { cn } from "@/lib/utils";
 import { ServiceTab } from "./service-tab";
 import { customerLogout, deleteAddress, deleteMyAccount, resendVerification, saveAddress, updateProfile } from "./actions";
 
-export const metadata = { title: "Hesabım", robots: { index: false } };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.hesabim"), robots: { index: false } };
+}
 
 const TABS = [
   ["cihazlar", "Cihazlarım"],
@@ -30,7 +35,7 @@ const TABS = [
 
 export default async function AccountPage({ searchParams }: { searchParams: Promise<{ t?: string; iade?: string; ariza?: string; yeni?: string }> }) {
   const me = await getCustomer();
-  if (!me) redirect("/giris?next=/hesabim");
+  if (!me) return localRedirect("/giris?next=/hesabim");
   const sp = await searchParams;
   const tab = sp.iade ? "siparisler" : sp.ariza !== undefined ? "servis" : (sp.t ?? "cihazlar");
   const [myOrders, services, addrs, settings] = await Promise.all([
@@ -49,7 +54,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     : [];
   // İade formu artık sipariş detayında: eski bağlantılar oraya gider
   const returnOrder = sp.iade ? myOrders.find((o) => o.id === sp.iade) : undefined;
-  if (returnOrder) redirect(`/siparis/${returnOrder.id}?k=${orderKey(returnOrder.id)}&iade=1#iade`);
+  if (returnOrder) await localRedirect(`/siparis/${returnOrder.id}?k=${orderKey(returnOrder.id)}&iade=1#iade`);
   const openService = services.filter((x) => x.status !== "CLOSED").length;
 
   return (

@@ -17,7 +17,7 @@ export function PostCards({ posts, cols = 3 }: { posts: PostCard[]; cols?: 2 | 3
               // Kapak görseli yoksa: boş kutu yerine sade, editoryal bir kapak
               <div className="relative flex h-full flex-col justify-end overflow-hidden bg-[linear-gradient(135deg,#1d1d1f_0%,#2c2c31_60%,#3d2320_100%)] p-5 text-white">
                 <BookOpen aria-hidden size={56} strokeWidth={1.2} className="absolute top-5 right-5 text-white/20 transition duration-500 group-hover:scale-110" />
-                <span className="text-[10.5px] font-extrabold tracking-[.2em] text-white/55">DERÄ°NOVA REHBER</span>
+                <span className="text-[10.5px] font-extrabold tracking-[.2em] text-white/55">REHBER</span>
                 <span className="font-display mt-1 line-clamp-2 text-[20px] leading-tight font-extrabold">{p.category}</span>
               </div>
             )}

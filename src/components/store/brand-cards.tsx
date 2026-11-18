@@ -1,3 +1,4 @@
+import { T } from "@/components/i18n";
 import { imgUrl } from "@/lib/img";
 import Link from "@/components/locale-link";
 import { ArrowRight } from "lucide-react";
@@ -17,7 +18,7 @@ export function BrandCard({ b, className, thumbs, note }: { b: BrandGroup; class
           ) : (
             <span className="font-display block truncate text-[19px] leading-none font-black tracking-tight md:text-[26px]">{b.name.toLocaleUpperCase("en-US")}</span>
           )}
-          <span className="mt-1.5 block text-[13px] text-mute">{note ? <b className="font-bold text-deep">{note} · </b> : null}{b.total} ürün</span>
+          <span className="mt-1.5 block text-[13px] text-mute">{note ? <b className="font-bold text-deep">{note} · </b> : null}<T k="bc.n" v={{ n: b.total }} /></span>
         </span>
         {thumbs?.length ? (
           <span className="hidden gap-2 sm:flex">
@@ -41,7 +42,7 @@ export function BrandCard({ b, className, thumbs, note }: { b: BrandGroup; class
         ))}
       </ul>
       <Link href={`/marka/${b.slug}`} className="flex items-center justify-between border-t border-line px-3 py-3 text-[13px] font-extrabold text-link md:px-4 md:text-sm">
-        <span>Tüm {b.name}<span className="hidden sm:inline"> ürünleri</span></span> <ArrowRight size={15} />
+        <span><T k="nav.allProductsOf" v={{ ad: b.name }} /></span> <ArrowRight size={15} />
       </Link>
     </div>
   );
@@ -84,15 +85,15 @@ export function BrandShowcase({ focus, models, note, rest, full = false }: { foc
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-extrabold tracking-[.14em] text-white/85 ring-1 ring-white/15">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand" /> TÜRKİYE YETKİLİ DİSTRİBÜTÖRÜ
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" /> <T k="bc.featured" />
             </span>
             <Link href={`/marka/${focus.slug}`} className="font-display mt-3 block text-[38px] leading-none font-black tracking-tight md:text-[54px]">
               {focus.name.toLocaleUpperCase("en-US")}
             </Link>
-            <p className="mt-2 text-[14px] text-white/65">{note ? <b className="text-white">{note} · </b> : null}{focus.total} ürün, orijinal ve faturalı</p>
+            <p className="mt-2 text-[14px] text-white/65">{note ? <b className="text-white">{note} · </b> : null}<T k="bc.nOrig" v={{ n: focus.total }} /></p>
           </div>
           <Link href={`/marka/${focus.slug}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-[14px] font-extrabold text-deep transition hover:-translate-y-0.5">
-            Tüm {focus.name} <ArrowRight size={16} />
+            <T k="nav.allOf" v={{ ad: focus.name }} /> <ArrowRight size={16} />
           </Link>
         </div>
         <div className="scrollbar-none -mx-5 mt-5 flex gap-2 overflow-x-auto px-5 md:mx-0 md:flex-wrap md:px-0">
@@ -120,7 +121,7 @@ export function BrandShowcase({ focus, models, note, rest, full = false }: { foc
         ) : null}
       </div>
       <div className="flex flex-col gap-3">
-        <span className="px-1 text-[11.5px] font-extrabold tracking-[.14em] text-mute">DİĞER MARKALAR</span>
+        <span className="px-1 text-[11.5px] font-extrabold tracking-[.14em] text-mute"><T k="bc.others" /></span>
         <div data-stagger="" className="grid grid-cols-2 content-start gap-3">
           {(full ? rest : rest.slice(0, 6)).map((b) => (
             <Link key={b.id} href={`/marka/${b.slug}`} className="group relative isolate flex min-h-[96px] flex-col justify-between overflow-hidden rounded-2xl border border-line bg-white p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#d6d6db] hover:shadow-[0_16px_30px_-20px_rgba(20,20,22,.4)]">
@@ -132,13 +133,13 @@ export function BrandShowcase({ focus, models, note, rest, full = false }: { foc
               ) : (
                 <b className="font-display text-[17px] font-black tracking-tight">{b.name.toLocaleUpperCase("en-US")}</b>
               )}
-              <span className="text-[12.5px] text-mute">{b.total} ürün</span>
+              <span className="text-[12.5px] text-mute"><T k="bc.n" v={{ n: b.total }} /></span>
             </Link>
           ))}
           {/* Ana sayfada özet; Markalar ve Kategoriler sayfasında zaten tüm markalar listelendiği için gösterilmez */}
           {!full ? (
             <Link href="/markalar" className="flex min-h-[96px] flex-col justify-between rounded-2xl bg-soft p-4 text-[14px] font-bold transition hover:bg-[#ececee]">
-              Tüm markalar <ArrowRight size={18} />
+              <T k="home.allBrands" /> <ArrowRight size={18} />
             </Link>
           ) : null}
         </div>
@@ -157,6 +158,8 @@ export async function FocusBrands({ brands }: { brands: BrandGroup[] }) {
   const m = await getMerch();
   const f = brands.find((g) => g.slug === m.focusBrand);
   if (!f) return <BrandGrid brands={brands} />;
-  const models = await latestFocus(m, 4);
+  const { getLocale } = await import("@/lib/i18n/server");
+  const { withLocaleNames } = await import("@/lib/store");
+  const models = withLocaleNames(await latestFocus(m, 4), await getLocale());
   return <BrandShowcase full focus={f} models={models} note={m.focusNote || undefined} rest={brands.filter((g) => g !== f)} />;
 }

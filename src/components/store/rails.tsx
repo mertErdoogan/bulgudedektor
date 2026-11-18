@@ -10,9 +10,11 @@ import { clearRecent, getRecent } from "@/lib/track";
 import { cn, formatTL } from "@/lib/utils";
 import { useCart } from "./cart";
 import { ProductCard } from "./product-card";
+import { useLocale, useT } from "@/components/i18n";
 
 /** Yatay kaydırmalı ürün şeridi: mobilde parmakla, masaüstünde oklarla. */
 export function Rail({ children, className, itemClass = "w-[62%] sm:w-[40%] md:w-[31.5%] xl:w-[23.8%]" }: { children: React.ReactNode[]; className?: string; itemClass?: string }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ l: true, r: false });
   const update = () => {
@@ -41,12 +43,12 @@ export function Rail({ children, className, itemClass = "w-[62%] sm:w-[40%] md:w
         ))}
       </div>
       {!edge.l ? (
-        <button type="button" onClick={() => go(-1)} aria-label="Geri" className="absolute top-[38%] -left-4 hidden h-11 w-11 place-items-center rounded-full border border-line bg-white shadow-md hover:bg-soft md:grid">
+        <button type="button" onClick={() => go(-1)} aria-label={t("rail.prev")} className="absolute top-[38%] -left-4 hidden h-11 w-11 place-items-center rounded-full border border-line bg-white shadow-md hover:bg-soft md:grid">
           <ChevronLeft size={20} />
         </button>
       ) : null}
       {!edge.r ? (
-        <button type="button" onClick={() => go(1)} aria-label="İleri" className="absolute top-[38%] -right-4 hidden h-11 w-11 place-items-center rounded-full border border-line bg-white shadow-md hover:bg-soft md:grid">
+        <button type="button" onClick={() => go(1)} aria-label={t("rail.next")} className="absolute top-[38%] -right-4 hidden h-11 w-11 place-items-center rounded-full border border-line bg-white shadow-md hover:bg-soft md:grid">
           <ChevronRight size={20} />
         </button>
       ) : null}
@@ -55,6 +57,7 @@ export function Rail({ children, className, itemClass = "w-[62%] sm:w-[40%] md:w
 }
 
 function useCards(ids: string[]) {
+  const lang = useLocale();
   const [state, setState] = useState<{ items: P[]; ctx: CardCtx | null }>({ items: [], ctx: null });
   const key = ids.join(",");
   useEffect(() => {
@@ -63,14 +66,14 @@ function useCards(ids: string[]) {
       return;
     }
     let live = true;
-    fetch(`/api/urun-kartlari?ids=${key}`)
+    fetch(`/api/urun-kartlari?ids=${key}&lang=${lang}`)
       .then((r) => r.json())
       .then((d) => live && setState(d))
       .catch(() => {});
     return () => {
       live = false;
     };
-  }, [key]);
+  }, [key, lang]);
   return state;
 }
 
@@ -86,7 +89,9 @@ function useRecentIds(exclude?: string) {
 }
 
 /** "Son gezdiklerin" şeridi — yalnızca bu tarayıcıda tutulur, giriş gerekmez. */
-export function RecentlyViewed({ exclude, title = "Son gezdiklerin", className, compact }: { exclude?: string; title?: string; className?: string; compact?: boolean }) {
+export function RecentlyViewed({ exclude, title: title0, className, compact }: { exclude?: string; title?: string; className?: string; compact?: boolean }) {
+  const t = useT();
+  const title = title0 ?? t("rail.recent");
   const ids = useRecentIds(exclude);
   const { items, ctx } = useCards(ids.slice(0, compact ? 8 : 12));
   if (!items.length || !ctx) return null;
@@ -96,7 +101,7 @@ export function RecentlyViewed({ exclude, title = "Son gezdiklerin", className, 
       <section className={className} aria-label={title} data-testid="recent-strip">
         <div className="flex items-center gap-3 rounded-2xl border border-line bg-white py-2 pr-2 pl-4">
           <span className="hidden shrink-0 items-center gap-2 text-[13px] font-extrabold md:flex">
-            <Clock3 size={16} className="text-mute" /> Kaldığın yerden devam et
+            <Clock3 size={16} className="text-mute" /> {t("rail.continue")}
           </span>
           <Clock3 size={16} className="shrink-0 text-mute md:hidden" aria-hidden />
           <div className="scrollbar-none flex min-w-0 flex-1 gap-2 overflow-x-auto">
@@ -113,7 +118,7 @@ export function RecentlyViewed({ exclude, title = "Son gezdiklerin", className, 
               </Link>
             ))}
           </div>
-          <button type="button" onClick={clearRecent} aria-label="Son gezdiklerini temizle" className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-mute hover:bg-soft hover:text-deep">
+          <button type="button" onClick={clearRecent} aria-label={t("rail.clearRecent")} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-mute hover:bg-soft hover:text-deep">
             <X size={16} />
           </button>
         </div>
@@ -125,7 +130,7 @@ export function RecentlyViewed({ exclude, title = "Son gezdiklerin", className, 
         <h2 className="font-display flex items-center gap-2 text-xl font-extrabold md:text-2xl">
           <Clock3 size={22} className="text-brand" /> {title}
         </h2>
-        <button type="button" onClick={clearRecent} className="text-sm font-bold text-mute hover:text-deep">Temizle</button>
+        <button type="button" onClick={clearRecent} className="text-sm font-bold text-mute hover:text-deep">{t("cmp.clear")}</button>
       </div>
       <Rail itemClass="w-[62%] sm:w-[40%] md:w-[31.5%] xl:w-[19%]">
         {items.map((p) => (
@@ -137,6 +142,7 @@ export function RecentlyViewed({ exclude, title = "Son gezdiklerin", className, 
 }
 
 function useRecs(ids: string[], tip: "kisisel" | "birlikte") {
+  const lang = useLocale();
   const [state, setState] = useState<{ items: P[]; ctx: CardCtx | null }>({ items: [], ctx: null });
   const key = ids.join(",");
   useEffect(() => {
@@ -145,27 +151,28 @@ function useRecs(ids: string[], tip: "kisisel" | "birlikte") {
       return;
     }
     let live = true;
-    fetch(`/api/oneriler?tip=${tip}&ids=${key}`)
+    fetch(`/api/oneriler?tip=${tip}&ids=${key}&lang=${lang}`)
       .then((r) => r.json())
       .then((d) => live && setState(d))
       .catch(() => {});
     return () => {
       live = false;
     };
-  }, [key, tip]);
+  }, [key, tip, lang]);
   return state;
 }
 
 /** "Sana özel": ziyaretçinin son gezdiği ürünlere göre öneriler (yalnızca gezinme geçmişi varsa görünür). */
 export function PersonalPicks({ className }: { className?: string }) {
+  const t = useT();
   const ids = useRecentIds();
   const { items, ctx } = useRecs(ids.slice(0, 12), "kisisel");
   if (items.length < 3 || !ctx) return null;
   return (
     <section className={className}>
       <div className="mb-5">
-        <h2 className="font-display text-[23px] leading-tight font-extrabold md:text-[30px]">Sana özel öneriler</h2>
-        <p className="mt-0.5 text-sm text-mute">İncelediğin cihazlara benzer modeller</p>
+        <h2 className="font-display text-[23px] leading-tight font-extrabold md:text-[30px]">{t("rail.picks")}</h2>
+        <p className="mt-0.5 text-sm text-mute">{t("rail.picksD")}</p>
       </div>
       <Rail>
         {items.map((p) => (
@@ -178,13 +185,14 @@ export function PersonalPicks({ className }: { className?: string }) {
 
 /** Sepette: "bunu alanlar şunu da aldı". */
 export function CartUpsell({ className }: { className?: string }) {
+  const t = useT();
   const { items: cart, ready } = useCart();
   const ids = cart.map((c) => c.productId);
   const { items, ctx } = useRecs(ready ? ids.slice(0, 10) : [], "birlikte");
   if (!items.length || !ctx) return null;
   return (
     <section className={className}>
-      <h2 className="font-display mb-4 text-xl font-extrabold md:text-2xl">Bunlarla birlikte alınanlar</h2>
+      <h2 className="font-display mb-4 text-xl font-extrabold md:text-2xl">{t("rail.together")}</h2>
       <Rail>
         {items.map((p) => (
           <ProductCard key={p.id} p={p} ctx={ctx} className="h-full" />
@@ -196,6 +204,7 @@ export function CartUpsell({ className }: { className?: string }) {
 
 /** Header'daki kısayol: son gezilenler ve favoriler küçük bir açılır pencerede. */
 export function QuickLists() {
+  const t = useT();
   const [open, setOpen] = useState<null | "recent" | "fav">(null);
   const recentIds = useRecentIds();
   const { favorites, ready } = useCart();
@@ -213,22 +222,22 @@ export function QuickLists() {
   const btn = "relative grid h-10 w-10 place-items-center rounded-full transition hover:bg-soft";
   return (
     <div ref={box} className="relative hidden items-center md:flex">
-      <button type="button" className={btn} aria-label="Son gezdiklerin" onClick={() => setOpen(open === "recent" ? null : "recent")}>
+      <button type="button" className={btn} aria-label={t("rail.recent")} onClick={() => setOpen(open === "recent" ? null : "recent")}>
         <Clock3 size={20} />
         {recentIds.length ? <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent" /> : null}
       </button>
-      <button type="button" className={btn} aria-label="Favorilerim" onClick={() => setOpen(open === "fav" ? null : "fav")}>
+      <button type="button" className={btn} aria-label={t("nav.favorites")} onClick={() => setOpen(open === "fav" ? null : "fav")}>
         <Heart size={20} />
         {ready && favorites.length ? <span className="absolute -top-0.5 -right-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[11px] font-extrabold text-white">{favorites.length}</span> : null}
       </button>
       {open ? (
         <div className="absolute top-full right-0 z-50 mt-2 w-[360px] rounded-2xl border border-line bg-white p-3 text-deep shadow-2xl">
           <div className="mb-2 flex items-center justify-between px-1">
-            <b>{open === "fav" ? "Favorilerim" : "Son gezdiklerin"}</b>
-            <button type="button" onClick={() => setOpen(null)} aria-label="Kapat" className="grid h-8 w-8 place-items-center rounded-full hover:bg-soft"><X size={16} /></button>
+            <b>{open === "fav" ? t("nav.favorites") : t("rail.recent")}</b>
+            <button type="button" onClick={() => setOpen(null)} aria-label={t("rail.close")} className="grid h-8 w-8 place-items-center rounded-full hover:bg-soft"><X size={16} /></button>
           </div>
           {ids.length === 0 ? (
-            <p className="px-1 py-6 text-center text-sm text-mute">{open === "fav" ? "Henüz favori ürünün yok. Kalbe dokunarak ekleyebilirsin." : "Henüz bir ürün incelemedin."}</p>
+            <p className="px-1 py-6 text-center text-sm text-mute">{open === "fav" ? t("rail.noFav") : t("rail.noRecent")}</p>
           ) : (
             <ul className="flex max-h-[380px] flex-col overflow-y-auto">
               {items.map((p) => (
@@ -246,7 +255,7 @@ export function QuickLists() {
             </ul>
           )}
           {open === "fav" && ids.length ? (
-            <Link href="/favoriler" onClick={() => setOpen(null)} className="mt-2 grid h-10 place-items-center rounded-lg bg-deep text-sm font-extrabold text-white">Tüm favorileri gör</Link>
+            <Link href="/favoriler" onClick={() => setOpen(null)} className="mt-2 grid h-10 place-items-center rounded-lg bg-deep text-sm font-extrabold text-white">{t("rail.allFav")}</Link>
           ) : null}
         </div>
       ) : null}
@@ -256,6 +265,7 @@ export function QuickLists() {
 
 /** /favoriler sayfası içeriği */
 export function FavoritesGrid() {
+  const t = useT();
   const { favorites, ready } = useCart();
   const { items, ctx } = useCards(favorites.slice(0, 40));
   if (!ready) return null;
@@ -263,12 +273,12 @@ export function FavoritesGrid() {
     return (
       <div className="rounded-2xl bg-soft p-10 text-center">
         <Heart size={36} className="mx-auto text-accent" />
-        <p className="mt-3 font-bold">Favori listen boş</p>
-        <p className="mt-1 text-sm text-mute">Beğendiğin ürünlerdeki kalbe dokun; fiyatını ve stoğunu buradan takip et.</p>
-        <Link href="/urunler" className="mt-4 inline-flex h-11 items-center rounded-lg bg-brand px-5 text-sm font-extrabold text-white">Ürünlere göz at</Link>
+        <p className="mt-3 font-bold">{t("rail.favEmpty")}</p>
+        <p className="mt-1 text-sm text-mute">{t("rail.favEmptyD")}</p>
+        <Link href="/urunler" className="mt-4 inline-flex h-11 items-center rounded-lg bg-brand px-5 text-sm font-extrabold text-white">{t("rail.browse")}</Link>
       </div>
     );
-  if (!ctx) return <p className="text-mute">Yükleniyor…</p>;
+  if (!ctx) return <p className="text-mute">{t("rail.loading")}</p>;
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
       {items.map((p) => (

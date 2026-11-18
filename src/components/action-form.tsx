@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, startTransition, useActionState, useContext, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useLocaleRouter } from "@/components/i18n";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import type { ActionResult } from "@/lib/action";
@@ -21,7 +21,7 @@ const PendingCtx = createContext<boolean | null>(null);
 
 export function ActionForm({ action, children, resetOnSuccess, confirm, onDone, ...rest }: Props) {
   const [state, formAction, pending] = useActionState(action, null);
-  const router = useRouter();
+  const router = useLocaleRouter();
   const ref = useRef<HTMLFormElement>(null);
   useEffect(() => {
     if (!state) return;

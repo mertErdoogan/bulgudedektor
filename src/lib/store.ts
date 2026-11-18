@@ -25,6 +25,8 @@ export const cardColumns = {
   technology: products.technology,
   brand: brands.name,
   brandSlug: brands.slug,
+  /** İngilizce ad (varsa): kart, dili İngilizce olan sayfada bunu gösterir; listeler ayrıca çevrilmek zorunda kalmaz */
+  nameEn: sql<string | null>`(select tr.value from translations tr where tr.entity = 'product' and tr.entity_id = ${q(products.id)} and tr.locale = 'en' and tr.field = 'name')`,
   image: sql<string | null>`(select ${q(productImages.url)} from ${productImages} where ${q(productImages.productId)} = ${q(products.id)} order by ${q(productImages.sortOrder)} limit 1)`,
   rating: sql<number | null>`(select avg(${q(reviews.rating)})::float from ${reviews} where ${q(reviews.productId)} = ${q(products.id)} and ${q(reviews.isApproved)})`,
   reviewCount: sql<number>`(select count(*)::int from ${reviews} where ${q(reviews.productId)} = ${q(products.id)} and ${q(reviews.isApproved)})`,
@@ -53,6 +55,7 @@ export type ProductCard = {
   technology: string | null;
   brand: string | null;
   brandSlug?: string | null;
+  nameEn?: string | null;
   image: string | null;
   rating: number | null;
   reviewCount: number;
@@ -84,9 +87,11 @@ export const getNav = cache(async () => {
   return { menu: lm, categories: lc };
 });
 
-export const getFooterPages = cache(async () =>
-  db.select({ slug: pages.slug, title: pages.title, group: pages.footerGroup }).from(pages).where(and(eq(pages.isPublished, true), eq(pages.showInFooter, true))).orderBy(asc(pages.title)),
-);
+export const getFooterPages = cache(async () => {
+  const rows = await db.select({ id: pages.id, slug: pages.slug, title: pages.title, group: pages.footerGroup }).from(pages).where(and(eq(pages.isPublished, true), eq(pages.showInFooter, true))).orderBy(asc(pages.title));
+  const { localize } = await import("./i18n/content");
+  return localize(rows, "page");
+});
 
 export const getActiveBrands = cache(async () => db.select().from(brands).where(eq(brands.isActive, true)).orderBy(asc(brands.sortOrder)));
 
@@ -349,16 +354,21 @@ export type BrandGroup = {
   categories: { name: string; slug: string; count: number }[];
 };
 
+/** İngilizce sayfada kart adlarını İngilizce adla değiştirir (kart sorgusu nameEn'i ayrıca getirir) */
+export function withLocaleNames<T extends { name: string; nameEn?: string | null }>(rows: T[], locale: string): T[] {
+  return locale === "en" ? rows.map((r) => (r.nameEn ? { ...r, name: r.nameEn } : r)) : rows;
+}
+
 /** Markalar ve her markanın ürün bulunan kategorileri (marka → kategori gezinmesi için). */
 export const getBrandGroups = cache(async (): Promise<BrandGroup[]> => {
   const [bs, rows, imgs] = await Promise.all([
     getActiveBrands(),
     db
-      .select({ brandId: products.brandId, name: categories.name, slug: categories.slug, sort: categories.sortOrder, count: sql<number>`count(*)::int` })
+      .select({ brandId: products.brandId, id: categories.id, name: categories.name, slug: categories.slug, sort: categories.sortOrder, count: sql<number>`count(*)::int` })
       .from(products)
       .innerJoin(categories, eq(categories.id, products.categoryId))
       .where(and(active, eq(categories.isActive, true)))
-      .groupBy(products.brandId, categories.name, categories.slug, categories.sortOrder)
+      .groupBy(products.brandId, categories.id, categories.name, categories.slug, categories.sortOrder)
       .orderBy(asc(categories.sortOrder)),
     db
       .selectDistinctOn([products.brandId], {
@@ -369,9 +379,11 @@ export const getBrandGroups = cache(async (): Promise<BrandGroup[]> => {
       .where(active)
       .orderBy(products.brandId, desc(products.isFeatured), desc(products.price)),
   ]);
-  return bs
+  const { localize } = await import("./i18n/content");
+  const [rowsL, bsL] = await Promise.all([localize(rows, "category"), localize(bs, "brand")]);
+  return bsL
     .map((b) => {
-      const cats = rows.filter((r) => r.brandId === b.id).map(({ name, slug, count }) => ({ name, slug, count }));
+      const cats = rowsL.filter((r) => r.brandId === b.id).map(({ name, slug, count }) => ({ name, slug, count }));
       return { id: b.id, name: b.name, slug: b.slug, logoUrl: b.logoUrl, description: b.description, total: cats.reduce((a, c) => a + c.count, 0), image: imgs.find((i) => i.brandId === b.id)?.image ?? null, categories: cats };
     })
     .filter((b) => b.total > 0);

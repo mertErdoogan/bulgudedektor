@@ -4,16 +4,26 @@ import { db } from "@/db";
 import { translations } from "@/db/schema";
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "./config";
 import { getLocale } from "./server";
+import { revalidateTag } from "next/cache";
+import { slugify } from "@/lib/utils";
+import { SLUG_TAG } from "./slugs";
 
-export type Entity = "product" | "category" | "brand" | "page" | "menu";
+export type Entity = "product" | "category" | "brand" | "page" | "menu" | "faq" | "section" | "banner" | "campaign" | "text";
 /** Panelde çevrilebilen alanlar */
 export const TRANSLATABLE: Record<Entity, string[]> = {
-  product: ["name", "shortDescription", "description", "seoTitle", "seoDescription"],
-  category: ["name", "shortText", "description", "seoTitle", "seoDescription", "seoContent"],
+  product: ["name", "slug", "shortDescription", "description", "seoTitle", "seoDescription"],
+  category: ["name", "slug", "shortText", "description", "seoTitle", "seoDescription", "seoContent"],
   brand: ["description"],
-  page: ["title", "content"],
+  page: ["title", "slug", "content"],
   menu: ["label"],
+  faq: ["question", "answer", "group"],
+  section: ["title", "subtitle"],
+  banner: ["title", "subtitle", "eyebrow", "ctaLabel"],
+  campaign: ["name", "description"],
+  text: ["value"],
 };
+/** Panelde düz metin olarak değil, JSON olarak saklanan liste alanları (teknik özellikler, kutu içeriği…) */
+const JSON_FIELDS = new Set(["specs", "idealFor", "notFor", "boxContents", "useCases", "badges"]);
 
 const load = cache(async (entity: Entity, locale: Locale, ids: string) => {
   const list = ids.split(",").filter(Boolean);
@@ -40,7 +50,17 @@ export async function localize<T extends { id: string }>(rows: T[], entity: Enti
     const tr = m.get(r.id);
     if (!tr) return r;
     const out = { ...r } as Record<string, unknown>;
-    for (const [f, v] of Object.entries(tr)) if (v && f in out) out[f] = v;
+    for (const [f, v] of Object.entries(tr)) {
+      // slug kaydın kimliğidir (filtre, bağlantı); İngilizce adres localePath ile üretilir
+      if (!v || f === "slug" || !(f in out)) continue;
+      if (JSON_FIELDS.has(f) || (out[f] !== null && typeof out[f] === "object")) {
+        try {
+          out[f] = JSON.parse(v);
+        } catch {
+          /* bozuk çeviri: Türkçe kalsın */
+        }
+      } else out[f] = v;
+    }
     return out as T;
   });
 }
@@ -64,7 +84,10 @@ export async function saveEntityTranslations(entity: Entity, entityId: string, f
     for (const field of TRANSLATABLE[entity]) {
       const key = `tr_${locale}_${field}`;
       if (!fd.has(key)) continue;
-      const value = String(fd.get(key) ?? "").trim();
+      const raw = String(fd.get(key) ?? "").trim();
+      // Dil adresindeki slug: yalnız a-z, 0-9 ve tire
+      const value = field === "slug" ? slugify(raw) : raw;
+      if (field === "slug") revalidateTag(SLUG_TAG);
       const where = and(eq(translations.entity, entity), eq(translations.entityId, entityId), eq(translations.locale, locale), eq(translations.field, field));
       if (!value) await db.delete(translations).where(where);
       else
@@ -74,4 +97,12 @@ export async function saveEntityTranslations(entity: Entity, entityId: string, f
           .onConflictDoUpdate({ target: [translations.entity, translations.entityId, translations.locale, translations.field], set: { value, updatedAt: new Date() } });
     }
   }
+}
+
+/** Ayarlardaki serbest metinlerin (duyuru şeridi, kayan şerit…) çevirisi: translations(entity="text", entityId=anahtar). */
+export async function localizeText(key: string, value: string, locale?: Locale): Promise<string> {
+  const l = locale ?? (await getLocale());
+  if (l === DEFAULT_LOCALE || !value) return value;
+  const m = await load("text", l, key);
+  return m.get(key)?.value || value;
 }

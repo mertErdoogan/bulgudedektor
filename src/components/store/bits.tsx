@@ -10,7 +10,7 @@ import { Button } from "@/components/ui";
 import { Logo } from "@/components/logo";
 import { useCart } from "./cart";
 import { BrandMark } from "./brand-mark";
-import { useT } from "@/components/i18n";
+import { T, useT } from "@/components/i18n";
 import { splitLocale } from "@/lib/i18n/config";
 
 export function CartButton({ compact }: { compact?: boolean }) {
@@ -96,17 +96,19 @@ export function FavoriteButton({ productId, name, className, withLabel }: { prod
 }
 
 export function CompareToggle({ productId }: { productId: string }) {
+  const t = useT();
   const { compare, toggleCompare } = useCart();
   const on = compare.includes(productId);
   return (
     <button type="button" onClick={() => toggleCompare(productId)} className={cn("flex items-center gap-1.5 text-xs font-bold", on ? "text-brand" : "text-mute hover:text-deep")}>
       <span className={cn("grid h-4 w-4 place-items-center rounded border-2", on ? "border-brand bg-brand text-white" : "border-[#bdbdc2]")}>{on ? "✓" : ""}</span>
-      Karşılaştır
+      {t("cmp.compare")}
     </button>
   );
 }
 
 export function CompareBar() {
+  const t = useT();
   const { compare, toggleCompare } = useCart();
   if (compare.length < 1) return null;
   return (
@@ -114,12 +116,12 @@ export function CompareBar() {
       <div className="flex items-center gap-3 rounded-xl bg-deep px-4 py-2.5 text-sm text-white shadow-xl">
         <Scale size={18} />
         <span>
-          <b>{compare.length} ürün</b> seçildi {compare.length < 2 ? "· en az 2 seç" : ""}
+          <b>{t("cmp.nItems", { n: compare.length })}</b> {t("cmp.selected")} {compare.length < 2 ? `· ${t("cmp.min2")}` : ""}
         </span>
         <Link href={`/karsilastir?ids=${compare.join(",")}`} className={cn("rounded-lg bg-white px-3 py-1.5 font-bold text-deep", compare.length < 2 && "pointer-events-none opacity-50")}>
-          Karşılaştır
+          {t("cmp.compare")}
         </Link>
-        <button onClick={() => compare.forEach(toggleCompare)} className="text-white/70" aria-label="Temizle">
+        <button onClick={() => compare.forEach(toggleCompare)} className="text-white/70" aria-label={t("cmp.clear")}>
           <X size={16} />
         </button>
       </div>
@@ -130,6 +132,7 @@ export function CompareBar() {
 type Cat = { id: string; name: string; slug: string; shortText: string | null; imageUrl: string | null; description: string | null };
 
 export function MegaMenu({ categories, brands, variant = "nav" }: { categories: Cat[]; brands: { name: string; slug: string; logoUrl?: string | null }[]; variant?: "nav" | "compact" }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [cur, setCur] = useState(0);
   const c = categories[cur];
@@ -146,7 +149,7 @@ export function MegaMenu({ categories, brands, variant = "nav" }: { categories: 
             : "flex h-10 items-center gap-2 rounded-full border border-line bg-white px-4 text-[14px] font-bold transition hover:border-deep"
         }
       >
-        <Menu size={19} strokeWidth={2.1} /> {variant === "nav" ? "Kategoriler" : "Menü"}
+        <Menu size={19} strokeWidth={2.1} /> {variant === "nav" ? t("nav.categories") : t("nav.menu")}
       </button>
       {open && c ? (
         <div className="absolute top-full left-0 z-40 flex w-[min(1000px,calc(100vw-48px))] overflow-hidden rounded-xl border border-line bg-white pt-0 text-deep shadow-2xl">
@@ -185,10 +188,10 @@ export function MegaMenu({ categories, brands, variant = "nav" }: { categories: 
             </div>
             <div className="mt-auto flex items-center justify-between rounded-xl bg-tint p-4">
               <span className="text-sm">
-                <b>Emin değil misin?</b> 6 soruda sana uygun cihazı bulalım.
+                <b>{t("mega.unsure")}</b> {t("mega.unsureD")}
               </span>
               <Link href="/sihirbaz" className="rounded-lg bg-deep px-4 py-2 text-sm font-bold text-white">
-                Bana hangisi? →
+                {t("mega.which")}
               </Link>
             </div>
           </div>
@@ -242,7 +245,7 @@ export function PriceInstallment({ price, n }: { price: number; n: number }) {
   if (n <= 1) return null;
   return (
     <span>
-      {n} ay vade farksız <b>{formatTL(Math.round(price / n))}</b>
+      <T k="card.instMonths" v={{ n }} /> <b>{formatTL(Math.round(price / n))}</b>
     </span>
   );
 }

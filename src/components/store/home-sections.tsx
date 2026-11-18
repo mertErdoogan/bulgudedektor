@@ -1,24 +1,27 @@
+import { localePath } from "@/lib/i18n/config";
 import { imgProps } from "@/lib/img";
 import Link from "@/components/locale-link";
 import { ArrowRight, BookOpen, Clock3, Coins, Compass, Gem, GitCompare, MessageCircle, Phone, Radar, RotateCcw, ShieldCheck, Store, Waves, Truck } from "lucide-react";
 import type { PostCard } from "@/lib/content";
 import type { CSSProperties } from "react";
 import { formatDate } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 /* ───────────────────────── "Hangi dedektör sana göre?" testi ───────────────────────── */
 
 const AMAC = [
-  { v: "define", l: "Sikke, takı, define", d: "Tarla, bağ, harabe", I: Coins },
-  { v: "altin", l: "Doğal altın", d: "Nugget, maden sahası", I: Gem },
-  { v: "sahil", l: "Sahilde kayıp takı", d: "Kum, sığ su, dalış", I: Waves },
-  { v: "derin", l: "Büyük ve derin hedef", d: "Görüntüleme, 3D", I: Radar },
+  { v: "define", l: "home.amacDefine", d: "home.amacDefineD", I: Coins },
+  { v: "altin", l: "home.amacGold", d: "home.amacGoldD", I: Gem },
+  { v: "sahil", l: "home.amacBeach", d: "home.amacBeachD", I: Waves },
+  { v: "derin", l: "home.amacDeep", d: "home.amacDeepD", I: Radar },
 ] as const;
 
 /**
  * Testin ilk sorusu doğrudan banda taşınır: müşteri bir cevaba tıklayınca test 2. sorudan açılır.
  * Koyu, sakin zemin + ince ızgara deseni; cevap kartları üzerine gelince hafifçe kalkar.
  */
-export function WizardBand({ title, subtitle }: { title?: string | null; subtitle?: string | null }) {
+export async function WizardBand({ title, subtitle }: { title?: string | null; subtitle?: string | null }) {
+  const t = await getT();
   return (
     <section className="container-x mt-8 md:mt-12" data-testid="wizard-band">
       <div className="relative isolate overflow-hidden rounded-[24px] bg-[#141416] text-white md:rounded-[28px]">
@@ -28,14 +31,14 @@ export function WizardBand({ title, subtitle }: { title?: string | null; subtitl
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 p-5 md:gap-8 md:p-10 lg:grid-cols-[1fr_1.35fr] lg:items-center">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[10.5px] font-extrabold tracking-[.12em] text-white/85 ring-1 ring-white/15 md:gap-2 md:px-3 md:py-1 md:text-[11.5px]">
-              <Compass size={13} /> 1 DAKİKALIK TEST
+              <Compass size={13} /> {t("home.wizEyebrow")}
             </span>
-            <h2 className="font-display mt-2.5 text-[21px] leading-[1.15] md:mt-4 md:leading-[1.1] font-extrabold tracking-tight md:text-[40px]">{title || "Hangi dedektör sana göre?"}</h2>
-            <p className="mt-1.5 text-[13px] text-white/65 md:hidden">6 kısa soru · 1 dakika · sana uygun 3 cihaz</p>
-            <p className="mt-3 hidden max-w-md text-[15px] leading-relaxed text-white/70 md:block">{subtitle || "6 kısa soru. Sana uygun 3 cihazı nedenleriyle gösterelim; karar vermeden önce uzmana da sorabilirsin."}</p>
+            <h2 className="font-display mt-2.5 text-[21px] leading-[1.15] md:mt-4 md:leading-[1.1] font-extrabold tracking-tight md:text-[40px]">{title || t("home.wizTitle")}</h2>
+            <p className="mt-1.5 text-[13px] text-white/65 md:hidden">{t("home.wizShort")}</p>
+            <p className="mt-3 hidden max-w-md text-[15px] leading-relaxed text-white/70 md:block">{subtitle || t("home.wizSub")}</p>
             <div className="mt-6 hidden flex-wrap items-center gap-3 md:flex">
               <Link href="/sihirbaz" className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 text-[15px] font-extrabold text-deep transition hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-10px_rgba(255,255,255,.5)]">
-                Teste başla <ArrowRight size={17} />
+                {t("home.wizStart")} <ArrowRight size={17} />
               </Link>
               <span className="flex items-center gap-1.5" aria-hidden>
                 {Array.from({ length: 6 }, (_, i) => (
@@ -46,10 +49,10 @@ export function WizardBand({ title, subtitle }: { title?: string | null; subtitl
           </div>
           <div className="md:rounded-3xl md:bg-white/[.06] md:p-5 md:ring-1 md:ring-white/12 md:backdrop-blur">
             <div className="hidden items-center justify-between px-1 md:flex">
-              <span className="text-[11px] font-extrabold tracking-[.14em] text-white/55">SORU 1 / 6</span>
-              <span className="text-[12px] text-white/55">Birini seç, gerisi kolay</span>
+              <span className="text-[11px] font-extrabold tracking-[.14em] text-white/55">{t("home.wizQ1")}</span>
+              <span className="text-[12px] text-white/55">{t("home.wizPick")}</span>
             </div>
-            <p className="text-[12px] font-bold text-white/55 md:font-display md:mt-1.5 md:px-1 md:text-[20px] md:font-extrabold md:text-white">Ne arayacaksın? <span className="md:hidden">Birini seç, test başlasın</span></p>
+            <p className="text-[12px] font-bold text-white/55 md:font-display md:mt-1.5 md:px-1 md:text-[20px] md:font-extrabold md:text-white">{t("home.wizWhat")} <span className="md:hidden">{t("home.wizPickStart")}</span></p>
             {/* Telefonda seçenekler yatay kayan çipler: bant ekranı kaplamaz, tek dokunuşla test başlar */}
             <div data-stagger="" className="scrollbar-none -mx-5 mt-2.5 flex gap-2 overflow-x-auto px-5 md:mx-0 md:mt-4 md:grid md:grid-cols-2 md:gap-2.5 md:overflow-visible md:px-0">
               {AMAC.map(({ v, l, d, I }) => (
@@ -58,13 +61,13 @@ export function WizardBand({ title, subtitle }: { title?: string | null; subtitl
                     <I size={17} />
                   </span>
                   <span className="min-w-0">
-                    <b className="block text-[13.5px] leading-tight whitespace-nowrap md:text-[15px] md:whitespace-normal">{l}</b>
-                    <span className="hidden text-[12px] text-white/60 group-hover:text-mute md:block">{d}</span>
+                    <b className="block text-[13.5px] leading-tight whitespace-nowrap md:text-[15px] md:whitespace-normal">{t(l)}</b>
+                    <span className="hidden text-[12px] text-white/60 group-hover:text-mute md:block">{t(d)}</span>
                   </span>
                 </Link>
               ))}
               <Link href="/sihirbaz" className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-[13.5px] font-extrabold whitespace-nowrap text-deep md:hidden">
-                Teste başla <ArrowRight size={15} />
+                {t("home.wizStart")} <ArrowRight size={15} />
               </Link>
             </div>
           </div>
@@ -80,13 +83,14 @@ export function WizardBand({ title, subtitle }: { title?: string | null; subtitl
  * Karar anındaki müşteri için: WhatsApp (en hızlı), telefon, karşılaştırma ve showroom.
  * Görüntülü görüşme sözü verilmez (ekibin her arayana ayıracak vakti olmayabilir).
  */
-export function ExpertBand({ title, wa, phone, hours }: { title?: string | null; wa: string; phone: string; hours: string }) {
+export async function ExpertBand({ title, wa, phone, hours }: { title?: string | null; wa: string; phone: string; hours: string }) {
+  const tr = await getT();
   const tel = phone ? `tel:${phone.replace(/[^\d+]/g, "")}` : "/iletisim";
   const tiles = [
-    { href: wa, ext: true, I: MessageCircle, t: "WhatsApp'tan yaz", d: "Genelde dakikalar içinde yanıt", tone: "bg-[#e9f7ef] text-[#11643a]" },
-    { href: tel, ext: false, I: Phone, t: phone || "Bizi arayın", d: hours.split(",")[0] || "Mesai saatlerinde", tone: "bg-[#eef2fd] text-[#1f3b8f]" },
-    { href: "/karsilastir", ext: false, I: GitCompare, t: "Yan yana karşılaştır", d: "Modelleri tek tabloda gör", tone: "bg-[#fdf0ee] text-brand" },
-    { href: "/iletisim", ext: false, I: Store, t: "Showroom'a gel", d: "Adres ve çalışma saatleri", tone: "bg-[#f4f4f5] text-deep" },
+    { href: wa, ext: true, I: MessageCircle, t: tr("nav.writeWhatsapp"), d: tr("home.exWaD"), tone: "bg-[#e9f7ef] text-[#11643a]" },
+    { href: tel, ext: false, I: Phone, t: phone || tr("home.exCall"), d: (tr.locale === "en" ? "" : hours.split(",")[0]) || tr("home.exCallD"), tone: "bg-[#eef2fd] text-[#1f3b8f]" },
+    { href: "/karsilastir", ext: false, I: GitCompare, t: tr("home.exCmp"), d: tr("home.exCmpD"), tone: "bg-[#fdf0ee] text-brand" },
+    { href: "/iletisim", ext: false, I: Store, t: tr("home.exVisit"), d: tr("home.exVisitD"), tone: "bg-[#f4f4f5] text-deep" },
   ];
   return (
     <section className="container-x mt-12" data-testid="expert-band">
@@ -94,14 +98,14 @@ export function ExpertBand({ title, wa, phone, hours }: { title?: string | null;
         <div>
           <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[11.5px] font-extrabold tracking-[.12em] text-mute ring-1 ring-line">
             <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22c55e] opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-[#22c55e]" /></span>
-            UZMAN DESTEĞİ
+            {tr("home.exEyebrow")}
           </span>
-          <h2 className="font-display mt-3 text-[26px] leading-tight font-extrabold tracking-tight md:text-[32px]">{title && !/kamera|görüntülü/i.test(title) ? title : "Kararsız mı kaldın? Bir uzmana sor."}</h2>
-          <p className="mt-2 text-[14.5px] text-mute">Toprağını, bütçeni ve ne aradığını anlat; sana uygun modeli birlikte seçelim. <span className="whitespace-nowrap">{hours}</span></p>
+          <h2 className="font-display mt-3 text-[26px] leading-tight font-extrabold tracking-tight md:text-[32px]">{title && !/kamera|görüntülü/i.test(title) ? title : tr("home.exTitle")}</h2>
+          <p className="mt-2 text-[14.5px] text-mute">{tr("home.exSub")} <span className="whitespace-nowrap">{hours}</span></p>
         </div>
         <div data-stagger="" className="grid gap-3 sm:grid-cols-2">
           {tiles.map(({ href, ext, I, t, d, tone }) => (
-            <a key={t} href={href} target={ext ? "_blank" : undefined} rel={ext ? "noopener" : undefined} className="group flex items-center gap-3 rounded-2xl border border-line bg-white p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-[#d6d6db] hover:shadow-[0_16px_30px_-20px_rgba(20,20,22,.4)] md:p-4">
+            <a key={t} href={ext ? href : localePath(href, tr.locale)} target={ext ? "_blank" : undefined} rel={ext ? "noopener" : undefined} className="group flex items-center gap-3 rounded-2xl border border-line bg-white p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-[#d6d6db] hover:shadow-[0_16px_30px_-20px_rgba(20,20,22,.4)] md:p-4">
               <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl transition duration-300 group-hover:scale-110 ${tone}`}>
                 <I size={21} />
               </span>
@@ -119,27 +123,28 @@ export function ExpertBand({ title, wa, phone, hours }: { title?: string | null;
 
 /* ───────────────────────── Güven: seri no + garanti, iade, showroom ───────────────────────── */
 
-export function TrustBand() {
+export async function TrustBand() {
+  const tr = await getT();
   const cards = [
-    { big: "2 YIL", t: "Distribütör garantisi", d: "Faturalı, Türkiye garantili", I: ShieldCheck, c: "22,163,74" },
-    { big: "14 GÜN", t: "Kolay iade", d: "Hesabından tek tıkla talep", I: RotateCcw, c: "37,99,235" },
-    { big: "ÜCRETSİZ", t: "Kargo", d: "Sigortalı, tüm Türkiye'ye", I: Truck, c: "212,46,30" },
+    { big: tr("home.tr1Big"), t: tr("home.tr1"), d: tr("home.tr1D"), I: ShieldCheck, c: "22,163,74" },
+    { big: tr("home.tr2Big"), t: tr("home.tr2"), d: tr("home.tr2D"), I: RotateCcw, c: "37,99,235" },
+    { big: tr("home.tr3Big"), t: tr("home.tr3"), d: tr("home.tr3D"), I: Truck, c: "212,46,30" },
   ];
   return (
     <section data-stagger="" className="container-x mt-12 grid grid-cols-3 gap-2.5 md:gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr]" data-testid="trust-band">
-      <form action="/seri-no" className="relative isolate col-span-3 flex flex-col lg:col-span-1 justify-between gap-4 overflow-hidden rounded-[24px] bg-[#141416] p-5 text-white md:p-6">
+      <form action={localePath("/seri-no", tr.locale)} className="relative isolate col-span-3 flex flex-col lg:col-span-1 justify-between gap-4 overflow-hidden rounded-[24px] bg-[#141416] p-5 text-white md:p-6">
         <span aria-hidden className="absolute -top-16 -right-10 -z-10 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(34,197,94,.35),transparent_65%)] blur-xl" />
         <ShieldCheck aria-hidden size={120} strokeWidth={1} className="absolute -right-4 -bottom-6 -z-10 text-white/[.06]" />
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-extrabold tracking-[.12em] text-[#86efac] ring-1 ring-white/10">
-            <ShieldCheck size={13} /> ORİJİNALLİK KONTROLÜ
+            <ShieldCheck size={13} /> {tr("home.serEyebrow")}
           </span>
-          <b className="font-display mt-3 block text-[22px] leading-tight md:text-[24px]">Cihazın orijinal mi?</b>
-          <span className="mt-1 block text-[13.5px] text-white/65">Seri numarasını yaz, distribütör kaydını anında gör.</span>
+          <b className="font-display mt-3 block text-[22px] leading-tight md:text-[24px]">{tr("home.serTitle")}</b>
+          <span className="mt-1 block text-[13.5px] text-white/65">{tr("home.serSub")}</span>
         </div>
         <span className="flex gap-2 rounded-full bg-white/10 p-1.5 ring-1 ring-white/15 focus-within:ring-white/40">
-          <input name="no" required placeholder="Seri numarası" aria-label="Seri numarası" className="h-10 min-w-0 flex-1 bg-transparent px-3 text-[14.5px] text-white outline-none placeholder:text-white/45" />
-          <button className="h-10 shrink-0 rounded-full bg-white px-5 text-[13.5px] font-extrabold text-deep transition hover:bg-[#86efac]">Sorgula</button>
+          <input name="no" required placeholder={tr("home.serPh")} aria-label={tr("home.serPh")} className="h-10 min-w-0 flex-1 bg-transparent px-3 text-[14.5px] text-white outline-none placeholder:text-white/45" />
+          <button className="h-10 shrink-0 rounded-full bg-white px-5 text-[13.5px] font-extrabold text-deep transition hover:bg-[#86efac]">{tr("home.serBtn")}</button>
         </span>
       </form>
       {cards.map(({ big, t, d, I, c }) => (
@@ -196,7 +201,7 @@ export function BlogShowcase({ posts }: { posts: PostCard[] }) {
     <section className="container-x mt-14" data-testid="blog-showcase">
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
-          <span className="text-[11.5px] font-extrabold tracking-[.14em] text-mute">DERÄ°NOVA REHBER</span>
+          <span className="text-[11.5px] font-extrabold tracking-[.14em] text-mute">REHBER</span>
           <h2 className="font-display mt-1 text-[24px] leading-tight font-extrabold md:text-[32px]">Almadan önce bilmen gerekenler</h2>
         </div>
         <Link href="/blog" className="flex shrink-0 items-center gap-1.5 text-sm font-bold hover:text-brand">Tüm rehberler <ArrowRight size={15} /></Link>

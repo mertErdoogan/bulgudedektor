@@ -2,6 +2,8 @@ import "server-only";
 import { cache } from "react";
 import { and, arrayContains, asc, desc, eq, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
+import { localize } from "@/lib/i18n/content";
+import { getLocale } from "@/lib/i18n/server";
 import { faqs, posts } from "@/db/schema";
 
 const live = () => and(eq(posts.status, "PUBLISHED"), lte(posts.publishedAt, new Date()));
@@ -28,6 +30,8 @@ export const getPublishedPosts = cache(async (category?: string) =>
 export const getPost = cache(async (slug: string) => db.query.posts.findFirst({ where: and(eq(posts.slug, slug), live()) }));
 
 export async function relatedPosts(o: { productId?: string; categoryId?: string | null; excludeId?: string; limit?: number }) {
+  // Rehber yazıları yalnızca Türkçe: İngilizce sayfalarda Türkçe yazı önerilmez
+  if ((await getLocale()) !== "tr") return [];
   const conds = [
     o.productId ? arrayContains(posts.relatedProductIds, [o.productId]) : undefined,
     o.categoryId ? arrayContains(posts.relatedCategoryIds, [o.categoryId]) : undefined,
@@ -58,11 +62,13 @@ export async function getFaqs(f: FaqFilter = {}) {
         : f.general
           ? and(base, isNull(faqs.productId), isNull(faqs.categoryId))
           : base;
-  return db.select().from(faqs).where(where).orderBy(asc(faqs.group), asc(faqs.sortOrder), asc(faqs.createdAt));
+  const rows = await db.select().from(faqs).where(where).orderBy(asc(faqs.group), asc(faqs.sortOrder), asc(faqs.createdAt));
+  return localize(rows, "faq");
 }
 
-export const getGlossary = cache(async () =>
-  db.select().from(faqs).where(and(eq(faqs.kind, "GLOSSARY"), eq(faqs.isPublished, true))).orderBy(asc(faqs.question)),
-);
+export const getGlossary = cache(async () => {
+  const rows = await localize(await db.select().from(faqs).where(and(eq(faqs.kind, "GLOSSARY"), eq(faqs.isPublished, true))), "faq");
+  return rows.sort((a, b) => a.question.localeCompare(b.question, "tr"));
+});
 
 export const toQA = (rows: { question: string; answer: string }[]) => rows.map((r) => ({ q: r.question, a: r.answer }));

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { AllSettings } from "./settings";
+import { localePath, type Locale } from "./i18n/config";
 
 /**
  * SEO + GEO (AI arama motorları) yardımcıları.
@@ -53,8 +54,9 @@ export async function pageMeta(o: { title?: string; description?: string | null;
   // Dil: canonical o dilin kendi adresi (İngilizce sayfa Türkçenin kopyası sayılmasın)
   const { getLocale } = await import("./i18n/server");
   const { localePath } = await import("./i18n/config");
+  const { getSlugMap } = await import("./i18n/slugs");
   const locale = await getLocale();
-  const url = abs(localePath(o.path, locale))!;
+  const url = abs(localePath(o.path, locale, locale === "en" ? await getSlugMap() : {}))!;
   // Kendi görseli olmayan sayfa: varsayılan paylaşım görseli (boş WhatsApp/Facebook kartı olmasın)
   const images = [o.image ? { url: abs(o.image)! } : { url: abs("/og-default")!, width: 1200, height: 630 }];
   return {
@@ -149,10 +151,10 @@ export function storeLd(s: AllSettings) {
   });
 }
 
-export function breadcrumbLd(items: { name: string; path: string }[]) {
+export function breadcrumbLd(items: { name: string; path: string }[], home = "Ana sayfa", homePath = "/") {
   return {
     "@type": "BreadcrumbList",
-    itemListElement: [{ name: "Ana sayfa", path: "/" }, ...items].map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, item: abs(x.path) })),
+    itemListElement: [{ name: home, path: homePath }, ...items].map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, item: abs(x.path) })),
   };
 }
 
@@ -164,12 +166,12 @@ export function faqLd(list: { q: string; a: string }[]) {
   };
 }
 
-export function itemListLd(name: string, items: { slug: string; name: string; image?: string | null; price?: number }[]) {
+export function itemListLd(name: string, items: { slug: string; name: string; image?: string | null; price?: number }[], locale: Locale = "tr") {
   return {
     "@type": "ItemList",
     name,
     numberOfItems: items.length,
-    itemListElement: items.slice(0, 30).map((p, i) => ({ "@type": "ListItem", position: i + 1, url: abs(`/urun/${p.slug}`), name: p.name })),
+    itemListElement: items.slice(0, 30).map((p, i) => ({ "@type": "ListItem", position: i + 1, url: abs(localePath(`/urun/${p.slug}`, locale)), name: p.name })),
   };
 }
 
@@ -195,12 +197,12 @@ type ProductInput = {
   reviews: { name: string; rating: number; body: string; createdAt: Date }[];
 };
 
-export function productLd(p: ProductInput, s: AllSettings) {
+export function productLd(p: ProductInput, s: AllSettings, locale: Locale = "tr") {
   const out = p.status === "ARCHIVED" || (p.stock <= 0 && !p.allowBackorder);
   const rating = p.reviews.length ? p.reviews.reduce((a, r) => a + r.rating, 0) / p.reviews.length : null;
   const validUntil = new Date(Date.now() + 1000 * 60 * 60 * 24 * 90).toISOString().slice(0, 10);
   const freeShip = s.shipping.flatRate === 0 || (s.shipping.freeThreshold > 0 && p.price >= s.shipping.freeThreshold);
-  const url = abs(`/urun/${p.slug}`)!;
+  const url = abs(localePath(`/urun/${p.slug}`, locale))!;
   return clean({
     "@type": "Product",
     "@id": `${url}#product`,

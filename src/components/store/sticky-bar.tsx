@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { MessageCircle, User } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n";
 import { CartButton, MegaMenu, SearchBox } from "./bits";
 
 type Cat = Parameters<typeof MegaMenu>[0]["categories"];
@@ -14,6 +15,7 @@ type Cat = Parameters<typeof MegaMenu>[0]["categories"];
  * Böylece arama ve sepet her an bir tık uzakta; büyük başlık yer kaplamaz.
  */
 export function StickyBar({ categories, brands, wa, storeName }: { categories: Cat; brands: { name: string; slug: string }[]; wa: string; storeName: string }) {
+  const t = useT();
   const [on, setOn] = useState(false);
   useEffect(() => {
     let raf = 0;
@@ -45,10 +47,10 @@ export function StickyBar({ categories, brands, wa, storeName }: { categories: C
         <MegaMenu categories={categories} brands={brands} variant="compact" />
         <SearchBox className="max-w-[560px] flex-1" />
         <div className="ml-auto flex items-center gap-1">
-          <a href={wa} target="_blank" aria-label="WhatsApp ile uzmana sor" className="grid h-11 w-11 place-items-center rounded-full text-[#11643a] hover:bg-[#f1faf4]">
+          <a href={wa} target="_blank" aria-label={t("nav.askExpertAria")} className="grid h-11 w-11 place-items-center rounded-full text-[#11643a] hover:bg-[#f1faf4]">
             <MessageCircle size={20} />
           </a>
-          <Link href="/hesabim" aria-label="Hesabım" className="grid h-11 w-11 place-items-center rounded-full hover:bg-soft">
+          <Link href="/hesabim" aria-label={t("nav.account")} className="grid h-11 w-11 place-items-center rounded-full hover:bg-soft">
             <User size={20} strokeWidth={1.9} />
           </Link>
           <CartButton />

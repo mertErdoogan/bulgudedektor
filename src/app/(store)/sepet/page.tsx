@@ -1,8 +1,12 @@
+import { getT } from "@/lib/i18n/server";
 import { cardReady } from "@/lib/card-ready";
 import { getSettings } from "@/lib/settings";
 import { CartView } from "./view";
 
-export const metadata = { title: "Sepet", robots: { index: false } };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.sepet"), robots: { index: false } };
+}
 
 export default async function CartPage() {
   const s = await getSettings();

@@ -157,6 +157,7 @@ export function ProductForm({
             enabled={locales}
             fields={[
               { field: "name", label: "Ürün adı" },
+                { field: "slug", label: "Adres (slug) — ör. coins-and-relics; boşsa Türkçe slug kullanılır" },
               { field: "shortDescription", label: "Kısa açıklama", multiline: true },
               { field: "description", label: "Detaylı açıklama", multiline: true, hint: "Markdown destekler" },
               { field: "seoTitle", label: "SEO başlığı" },

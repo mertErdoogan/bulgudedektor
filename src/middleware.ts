@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { DEFAULT_LOCALE, splitLocale } from "@/lib/i18n/config";
+import { DEFAULT_LOCALE, hasLegacySegment, internalPath, localePath, splitLocale } from "@/lib/i18n/config";
 
 /**
  * 1) Ön izleme ortamı (PREPROD=1): tüm site şifreli (HTTP Basic Auth: PREVIEW_USER / PREVIEW_PASSWORD) ve
@@ -38,12 +38,25 @@ export function middleware(req: NextRequest) {
 
   // Dil: /en/... adresleri ön eki atılarak aynı sayfaya yönlenir; sayfa dili x-locale başlığından okur.
   // Türkçe (varsayılan) ön eksizdir; /tr/... gelirse ön eksiz adrese kalıcı yönlendirilir.
-  const { locale, path } = splitLocale(pathname);
+  // İngilizce adresler İngilizce bölüm adlarıyla yayınlanır (/en/product/x); eski /en/urun/x biçimi kalıcı yönlendirilir.
+  const { locale, path: publicPath } = splitLocale(pathname);
   if (pathname === "/tr" || pathname.startsWith("/tr/")) {
     const url = req.nextUrl.clone();
     url.pathname = pathname.slice(3) || "/";
     return NextResponse.redirect(url, 308);
   }
+  if (hasLegacySegment(publicPath, locale)) {
+    const url = req.nextUrl.clone();
+    url.pathname = localePath(publicPath, locale, {});
+    return NextResponse.redirect(url, 308);
+  }
+  // Blog yalnız Türkçe: İngilizce adresi Türkçe yazıya gider (yarım çeviri gösterilmez)
+  if (locale !== DEFAULT_LOCALE && /^\/blog(\/|$)/.test(publicPath)) {
+    const url = req.nextUrl.clone();
+    url.pathname = publicPath;
+    return NextResponse.redirect(url, 307);
+  }
+  const path = internalPath(publicPath, locale);
   const reqHeaders = new Headers(req.headers);
   reqHeaders.set("x-locale", locale);
   reqHeaders.set("x-pathname", path);

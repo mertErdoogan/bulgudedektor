@@ -13,10 +13,16 @@ const DAY = 86400000;
 const DAYS = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
 const FULL = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 const MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+const EN = {
+  days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  full: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+  months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+};
+type L = "tr" | "en";
 
 /** UTC ms'yi "Türkiye duvar saati" olarak yorumlanan bir Date'e çevir (getUTC* ile okunur). */
 const trNow = (now: Date) => new Date(now.getTime() + TR_OFFSET);
-const fmt = (d: Date) => `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+const fmt = (d: Date, l: L = "tr") => (l === "en" ? `${EN.days[d.getUTCDay()]} ${d.getUTCDate()} ${EN.months[d.getUTCMonth()]}` : `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`);
 
 function isShipDay(d: Date, saturday: boolean) {
   const w = d.getUTCDay();
@@ -32,8 +38,9 @@ function addBusinessDays(d: Date, n: number, saturday: boolean) {
   return x;
 }
 
-export function deliveryInfo(p: Item, s: Pick<ShippingSettings, "sameDayCutoff" | "transitMinDays" | "transitMaxDays" | "shipOnSaturday">, now = new Date()): DeliveryInfo {
-  if (p.stock <= 0 && !p.allowBackorder) return { tone: "none", ship: "Stokta yok", eta: null };
+export function deliveryInfo(p: Item, s: Pick<ShippingSettings, "sameDayCutoff" | "transitMinDays" | "transitMaxDays" | "shipOnSaturday">, now = new Date(), l: L = "tr"): DeliveryInfo {
+  const en = l === "en";
+  if (p.stock <= 0 && !p.allowBackorder) return { tone: "none", ship: en ? "Out of stock" : "Stokta yok", eta: null };
   const t = trNow(now);
   const sat = !!s.shipOnSaturday;
   const [ch, cm] = (s.sameDayCutoff || "15:00").split(":").map(Number);
@@ -46,26 +53,36 @@ export function deliveryInfo(p: Item, s: Pick<ShippingSettings, "sameDayCutoff" 
   let tone: DeliveryInfo["tone"];
   if (p.stock <= 0) {
     shipDay = addBusinessDays(t, 5, sat);
-    ship = "Siparişle temin · 5–7 iş günü";
+    ship = en ? "Made to order · 5–7 business days" : "Siparişle temin · 5–7 iş günü";
     tone = "slow";
   } else if (p.sameDayShipping && isShipDay(t, sat) && beforeCutoff) {
     shipDay = t;
-    ship = "Bugün kargoda";
+    ship = en ? "Ships today" : "Bugün kargoda";
     tone = "fast";
   } else if (p.sameDayShipping) {
     shipDay = addBusinessDays(t, 1, sat);
     const tomorrow = Math.round((Date.UTC(shipDay.getUTCFullYear(), shipDay.getUTCMonth(), shipDay.getUTCDate()) - Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate())) / DAY) === 1;
-    ship = tomorrow ? "Yarın kargoda" : `${FULL[shipDay.getUTCDay()]} kargoda`;
+    ship = en ? (tomorrow ? "Ships tomorrow" : `Ships ${EN.full[shipDay.getUTCDay()]}`) : tomorrow ? "Yarın kargoda" : `${FULL[shipDay.getUTCDay()]} kargoda`;
     tone = "fast";
   } else {
     shipDay = addBusinessDays(t, 2, sat);
-    ship = "1–2 iş gününde kargoda";
+    ship = en ? "Ships in 1–2 business days" : "1–2 iş gününde kargoda";
     tone = "normal";
   }
   if (tone === "slow") return { tone, ship, eta: null };
   const a = addBusinessDays(shipDay, minT, sat);
   const b = addBusinessDays(shipDay, maxT, sat);
-  const eta = minT === maxT ? `${fmt(a)} kapında` : a.getUTCMonth() === b.getUTCMonth() ? `${DAYS[a.getUTCDay()]}–${DAYS[b.getUTCDay()]}, ${a.getUTCDate()}–${b.getUTCDate()} ${MONTHS[b.getUTCMonth()]} kapında` : `${fmt(a)} – ${fmt(b)} kapında`;
+  const eta = en
+    ? minT === maxT
+      ? `Delivered ${fmt(a, l)}`
+      : a.getUTCMonth() === b.getUTCMonth()
+        ? `Delivered ${EN.days[a.getUTCDay()]}–${EN.days[b.getUTCDay()]}, ${a.getUTCDate()}–${b.getUTCDate()} ${EN.months[b.getUTCMonth()]}`
+        : `Delivered ${fmt(a, l)} – ${fmt(b, l)}`
+    : minT === maxT
+      ? `${fmt(a)} kapında`
+      : a.getUTCMonth() === b.getUTCMonth()
+        ? `${DAYS[a.getUTCDay()]}–${DAYS[b.getUTCDay()]}, ${a.getUTCDate()}–${b.getUTCDate()} ${MONTHS[b.getUTCMonth()]} kapında`
+        : `${fmt(a)} – ${fmt(b)} kapında`;
   return { tone, ship, eta };
 }
 

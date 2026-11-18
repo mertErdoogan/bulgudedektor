@@ -10,6 +10,8 @@ import { imgUrl } from "@/lib/img";
 import { INFO_LINK } from "@/lib/nav-links";
 import { cn, formatTL } from "@/lib/utils";
 import { MegaMenu } from "./bits";
+import { useT } from "@/components/i18n";
+import { T } from "@/components/i18n";
 
 type Item = { id: string; label: string; url: string; highlight: boolean };
 type Cat = Parameters<typeof MegaMenu>[0]["categories"];
@@ -24,6 +26,7 @@ export function NavBar({ items, categories, brands, focus, cats }: { items: Item
   const path = usePathname();
   const [open, setOpen] = useState<string | null>(null);
   const t = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tr = useT();
   const isActive = (url: string) => path === url || path.startsWith(url + "/") || path.startsWith(url + "?");
   const later = (v: string | null, ms: number) => {
     if (t.current) clearTimeout(t.current);
@@ -66,7 +69,7 @@ export function NavBar({ items, categories, brands, focus, cats }: { items: Item
   );
 
   return (
-    <nav className="relative hidden border-b border-line bg-white md:block" aria-label="Ana menü">
+    <nav className="relative hidden border-b border-line bg-white md:block" aria-label={tr("nav.main")}>
       <div className="container-x flex h-[52px] items-stretch">
         <MegaMenu categories={categories} brands={brands} />
         <div className="scrollbar-none ml-2 flex min-w-0 items-stretch overflow-x-auto">
@@ -124,7 +127,7 @@ function ModelCard({ p, onClick, tall }: { p: NavCard; onClick: () => void; tall
   return (
     <Link href={`/urun/${p.slug}`} onClick={onClick} className="group flex flex-col overflow-hidden rounded-[18px] border border-line bg-white transition hover:-translate-y-0.5 hover:border-[#d6d6db] hover:shadow-[0_14px_28px_-18px_rgba(20,20,22,.4)]">
       <span className={cn("relative grid place-items-center bg-[radial-gradient(circle_at_50%_60%,#fff_0%,#f4f4f5_72%)]", tall ? "h-[132px]" : "h-[112px]")}>
-        {p.isNew ? <span className="absolute top-2.5 left-2.5 rounded-full bg-brand px-2 py-0.5 text-[10.5px] font-extrabold tracking-wider text-white">YENİ</span> : null}
+        {p.isNew ? <span className="absolute top-2.5 left-2.5 rounded-full bg-brand px-2 py-0.5 text-[10.5px] font-extrabold tracking-wider text-white"><T k="card.new" /></span> : null}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {p.image ? <img src={imgUrl(p.image, 256)} alt="" className={cn("max-w-[80%] object-contain mix-blend-multiply transition duration-300 group-hover:scale-105", tall ? "h-[110px]" : "h-[92px]")} /> : null}
       </span>
@@ -141,21 +144,21 @@ function FocusPanel({ f, close }: { f: FocusMenu; close: () => void }) {
   return (
     <div className="grid grid-cols-[230px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_290px]">
       <div className="border-r border-line px-3 py-5">
-        <p className="px-3 pb-2 text-[11px] font-extrabold tracking-[.1em] text-mute">SERİLER</p>
+        <p className="px-3 pb-2 text-[11px] font-extrabold tracking-[.1em] text-mute"><T k="nav.series" /></p>
         <Link href={`/marka/${f.brand.slug}`} onClick={close} className="flex items-center justify-between rounded-xl bg-soft px-3 py-2.5 text-[14px] font-bold">
-          Tüm {f.brand.name} <span className="text-xs font-semibold text-mute">{f.total}</span>
+          <T k="nav.allOf" v={{ ad: f.brand.name }} /> <span className="text-xs font-semibold text-mute">{f.total}</span>
         </Link>
         {f.series.map((s) => (
           <Link key={s.slug} href={`/marka/${f.brand.slug}?kategori=${s.slug}`} onClick={close} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[14px] font-medium transition hover:bg-soft">
             <span className="truncate">{s.name}</span> <span className="text-xs font-semibold text-mute">{s.count}</span>
           </Link>
         ))}
-        <Link href="/markalar" onClick={close} className="mt-3 flex items-center gap-1.5 px-3 text-[13px] font-bold text-mute hover:text-deep">Diğer markalar <ArrowRight size={14} /></Link>
+        <Link href="/markalar" onClick={close} className="mt-3 flex items-center gap-1.5 px-3 text-[13px] font-bold text-mute hover:text-deep"><T k="nav.otherBrands" /> <ArrowRight size={14} /></Link>
       </div>
       <div className="p-5">
         <div className="mb-3.5 flex items-baseline justify-between">
-          <p className="text-[16px] font-extrabold">Öne çıkan modeller</p>
-          <Link href={`/marka/${f.brand.slug}`} onClick={close} className="flex items-center gap-1 text-[13px] font-bold text-brand">Tüm {f.brand.name} ürünleri <ArrowRight size={14} /></Link>
+          <p className="text-[16px] font-extrabold"><T k="nav.featuredModels" /></p>
+          <Link href={`/marka/${f.brand.slug}`} onClick={close} className="flex items-center gap-1 text-[13px] font-bold text-brand"><T k="nav.allProductsOf" v={{ ad: f.brand.name }} /> <ArrowRight size={14} /></Link>
         </div>
         <div className="grid grid-cols-3 gap-3.5">
           {f.models.slice(0, 6).map((p) => (
@@ -174,17 +177,17 @@ function FocusPanel({ f, close }: { f: FocusMenu; close: () => void }) {
                 <img src={imgUrl(f.promo.image, 256)} alt="" className="h-[96px] w-[96px] object-contain" />
               </span>
             ) : null}
-            <span className="relative z-10 mt-auto inline-flex items-center gap-1.5 text-[13px] font-bold">Kampanyayı gör <ArrowRight size={14} /></span>
+            <span className="relative z-10 mt-auto inline-flex items-center gap-1.5 text-[13px] font-bold"><T k="nav.seeDeal" /> <ArrowRight size={14} /></span>
           </Link>
         ) : null}
         <Link href="/sihirbaz" onClick={close} className="flex items-center gap-3 rounded-[18px] border border-line p-4 transition hover:border-deep">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-soft text-brand"><Compass size={22} /></span>
           <span>
-            <b className="block text-[14px]">Hangisi bana uygun?</b>
-            <span className="text-[12.5px] text-mute">Birkaç soruda doğru model</span>
+            <b className="block text-[14px]"><T k="nav.whichFits" /></b>
+            <span className="text-[12.5px] text-mute"><T k="nav.whichFitsD" /></span>
           </span>
         </Link>
-        <span className="flex items-center gap-1.5 px-1 text-[12.5px] text-mute"><BadgeCheck size={15} className="text-[#11643a]" /> Orijinal, faturalı, garantili</span>
+        <span className="flex items-center gap-1.5 px-1 text-[12.5px] text-mute"><BadgeCheck size={15} className="text-[#11643a]" /> <T k="nav.genuine" /></span>
       </div>
     </div>
   );
@@ -196,7 +199,7 @@ function CatPanel({ c, href, label, close }: { c: CatMenu; href: string; label: 
       <div className="border-r border-line px-3 py-5">
         {c.subs.length ? (
           <>
-            <p className="px-3 pb-2 text-[11px] font-extrabold tracking-[.1em] text-mute">ALT KATEGORİLER</p>
+            <p className="px-3 pb-2 text-[11px] font-extrabold tracking-[.1em] text-mute"><T k="nav.subcats" /></p>
             {c.subs.map((s) => (
               <Link key={s.slug} href={`/kategori/${s.slug}`} onClick={close} className="block rounded-xl px-3 py-2 text-[14px] font-medium hover:bg-soft">{s.name}</Link>
             ))}
@@ -205,7 +208,7 @@ function CatPanel({ c, href, label, close }: { c: CatMenu; href: string; label: 
         ) : null}
         {c.brands.length ? (
           <>
-            <p className="px-3 pb-2 text-[11px] font-extrabold tracking-[.1em] text-mute">MARKAYA GÖRE</p>
+            <p className="px-3 pb-2 text-[11px] font-extrabold tracking-[.1em] text-mute"><T k="nav.byBrand" /></p>
             {c.brands.map((b) => (
               <Link key={b.slug} href={`${href}?marka=${b.slug}`} onClick={close} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-[14px] font-medium hover:bg-soft">
                 <BrandMark name={b.name} logoUrl={b.logoUrl} size={28} className="rounded-lg" />
@@ -214,12 +217,12 @@ function CatPanel({ c, href, label, close }: { c: CatMenu; href: string; label: 
             ))}
           </>
         ) : null}
-        <Link href={href} onClick={close} className="mt-3 flex items-center gap-1.5 px-3 text-[13px] font-bold text-brand">Tüm {label} <ArrowRight size={14} /></Link>
+        <Link href={href} onClick={close} className="mt-3 flex items-center gap-1.5 px-3 text-[13px] font-bold text-brand"><T k="nav.allOf" v={{ ad: label }} /> <ArrowRight size={14} /></Link>
       </div>
       <div className="p-5">
         {c.products.length ? (
           <>
-            <p className="mb-3.5 text-[16px] font-extrabold">Öne çıkanlar</p>
+            <p className="mb-3.5 text-[16px] font-extrabold"><T k="nav.featured" /></p>
             <div className="grid grid-cols-3 gap-3.5">
               {c.products.map((p) => (
                 <ModelCard key={p.id} p={p} onClick={close} tall />
@@ -227,7 +230,7 @@ function CatPanel({ c, href, label, close }: { c: CatMenu; href: string; label: 
             </div>
           </>
         ) : null}
-        <Link href="/sihirbaz" onClick={close} className="mt-4 flex items-center gap-2 text-[13px] font-semibold text-mute hover:text-deep"><Compass size={16} className="text-brand" /> Emin değil misin? Bana hangisi testi</Link>
+        <Link href="/sihirbaz" onClick={close} className="mt-4 flex items-center gap-2 text-[13px] font-semibold text-mute hover:text-deep"><Compass size={16} className="text-brand" /> <T k="nav.unsureTest" /></Link>
       </div>
     </div>
   );

@@ -13,15 +13,17 @@ import { StickyBar } from "./sticky-bar";
 import { LangSwitch } from "./lang-switch";
 import { getPathname, getT } from "@/lib/i18n/server";
 import { DEFAULT_LOCALE, LOCALES } from "@/lib/i18n/config";
+import { localizeText } from "@/lib/i18n/content";
 
 export async function StoreHeader() {
   const [s, nav, brands, customer, hd, t, path] = await Promise.all([getSettings(), getNav(), getActiveBrands(), getCustomer(), getHeaderData(), getT(), getPathname()]);
+  const announcement = await localizeText("store.announcement", s.store.announcement, t.locale);
   const langs = LOCALES.filter((l) => l === DEFAULT_LOCALE || s.i18n.locales.includes(l));
   const header = nav.menu.filter((m) => m.location === "HEADER");
   // Kurumsal sayfalar (Hakkımızda, İletişim…) üst şeritte: menü yalnız alışverişe ayrılır, ekran genişliği ne olursa olsun çakışmaz
   const info = header.filter((m) => !m.highlight && INFO_LINK.test(m.url));
   const wa = s.store.whatsapp ? `https://wa.me/${s.store.whatsapp}` : "/iletisim";
-  const notes = s.store.announcement.split("·").map((t) => t.trim()).filter(Boolean);
+  const notes = announcement.split("·").map((t) => t.trim()).filter(Boolean);
   const brandList = brands.map((b) => ({ name: b.name, slug: b.slug, logoUrl: b.logoUrl }));
   return (
     <>

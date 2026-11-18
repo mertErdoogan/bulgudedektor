@@ -5,7 +5,9 @@ import { db } from "@/db";
 import { conversations, customers, messages, newsletterSubscribers, orderItems, orders, productQuestions, products, reviews, stockAlerts } from "@/db/schema";
 import { fail, ok, safe, type ActionResult } from "@/lib/action";
 import { getCustomer } from "@/lib/auth";
-import { quoteCart, type CartInput } from "@/lib/pricing";
+import { quoteCart, type CartInput, type Quote } from "@/lib/pricing";
+import { getLocale } from "@/lib/i18n/server";
+import { localize } from "@/lib/i18n/content";
 import { normalizePhone, str, strOrNull } from "@/lib/utils";
 import { allow, verifyHuman } from "@/lib/guard";
 
@@ -13,7 +15,44 @@ const rateLimit = (key: string, max = 5, windowMs = 10 * 60 * 1000) => allow(key
 
 export async function getCartQuote(items: CartInput, coupon?: string | null, paymentMethod?: "CARD" | "TRANSFER", deliveryMethod?: "CARGO" | "PICKUP") {
   const c = await getCustomer();
-  return quoteCart(items, { couponCode: coupon, paymentMethod, deliveryMethod, customerId: c?.id });
+  const q = await quoteCart(items, { couponCode: coupon, paymentMethod, deliveryMethod, customerId: c?.id });
+  return (await getLocale()) === "en" ? quoteToEnglish(q) : q;
+}
+
+/** Sepet hesabı Türkçe üretilir; İngilizce sayfada ürün adları ve uyarılar çevrilir (tutarlar aynı). */
+async function quoteToEnglish(q: Quote): Promise<Quote> {
+  const names = new Map(
+    (await localize(q.lines.map((l) => ({ id: l.productId, name: l.name })), "product", "en")).map((x) => [x.id, x.name]),
+  );
+  const nm = (s: string) => {
+    for (const l of q.lines) if (names.get(l.productId) && s.includes(l.name)) s = s.replaceAll(l.name, names.get(l.productId)!);
+    return s;
+  };
+  const tr = (s: string) =>
+    nm(s)
+      .replace(/^Sepetteki bir ürün artık satışta değil, sepetten çıkarıldı\.$/, "An item in your cart is no longer for sale and was removed.")
+      .replace(/^Sepetindeki bir ürün artık satışta olmadığı için sepetten çıkarıldı\.$/, "An item in your cart is no longer for sale, so it was removed.")
+      .replace(/^(.+) stokta kalmadığı için sepetten çıkarıldı\.$/, "$1 is out of stock and was removed from your cart.")
+      .replace(/^(.+): stokta (\d+) adet kaldığı için adet \d+ yapıldı\.$/, "$1: only $2 left in stock, so the quantity was set to $2.")
+      .replace(/^(.+): Stokta yok$/, "$1: Out of stock")
+      .replace(/^(.+): Stokta (\d+) adet var$/, "$1: Only $2 in stock")
+      .replace(/^Stokta yok$/, "Out of stock")
+      .replace(/^Stokta (\d+) adet var$/, "Only $1 in stock")
+      .replace(/^Kupon kodu geçersiz veya süresi dolmuş\.$/, "This coupon code is invalid or has expired.")
+      .replace(/^Bu kupon ([\d.,]+) TL ve üzeri sepette geçerli\.$/, "This coupon is valid on carts of $1 TL or more.")
+      .replace(/^Bu kuponu kullanım hakkın doldu\.$/, "You have already used this coupon the maximum number of times.")
+      .replace(/^Bu kupon sepetindeki ürünlerde geçerli değil\.$/, "This coupon doesn't apply to the items in your cart.")
+      .replace(/^Sepetindeki "(.+)" kampanyası daha avantajlı; kupon yerine o uygulandı\. Kampanyalar birleştirilmez\.$/, 'The "$1" offer in your cart is a better deal, so it was applied instead of the coupon. Offers can\'t be combined.');
+  const campaign = q.campaign ? (await localize([q.campaign], "campaign", "en"))[0] : null;
+  return {
+    ...q,
+    campaign,
+    lines: q.lines.map((l) => ({ ...l, name: names.get(l.productId) ?? l.name, error: l.error ? tr(l.error) : l.error })),
+    errors: q.errors.map(tr),
+    fixes: q.fixes.map((f) => ({ ...f, message: tr(f.message) })),
+    couponError: q.couponError ? tr(q.couponError) : q.couponError,
+    couponNote: q.couponNote ? tr(q.couponNote) : q.couponNote,
+  };
 }
 
 export async function askQuestion(_: ActionResult | null, fd: FormData): Promise<ActionResult> {

@@ -7,6 +7,7 @@ import { deliveryInfo } from "@/lib/delivery";
 import { cn, formatTL } from "@/lib/utils";
 import { AddToCart, CompareToggle, FavoriteButton } from "./bits";
 import { T } from "@/components/i18n";
+import type { DictKey } from "@/lib/i18n/dict";
 
 const NEW_DAYS = 30;
 
@@ -22,7 +23,7 @@ export function isNew(p: Pick<P, "createdAt">) {
 
 /** Ürünün altında görünen sade "kargo / teslim" rozeti. */
 export function DeliveryBadge({ p, ctx, className }: { p: Pick<P, "stock" | "allowBackorder" | "sameDayShipping">; ctx: CardCtx; className?: string }) {
-  const d = deliveryInfo(p, ctx.ship);
+  const d = deliveryInfo(p, ctx.ship, undefined, ctx.locale);
   if (d.tone === "none") return null;
   return (
     <span
@@ -43,7 +44,7 @@ export function DeliveryBadge({ p, ctx, className }: { p: Pick<P, "stock" | "all
 
 /** Ürün sayfası fiyat kartında tek satır teslimat bilgisi: "Pazartesi kargoda · Sal–Çar, 17–18 Kas kapında". */
 export function DeliveryLine({ p, ctx, pickup }: { p: Pick<P, "stock" | "allowBackorder" | "sameDayShipping">; ctx: CardCtx; pickup?: boolean }) {
-  const d = deliveryInfo(p, ctx.ship);
+  const d = deliveryInfo(p, ctx.ship, undefined, ctx.locale);
   if (d.tone === "none") return null;
   return (
     <span className="flex items-start gap-2" data-testid="pdp-delivery">
@@ -51,7 +52,7 @@ export function DeliveryLine({ p, ctx, pickup }: { p: Pick<P, "stock" | "allowBa
       <span>
         <b className={d.tone === "fast" ? "text-ok" : d.tone === "slow" ? "text-warn" : "text-deep"}>{d.ship}</b>
         {d.eta ? <span className="text-mute"> · {d.eta}</span> : null}
-        {pickup ? <span className="block text-[12.5px] text-mute">Showroom&apos;dan da teslim alabilirsin.</span> : null}
+        {pickup ? <span className="block text-[12.5px] text-mute"><T k="card.pickup" /></span> : null}
       </span>
     </span>
   );
@@ -63,13 +64,13 @@ export function SocialProof({ p, ctx, className }: { p: Pick<P, "views24" | "car
   if (p.carts24 >= SOCIAL_MIN_CARTS)
     return (
       <span className={cn("flex items-center gap-1 text-[11.5px] font-semibold text-deep", className)}>
-        <Flame size={13} /> Son 24 saatte {p.carts24} kişi sepete ekledi
+        <Flame size={13} /> <T k="card.carts24" v={{ n: p.carts24 }} />
       </span>
     );
   if (p.views24 >= SOCIAL_MIN_VIEWS)
     return (
       <span className={cn("flex items-center gap-1 text-[11.5px] font-semibold text-mute", className)}>
-        <Eye size={13} /> 24 saatte {p.views24} kişi inceledi
+        <Eye size={13} /> <T k="card.views24" v={{ n: p.views24 }} />
       </span>
     );
   return null;
@@ -78,7 +79,7 @@ export function SocialProof({ p, ctx, className }: { p: Pick<P, "views24" | "car
 /** Görseli olmayan ürün için sade yer tutucu: boş kutu "site bozuk" gibi görünmesin. */
 export function NoImage({ brand, className }: { brand?: string | null; className?: string }) {
   return (
-    <span className={cn("flex h-full w-full flex-col items-center justify-center gap-2 text-[#b9b9bf]", className)} role="img" aria-label="Görsel hazırlanıyor">
+    <span className={cn("flex h-full w-full flex-col items-center justify-center gap-2 text-[#b9b9bf]", className)} role="img" aria-label={brand || "—"}>
       <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M14 50 44 14" />
         <path d="M40 18h8l2 6-6 3" />
@@ -96,26 +97,27 @@ export function ProductCard({ p, ctx, compare = false, className, rank }: { p: P
   // "Yeni" yalnızca panelde "Yeni" rozeti verilen ürünlerde: eklenme tarihine bakılmaz (toplu içe aktarımda her ürün "yeni" görünürdü).
   const fresh = p.badges.some((b) => /^yeni/i.test(b));
   const badge = p.badges.find((b) => !/^yeni/i.test(b));
-  const d = deliveryInfo(p, ctx.ship);
+  const d = deliveryInfo(p, ctx.ship, undefined, ctx.locale);
   const deal = !out && p.cartDeal && p.cartDeal > 0 ? Math.round((p.price - p.cartDeal) * 100) / 100 : 0;
+  const name = ctx.locale === "en" && p.nameEn ? p.nameEn : p.name;
   return (
     <article className={cn("group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-white text-deep transition duration-300 hover:-translate-y-1 hover:border-[#dcdce0] hover:shadow-[0_22px_40px_-22px_rgba(20,20,22,.35)]", className)}>
       {/* Görsel: kartın en baskın öğesi. Spot ışığı zemini; üzerine gelince ürün hafifçe kalkar. */}
       <Link href={`/urun/${p.slug}`} className="relative m-2 mb-0 block overflow-hidden rounded-xl bg-[radial-gradient(120%_90%_at_50%_35%,#ffffff_0%,#f6f6f6_55%,#ededed_100%)]">
         <span className="relative block aspect-[5/4]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {p.image ? <img {...imgProps(p.image, [256, 384, 640], "(min-width: 1280px) 280px, (min-width: 768px) 30vw, 50vw")} alt={`${p.brand ?? ""} ${p.name}`.trim()} loading="lazy" decoding="async" className="h-full w-full object-contain p-3 mix-blend-multiply transition duration-500 group-hover:-translate-y-1 group-hover:scale-[1.05]" /> : <NoImage brand={p.brand} />}
+          {p.image ? <img {...imgProps(p.image, [256, 384, 640], "(min-width: 1280px) 280px, (min-width: 768px) 30vw, 50vw")} alt={`${p.brand ?? ""} ${name}`.trim()} loading="lazy" decoding="async" className="h-full w-full object-contain p-3 mix-blend-multiply transition duration-500 group-hover:-translate-y-1 group-hover:scale-[1.05]" /> : <NoImage brand={p.brand} />}
         </span>
         <span aria-hidden className="card-shine pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/60 to-transparent" />
         <span className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1 pr-10">
           {rank ? <span className="grid h-7 min-w-7 place-items-center rounded-full bg-deep px-1.5 text-[12.5px] font-black text-white shadow-sm">{rank}</span> : null}
           {out ? <span className="rounded-full bg-deep px-2.5 py-0.5 text-[11px] font-extrabold text-white"><T k="card.soldOut" /></span> : null}
           {fresh && !out ? <span className="rounded-full bg-white px-2.5 py-0.5 text-[10.5px] font-black tracking-[.08em] text-deep shadow-sm ring-1 ring-line"><T k="card.new" /></span> : null}
-          {badge && !discount && !fresh ? <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-extrabold text-deep ring-1 ring-line">{badge}</span> : null}
+          {badge && !discount && !fresh ? <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-extrabold text-deep ring-1 ring-line"><BadgeText b={badge} /></span> : null}
         </span>
         {discount ? <span className="absolute right-2.5 bottom-2.5 rounded-full bg-brand px-2.5 py-1 text-[11.5px] font-black text-white shadow-sm">−%{discount}</span> : null}
       </Link>
-      <FavoriteButton productId={p.id} name={p.name} className="absolute top-4 right-4" />
+      <FavoriteButton productId={p.id} name={name} className="absolute top-4 right-4" />
       <div className="flex flex-1 flex-col px-3.5 pt-3 pb-3.5 md:px-4 md:pb-4">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[11.5px] font-extrabold tracking-[0.12em] text-mute">{p.brand?.toLocaleUpperCase("en-US")}</span>
@@ -126,7 +128,7 @@ export function ProductCard({ p, ctx, compare = false, className, rank }: { p: P
           ) : null}
         </div>
         <Link href={`/urun/${p.slug}`} className="font-display mt-0.5 line-clamp-2 text-[16px] leading-[1.25] font-extrabold hover:text-brand md:text-[17px]">
-          {p.name}
+          {name}
         </Link>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
           <strong className="font-display text-[19px] font-extrabold md:text-[20px]">{formatTL(p.price)}</strong>
@@ -152,7 +154,7 @@ export function ProductCard({ p, ctx, compare = false, className, rank }: { p: P
               <T k="card.view" />
             </Link>
           ) : (
-            <AddToCart productId={p.id} name={p.name} price={p.price} brand={p.brand} variant="card" />
+            <AddToCart productId={p.id} name={name} price={p.price} brand={p.brand} variant="card" />
           )}
           {compare ? <CompareToggle productId={p.id} /> : null}
         </div>
@@ -160,3 +162,9 @@ export function ProductCard({ p, ctx, compare = false, className, rank }: { p: P
     </article>
   );
 }
+
+/** Panelde Türkçe girilen rozetin bilinen karşılığı (Çok satan → Best seller); bilinmeyen rozet olduğu gibi */
+function BadgeText({ b }: { b: string }) {
+  return <T k={(`badge.${b.toLocaleLowerCase("tr-TR")}` in BADGE_KEYS ? `badge.${b.toLocaleLowerCase("tr-TR")}` : "badge.raw") as DictKey} v={{ b }} />;
+}
+const BADGE_KEYS: Record<string, true> = { "badge.çok satan": true, "badge.yeni": true, "badge.fırsat": true, "badge.indirim": true, "badge.son adetler": true, "badge.stokta": true };

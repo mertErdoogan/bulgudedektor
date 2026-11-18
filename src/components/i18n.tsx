@@ -3,12 +3,14 @@
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useMemo, type ComponentProps } from "react";
-import { DEFAULT_LOCALE, localePath, type Locale } from "@/lib/i18n/config";
+import { DEFAULT_LOCALE, localePath, setSlugMap, type Locale, type SlugMap } from "@/lib/i18n/config";
 import { translate, type DictKey } from "@/lib/i18n/dict";
 
 const Ctx = createContext<Locale>(DEFAULT_LOCALE);
 
-export function I18nProvider({ locale, children }: { locale: Locale; children: React.ReactNode }) {
+export function I18nProvider({ locale, slugs, children }: { locale: Locale; slugs?: SlugMap; children: React.ReactNode }) {
+  // İngilizce kayıt slug'ları (ör. eqx-11-baslik → eqx-11-coil): LocaleLink ve router bunları kullanır
+  if (slugs) setSlugMap(slugs);
   return <Ctx.Provider value={locale}>{children}</Ctx.Provider>;
 }
 

@@ -7,6 +7,7 @@ import type { CardCtx } from "@/lib/card-ctx";
 import type { ProductCard as P } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ProductCard } from "./product-card";
+import { useT } from "@/components/i18n";
 
 export type ExploreTab = { k: string; l: string; d: string; href: string; items: P[] };
 const ICON: Record<string, typeof Coins> = { define: Coins, altin: Gem, sahil: Waves, baslangic: Sprout, pro: Radar };
@@ -16,7 +17,8 @@ const ICON: Record<string, typeof Coins> = { define: Coins, altin: Gem, sahil: W
  * Sekmeler arası geçiş sayfa yenilemeden; her sekmenin altında o amacın tüm ürünlerine bağlantı.
  */
 export function ExploreTabs({ tabs, ctx }: { tabs: ExploreTab[]; ctx: CardCtx }) {
-  const list = tabs.filter((t) => t.items.length >= 3);
+  const t = useT();
+  const list = tabs.filter((x) => x.items.length >= 3);
   const [k, setK] = useState(list[0]?.k);
   const cur = list.find((t) => t.k === k) ?? list[0];
   if (!cur) return null;
@@ -24,14 +26,14 @@ export function ExploreTabs({ tabs, ctx }: { tabs: ExploreTab[]; ctx: CardCtx })
     <section className="container-x mt-14" data-testid="explore">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <span className="text-[11.5px] font-extrabold tracking-[.14em] text-mute">AMACINA GÖRE KEŞFET</span>
-          <h2 className="font-display mt-1 text-[24px] leading-tight font-extrabold md:text-[32px]">Ne arıyorsan, ona göre seç</h2>
+          <span className="text-[11.5px] font-extrabold tracking-[.14em] text-mute">{t("et.eyebrow")}</span>
+          <h2 className="font-display mt-1 text-[24px] leading-tight font-extrabold md:text-[32px]">{t("et.title")}</h2>
         </div>
         <Link href={cur.href} className="flex items-center gap-1.5 text-sm font-bold hover:text-brand">
-          Tümünü gör <ArrowRight size={15} />
+          {t("hl.all")} <ArrowRight size={15} />
         </Link>
       </div>
-      <div role="tablist" aria-label="Amaç" className="scrollbar-none -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+      <div role="tablist" aria-label={t("et.aria")} className="scrollbar-none -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
         {list.map((t) => {
           const I = ICON[t.k] ?? Coins;
           const on = t.k === cur.k;

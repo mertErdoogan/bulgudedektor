@@ -2,6 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useT } from "@/components/i18n";
+import { localePath } from "@/lib/i18n/config";
 import { countActivity, emit } from "@/lib/track";
 
 export type CartItem = { productId: string; quantity: number };
@@ -43,6 +45,7 @@ function write(k: string, v: unknown) {
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const t = useT();
   const [items, setItems] = useState<CartItem[]>([]);
   const [compare, setCompare] = useState<string[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -87,7 +90,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const cur = read<CartItem[]>(KEY, items);
         const ex = cur.find((i) => i.productId === productId);
         persist(ex ? cur.map((i) => (i.productId === productId ? { ...i, quantity: Math.min(99, i.quantity + qty) } : i)) : [...cur, { productId, quantity: qty }]);
-        toast.success(name ? `${name} sepete eklendi` : "Sepete eklendi", { action: { label: "Sepete git", onClick: () => (window.location.href = "/sepet") } });
+        toast.success(name ? t("cartp.added_n", { name }) : t("cartp.added"), { action: { label: t("cartp.go"), onClick: () => (window.location.href = localePath("/sepet", t.locale)) } });
       },
       setQty: (productId, qty) => persist(qty <= 0 ? items.filter((i) => i.productId !== productId) : items.map((i) => (i.productId === productId ? { ...i, quantity: Math.min(99, qty) } : i))),
       remove: (productId) => persist(items.filter((i) => i.productId !== productId)),
@@ -118,12 +121,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         write(FKEY, next);
         if (on) {
           emit("add_to_wishlist", { items: [{ item_id: productId, item_name: name ?? productId }] });
-          toast.success(name ? `${name} favorilere eklendi` : "Favorilere eklendi", { action: { label: "Favorilerim", onClick: () => (window.location.href = "/favoriler") } });
+          toast.success(name ? t("cartp.fav_n", { name }) : t("cartp.fav"), { action: { label: t("meta.favoriler"), onClick: () => (window.location.href = localePath("/favoriler", t.locale)) } });
         }
         if (loggedIn) void fetch("/api/favoriler", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: productId, on }) });
       },
     }),
-    [items, ready, compare, persist, favorites, loggedIn],
+    [items, ready, compare, persist, favorites, loggedIn, t],
   );
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

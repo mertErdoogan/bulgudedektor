@@ -1,5 +1,6 @@
 import type { InstallmentBank } from "@/lib/iyzico";
 import { formatTL } from "@/lib/utils";
+import { T } from "@/components/i18n";
 
 /** Taksit tablosu: iyzico verisi varsa banka bazında, yoksa mağaza ayarlarından genel tablo. */
 export function InstallmentTable({ price, banks, noInterest, max, rates = {} }: { price: number; banks: InstallmentBank[] | null; noInterest: number; max: number; rates?: Record<string, number> }) {
@@ -10,8 +11,8 @@ export function InstallmentTable({ price, banks, noInterest, max, rates = {} }: 
         <table className="w-full min-w-[560px] border-collapse text-sm">
           <thead>
             <tr className="bg-soft text-left">
-              <th className="px-3 py-2">Kart</th>
-              {ns.map((n) => <th key={n} className="px-3 py-2 text-right whitespace-nowrap">{n} taksit</th>)}
+              <th className="px-3 py-2"><T k="inst.card" /></th>
+              {ns.map((n) => <th key={n} className="px-3 py-2 text-right whitespace-nowrap"><T k="inst.n" v={{ n }} /></th>)}
             </tr>
           </thead>
           <tbody>
@@ -22,7 +23,7 @@ export function InstallmentTable({ price, banks, noInterest, max, rates = {} }: 
                   const r = b.rows.find((x) => x.n === n);
                   return (
                     <td key={n} className="px-3 py-2 text-right whitespace-nowrap">
-                      {r ? <><b>{formatTL(r.monthly)}</b><span className="block text-xs text-mute">{r.total <= price * 1.001 ? "vade farksız" : `toplam ${formatTL(r.total)}`}</span></> : <span className="text-mute">—</span>}
+                      {r ? <><b>{formatTL(r.monthly)}</b><span className="block text-xs text-mute">{r.total <= price * 1.001 ? <T k="pdp.instValue" /> : <T k="inst.total" v={{ tutar: formatTL(r.total) }} />}</span></> : <span className="text-mute">—</span>}
                     </td>
                   );
                 })}
@@ -35,7 +36,7 @@ export function InstallmentTable({ price, banks, noInterest, max, rates = {} }: 
   }
   // iyzico verisi yoksa: vade farksız taksitler + ayarlardaki genel vade farkı oranları
   const ns = Array.from({ length: Math.max(0, max - 1) }, (_, i) => i + 2).filter((n) => n <= noInterest || rates[String(n)] !== undefined);
-  if (!ns.length) return <p className="text-sm text-mute">Kartına özel taksit seçeneklerini ödeme adımında görürsün.</p>;
+  if (!ns.length) return <p className="text-sm text-mute"><T k="inst.atCheckout" /></p>;
   return (
     <div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -44,14 +45,14 @@ export function InstallmentTable({ price, banks, noInterest, max, rates = {} }: 
           const total = free ? price : Math.round(price * (1 + (rates[String(n)] ?? 0) / 100));
           return (
             <div key={n} className="rounded-xl border border-line p-3 text-center">
-              <span className="text-xs text-mute">{n} taksit</span>
+              <span className="text-xs text-mute"><T k="inst.n" v={{ n }} /></span>
               <b className="block text-[17px]">{formatTL(Math.round(total / n))}</b>
-              <span className={free ? "text-xs font-semibold text-ok" : "text-xs text-mute"}>{free ? "vade farksız" : `toplam ${formatTL(total)}`}</span>
+              <span className={free ? "text-xs font-semibold text-ok" : "text-xs text-mute"}>{free ? <T k="pdp.instValue" /> : <T k="inst.total" v={{ tutar: formatTL(total) }} />}</span>
             </div>
           );
         })}
       </div>
-      <p className="mt-2 text-xs text-mute">Tüm kredi kartlarında geçerli genel oranlardır; kartına özel kesin tutarları ödeme adımında görürsün.</p>
+      <p className="mt-2 text-xs text-mute"><T k="inst.general" /></p>
     </div>
   );
 }

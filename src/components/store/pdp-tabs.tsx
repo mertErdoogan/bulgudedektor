@@ -3,6 +3,7 @@
 import { imgUrl } from "@/lib/img";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n";
 import { useCart } from "./cart";
 
 type Tab = { id: string; label: string; count?: number };
@@ -13,6 +14,7 @@ type Tab = { id: string; label: string; count?: number };
  * müşteri özellikleri veya yorumları okurken satın almak için yukarı dönmek zorunda kalmaz.
  */
 export function PdpTabs({ tabs, product }: { tabs: Tab[]; product: { id: string; name: string; price: string; amount: number; image: string | null; brand?: string | null; disabled: boolean } }) {
+  const t = useT();
   const [active, setActive] = useState(tabs[0]?.id);
   const [buyHidden, setBuyHidden] = useState(false);
   const [top, setTop] = useState(64);
@@ -79,7 +81,7 @@ export function PdpTabs({ tabs, product }: { tabs: Tab[]; product: { id: string;
   return (
     <div ref={bar} className="sticky z-20 -mx-4 mt-10 border-y border-line bg-white/90 backdrop-blur-xl md:mx-0 md:rounded-2xl md:border" style={{ top }} data-testid="pdp-tabs">
       <div className="flex items-center gap-3 px-2 md:px-2.5">
-        <nav ref={strip} aria-label="Ürün bölümleri" className="scrollbar-none flex min-w-0 flex-1 gap-1 overflow-x-auto py-2">
+        <nav ref={strip} aria-label={t("pdp.sections")} className="scrollbar-none flex min-w-0 flex-1 gap-1 overflow-x-auto py-2">
           {tabs.map((t) => (
             <a
               key={t.id}
@@ -119,7 +121,7 @@ export function PdpTabs({ tabs, product }: { tabs: Tab[]; product: { id: string;
             }}
             className={cn("h-10 rounded-full px-5 text-[14px] font-extrabold text-white transition disabled:opacity-50", done ? "bg-ok" : "bg-brand hover:bg-brand-dark")}
           >
-            {product.disabled ? "Stokta yok" : done ? "Eklendi ✓" : "Sepete ekle"}
+            {product.disabled ? t("card.outOfStock") : done ? t("pdp.added") : t("pdp.addToCart")}
           </button>
         </div>
       </div>

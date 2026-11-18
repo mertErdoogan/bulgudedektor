@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import { NavProgress } from "@/components/nav-progress";
 import { FormValidation } from "@/components/form-validation";
 import { I18nProvider } from "@/components/i18n";
+import { getSlugMap } from "@/lib/i18n/slugs";
 import { getLocale } from "@/lib/i18n/server";
 import { HTML_LANG } from "@/lib/i18n/config";
 import { siteUrl } from "@/lib/seo";
@@ -21,6 +22,7 @@ export const viewport: Viewport = { themeColor: "#D42E1E", width: "device-width"
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
+  const slugs = locale === "en" ? await getSlugMap() : undefined;
   return (
     <html lang={HTML_LANG[locale]}>
       <head>
@@ -28,7 +30,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="preload" href="/fonts/public-sans-latin-ext-wght-normal.woff2" as="font" type="font/woff2" crossOrigin="" />
       </head>
       <body>
-        <I18nProvider locale={locale}>
+        <I18nProvider locale={locale} slugs={slugs}>
           <NavProgress />
           <FormValidation />
           {children}

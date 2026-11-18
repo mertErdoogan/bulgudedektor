@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { addresses } from "@/db/schema";
@@ -7,7 +8,10 @@ import { cardReady } from "@/lib/card-ready";
 import { CheckoutForm } from "./form";
 import { CheckoutGate } from "./gate";
 
-export const metadata = { title: "Ödeme", robots: { index: false } };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.odeme"), robots: { index: false } };
+}
 
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ misafir?: string }> }) {
   const [s, me, sp] = await Promise.all([getSettings(), getCustomer(), searchParams]);

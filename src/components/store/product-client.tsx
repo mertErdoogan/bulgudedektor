@@ -48,7 +48,7 @@ export function Gallery({ images, name, badge, brand, discountPct = 0 }: { image
         }}
         tabIndex={0}
         role="button"
-        aria-label={`${name} görsellerini büyüt${n > 1 ? `, ${i + 1} / ${n}` : ""}`}
+        aria-label={`${t("pdp.zoom", { name })}${n > 1 ? `, ${i + 1} / ${n}` : ""}`}
         data-testid="gallery-main"
       >
         {/* Ürünün altında yumuşak bir zemin gölgesi: düz gri kutu yerine "sahnede duran" ürün hissi */}
@@ -89,7 +89,7 @@ export function Gallery({ images, name, badge, brand, discountPct = 0 }: { image
       {n > 1 ? (
         <div className="scrollbar-none mt-3 hidden gap-2 overflow-x-auto md:flex">
           {images.map((im, k) => (
-            <button key={im.url + k} onClick={() => setI(k)} className={cn("h-[76px] w-[76px] shrink-0 overflow-hidden rounded-2xl border-2 bg-[#f6f6f7] transition", k === i ? "border-deep" : "border-transparent opacity-70 hover:opacity-100")} aria-label={`Görsel ${k + 1}`} aria-current={k === i ? "true" : undefined}>
+            <button key={im.url + k} onClick={() => setI(k)} className={cn("h-[76px] w-[76px] shrink-0 overflow-hidden rounded-2xl border-2 bg-[#f6f6f7] transition", k === i ? "border-deep" : "border-transparent opacity-70 hover:opacity-100")} aria-label={t("pdp.img_n", { n: k + 1 })} aria-current={k === i ? "true" : undefined}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imgUrl(im.url, 128)} alt="" className="h-full w-full object-contain p-1.5 mix-blend-multiply" />
             </button>
@@ -127,7 +127,7 @@ function Lightbox({ images, name, index, onIndex, onClose }: { images: { url: st
   });
   const cur = images[index];
   return (
-    <div role="dialog" aria-modal="true" aria-label={`${name} görselleri`} className="fixed inset-0 z-[120] flex flex-col bg-[#0c0c0e]/95 text-white backdrop-blur-sm" data-testid="gallery-lightbox">
+    <div role="dialog" aria-modal="true" aria-label={t("pdp.imgs", { name })} className="fixed inset-0 z-[120] flex flex-col bg-[#0c0c0e]/95 text-white backdrop-blur-sm" data-testid="gallery-lightbox">
       <div className="flex items-center gap-3 px-4 py-3 md:px-6">
         <b className="min-w-0 flex-1 truncate text-[14px]">{name}</b>
         {n > 1 ? <span className="text-[13px] text-white/60 tabular-nums">{index + 1} / {n}</span> : null}
@@ -174,7 +174,7 @@ function Lightbox({ images, name, index, onIndex, onClose }: { images: { url: st
       {n > 1 ? (
         <div className="scrollbar-none flex justify-center gap-2 overflow-x-auto px-4 pb-[max(16px,env(safe-area-inset-bottom))]">
           {images.map((im, k) => (
-            <button key={im.url + k} type="button" onClick={() => { setZ(null); onIndex(k); }} aria-label={`Görsel ${k + 1}`} aria-current={k === index ? "true" : undefined} className={cn("h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white transition", k === index ? "ring-2 ring-white" : "opacity-50 hover:opacity-90")}>
+            <button key={im.url + k} type="button" onClick={() => { setZ(null); onIndex(k); }} aria-label={t("pdp.img_n", { n: k + 1 })} aria-current={k === index ? "true" : undefined} className={cn("h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white transition", k === index ? "ring-2 ring-white" : "opacity-50 hover:opacity-90")}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imgUrl(im.url, 128)} alt="" className="h-full w-full object-contain p-1" />
             </button>
@@ -246,10 +246,11 @@ export function StickyBuy({ productId, name, price, inst, disabled, amount, bran
 }
 
 export function Stars({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const t = useT();
   return (
-    <div className="flex gap-1" role="radiogroup" aria-label="Puan">
+    <div className="flex gap-1" role="radiogroup" aria-label={t("pdp.rating")}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <button type="button" key={n} onClick={() => onChange(n)} className={cn("text-2xl", n <= value ? "text-gold" : "text-line")} aria-label={`${n} yıldız`}>★</button>
+        <button type="button" key={n} onClick={() => onChange(n)} className={cn("text-2xl", n <= value ? "text-gold" : "text-line")} aria-label={t("pdp.stars", { n })}>★</button>
       ))}
     </div>
   );

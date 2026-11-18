@@ -1,16 +1,22 @@
 import Link from "@/components/locale-link";
 import { Plus, ChevronDown, Sparkles } from "lucide-react";
 import { breadcrumbLd, faqLd, graph } from "@/lib/seo";
+import { T } from "@/components/i18n";
 import { JsonLd } from "./json-ld";
+import { getT } from "@/lib/i18n/server";
+import { getSlugMap } from "@/lib/i18n/slugs";
+import { localePath } from "@/lib/i18n/config";
 
 /** Görünür breadcrumb + BreadcrumbList şeması (aynı veri, tek kaynak). */
-export function Breadcrumbs({ items, className = "mb-3" }: { items: { name: string; path: string }[]; className?: string }) {
+export async function Breadcrumbs({ items, className = "mb-3" }: { items: { name: string; path: string }[]; className?: string }) {
+  const [t, slugs] = await Promise.all([getT(), getSlugMap()]);
+  const home = t("bc.home");
   return (
     <>
-      <JsonLd data={graph(breadcrumbLd(items))} />
-      <nav className={`text-[13px] text-mute ${className}`} aria-label="Konum">
+      <JsonLd data={graph(breadcrumbLd(items.map((x) => ({ ...x, path: localePath(x.path, t.locale, slugs) })), home, localePath("/", t.locale)))} />
+      <nav className={`text-[13px] text-mute ${className}`} aria-label={t("bc.nav")}>
         <ol className="flex flex-wrap items-center gap-x-1">
-          <li><Link href="/">Ana sayfa</Link></li>
+          <li><Link href="/">{home}</Link></li>
           {items.map((c, i) => (
             <li key={c.path} className="flex items-center gap-1">
               <span aria-hidden>/</span>
@@ -27,27 +33,27 @@ export function Breadcrumbs({ items, className = "mb-3" }: { items: { name: stri
  * "Kısa cevap" kutusu — AI Overviews / ChatGPT / Perplexity'nin alıntılamayı sevdiği
  * 40–60 kelimelik doğrudan yanıt. Sayfanın en üstünde, ilk paragraf olarak durur.
  */
-export function AnswerBox({ title = "Kısa cevap", children, updated }: { title?: string; children: React.ReactNode; updated?: string }) {
+export function AnswerBox({ title, children, updated }: { title?: string; children: React.ReactNode; updated?: string }) {
   return (
     <div className="answer-box rounded-2xl border border-line bg-[#fafafa] p-4 md:p-5">
       <p className="mb-1.5 flex items-center gap-1.5 text-[14px] font-extrabold text-deep">
-        <Sparkles size={14} className="text-brand" /> {title}
+        <Sparkles size={14} className="text-brand" /> {title ?? <T k="seo.shortAnswer" />}
       </p>
       <div className="text-[15.5px] leading-relaxed text-deep">{children}</div>
-      {updated ? <p className="mt-2 text-[12px] text-mute">Son güncelleme: {updated}</p> : null}
+      {updated ? <p className="mt-2 text-[12px] text-mute"><T k="seo.updated" v={{ tarih: updated }} /></p> : null}
     </div>
   );
 }
 
 /** Görünür SSS listesi + FAQPage şeması. Cevaplar HTML'de açık durur (details içinde de indekslenir). */
-export function FaqSection({ items, title = "Sık sorulan sorular", id = "sss", schema = true, className = "", variant = "list" }: { items: { q: string; a: string }[]; title?: string; id?: string; schema?: boolean; className?: string; variant?: "list" | "cards" }) {
+export function FaqSection({ items, title, id = "sss", schema = true, className = "", variant = "list" }: { items: { q: string; a: string }[]; title?: string; id?: string; schema?: boolean; className?: string; variant?: "list" | "cards" }) {
   if (!items.length) return null;
   if (variant === "cards")
     return (
       <section id={id} className={`scroll-mt-40 ${className}`}>
         {schema ? <JsonLd data={graph(faqLd(items))} /> : null}
-        <span className="inline-flex items-center rounded-full bg-soft px-3 py-1 text-[11px] font-extrabold tracking-[.14em] text-mute">SIK SORULANLAR</span>
-        <h2 className="font-display mt-3 mb-5 text-[24px] leading-tight font-extrabold">{title}</h2>
+        <span className="inline-flex items-center rounded-full bg-soft px-3 py-1 text-[11px] font-extrabold tracking-[.14em] text-mute"><T k="seo.faqEyebrow" /></span>
+        <h2 className="font-display mt-3 mb-5 text-[24px] leading-tight font-extrabold">{title ?? <T k="seo.faqTitle" />}</h2>
         <div className="flex flex-col gap-2.5">
           {items.map((f, i) => (
             <details key={i} className="group rounded-2xl border border-line bg-white px-4 py-3.5 transition open:border-transparent open:bg-soft open:shadow-[inset_0_0_0_1px_rgba(20,20,22,.04)] md:px-5" open={i === 0}>
@@ -65,7 +71,7 @@ export function FaqSection({ items, title = "Sık sorulan sorular", id = "sss", 
   return (
     <section id={id} className={`scroll-mt-40 ${className}`}>
       {schema ? <JsonLd data={graph(faqLd(items))} /> : null}
-      <h2 className="font-display mb-3 text-2xl font-extrabold">{title}</h2>
+      <h2 className="font-display mb-3 text-2xl font-extrabold">{title ?? <T k="seo.faqTitle" />}</h2>
       <div className="divide-y divide-line rounded-2xl border border-line">
         {items.map((f, i) => (
           <details key={i} className="group p-4" open={i === 0}>

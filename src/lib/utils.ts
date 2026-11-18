@@ -11,10 +11,10 @@ export function formatTL(v: number | string | null | undefined) {
   return `${tl.format(Math.round(n * 100) / 100)} TL`;
 }
 
-export function formatDate(d: Date | string | null | undefined, withTime = false) {
+export function formatDate(d: Date | string | null | undefined, withTime = false, locale: "tr" | "en" = "tr") {
   if (!d) return "—";
   const date = typeof d === "string" ? new Date(d) : d;
-  return new Intl.DateTimeFormat("tr-TR", {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "tr-TR", {
     day: "2-digit",
     month: "short",
     year: "numeric",

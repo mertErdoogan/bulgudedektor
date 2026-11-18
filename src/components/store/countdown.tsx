@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
+import { T } from "@/components/i18n";
 
 /** Aynı gün kargo kesim saatine geri sayım (sunucunun hesapladığı gerçek süre). */
 export function CutoffCountdown({ ms }: { ms: number }) {
@@ -18,7 +19,7 @@ export function CutoffCountdown({ ms }: { ms: number }) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return (
     <span className="flex items-center gap-2 rounded-full bg-ok-bg px-3 py-2 text-sm font-bold text-ok" suppressHydrationWarning>
-      <Timer size={16} /> Bugün kargoda için <span className="font-mono tabular-nums">{pad(h)}:{pad(m)}:{pad(s)}</span>
+      <Timer size={16} /> <T k="cutoff.left" /> <span className="font-mono tabular-nums">{pad(h)}:{pad(m)}:{pad(s)}</span>
     </span>
   );
 }

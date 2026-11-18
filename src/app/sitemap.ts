@@ -1,3 +1,4 @@
+import { getSlugMap } from "@/lib/i18n/slugs";
 import { q } from "@/db/q";
 import type { MetadataRoute } from "next";
 import { and, asc, eq, lte, sql } from "drizzle-orm";
@@ -50,11 +51,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const others = LOCALES.filter((l) => l !== DEFAULT_LOCALE && s.i18n.locales.includes(l));
   if (!others.length) return list;
   const out: MetadataRoute.Sitemap = [];
+  const slugs = await getSlugMap();
   for (const e of list) {
     const path = e.url.slice(base.length) || "/";
-    const languages = Object.fromEntries([[HTML_LANG[DEFAULT_LOCALE], e.url], ...others.map((l) => [HTML_LANG[l], `${base}${localePath(path, l)}`])]);
+    // Blog yazıları yalnız Türkçe yayınlanır; İngilizce karşılığı yok
+    if (path.startsWith("/blog")) {
+      out.push(e);
+      continue;
+    }
+    const languages = Object.fromEntries([[HTML_LANG[DEFAULT_LOCALE], e.url], ...others.map((l) => [HTML_LANG[l], `${base}${localePath(path, l, slugs)}`])]);
     out.push({ ...e, alternates: { languages } });
-    for (const l of others) out.push({ ...e, url: `${base}${localePath(path, l)}`, alternates: { languages } });
+    for (const l of others) out.push({ ...e, url: `${base}${localePath(path, l, slugs)}`, alternates: { languages } });
   }
   return out;
 }

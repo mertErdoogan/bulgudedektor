@@ -91,7 +91,7 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
   return (
     <div className="container-x py-5">
       {crumbs ? <Breadcrumbs className="mb-2" items={crumbs.map((c) => ({ name: c.label, path: c.href }))} /> : null}
-      {!active.length && !f.q ? <JsonLd data={graph(itemListLd(title, items))} /> : null}
+      {!active.length && !f.q ? <JsonLd data={graph(itemListLd(title, items, t.locale))} /> : null}
       <div className="max-w-3xl">
         <h1 className="font-display text-[26px] font-extrabold md:text-[32px]">{title}</h1>
         {intro ? <p className="mt-1.5 text-[14.5px] leading-relaxed text-mute">{intro}</p> : null}
@@ -150,7 +150,7 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
           {items.length ? (
             <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
               {items.map((p) => (
-                <ProductCard key={p.id} p={p} ctx={cardCtx(s)} compare />
+                <ProductCard key={p.id} p={p} ctx={cardCtx(s, t.locale)} compare />
               ))}
             </div>
           ) : null}

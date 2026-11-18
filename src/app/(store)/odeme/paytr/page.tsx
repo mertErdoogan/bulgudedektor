@@ -1,6 +1,8 @@
+import { localRedirect } from "@/lib/i18n/server";
+import { getT } from "@/lib/i18n/server";
 import Link from "@/components/locale-link";
 import Script from "next/script";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { Lock, ShieldCheck } from "lucide-react";
 import { db } from "@/db";
@@ -8,7 +10,10 @@ import { orders } from "@/db/schema";
 import { orderKey } from "@/lib/store";
 import { formatTL, orderNo } from "@/lib/utils";
 
-export const metadata = { title: "Güvenli ödeme", robots: { index: false } };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.odeme_paytr"), robots: { index: false } };
+}
 export const dynamic = "force-dynamic";
 
 /** PayTR iFrame: kart bilgisi PayTR'ın kendi sayfasına girilir (3D Secure), sitemize hiç gelmez. */
@@ -17,8 +22,8 @@ export default async function PaytrPage({ searchParams }: { searchParams: Promis
   if (!o || !k || k !== orderKey(o) || !t || !/^[A-Za-z0-9_-]{10,200}$/.test(t)) notFound();
   const order = await db.query.orders.findFirst({ where: eq(orders.id, o), with: { items: { columns: { name: true, quantity: true } } } });
   if (!order) notFound();
-  if (order.paymentStatus === "PAID") redirect(`/siparis/${o}?k=${k}&yeni=1`);
-  if (order.status !== "PENDING_PAYMENT") redirect(`/siparis/${o}?k=${k}`);
+  if (order.paymentStatus === "PAID") await localRedirect(`/siparis/${o}?k=${k}&yeni=1`);
+  if (order.status !== "PENDING_PAYMENT") await localRedirect(`/siparis/${o}?k=${k}`);
   return (
     <div className="container-x max-w-3xl py-6 md:py-10">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">

@@ -2,6 +2,7 @@ import { q as qc } from "@/db/q";
 import "server-only";
 import { and, desc, eq, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
+import { localize } from "@/lib/i18n/content";
 import { brands, categories, posts, products, searchQueries } from "@/db/schema";
 
 /**
@@ -48,7 +49,7 @@ export function tokenize(q: string) {
 }
 
 /** Ürünün aranabilir metni (ad + marka + kod + kategori + kullanım amaçları), normalleştirilmiş. */
-const doc = sql`site_norm(${qc(products.name)} || ' ' || coalesce(${qc(brands.name)}, '') || ' ' || ${qc(products.sku)} || ' ' || coalesce((select ${qc(categories.name)} from ${categories} where ${qc(categories.id)} = ${qc(products.categoryId)}), '') || ' ' || array_to_string(${qc(products.useCases)}, ' '))`;
+const doc = sql`site_norm(${qc(products.name)} || ' ' || coalesce(${qc(brands.name)}, '') || ' ' || ${qc(products.sku)} || ' ' || coalesce((select ${qc(categories.name)} from ${categories} where ${qc(categories.id)} = ${qc(products.categoryId)}), '') || ' ' || array_to_string(${qc(products.useCases)}, ' ') || ' ' || coalesce((select string_agg(tr.value, ' ') from translations tr where tr.entity = 'product' and tr.entity_id = ${qc(products.id)} and tr.field in ('name', 'shortDescription')), ''))`;
 const nameDoc = sql`site_norm(${products.name} || ' ' || coalesce(${brands.name}, ''))`;
 /** Ürünün ana kategorisi: "altın dedektörü" aramasında asıl altın cihazları (kategorisi Doğal altın olanlar) öne çıksın. */
 const catDoc = sql`site_norm(coalesce((select ${qc(categories.name)} from ${categories} where ${qc(categories.id)} = ${qc(products.categoryId)}), ''))`;
@@ -75,7 +76,7 @@ export function productSearch(q: string): { where: SQL; score: SQL } | null {
 }
 
 /** Arama kutusundaki anlık öneriler: ürün, kategori, marka, rehber. */
-export async function suggest(q: string) {
+export async function suggest(q: string, lang: "tr" | "en" = "tr") {
   const s = productSearch(q);
   const n = trNorm(q).trim();
   if (!s || n.length < 2) return { products: [], total: 0, categories: [], brands: [], posts: [] };
@@ -99,11 +100,17 @@ export async function suggest(q: string) {
       .where(and(eq(products.status, "ACTIVE"), s.where))
       .orderBy(desc(s.score))
       .limit(6),
-    db.select({ name: categories.name, slug: categories.slug }).from(categories).where(and(eq(categories.isActive, true), sql`site_norm(${categories.name} || ' ' || coalesce(${categories.shortText}, '')) like ${like}`)).limit(3),
+    db
+      .select({ id: categories.id, name: categories.name, slug: categories.slug })
+      .from(categories)
+      .where(and(eq(categories.isActive, true), sql`site_norm(${categories.name} || ' ' || coalesce(${categories.shortText}, '') || ' ' || coalesce((select string_agg(tr.value, ' ') from translations tr where tr.entity = 'category' and tr.entity_id = ${categories.id} and tr.field = 'name'), '')) like ${like}`))
+      .limit(3),
     db.select({ name: brands.name, slug: brands.slug }).from(brands).where(and(eq(brands.isActive, true), sql`(site_norm(${brands.name}) like ${like} or word_similarity(${n}, site_norm(${brands.name})) >= 0.5)`)).limit(3),
     db.select({ title: posts.title, slug: posts.slug }).from(posts).where(and(eq(posts.status, "PUBLISHED"), sql`${posts.publishedAt} <= now()`, sql`site_norm(${posts.title}) like ${like}`)).limit(2),
   ]);
-  return { products: prods.map(({ total: _t, ...p }) => p), total: prods[0]?.total ?? 0, categories: cats, brands: brs, posts: ps };
+  // İngilizce: ad ve kategori çevirileri; rehber yazıları yalnızca Türkçe olduğu için gösterilmez
+  const [lp, lc] = await Promise.all([localize(prods, "product", lang), localize(cats, "category", lang)]);
+  return { products: lp.map(({ total: _t, ...p }) => p), total: prods[0]?.total ?? 0, categories: lc.map(({ id: _i, ...c }) => c), brands: brs, posts: lang === "en" ? [] : ps };
 }
 
 export async function logSearch(q: string, results: number) {

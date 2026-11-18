@@ -6,6 +6,7 @@ import Link from "@/components/locale-link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatTL } from "@/lib/utils";
+import { useT } from "@/components/i18n";
 
 /** Büyük slider slaytı: yalnız görsel (hazır tasarım); sekmede başlık/alt yazı ve varsa ürün fotoğrafı */
 type B = { id: string; title: string; subtitle: string | null; imageUrl: string; mobileImageUrl: string | null; linkUrl: string | null; stage: string; thumb: string | null };
@@ -35,6 +36,7 @@ const CARD_TONES = [
  * Altında 3 renkli kart.
  */
 export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] }) {
+  const t = useT();
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -125,10 +127,10 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
                   ))}
                 </div>
                 <div className={cn("hidden shrink-0 items-center gap-2 px-4 md:flex", dark ? "border-l border-white/15" : "border-l border-black/10")}>
-                  <button type="button" onClick={() => setI((i - 1 + n) % n)} aria-label="Önceki slayt" data-testid="hero-prev" className={cn("grid h-11 w-11 place-items-center rounded-full border transition", dark ? "border-white/40 hover:bg-white/10" : "border-black/20 bg-white hover:border-deep")}>
+                  <button type="button" onClick={() => setI((i - 1 + n) % n)} aria-label={t("hero.prev")} data-testid="hero-prev" className={cn("grid h-11 w-11 place-items-center rounded-full border transition", dark ? "border-white/40 hover:bg-white/10" : "border-black/20 bg-white hover:border-deep")}>
                     <ChevronLeft size={20} />
                   </button>
-                  <button type="button" onClick={() => setI((i + 1) % n)} aria-label="Sonraki slayt" data-testid="hero-next" className={cn("grid h-11 w-11 place-items-center rounded-full transition", dark ? "bg-white text-deep hover:bg-white/85" : "bg-deep text-white hover:bg-black")}>
+                  <button type="button" onClick={() => setI((i + 1) % n)} aria-label={t("hero.next")} data-testid="hero-next" className={cn("grid h-11 w-11 place-items-center rounded-full transition", dark ? "bg-white text-deep hover:bg-white/85" : "bg-deep text-white hover:bg-black")}>
                     <ChevronRight size={20} />
                   </button>
                 </div>
@@ -164,7 +166,7 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
                       {c.oldPrice && c.oldPrice > c.price ? <s className="text-xs whitespace-nowrap text-white/70">{formatTL(c.oldPrice)}</s> : null}
                     </span>
                   ) : null}
-                  <span className="inline-flex w-fit items-center gap-1 text-[12.5px] font-extrabold underline-offset-4 md:mt-1 md:text-sm group-hover/card:underline">Keşfet <span aria-hidden className="transition group-hover/card:translate-x-1">→</span></span>
+                  <span className="inline-flex w-fit items-center gap-1 text-[12.5px] font-extrabold underline-offset-4 md:mt-1 md:text-sm group-hover/card:underline">{t("hero.explore")} <span aria-hidden className="transition group-hover/card:translate-x-1">→</span></span>
                 </span>
                 {/* Ürün: beyaz "sahne" dairesi kartın üst kenarından taşar */}
                 <span className="relative z-[1] grid h-[78px] w-[78px] shrink-0 place-items-center rounded-full bg-white shadow-[0_10px_22px_-10px_rgba(0,0,0,.45)] ring-[3px] ring-white/30 md:-mt-16 md:self-start md:ring-4 transition duration-500 group-hover/card:-translate-y-1 group-hover/card:scale-105 md:-mt-16 md:h-[150px] md:w-[150px]">
@@ -175,7 +177,7 @@ export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] })
                       <img src={imgUrl(c.image, 256)} alt="" className="h-[80%] w-[80%] object-contain mix-blend-multiply transition duration-500 group-hover/card:-rotate-6" />
                     ) : null}
                   </span>
-                  {c.isNew ? <span className="absolute -top-1.5 -right-1.5 grid h-8 w-8 rotate-12 text-[9px] md:h-11 md:w-11 md:text-[11px] place-items-center rounded-full bg-[#ffcf3d] font-black text-deep shadow-md transition group-hover/card:rotate-0">YENİ</span> : null}
+                  {c.isNew ? <span className="absolute -top-1.5 -right-1.5 grid h-8 w-8 rotate-12 text-[9px] md:h-11 md:w-11 md:text-[11px] place-items-center rounded-full bg-[#ffcf3d] font-black text-deep shadow-md transition group-hover/card:rotate-0">{t("hl.newBadge")}</span> : null}
                 </span>
               </Link>
             ))}

@@ -3,29 +3,31 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { getGlossary } from "@/lib/content";
 import { headingId } from "@/lib/markdown";
 import { definedTermSetLd, graph, pageMeta } from "@/lib/seo";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
-export const generateMetadata = () => pageMeta({
-  title: "Metal Dedektörü Sözlüğü — Terimler ve Anlamları",
-  description: "Ayrım (discrimination), toprak dengeleme, VLF, PI, çok frekans, pinpointer, ID numarası… Metal dedektörü terimlerinin kısa ve anlaşılır tanımları.",
-  path: "/sozluk",
-});
+export async function generateMetadata() {
+  const t = await getT();
+  return pageMeta({ title: t("glp.meta_title"), description: t("glp.meta_desc"), path: "/sozluk" });
+}
 
 const TR_ORDER = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
 
 export default async function GlossaryPage() {
+  const tt = await getT();
+  const lc = tt.locale === "en" ? "en" : "tr";
   const terms = (await getGlossary()).map((t) => ({ ...t, id: headingId(t.question) }));
-  const letter = (s: string) => s.trim().charAt(0).toLocaleUpperCase("tr-TR");
+  const letter = (s: string) => s.trim().charAt(0).toLocaleUpperCase(lc === "tr" ? "tr-TR" : "en-GB");
   const groups = new Map<string, typeof terms>();
-  for (const t of terms.sort((a, b) => a.question.localeCompare(b.question, "tr"))) groups.set(letter(t.question), [...(groups.get(letter(t.question)) ?? []), t]);
-  const letters = [...groups.keys()].sort((a, b) => TR_ORDER.indexOf(a) - TR_ORDER.indexOf(b));
+  for (const t of terms.sort((a, b) => a.question.localeCompare(b.question, lc))) groups.set(letter(t.question), [...(groups.get(letter(t.question)) ?? []), t]);
+  const letters = [...groups.keys()].sort((a, b) => (lc === "tr" ? TR_ORDER.indexOf(a) - TR_ORDER.indexOf(b) : a.localeCompare(b, "en")));
   return (
     <div className="container-x max-w-4xl py-6">
       <JsonLd data={graph(definedTermSetLd(terms))} />
-      <Breadcrumbs items={[{ name: "Dedektör sözlüğü", path: "/sozluk" }]} />
-      <h1 className="font-display text-[28px] font-extrabold md:text-[36px]">Metal dedektörü sözlüğü</h1>
-      <p className="mt-2 text-[15px] text-[#3f3f46]">Dedektör dünyasında sık geçen {terms.length} terimin kısa tanımı. Her tanım ilk cümlede doğrudan cevabı verir.</p>
-      <nav className="mt-5 flex flex-wrap gap-1.5" aria-label="Harfler">
+      <Breadcrumbs items={[{ name: tt("glp.crumb"), path: "/sozluk" }]} />
+      <h1 className="font-display text-[28px] font-extrabold md:text-[36px]">{tt("glp.title")}</h1>
+      <p className="mt-2 text-[15px] text-[#3f3f46]">{tt("glp.sub", { n: terms.length })}</p>
+      <nav className="mt-5 flex flex-wrap gap-1.5" aria-label={tt("glp.letters")}>
         {letters.map((l) => <a key={l} href={`#harf-${l}`} className="grid h-9 w-9 place-items-center rounded-lg border border-line text-sm font-bold hover:bg-soft">{l}</a>)}
       </nav>
       <div className="mt-8 flex flex-col gap-8">

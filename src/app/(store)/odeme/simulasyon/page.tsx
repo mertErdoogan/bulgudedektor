@@ -1,4 +1,5 @@
-import { notFound, redirect } from "next/navigation";
+import { localRedirect } from "@/lib/i18n/server";
+import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { orders } from "@/db/schema";
@@ -22,7 +23,7 @@ export default async function SimPage({ searchParams }: { searchParams: Promise<
     if (!simulationAllowed() || !o) return;
     if (fd.get("r") === "ok") await markOrderPaid(o, { paymentId: `SIM-${Date.now()}`, raw: "simulated", installments: Number(fd.get("n")) || 1 });
     else await failOrderPayment(o, "Simülasyon: kart reddedildi");
-    redirect(`/siparis/${o}?k=${orderKey(o)}${fd.get("r") === "ok" ? "&yeni=1" : "&odeme=hata"}`);
+    await localRedirect(`/siparis/${o}?k=${orderKey(o)}${fd.get("r") === "ok" ? "&yeni=1" : "&odeme=hata"}`);
   }
   return (
     <div className="container-x max-w-md py-12">

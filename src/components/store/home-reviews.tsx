@@ -1,6 +1,8 @@
+import { localize } from "@/lib/i18n/content";
 import { imgUrl } from "@/lib/img";
 import { q } from "@/db/q";
 import Link from "@/components/locale-link";
+import { getT } from "@/lib/i18n/server";
 import { BadgeCheck, Star } from "lucide-react";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -14,7 +16,8 @@ import { CountUp } from "./reveal";
  * Yorum yoksa bölüm hiç çizilmez.
  */
 export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: string }) {
-  const [rows, [agg]] = await Promise.all([
+  const t = await getT();
+  const [rows0, [agg]] = await Promise.all([
     db
       .select({
         id: reviews.id,
@@ -23,6 +26,7 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
         body: reviews.body,
         isVerified: reviews.isVerified,
         createdAt: reviews.createdAt,
+        productId: products.id,
         productName: products.name,
         productSlug: products.slug,
         image: sql<string | null>`(select ${q(productImages.url)} from ${productImages} where ${q(productImages.productId)} = ${q(products.id)} order by ${q(productImages.sortOrder)} limit 1)`,
@@ -39,7 +43,9 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
     .from(reviews)
     .where(eq(reviews.isApproved, true))
     .groupBy(reviews.rating);
-  if (!rows.length) return null;
+  if (!rows0.length) return null;
+  const names = new Map((await localize(rows0.map((r) => ({ id: r.productId, name: r.productName })), "product", t.locale)).map((x) => [x.id, x.name]));
+  const rows = rows0.map((r) => ({ ...r, productName: names.get(r.productId) ?? r.productName }));
   const by = (r: number) => dist.find((d) => d.r === r)?.n ?? 0;
   const avg = agg.avg ?? 0;
   return (
@@ -47,17 +53,18 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
       <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-stretch">
         {/* Özet: büyük puan, yıldızlar ve dağılım çubukları */}
         <div className="flex flex-col rounded-[26px] bg-[linear-gradient(160deg,#fffaf0_0%,#ffffff_55%)] p-6 ring-1 ring-[#f1e6cf]">
-          <span className="text-[11.5px] font-extrabold tracking-[.14em] text-mute">MÜŞTERİ YORUMLARI</span>
-          <h2 id="yorumlar-baslik" className="font-display mt-1 text-[24px] leading-tight font-extrabold md:text-[28px]">Müşterilerimiz ne diyor?</h2>
+          <span className="text-[11.5px] font-extrabold tracking-[.14em] text-mute">{t("hr.eyebrow")}</span>
+          <h2 id="yorumlar-baslik" className="font-display mt-1 text-[24px] leading-tight font-extrabold md:text-[28px]">{t("hr.title")}</h2>
+          {t.locale === "en" ? <p className="mt-1 text-xs text-mute">Reviews are shown in their original language (Turkish).</p> : null}
           <div className="mt-5 flex items-end gap-3">
             <CountUp value={Number(avg.toFixed(1))} className="font-display text-[56px] leading-none font-black tracking-tight" />
             <span className="pb-1.5">
-              <span className="flex text-[18px] leading-none text-gold" aria-label={`5 üzerinden ${avg.toFixed(1)}`}>
+              <span className="flex text-[18px] leading-none text-gold" aria-label={t("hr.avgAria", { n: avg.toFixed(1) })}>
                 {Array.from({ length: 5 }, (_, i) => (
                   <Star key={i} size={18} className={i < Math.round(avg) ? "fill-gold text-gold" : "text-[#e5d9bd]"} />
                 ))}
               </span>
-              <span className="mt-1 block text-[13px] text-mute">{agg.n} onaylı yorum</span>
+              <span className="mt-1 block text-[13px] text-mute">{t("hr.count", { n: agg.n })}</span>
             </span>
           </div>
           <div className="mt-5 flex flex-col gap-1.5">
@@ -86,24 +93,24 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
                 <span className="min-w-0">
                   <b className="block truncate text-[14.5px]">{r.name}</b>
                   <span className="flex items-center gap-1.5 text-[12px] text-mute">
-                    {r.isVerified ? <span className="flex items-center gap-1 font-semibold text-ok"><BadgeCheck size={13} /> Satın aldı</span> : null}
+                    {r.isVerified ? <span className="flex items-center gap-1 font-semibold text-ok"><BadgeCheck size={13} /> {t("hr.bought")}</span> : null}
                     <time dateTime={r.createdAt.toISOString()}>{formatDate(r.createdAt)}</time>
                   </span>
                 </span>
               </div>
-              <span className="mt-3 flex" aria-label={`5 üzerinden ${r.rating} yıldız`}>
+              <span className="mt-3 flex" aria-label={t("pdp.starsAria", { n: r.rating })}>
                 {Array.from({ length: 5 }, (_, i) => (
                   <Star key={i} size={15} className={i < r.rating ? "fill-gold text-gold" : "text-line"} />
                 ))}
               </span>
-              <blockquote className="mt-2 line-clamp-5 flex-1 text-[15px] leading-relaxed text-[#2a2a2e]">{r.body}</blockquote>
+              <blockquote lang="tr" className="mt-2 line-clamp-5 flex-1 text-[15px] leading-relaxed text-[#2a2a2e]">{r.body}</blockquote>
               <Link href={`/urun/${r.productSlug}#yorumlar`} className="mt-4 flex items-center gap-2.5 rounded-xl border border-line p-2 pr-3 transition hover:border-deep">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-soft">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {r.image ? <img src={imgUrl(r.image, 96)} alt="" loading="lazy" className="h-9 w-9 object-contain mix-blend-multiply" /> : null}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{r.productName}</span>
-                <span className="text-[12px] font-bold text-mute">İncele →</span>
+                <span className="text-[12px] font-bold text-mute">{t("hl.view")} →</span>
               </Link>
             </article>
           ))}

@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "@/components/locale-link";
 import { and, eq, isNull } from "drizzle-orm";
 import { CheckCircle2, CircleAlert } from "lucide-react";
@@ -5,7 +6,10 @@ import { db } from "@/db";
 import { customers } from "@/db/schema";
 import { checkEmailToken } from "@/lib/account";
 
-export const metadata = { title: "E-posta doğrulama", robots: { index: false } };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.eposta_dogrula"), robots: { index: false } };
+}
 
 export default async function VerifyEmailPage({ searchParams }: { searchParams: Promise<{ e?: string; x?: string; t?: string }> }) {
   const sp = await searchParams;

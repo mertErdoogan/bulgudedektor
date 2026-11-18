@@ -8,6 +8,7 @@ import { db } from "../src/db";
 import * as t from "../src/db/schema";
 import { DEFAULT_ROLES } from "../src/lib/permissions";
 import { seedContent } from "./seed-content";
+import { seedEnglish } from "./lib/seed-en";
 import { LEGAL_PAGES } from "./lib/legal-texts";
 import { DEFAULT_TEMPLATES } from "../src/lib/templates";
 
@@ -19,7 +20,7 @@ async function main() {
   console.log("Tablolar temizleniyor…");
   await db.execute(sql`TRUNCATE roles, users, audit_logs, brands, categories, products, product_images, serial_numbers, stock_movements,
     media_assets, customers, addresses, customer_notes, conversations, messages, service_records, reviews, product_questions, stock_alerts,
-    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects, search_queries, product_activity, favorites, cart_snapshots, password_resets, reply_templates, staff_notifications, rate_hits RESTART IDENTITY CASCADE`);
+    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects, search_queries, product_activity, favorites, cart_snapshots, password_resets, reply_templates, staff_notifications, rate_hits, translations RESTART IDENTITY CASCADE`);
 
   // Roller ve ekip
   const roleRows = await db.insert(t.roles).values(DEFAULT_ROLES.map((r) => ({ ...r, permissions: [...r.permissions], isSystem: r.key === "admin" }))).returning();
@@ -223,7 +224,7 @@ async function main() {
         trackingNumber: ["SHIPPED", "DELIVERED"].includes(status) ? String(700000000 + i * 137) : null,
         shippedAt: ["SHIPPED", "DELIVERED"].includes(status) ? new Date(created.getTime() + 86400000) : null,
         // Teslim edilmiş eski siparişlerin çoğunun faturası eklenmiş olsun (iş listesinde birkaç eksik kalsın)
-        ...(status === "DELIVERED" && i % 6 ? { invoiceNo: `ARN2026${String(100000 + i)}`, invoiceUrl: "/demo/fatura-ornek.pdf", invoicedAt: new Date(created.getTime() + 86400000) } : {}),
+        ...(status === "DELIVERED" && i % 6 ? { invoiceNo: `DRN2026${String(100000 + i)}`, invoiceUrl: "/demo/invoice-sample.pdf", invoicedAt: new Date(created.getTime() + 86400000) } : {}),
         deliveredAt: status === "DELIVERED" ? new Date(created.getTime() + 3 * 86400000) : null,
         createdAt: created,
       })
@@ -273,7 +274,9 @@ async function main() {
     { key: "store", value: { name: "Derinova Dedektör" } },
     { key: "setup", value: { completed: false, completedSteps: ["store"] } },
     // seed-if-empty.ts DEMO_VERSION ile aynı olmalı
-    { key: "demo", value: { version: 2 } },
+    { key: "demo", value: { version: 3 } },
+    // Demo mağaza İngilizce sürümü açık gelir (yurt dışı satış denemesi için)
+    { key: "i18n", value: { locales: ["tr", "en"], switcher: true } },
   ]);
   await db.insert(t.auditLogs).values({ userId: admin.id, action: "create", entity: "system", summary: "Demo verisi yüklendi" });
 
@@ -288,6 +291,7 @@ async function main() {
   await seedContent();
 
   await ensureDemoGallery();
+  console.log(`İngilizce içerik: ${await seedEnglish()} çeviri`);
 
   console.log("Bitti. Giriş: admin@derinova.local / Demo12345!  (satis@, depo@, servis@ aynı şifre)");
   process.exit(0);
