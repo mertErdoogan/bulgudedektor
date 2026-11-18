@@ -71,19 +71,15 @@ async def toast(pg, contains=None):
 async def main():
     sql("delete from rate_hits")  # DB tabanlı hız sınırı testler arasında sıfırlanır
     # ── HTTP düzeyi
-    for src, dst in [
-        ("/kategori/minelab-dedektor", "/marka/minelab"),
-        ("/kategori?ara=vanquish", "/ara?q=vanquish"),
-        ("/sayfa/satis-sozlesmesi/sasoz", "/sayfa/mesafeli-satis-sozlesmesi"),
-        ("/sayfa/garanti-ve-iade-kosullari/gaiad", "/sayfa/iade-ve-degisim"),
-        ("/uye/giris", "/giris"),
-        ("/listeler/favori", "/favoriler"),
-    ]:
+    # Panelden eklenen yönlendirme ve arama kısayolu çalışır
+    sql("insert into redirects(id, from_path, to_path) values (gen_random_uuid()::text, '/eski-giris-test', '/giris') on conflict do nothing")
+    for src, dst in [("/eski-giris-test", "/giris"), ("/arama?q=vanquish", "/ara?q=vanquish")]:
         st, h, _ = http(src)
         check(f"yönlendirme {src}", st in (301, 308) and (h.get("Location") or "").endswith(dst), f"{st} {h.get('Location')}")
+    sql("delete from redirects where from_path='/eski-giris-test'")
 
     st, _, body = http("/sayfa/odeme-ve-teslimat")
-    check("ödeme sayfası gerçek IBAN ve unvan", st == 200 and "TR18 0006 2000 3570 0006 2929 42" in body and "Ltd. Şti." in body and "{{" not in body)
+    check("ödeme sayfası IBAN ve unvan ayarlardan dolar", st == 200 and "TR00 0000 0000 0000 0000 0000 00" in body and "Ltd. Şti." in body and "{{" not in body)
     st, _, body = http("/sayfa/mesafeli-satis-sozlesmesi")
     check("mesafeli satış: 14 gün cayma + 6502", "14 gün" in body and "6502" in body)
 
@@ -106,10 +102,10 @@ async def main():
         # ── Yönetici 2FA
         ctx = await br.new_context(user_agent=UA, accept_downloads=True)
         pg = await ctx.new_page()
-        sql("update users set totp_enabled=false, totp_secret=null, totp_last_step=null where email='admin@arenadedektor.local'")
+        sql("update users set totp_enabled=false, totp_secret=null, totp_last_step=null where email='admin@derinova.local'")
         await pg.goto(B + "/admin/giris")
-        await pg.fill("input[name=email]", "admin@arenadedektor.local")
-        await pg.fill("input[name=password]", "Arena123!")
+        await pg.fill("input[name=email]", "admin@derinova.local")
+        await pg.fill("input[name=password]", "Demo12345!")
         await pg.click("button[type=submit]")
         await pg.wait_for_url(re.compile(r".*/admin(\?.*)?$"), timeout=60000)
         await pg.goto(B + "/admin/hesap")
@@ -123,22 +119,22 @@ async def main():
         await pg.fill("input[name=code]", totp(secret))
         await pg.get_by_role("button", name="Onayla").click()
         await pg.wait_for_selector("text=Açık", timeout=20000)
-        check("2FA açıldı", sql("select totp_enabled from users where email='admin@arenadedektor.local'") == "t")
-        check("2FA anahtarı şifreli saklanıyor", sql("select totp_secret from users where email='admin@arenadedektor.local'").startswith("v1."))
+        check("2FA açıldı", sql("select totp_enabled from users where email='admin@derinova.local'") == "t")
+        check("2FA anahtarı şifreli saklanıyor", sql("select totp_secret from users where email='admin@derinova.local'").startswith("v1."))
         await ctx.close()
 
         ctx = await br.new_context(user_agent=UA)
         pg = await ctx.new_page()
         await pg.goto(B + "/admin/giris")
-        await pg.fill("input[name=email]", "admin@arenadedektor.local")
-        await pg.fill("input[name=password]", "Arena123!")
+        await pg.fill("input[name=email]", "admin@derinova.local")
+        await pg.fill("input[name=password]", "Demo12345!")
         await pg.click("button[type=submit]")
         await pg.wait_for_url(re.compile(r".*/admin/giris/dogrula.*"), timeout=30000)
         check("şifreden sonra kod soruluyor", "/dogrula" in pg.url)
         r = await pg.request.get(B + "/admin/siparisler", max_redirects=0)
         check("kod girilmeden panel açılmaz", r.status in (302, 307))
         # aynı adımın kodu (kurulumda kullanıldı) tekrar kabul edilmez; bir sonraki adımı bekle
-        last = int(sql("select totp_last_step from users where email='admin@arenadedektor.local'") or 0)
+        last = int(sql("select totp_last_step from users where email='admin@derinova.local'") or 0)
         while int(time.time() // 30) <= last:
             await asyncio.sleep(2)
         await pg.fill("input[name=code]", totp(secret))

@@ -31,7 +31,7 @@ async def ev(pg):
     return await pg.evaluate("""() => ({
       g: (window.dataLayer||[]).map(a => Array.from(a)),
       f: (window.fbq && window.fbq.queue ? window.fbq.queue : []).map(a => Array.from(a)),
-      ads: window.__arenaAds || null })""")
+      ads: window.__siteAds || null })""")
 
 async def main():
     sql("update users set totp_enabled=false, totp_secret=null, totp_last_step=null")  # features testi 2FA açar; giriş testleri sıfırdan başlar
@@ -126,7 +126,7 @@ async def main():
 
             # Panel: kaynak görünür + raporda kırılım
             ac = await b.new_context(user_agent=UA, viewport={"width": 1400, "height": 900}); ap = await ac.new_page()
-            await ap.goto(B + "/admin/giris"); await ap.fill("input[name=email]", "admin@arenadedektor.local"); await ap.fill("input[name=password]", "Arena123!")
+            await ap.goto(B + "/admin/giris"); await ap.fill("input[name=email]", "admin@derinova.local"); await ap.fill("input[name=password]", "Demo12345!")
             await ap.click("button[type=submit]"); await ap.wait_for_url(re.compile(r".*/admin(?!/giris).*"))
             await ap.goto(B + f"/admin/siparisler/{oid}", wait_until="networkidle")
             chk("Sipariş detayında kaynak: Google Ads", "Kaynak: Google Ads" in await ap.inner_text("body"))

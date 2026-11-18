@@ -12,7 +12,7 @@ import { track } from "@/lib/track";
  *   müşteri reklamı görüp birkaç gün sonra satın alır).
  * - Yeni bir kampanya bağlantısıyla gelinirse eskisinin üzerine yazılır (son tıklama).
  */
-export const ATTR_KEY = "arena_attr";
+export const ATTR_KEY = "site_attr";
 const TTL = 30 * 86400_000;
 const PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "gbraid", "wbraid", "fbclid"] as const;
 
@@ -21,7 +21,7 @@ type Attr = Record<string, string>;
 const cut = (v: string, n = 200) => v.slice(0, n);
 
 function hasConsent() {
-  return /(?:^|; )arena_consent=[^;]*a/.test(document.cookie);
+  return /(?:^|; )site_consent=[^;]*a/.test(document.cookie);
 }
 
 export function readAttribution(): Attr | null {

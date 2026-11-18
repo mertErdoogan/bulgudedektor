@@ -58,7 +58,7 @@ with sync_playwright() as p:
     sql("truncate rate_hits")
     pg.goto(BASE + "/giris", wait_until="networkidle")
     pg.fill("input[name=id]", cust)
-    pg.fill("input[name=password]", "Arena123!")
+    pg.fill("input[name=password]", "Demo12345!")
     pg.click("button:has-text('Giriş yap')")
     try:
         pg.wait_for_url(re.compile(r"/hesabim"), timeout=30000)

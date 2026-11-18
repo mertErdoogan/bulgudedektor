@@ -14,7 +14,7 @@ export async function readOrderAttribution(raw: FormDataEntryValue | null): Prom
     } catch {}
   }
   const c = await cookies();
-  const consent = c.get("arena_consent")?.value ?? "";
+  const consent = c.get("site_consent")?.value ?? "";
   out.analytics = consent.includes("a");
   out.marketing = consent.includes("m");
   if (out.marketing) {

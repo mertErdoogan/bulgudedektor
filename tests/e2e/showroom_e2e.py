@@ -44,8 +44,8 @@ with sync_playwright() as p:
     # Panelden "Showroom'da sergileniyor" işaretle
     a = b.new_context(viewport={"width": 1366, "height": 900}).new_page()
     a.goto(f"{BASE}/admin/giris")
-    a.fill("input[name=email]", "admin@arenadedektor.local")
-    a.fill("input[name=password]", "Arena123!")
+    a.fill("input[name=email]", "admin@derinova.local")
+    a.fill("input[name=password]", "Demo12345!")
     a.click("button[type=submit]")
     a.wait_for_load_state("networkidle")
     a.goto(f"{BASE}/admin/urunler/{pid}")

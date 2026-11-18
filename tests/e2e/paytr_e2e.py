@@ -127,8 +127,8 @@ async def main():
         actx = await br.new_context(user_agent=UA, viewport={"width": 1400, "height": 1000})
         ap = await actx.new_page()
         await ap.goto(B + "/admin/giris")
-        await ap.fill("input[name=email]", "admin@arenadedektor.local")
-        await ap.fill("input[name=password]", "Arena123!")
+        await ap.fill("input[name=email]", "admin@derinova.local")
+        await ap.fill("input[name=password]", "Demo12345!")
         await ap.click("button[type=submit]")
         await ap.wait_for_url(re.compile(r".*/admin$"))
 

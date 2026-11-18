@@ -1,6 +1,6 @@
 # Canlıya alma ve eski siteden geçiş
 
-Bu belge, sitenin bir sunucuda yayına alınmasını ve arenadedektor.com (Efortek) üzerindeki ürünlerin, blog yazılarının ve müşterilerin yeni siteye taşınmasını adım adım anlatır.
+Bu belge, sitenin bir sunucuda yayına alınmasını ve eski sistemdeki müşterilerin yeni siteye taşınmasını adım adım anlatır.
 
 ## 1. Sunucu seçimi
 
@@ -18,7 +18,7 @@ Gereken: Ubuntu 24.04, alan adının A kaydı sunucunun IP'sine yönlendirilmiş
 ```bash
 # Sunucuda
 curl -fsSL https://get.docker.com | sh
-git clone https://github.com/mertErdoogan/bulgudedektor.git arena && cd arena
+git clone https://github.com/mertErdoogan/bulgudedektor.git magaza && cd magaza
 cp .env.example .env
 nano .env
 ```
@@ -27,8 +27,8 @@ nano .env
 
 | Değişken | Açıklama |
 |---|---|
-| `DOMAIN` | `www.arenadedektor.com` |
-| `APP_URL` | `https://www.arenadedektor.com` |
+| `DOMAIN` | `www.derinova.example` |
+| `APP_URL` | `https://www.derinova.example` |
 | `POSTGRES_PASSWORD` | `openssl rand -hex 24` çıktısı |
 | `AUTH_SECRET` | `openssl rand -base64 48` çıktısı. **Bir kez belirleyip değiştirmeyin:** değişirse herkesin oturumu kapanır, 2FA anahtarları geçersizleşir ve panelde şifreli saklanan ödeme/SMS/pazaryeri parolalarının yeniden girilmesi gerekir. |
 | `CRON_SECRET` | `openssl rand -hex 24` çıktısı |
@@ -39,15 +39,15 @@ Saat dilimi imajda `TZ=Europe/Istanbul` olarak ayarlıdır; "bugünkü satış",
 ```bash
 docker compose up -d --build
 # İlk yönetici + roller + yasal sayfalar + eski adres yönlendirmeleri
-docker compose exec -e ADMIN_EMAIL=siz@arenadedektor.com -e ADMIN_PASSWORD='EnAz10Karakter!' app npm run db:init
+docker compose exec -e ADMIN_EMAIL=siz@derinova.example -e ADMIN_PASSWORD='EnAz10Karakter!' app npm run db:init
 ```
 
-Caddy, Let's Encrypt sertifikasını kendiliğinden alır. `https://www.arenadedektor.com/admin/giris` ile girip **Kurulum** sayfasındaki adımları izleyin.
+Caddy, Let's Encrypt sertifikasını kendiliğinden alır. `https://www.derinova.example/admin/giris` ile girip **Kurulum** sayfasındaki adımları izleyin.
 
 Servisler:
 - `app`: site ve panel (açılışta veritabanı göçlerini otomatik uygular)
 - `db`: PostgreSQL 17 (veriler `pgdata` biriminde)
-- `caddy`: HTTPS ve `arenadedektor.com → www` yönlendirmesi
+- `caddy`: HTTPS ve `derinova.example → www` yönlendirmesi
 - `cron`: 15 dakikada bir zamanlanmış işler (ödeme zaman aşımı, sepet hatırlatma, yorum daveti, Trendyol senkronu)
 - `backup`: her gece 03:30 veritabanı yedeği (`deploy/backup.sh`), pazar günleri yüklenen görseller de. `./backups` klasöründe 14 gün saklanır.
   `.env` içinde `BACKUP_S3_BUCKET` (+ uç nokta ve anahtarlar) tanımlıysa **her gece kendiliğinden sunucu dışına** (Cloudflare R2 / S3) kopyalanır ve orada 30 gün saklanır.
@@ -60,16 +60,16 @@ Yedeğin işe yaradığını ancak geri yükleyerek anlarsınız. Ayda bir, canl
 ```sh
 # 1) Son yedeği seç
 ls -lh backups/
-# 2) Geçici bir veritabanına yükle (canlı veritabanı "arena", deneme "arena_test")
-docker compose exec db createdb -U arena arena_test
-docker compose exec -T db pg_restore -U arena -d arena_test --no-owner < backups/arena-YYYY-AA-GG.dump
+# 2) Geçici bir veritabanına yükle (canlı veritabanı "magaza", deneme "magaza_test")
+docker compose exec db createdb -U magaza magaza_test
+docker compose exec -T db pg_restore -U magaza -d magaza_test --no-owner < backups/magaza-YYYY-AA-GG.dump
 # 3) Kontrol et: sipariş ve seri no sayıları canlıyla aynı mı?
-docker compose exec db psql -U arena -d arena_test -c "select count(*) from orders; select count(*) from serial_numbers;"
+docker compose exec db psql -U magaza -d magaza_test -c "select count(*) from orders; select count(*) from serial_numbers;"
 # 4) Denemeyi sil
-docker compose exec db dropdb -U arena arena_test
+docker compose exec db dropdb -U magaza magaza_test
 ```
 
-Gerçek bir felakette (veritabanı bozuldu): siteyi bakıma al, `arena` veritabanını silip aynı `pg_restore` komutuyla son yedeği yükle, `docker compose up -d` ile aç.
+Gerçek bir felakette (veritabanı bozuldu): siteyi bakıma al, `magaza` veritabanını silip aynı `pg_restore` komutuyla son yedeği yükle, `docker compose up -d` ile aç.
 
 ### "Site çöktü" uyarısı
 
@@ -78,43 +78,18 @@ Gerçek bir felakette (veritabanı bozuldu): siteyi bakıma al, `arena` veritaba
 
 Güncelleme: `git pull && docker compose up -d --build`
 
-## 3. Eski siteden (Efortek) veri aktarımı
+## 3. Veri aktarımı
 
-### 3.1 Ürünler, görseller, blog yazıları
+### 3.1 Müşteriler
 
-İçe aktarma betiği eski sitenin herkese açık sayfalarını okur: site haritası → kategori sayfaları → ürün sayfaları. Ürün adresleri (`/urun/...`) ve blog adresleri **aynen korunur**, böylece Google'daki sıralamalar ve dış bağlantılar kaybolmaz. Kategori ve sayfa adresleri değiştiği için 301 yönlendirmeleri otomatik eklenir.
+Eski sistemden üye listesini Excel olarak indirin, **Farklı kaydet → CSV UTF-8** ile kaydedin. Panel → Müşteriler → **İçe aktar**. Şifreler taşınamaz; müşteriler ilk girişte "Şifremi unuttum" ile yeni şifre belirler. Ticari ileti izinlerini yalnızca eski sitede açıkça alındığından eminseniz aktarın.
 
-```bash
-# Önce deneme: sadece okur, data/arena-snapshot.json dosyasına yazar
-docker compose exec app npm run import:arena -- --dry
+### 3.2 Alan adını taşıma günü
 
-# Gerçek aktarım (görselleri indirip kendi sunucumuza alır)
-docker compose exec app npm run import:arena
-
-# Demo ürünleri arşive almak için (yalnızca ilk kurulumda, demo veri yüklediyseniz)
-docker compose exec app npm run import:arena -- --from data/arena-snapshot.json --archive-demo
-```
-
-Diğer seçenekler: `--limit 5` (deneme), `--hotlink` (görselleri indirmeden eski adresten göster; geçici), `--update-stock`, `--refresh-images`, `--publish-posts`.
-
-Aktarım sonrası yapılması gerekenler:
-1. **Stoklar:** Efortek yalnızca "var/yok" gösterdiği için stokta olan ürünlere geçici olarak **5 adet** yazılır. Panel → Stok sayfasından gerçek adetleri girin.
-2. **Blog yazıları** taslak olarak gelir; Panel → Blog'dan gözden geçirip yayınlayın.
-3. **Kampanyalı ürünler** (ör. "Pro Find 15 hediye") açıklamanın başına not olarak ve "Hediyeli" rozetiyle gelir. Hediyeyi otomatik sepete eklemek isterseniz Panel → Kampanyalar'dan kural tanımlayın.
-4. **Teknik özellikler** (teknoloji, su geçirmezlik) ürün adı ve açıklamadan tahmin edilir; kontrol edin.
-5. **Varyantlar:** Aynı modelin farklı paketlerini ürün formundaki "Varyant grubu" alanına aynı kodu yazarak birbirine bağlayın.
-
-### 3.2 Müşteriler
-
-Efortek yönetim panelinden üye listesini Excel olarak indirin, **Farklı kaydet → CSV UTF-8** ile kaydedin. Panel → Müşteriler → **İçe aktar**. Şifreler taşınamaz; müşteriler ilk girişte "Şifremi unuttum" ile yeni şifre belirler. Ticari ileti izinlerini yalnızca eski sitede açıkça alındığından eminseniz aktarın.
-
-### 3.3 Alan adını taşıma günü
-
-1. Yeni siteyi geçici bir alt alan adında (ör. `yeni.arenadedektor.com`) kurup aktarımı yapın, kontrol edin.
+1. Yeni siteyi geçici bir alt alan adında (ör. `yeni.derinova.example`) kurup kontrol edin.
 2. `.env`'de `DOMAIN` ve `APP_URL`'i asıl adrese çevirin, `docker compose up -d`.
 3. DNS'te `www` ve `@` kayıtlarını yeni sunucuya yönlendirin (TTL'i bir gün önceden 300'e düşürün).
 4. Google Search Console'da site haritasını (`/sitemap.xml`) yeniden gönderin; Panel → Yönlendirmeler sayfasının üstündeki **Bulunamayan adresler (404)** listesini ilk iki hafta her gün kontrol edin; çok denenenlere yeni adres yazıp kaydedin.
-5. Aynı gün son bir `npm run import:arena -- --dry` alın; fiyat değişiklikleri için `npm run import:arena -- --from data/arena-snapshot.json` (stoklara dokunmaz).
 
 ## 4. Dış servisler (hesap açılması gerekenler)
 

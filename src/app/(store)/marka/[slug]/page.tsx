@@ -44,7 +44,7 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
   ) : null;
   const answer = st.count && !curCat ? (
     <AnswerBox title={`${b.name} dedektör fiyatları`}>
-      Arena Dedektör’de <b>{st.count} orijinal {b.name} modeli</b> var
+      Derinova Dedektör’de <b>{st.count} orijinal {b.name} modeli</b> var
       {st.min != null ? (st.min === st.max ? <>; fiyatı <b>{formatTL(st.min)}</b></> : <>; fiyatlar <b>{formatTL(st.min)}</b> – <b>{formatTL(st.max)}</b> arasında</>) : null}. Öne çıkanlar:{" "}
       {st.picks.map((p, i) => (
         <span key={p.id}>{i ? ", " : ""}<Link className="font-bold text-link" href={`/urun/${p.slug}`}>{p.name}</Link></span>

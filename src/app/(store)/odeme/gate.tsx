@@ -47,7 +47,7 @@ export function CheckoutGate() {
           </ul>
           <Link
             href="/odeme?misafir=1"
-            onClick={() => window.dispatchEvent(new Event("arena-nav-start"))}
+            onClick={() => window.dispatchEvent(new Event("site-nav-start"))}
             className="mt-6 flex h-13 min-h-[52px] items-center justify-center gap-2 rounded-full bg-white text-[15px] font-extrabold text-deep transition hover:-translate-y-0.5"
             data-testid="guest-continue"
           >

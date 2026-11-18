@@ -13,7 +13,7 @@ export function csvResponse(name: string, rows: (string | number | null | undefi
   });
 }
 
-/** ; veya , ayırıcılı CSV'yi (Excel/Efortek dışa aktarımı) satırlara böler; tırnaklı alanları ve satır içi ; işaretini destekler. */
+/** ; veya , ayırıcılı CSV'yi (Excel dışa aktarımı) satırlara böler; tırnaklı alanları ve satır içi ; işaretini destekler. */
 export function parseCsv(text: string): { head: string[]; rows: string[][] } {
   const clean = text.replace(/^﻿/, "");
   const firstLine = clean.split(/\r?\n/, 1)[0] ?? "";

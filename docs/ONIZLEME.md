@@ -23,13 +23,13 @@ Canlıya yakın bir ortam gerektiğinde `plan: starter`, `disk` ve cron eklenere
 
 ## Ön izleme modunun farkları (`PREPROD=1`)
 
-- **Şifreli:** siteyi açınca tarayıcı kullanıcı adı/şifre sorar (kullanıcı adı `arena`, şifre kurulumda girdiğiniz `PREVIEW_PASSWORD`).
+- **Şifreli:** siteyi açınca tarayıcı kullanıcı adı/şifre sorar (kullanıcı adı `onizleme`, şifre kurulumda girdiğiniz `PREVIEW_PASSWORD`).
   `/api` altı açıktır (ödeme dönüşleri, cron, sağlık kontrolü kendi anahtarlarıyla korunur).
 - **Google'a kapalı:** robots.txt her şeyi kapatır, her sayfada `X-Robots-Tag: noindex`. Asıl siteyle yarışmaz.
 - **Sol altta "ÖN İZLEME" etiketi:** canlı siteyle karıştırılmasın.
 - **Demo veri:** ilk açılışta veritabanı boşsa demo ürünler, bannerlar, yorumlar yüklenir. Sonraki güncellemelerde
   veriye dokunulmaz (panelde yaptığınız değişiklikler kalır).
-- **Panel girişi:** `admin@arenadedektor.local`, şifre kurulumda girdiğiniz `ADMIN_PASSWORD` (en az 10 karakter).
+- **Panel girişi:** `admin@derinova.local`, şifre kurulumda girdiğiniz `ADMIN_PASSWORD` (en az 10 karakter).
 - **Ödeme test modunda:** kart ödemesi simülasyonla çalışır, gerçek para çekilmez (`PAYMENT_SIMULATION=force-test-only`).
   **Canlı sitede bu değişken asla olmamalı.**
 
@@ -42,7 +42,7 @@ Canlıya yakın bir ortam gerektiğinde `plan: starter`, `disk` ve cron eklenere
    - `ADMIN_PASSWORD`: panel şifresi (en az 10 karakter)
 4. **Apply / Deploy Blueprint**. İlk derleme 8–12 dakika sürer.
 5. Bittiğinde `arena-onizleme` servisine girin; üstte adres görünür (ör. `https://arena-onizleme.onrender.com`,
-   isim alınmışsa sonuna ek gelir). Açın → `arena` / `PREVIEW_PASSWORD` ile girin.
+   isim alınmışsa sonuna ek gelir). Açın → `onizleme` / `PREVIEW_PASSWORD` ile girin.
 
 ## Sonrası: telefondan geliştirme
 

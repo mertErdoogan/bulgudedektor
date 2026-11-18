@@ -46,7 +46,7 @@ async def login(br, email):
     pg = await ctx.new_page()
     await pg.goto(B + "/admin/giris")
     await pg.fill("input[name=email]", email)
-    await pg.fill("input[name=password]", "Arena123!")
+    await pg.fill("input[name=password]", "Demo12345!")
     await pg.click("button[type=submit]")
     await pg.wait_for_url(re.compile(r".*/admin(\?.*)?$"), timeout=60000)
     return ctx, pg
@@ -57,7 +57,7 @@ async def main():
     sql("update users set totp_enabled=false, totp_secret=null")
     async with async_playwright() as p:
         br = await p.chromium.launch(executable_path=os.environ.get("CHROME", "/usr/bin/google-chrome"))
-        ctx, pg = await login(br, "admin@arenadedektor.local")
+        ctx, pg = await login(br, "admin@derinova.local")
 
         # ── İş listesi
         await pg.goto(B + "/admin")

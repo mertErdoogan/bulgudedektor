@@ -1,4 +1,4 @@
-# Arena Dedektör — e-ticaret mağazası + yönetim paneli
+# Derinova Dedektör — e-ticaret mağazası + yönetim paneli
 
 Next.js 15 (App Router) · TypeScript · PostgreSQL + Drizzle ORM · Tailwind CSS · iyzico
 
@@ -15,8 +15,8 @@ PAYMENT_SIMULATION=1 npm run dev
 ```
 
 - Mağaza: http://localhost:3000
-- Panel: http://localhost:3000/admin — `admin@arenadedektor.local` / `Arena123!`
-  - Diğer roller (aynı şifre): `satis@`, `depo@`, `servis@arenadedektor.local`
+- Panel: http://localhost:3000/admin — `admin@derinova.local` / `Demo12345!`
+  - Diğer roller (aynı şifre): `satis@`, `depo@`, `servis@derinova.local`
 - `PAYMENT_SIMULATION=1` iken iyzico anahtarı yoksa kart ödemesi test ekranıyla simüle edilir (sadece geliştirmede çalışır).
 
 ## Canlıya alma
@@ -31,7 +31,7 @@ PAYMENT_SIMULATION=1 npm run dev
 
 **Zamanlanmış işler:** `/api/cron` her 15 dakikada bir çağrılmalı (`Authorization: Bearer $CRON_SECRET`). Yaptıkları: süresi dolan kart ödemelerini iptal edip stoğu geri alma, teslimattan 3 gün sonra yorum daveti, izin veren müşterilere terk edilen sepet hatırlatması, eski kayıtların temizliği. Vercel'de `vercel.json` hazır; VPS'te crontab:
 ```
-*/15 * * * * curl -fsS -H "Authorization: Bearer GIZLI" https://www.arenadedektor.com/api/cron > /dev/null
+*/15 * * * * curl -fsS -H "Authorization: Bearer GIZLI" https://www.derinova.example/api/cron > /dev/null
 ```
 
 **İzleme ve yedek:**
@@ -108,11 +108,10 @@ Var olan bir veritabanına örnek rehber/SSS/sözlük eklemek için (mevcut kay�
 
 ## Entegrasyonlar ve eski siteden geçiş
 
-Canlıya alma (Docker + Caddy), arenadedektor.com'dan ürün/blog/müşteri aktarımı ve dış servis hesapları için: **[docs/KURULUM.md](docs/KURULUM.md)**.
+Canlıya alma (Docker + Caddy), müşteri aktarımı ve dış servis hesapları için: **[docs/KURULUM.md](docs/KURULUM.md)**.
 
 | Özellik | Durum |
 |---|---|
-| Eski siteden aktarım (`npm run import:arena`) | Hazır; ürün/blog adresleri korunur, eski kategori/sayfa adresleri 301 |
 | Netgsm SMS (sipariş alındı / kargoda / teslim) | Kod hazır, gerçek hesapla test edilmedi |
 | Trendyol fiyat-stok senkronu ve sipariş aktarımı | Kod hazır (Order V2), sahte API ile test edildi, gerçek hesapla denenmedi |
 | Hepsiburada fiyat-stok senkronu ve sipariş aktarımı | Kod hazır (SKU eşleşmesi), sahte API ile test edildi, gerçek hesapla denenmedi |
@@ -126,7 +125,7 @@ Canlıya alma (Docker + Caddy), arenadedektor.com'dan ürün/blog/müşteri akta
 ## Testler
 
 ```bash
-npx tsx tests/unit/arena-parse.test.ts && npx tsx tests/unit/csv.test.ts && npx tsx tests/unit/totp.test.ts
+npx tsx tests/unit/csv.test.ts && npx tsx tests/unit/totp.test.ts
 npm run db:seed && npm run build && npm start   # ayrı terminalde
 python3 tests/e2e/core_e2e.py   # ayrıntılar: tests/README.md
 ```

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Veritabanı yedeği (VPS kurulumunda crontab ile her gece çalıştırın):
-#   0 3 * * * cd /srv/arena && ./scripts/backup.sh >> backups/backup.log 2>&1
+#   0 3 * * * cd /srv/magaza && ./scripts/backup.sh >> backups/backup.log 2>&1
 # Yönetilen Postgres (Neon, Supabase, Railway) kullanıyorsanız onların otomatik yedeği yeterlidir.
 set -euo pipefail
 source .env 2>/dev/null || true

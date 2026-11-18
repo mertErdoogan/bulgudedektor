@@ -11,6 +11,6 @@
 }
 
 # Çıplak alan adını www'ya yönlendir (DOMAIN www ile başlıyorsa)
-arenadedektor.com {
-	redir https://www.arenadedektor.com{uri} permanent
+derinova.example {
+	redir https://www.derinova.example{uri} permanent
 }

@@ -1,4 +1,4 @@
-# Arena Dedektör — üretim imajı
+# Derinova Dedektör — üretim imajı
 # docker compose up -d --build   (bkz. docs/KURULUM.md)
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app

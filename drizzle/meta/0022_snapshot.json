@@ -2383,7 +2383,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'Arena Dedekt\u00f6r Uzman Ekibi'"
+          "default": "'Derinova Uzman Ekibi'"
         },
         "author_title": {
           "name": "author_title",

@@ -19,10 +19,10 @@ async def toast_text(pg):
     except Exception:
         return ""
 
-async def admin_login(pg, email="admin@arenadedektor.local"):
+async def admin_login(pg, email="admin@derinova.local"):
     await pg.goto(B + "/admin/giris")
     await pg.fill("input[name=email]", email)
-    await pg.fill("input[name=password]", "Arena123!")
+    await pg.fill("input[name=password]", "Demo12345!")
     await pg.click("button[type=submit]")
     await pg.wait_for_url(re.compile(r".*/admin(\?.*)?$"), timeout=60000)
 
@@ -201,7 +201,7 @@ async def main():
         # ───────── Yetki: depo kullanıcısı raporlara giremez
         dctx = await b.new_context()
         dp = await dctx.new_page()
-        await admin_login(dp, "depo@arenadedektor.local")
+        await admin_login(dp, "depo@derinova.local")
         await dp.goto(B + "/admin/raporlar", wait_until="networkidle")
         check("Depo: raporlar engellendi", "yetki=yok" in dp.url, dp.url)
         nav = await dp.inner_text("aside")

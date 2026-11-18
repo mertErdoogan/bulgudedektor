@@ -20,7 +20,7 @@ export function middleware(req: NextRequest) {
   // çeker; şifre istenirse 401 alır ve tüm ürün/kategori görselleri kırık görünür. Görseller zaten gizli bilgi değil.
   const publicAsset = /^\/(demo|media|brand)\//.test(pathname) || /\.(jpe?g|png|webp|avif|gif|svg|ico|pdf)$/i.test(pathname);
   if (preprod && process.env.PREVIEW_PASSWORD && !pathname.startsWith("/api/") && !publicAsset) {
-    const user = process.env.PREVIEW_USER || "arena";
+    const user = process.env.PREVIEW_USER || "onizleme";
     const [scheme, enc] = (req.headers.get("authorization") ?? "").split(" ");
     let ok = false;
     if (scheme === "Basic" && enc) {
@@ -32,7 +32,7 @@ export function middleware(req: NextRequest) {
     if (!ok)
       return new NextResponse("Ön izleme ortamı: giriş gerekli.", {
         status: 401,
-        headers: { "WWW-Authenticate": 'Basic realm="Arena Dedektor on izleme", charset="UTF-8"', "X-Robots-Tag": "noindex, nofollow" },
+        headers: { "WWW-Authenticate": 'Basic realm="Derinova Dedektor on izleme", charset="UTF-8"', "X-Robots-Tag": "noindex, nofollow" },
       });
   }
 

@@ -34,7 +34,7 @@ export function legalTokens(store: Store, payment?: Payment, siteUrl = ""): Reco
     vergi_no: v(store.taxNumber),
     mersis: v(store.mersis),
     etbis: v(store.etbis),
-    site: esc(/localhost|127\.0\.0\.1|\.local\b|\.test\b/.test(siteUrl) || !siteUrl ? "www.arenadedektor.com" : siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")),
+    site: esc(/localhost|127\.0\.0\.1|\.local\b|\.test\b/.test(siteUrl) || !siteUrl ? "www.derinova.example" : siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")),
     odeme_kurulusu: payment?.provider === "paytr" ? "PayTR" : "iyzico",
     taksit: String(payment?.maxInstallment ?? 6),
     vade_farksiz: String(payment?.noInterestInstallments ?? 3),

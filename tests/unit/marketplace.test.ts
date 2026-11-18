@@ -24,9 +24,9 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
 }) as typeof fetch;
 
 (async () => {
-  await db.update(products).set({ barcode: null }).where(eq(products.barcode, "TEST-BARKOD-ARENA-1"));
+  await db.update(products).set({ barcode: null }).where(eq(products.barcode, "TEST-BARKOD-1"));
   const [p1, p2] = await db.select().from(products).where(eq(products.status, "ACTIVE")).orderBy(asc(products.sku)).limit(2);
-  await db.update(products).set({ barcode: "TEST-BARKOD-ARENA-1", stock: 10 }).where(eq(products.id, p1.id));
+  await db.update(products).set({ barcode: "TEST-BARKOD-1", stock: 10 }).where(eq(products.id, p1.id));
   await db.update(products).set({ stock: 10 }).where(eq(products.id, p2.id));
   await db.delete(orders).where(inArray(orders.channel, ["TRENDYOL", "HEPSIBURADA"]));
   const cur = (await db.query.settings.findFirst({ where: eq(settings.key, "integrations") }))?.value ?? {};
@@ -37,7 +37,7 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
   const ty = await import("../../src/lib/trendyol");
   fake = (url) =>
     url.includes("/orders")
-      ? { totalPages: 1, content: [{ shipmentPackageId: 777, orderNumber: "TY100", orderDate: Date.now(), totalPrice: 1000, customerEmail: "pf+x@trendyolmail.com", shipmentAddress: { fullName: "Ayşe Y", city: "Bursa", district: "Nilüfer", fullAddress: "Adres 1", phone: null }, lines: [{ barcode: "TEST-BARKOD-ARENA-1", quantity: 2, price: 500, productName: "X" }, { barcode: "YOK", quantity: 1, price: 0, productName: "Bilinmeyen" }] }] }
+      ? { totalPages: 1, content: [{ shipmentPackageId: 777, orderNumber: "TY100", orderDate: Date.now(), totalPrice: 1000, customerEmail: "pf+x@trendyolmail.com", shipmentAddress: { fullName: "Ayşe Y", city: "Bursa", district: "Nilüfer", fullAddress: "Adres 1", phone: null }, lines: [{ barcode: "TEST-BARKOD-1", quantity: 2, price: 500, productName: "X" }, { barcode: "YOK", quantity: 1, price: 0, productName: "Bilinmeyen" }] }] }
       : { batchRequestId: "b-1" };
   let r = await ty.trendyolSync();
   assert.ok(r.ok, r.message);
@@ -50,7 +50,7 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
   assert.equal((await db.query.products.findFirst({ where: eq(products.id, p1.id) }))!.stock, 8, "Trendyol satışı stoktan düşmeli");
   const push = calls.find((c) => c.url.includes("price-and-inventory"))!;
   assert.equal(push.headers["User-Agent"], "12345 - SelfIntegration");
-  const item = (push.body as { items: { barcode: string; salePrice: number; quantity: number }[] }).items.find((x) => x.barcode === "TEST-BARKOD-ARENA-1")!;
+  const item = (push.body as { items: { barcode: string; salePrice: number; quantity: number }[] }).items.find((x) => x.barcode === "TEST-BARKOD-1")!;
   assert.equal(item.quantity, 8);
   assert.equal(item.salePrice, Math.round(p1.price * 1.1 * 100) / 100, "%10 fiyat farkı uygulanmalı");
   r = await ty.trendyolSync();
@@ -87,7 +87,7 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
   fake = (url) => (url.includes("/orders") ? { totalPages: 1, content: [] } : { batchRequestId: "b-2" });
   await ty.trendyolSync();
   const push2 = calls.find((c) => c.url.includes("price-and-inventory"))!;
-  const it2 = (push2.body as { items: { barcode: string; quantity: number }[] }).items.find((x) => x.barcode === "TEST-BARKOD-ARENA-1")!;
+  const it2 = (push2.body as { items: { barcode: string; quantity: number }[] }).items.find((x) => x.barcode === "TEST-BARKOD-1")!;
   assert.equal(it2.quantity, 7 - 2, "güvenlik payı stoktan düşülerek gönderilmeli");
 
   // temizlik: demo ürünleri ve ayarları eski haline getir

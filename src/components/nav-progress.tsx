@@ -67,7 +67,7 @@ function Bar() {
       if (url.pathname === location.pathname && url.search === location.search) return; // aynı sayfa / yalnızca #
       start();
       // Mağaza tarafı hedef sayfanın iskeletini gösterebilsin (components/store/route-skeleton.tsx)
-      window.dispatchEvent(new CustomEvent("arena-nav-to", { detail: url.pathname }));
+      window.dispatchEvent(new CustomEvent("site-nav-to", { detail: url.pathname }));
     };
     const onSubmit = (e: SubmitEvent) => {
       // GET formları (arama, filtre, sorgu) da sayfa geçişidir
@@ -76,7 +76,7 @@ function Bar() {
         start();
         try {
           const to = new URL(f.action || location.href, location.href).pathname;
-          if (to !== location.pathname) window.dispatchEvent(new CustomEvent("arena-nav-to", { detail: to }));
+          if (to !== location.pathname) window.dispatchEvent(new CustomEvent("site-nav-to", { detail: to }));
         } catch {}
       }
     };
@@ -85,12 +85,12 @@ function Bar() {
     document.addEventListener("click", onClick, true);
     document.addEventListener("submit", onSubmit);
     window.addEventListener("popstate", onStart);
-    window.addEventListener("arena-nav-start", onStart);
+    window.addEventListener("site-nav-start", onStart);
     return () => {
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("submit", onSubmit);
       window.removeEventListener("popstate", onStart);
-      window.removeEventListener("arena-nav-start", onStart);
+      window.removeEventListener("site-nav-start", onStart);
       clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -33,7 +33,7 @@ export function ActionForm({ action, children, resetOnSuccess, confirm, onDone, 
       if (state.redirect) {
         if (/^https?:\/\//.test(state.redirect)) window.location.href = state.redirect;
         else {
-          window.dispatchEvent(new Event("arena-nav-start"));
+          window.dispatchEvent(new Event("site-nav-start"));
           router.push(state.redirect);
         }
       }

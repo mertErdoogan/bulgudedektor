@@ -19,7 +19,7 @@
 }
 
 @theme {
-  /* Arena Dedektör kurumsal renkleri: logo kırmızısı ve logo siyahı */
+  /* Kurumsal renkler: logo kırmızısı ve koyu metin rengi */
   --font-sans: "Public Sans Variable", "Public Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Public Sans Variable", "Public Sans", ui-sans-serif, system-ui, sans-serif;
 
@@ -168,7 +168,7 @@
 }
 
 /* Mobil tam ekran arama açıkken başlık alt menünün de üstüne çıksın */
-body.arena-search-open [data-site-header] {
+body.site-search-open [data-site-header] {
   z-index: 90;
 }
 

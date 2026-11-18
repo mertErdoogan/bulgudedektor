@@ -1,6 +1,7 @@
-# Arena Dedektör — Render ÜCRETSİZ ön izleme (geliştirme aşaması, telefondan görmek için)
+# Derinova Dedektör — Render ÜCRETSİZ ön izleme (geliştirme aşaması, telefondan görmek için)
 # Render → New → Blueprint → bu repo. main dalına her push otomatik yayına alınır. Kart gerekmez.
 # Ücretsiz planın sınırları ve ücretli plana geçiş: docs/ONIZLEME.md
+# Not: servis ve veritabanı adları (name) Render'da kaynağın kimliğidir; değiştirilirse Render yeni servis/veritabanı açar.
 services:
   - type: web
     name: arena-onizleme
@@ -31,11 +32,11 @@ services:
       - key: UPLOAD_DIR
         value: /tmp/uploads
       - key: PREVIEW_USER
-        value: arena
+        value: onizleme
       # Kurulumda Render sorar: siteyi açarken istenecek şifre
       - key: PREVIEW_PASSWORD
         sync: false
-      # Kurulumda Render sorar: panel (admin@arenadedektor.local) şifresi, en az 10 karakter
+      # Kurulumda Render sorar: panel (admin@derinova.local) şifresi, en az 10 karakter
       - key: ADMIN_PASSWORD
         sync: false
 

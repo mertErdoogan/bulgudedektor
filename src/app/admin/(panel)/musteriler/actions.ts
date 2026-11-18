@@ -82,7 +82,7 @@ export async function anonymizeCustomer(id: string): Promise<ActionResult> {
 }
 
 /**
- * Eski siteden (Efortek "Üyeler" dışa aktarımı) ya da Excel'den müşteri aktarımı.
+ * Eski sistemden ("Üyeler" dışa aktarımı) ya da Excel'den müşteri aktarımı.
  * Sütun adları esnek: ad/adı/ad soyad/name, soyad, e-posta/email, telefon/gsm/cep, il/şehir, ilçe, adres, izin/bülten/ticari ileti.
  * Var olan e-posta/telefon atlanır (üzerine yazılmaz). Şifre aktarılmaz: müşteri "Şifremi unuttum" ile yeni şifre belirler.
  */

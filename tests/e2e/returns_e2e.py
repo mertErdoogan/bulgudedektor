@@ -48,7 +48,7 @@ with sync_playwright() as p:
     c = b.new_context(viewport={"width": 1280, "height": 900}).new_page()
     c.goto(f"{BASE}/giris")
     c.fill("input[name=id]", "musteri1@ornek.com")
-    c.fill("input[name=password]", "Arena123!")
+    c.fill("input[name=password]", "Demo12345!")
     c.click("button:has-text('Giriş yap')")
     c.wait_for_load_state("networkidle")
 
@@ -92,8 +92,8 @@ with sync_playwright() as p:
     # Personel onaylar → müşteri kodu en üstte görür
     a = b.new_context(viewport={"width": 1366, "height": 900}).new_page()
     a.goto(f"{BASE}/admin/giris")
-    a.fill("input[name=email]", "admin@arenadedektor.local")
-    a.fill("input[name=password]", "Arena123!")
+    a.fill("input[name=email]", "admin@derinova.local")
+    a.fill("input[name=password]", "Demo12345!")
     a.click("button[type=submit]")
     a.wait_for_load_state("networkidle")
     rid = sql(f"select id from return_requests where order_id='{oid}'")

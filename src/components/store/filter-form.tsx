@@ -19,7 +19,7 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
     const fd = new FormData(ref.current);
     const q = new URLSearchParams();
     for (const [k, v] of fd.entries()) if (String(v)) q.append(k, String(v));
-    window.dispatchEvent(new Event("arena-nav-start")), router.push(`${window.location.pathname}?${q}`, { scroll: false });
+    window.dispatchEvent(new Event("site-nav-start")), router.push(`${window.location.pathname}?${q}`, { scroll: false });
   };
   const Group = ({ title, name, opts }: { title: string; name: string; opts: Opt[] }) =>
     opts.length ? (
@@ -48,7 +48,7 @@ export function FilterForm({ sp, brands, tech, water, exp, count }: { sp: Record
           onChange={(e) => {
             const q = new URLSearchParams(Object.entries(sp).flatMap(([k, vs]) => vs.map((v) => [k, v])));
             q.set("sirala", e.target.value);
-            window.dispatchEvent(new Event("arena-nav-start")), router.push(`${window.location.pathname}?${q}`, { scroll: false });
+            window.dispatchEvent(new Event("site-nav-start")), router.push(`${window.location.pathname}?${q}`, { scroll: false });
           }}
           aria-label={t("filter.sort")}
         >

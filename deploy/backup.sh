@@ -1,10 +1,10 @@
 #!/bin/sh
-# Arena Dedektör gece yedeği: veritabanı (+ pazar günleri yüklenen görseller) → yerel ./backups ve sunucu dışı depolama.
+# Derinova Dedektör gece yedeği: veritabanı (+ pazar günleri yüklenen görseller) → yerel ./backups ve sunucu dışı depolama.
 # docker-compose "backup" servisi her gece 03:30'da çalıştırır. Elle çalıştırmak için:
 #   docker compose exec backup sh /deploy/backup.sh
 #
 # Sunucu dışı kopya (önerilir; sunucu bozulursa yedek de gitmesin): .env içinde
-#   BACKUP_S3_BUCKET   ör. arena-yedek  (herkese AÇIK OLMAYAN ayrı bir bucket)
+#   BACKUP_S3_BUCKET   ör. magaza-yedek  (herkese AÇIK OLMAYAN ayrı bir bucket)
 #   BACKUP_S3_ENDPOINT Cloudflare R2: https://<hesap-id>.r2.cloudflarestorage.com  (AWS S3 için boş)
 #   BACKUP_S3_ACCESS_KEY_ID / BACKUP_S3_SECRET_ACCESS_KEY  (boşsa S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY kullanılır)
 # Yerelde 14 gün, uzakta 30 gün saklanır.
@@ -13,10 +13,10 @@ set -eu
 DAY=$(date +%F)
 DIR=/backups
 mkdir -p "$DIR"
-DB_FILE="$DIR/arena-$DAY.dump"
+DB_FILE="$DIR/magaza-$DAY.dump"
 
 echo "[yedek] $DAY veritabanı alınıyor…"
-pg_dump -h db -U arena -Fc arena > "$DB_FILE.tmp"
+pg_dump -h db -U magaza -Fc magaza > "$DB_FILE.tmp"
 mv "$DB_FILE.tmp" "$DB_FILE"
 # Yedeğin okunabildiğini doğrula (bozuk yedek, yedek değildir)
 pg_restore --list "$DB_FILE" > /dev/null
@@ -30,7 +30,7 @@ if [ "$(date +%u)" = "7" ] && [ -d /uploads ]; then
   echo "[yedek] görseller arşivlendi: $(du -h "$UP_FILE" | cut -f1)"
 fi
 
-find "$DIR" -name 'arena-*.dump' -mtime +14 -delete
+find "$DIR" -name 'magaza-*.dump' -mtime +14 -delete
 find "$DIR" -name 'uploads-*.tar.gz' -mtime +30 -delete
 
 if [ -n "${BACKUP_S3_BUCKET:-}" ]; then
@@ -48,7 +48,7 @@ if [ -n "${BACKUP_S3_BUCKET:-}" ]; then
   OLD=$(date -d "@$(( $(date +%s) - 30 * 86400 ))" +%F 2>/dev/null || date -v-30d +%F)
   # shellcheck disable=SC2086
   aws $EP s3 ls "s3://$BACKUP_S3_BUCKET/db/" | awk '{print $4}' | while read -r f; do
-    d=$(echo "$f" | sed -n 's/^arena-\([0-9-]*\)\.dump$/\1/p')
+    d=$(echo "$f" | sed -n 's/^magaza-\([0-9-]*\)\.dump$/\1/p')
     if [ -n "$d" ] && [ "$d" \< "$OLD" ]; then aws $EP s3 rm "s3://$BACKUP_S3_BUCKET/db/$f" --only-show-errors; fi
   done
   echo "[yedek] sunucu dışına kopyalandı: s3://$BACKUP_S3_BUCKET"

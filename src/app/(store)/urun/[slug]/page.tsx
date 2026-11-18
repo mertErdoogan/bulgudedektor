@@ -89,7 +89,7 @@ function quickAnswer(p: P, s: AllSettings) {
 function autoFaq(p: P, s: AllSettings) {
   const n = fullName(p);
   const out: { q: string; a: string }[] = [];
-  out.push({ q: `${n} orijinal mi, garantisi var mı?`, a: `Evet. Arena Dedektör'de satılan ${n} yetkili distribütör ürünüdür; faturalı ve ${p.warrantyMonths} ay garantilidir.${p.trackSerial ? " Cihazın seri numarasını sitemizdeki Seri No Sorgula sayfasından kontrol edebilirsiniz." : ""}` });
+  out.push({ q: `${n} orijinal mi, garantisi var mı?`, a: `Evet. Derinova Dedektör'de satılan ${n} yetkili distribütör ürünüdür; faturalı ve ${p.warrantyMonths} ay garantilidir.${p.trackSerial ? " Cihazın seri numarasını sitemizdeki Seri No Sorgula sayfasından kontrol edebilirsiniz." : ""}` });
   if (p.waterproof) out.push({ q: `${n} su geçirmez mi?`, a: `${n} için su dayanımı: ${WATERPROOF_LABEL[p.waterproof]}.${p.waterproof === "NONE" ? " Yağmurda koruyucu kılıf kullanılması önerilir." : ""}` });
   if (p.weightKg) out.push({ q: `${n} kaç kilo?`, a: `${n} yaklaşık ${p.weightKg.toLocaleString("tr-TR")} kg ağırlığındadır.${p.weightKg <= 1.5 ? " Uzun süreli aramalarda yormayan hafif sınıftadır." : ""}` });
   if (p.experience) out.push({ q: `${n} yeni başlayanlar için uygun mu?`, a: p.experience === "BEGINNER" ? `Evet, ${n} kolay menüsü ve hazır programlarıyla yeni başlayanlar için uygundur.` : `${n} ${WHO[p.experience]} kullanıcılar için tasarlanmıştır. Yeni başlıyorsanız satın alma sonrası ücretsiz kurulum eğitimimizden yararlanabilirsiniz.` });
@@ -473,7 +473,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     </div>
                     <span className="mt-3 flex" aria-label={`5 üzerinden ${r.rating} yıldız`}>{Array.from({ length: 5 }, (_, i) => <Star key={i} size={15} className={i < r.rating ? "fill-gold text-gold" : "text-line"} />)}</span>
                     <p className="mt-2 text-[15px] leading-relaxed text-[#2a2a2e]">{r.body}</p>
-                    {r.reply ? <p className="mt-3 rounded-2xl bg-soft p-3.5 text-[13.5px]"><b>Arena Dedektör:</b> {r.reply}</p> : null}
+                    {r.reply ? <p className="mt-3 rounded-2xl bg-soft p-3.5 text-[13.5px]"><b>Derinova Dedektör:</b> {r.reply}</p> : null}
                   </article>
                 ))}
               </div>

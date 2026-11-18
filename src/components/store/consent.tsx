@@ -9,10 +9,10 @@ import { pageView } from "@/lib/track";
 
 /**
  * KVKK çerez onayı. Analitik (GA4) ve pazarlama (Meta Pixel) çerezleri yalnızca açık onaydan sonra yüklenir.
- * Tercih 180 gün `arena_consent` çerezinde saklanır; footer'daki "Çerez tercihleri" ile değiştirilebilir.
+ * Tercih 180 gün `site_consent` çerezinde saklanır; footer'daki "Çerez tercihleri" ile değiştirilebilir.
  */
 type Choice = { analytics: boolean; marketing: boolean };
-const NAME = "arena_consent";
+const NAME = "site_consent";
 
 function readChoice(): Choice | null {
   const m = document.cookie.match(new RegExp(`(?:^|; )${NAME}=([^;]*)`));
@@ -23,10 +23,10 @@ function readChoice(): Choice | null {
 function saveChoice(c: Choice) {
   const v = `n${c.analytics ? "a" : ""}${c.marketing ? "m" : ""}`;
   document.cookie = `${NAME}=${v}; Max-Age=${180 * 86400}; Path=/; SameSite=Lax`;
-  window.dispatchEvent(new Event("arena-consent"));
+  window.dispatchEvent(new Event("site-consent"));
 }
 export function openConsent() {
-  window.dispatchEvent(new Event("arena-consent-open"));
+  window.dispatchEvent(new Event("site-consent-open"));
 }
 
 type Tags = { ga?: string; ads?: string[]; labels?: string[]; gtm?: string; px?: string };
@@ -47,8 +47,8 @@ export function ConsentAndAnalytics({ ga, ads = [], labels = [], gtm, px }: Tags
       setDetail(true);
       setOpen(true);
     };
-    window.addEventListener("arena-consent-open", reopen);
-    return () => window.removeEventListener("arena-consent-open", reopen);
+    window.addEventListener("site-consent-open", reopen);
+    return () => window.removeEventListener("site-consent-open", reopen);
   }, []);
 
   // Sayfa değişiminde sayfa görüntüleme (SPA geçişleri). Betik henüz yüklenmediyse olay kuyruğa girer.
@@ -83,7 +83,7 @@ export function ConsentAndAnalytics({ ga, ads = [], labels = [], gtm, px }: Tags
     `gtag('consent','default',{analytics_storage:'${a ? "granted" : "denied"}',ad_storage:'${m ? "granted" : "denied"}',ad_user_data:'${m ? "granted" : "denied"}',ad_personalization:'${m ? "granted" : "denied"}'});` +
     "gtag('js',new Date());" +
     gIds.map((id) => `gtag('config','${id}',{send_page_view:false});`).join("") +
-    `window.__arenaAds=${JSON.stringify(m ? adLabels : [])};window.dispatchEvent(new Event('arena-tags'));`;
+    `window.__siteAds=${JSON.stringify(m ? adLabels : [])};window.dispatchEvent(new Event('site-tags'));`;
   return (
     <>
       {choice && (gIds.length || gtmId) ? (
@@ -96,7 +96,7 @@ export function ConsentAndAnalytics({ ga, ads = [], labels = [], gtm, px }: Tags
         </>
       ) : null}
       {m && pxId ? (
-        <Script id="px" strategy="afterInteractive">{`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${pxId}');window.dispatchEvent(new Event('arena-tags'));`}</Script>
+        <Script id="px" strategy="afterInteractive">{`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${pxId}');window.dispatchEvent(new Event('site-tags'));`}</Script>
       ) : null}
       {open ? (
         <div role="dialog" aria-label="Çerez tercihleri" className="fixed inset-x-3 bottom-[76px] z-[60] rounded-2xl border border-line bg-white/95 p-4 text-deep shadow-[0_20px_50px_-20px_rgba(20,20,22,.45)] backdrop-blur md:inset-x-auto md:bottom-5 md:left-5 md:w-[400px]">

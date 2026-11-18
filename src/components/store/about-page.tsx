@@ -11,10 +11,10 @@ import type { Locale } from "@/lib/i18n/config";
 
 const TR = {
   eyebrow: "Hakkımızda",
-  lead: "Minelab Türkiye yetkili distribütörü. Doğru cihazı birlikte seçer, kutudan çıktıktan sonra da yanınızda oluruz.",
-  b1: "Minelab yetkili distribütör",
+  lead: "Metal dedektöründe uzman mağaza. Doğru cihazı birlikte seçer, kutudan çıktıktan sonra da yanınızda oluruz.",
+  b1: "Uzman danışmanlık",
   b2: "Orijinal · faturalı · garantili",
-  b3: "Şişli'de showroom",
+  b3: "İstanbul'da showroom",
   visit: "Showroom'a gel",
   ask: "WhatsApp'tan sor",
   sBrands: "marka",
@@ -53,10 +53,10 @@ const TR = {
 };
 const EN: typeof TR = {
   eyebrow: "About us",
-  lead: "Official Minelab distributor in Türkiye. We help you pick the right detector and stay with you long after it leaves the box.",
-  b1: "Official Minelab distributor",
+  lead: "A metal detector specialist. We help you pick the right detector and stay with you long after it leaves the box.",
+  b1: "Expert advice",
   b2: "Genuine · invoiced · warranty",
-  b3: "Showroom in Şişli",
+  b3: "Showroom in Istanbul",
   visit: "Visit the showroom",
   ask: "Ask on WhatsApp",
   sBrands: "brands",
@@ -111,7 +111,7 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
     db.select({ id: brands.id, name: brands.name, slug: brands.slug, logoUrl: brands.logoUrl }).from(brands).where(eq(brands.isActive, true)).orderBy(brands.sortOrder, brands.name),
     db.select({ n: count() }).from(products).where(and(eq(products.status, "ACTIVE"))),
   ]);
-  // Minelab (distribütörü olduğumuz marka) her zaman başta
+  // Öncelikli marka (Vitrin ayarı, varsayılan Minelab) her zaman başta
   const brandList = [...brandRows].sort((a, b) => Number(/minelab/i.test(b.name)) - Number(/minelab/i.test(a.name)));
   const years = st.foundingYear && /^\d{4}$/.test(st.foundingYear) ? new Date().getFullYear() - Number(st.foundingYear) : 0;
   const stats = [

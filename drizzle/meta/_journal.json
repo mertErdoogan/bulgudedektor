@@ -162,6 +162,13 @@
       "when": 1795020000000,
       "tag": "0022_banner_stage_color",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795030000000,
+      "tag": "0023_rebrand",
+      "breakpoints": true
     }
   ]
 }

@@ -24,7 +24,7 @@ type Ctx = {
 const CartContext = createContext<Ctx | null>(null);
 const KEY = "bulgu_cart_v1";
 const CKEY = "bulgu_compare_v1";
-const FKEY = "arena_fav_v1";
+const FKEY = "site_fav_v1";
 
 function read<T>(k: string, fb: T): T {
   try {

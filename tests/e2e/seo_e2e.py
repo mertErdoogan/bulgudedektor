@@ -13,7 +13,7 @@ async def main():
   _sql("delete from rate_hits")  # DB tabanlı giriş hız sınırı testler arasında sıfırlanır
   async with async_playwright() as p:
     b=await p.chromium.launch(executable_path=os.environ.get("CHROME", "/usr/bin/google-chrome")); pg=await (await b.new_context()).new_page()
-    await pg.goto(B+'/admin/giris'); await pg.fill('input[name=email]','admin@arenadedektor.local'); await pg.fill('input[name=password]','Arena123!')
+    await pg.goto(B+'/admin/giris'); await pg.fill('input[name=email]','admin@derinova.local'); await pg.fill('input[name=password]','Demo12345!')
     await pg.click('button[type=submit]'); await pg.wait_for_url(re.compile(r'.*/admin$'))
     # yeni yazı - kısa cevapsız yayınlama reddedilmeli
     await pg.goto(B+'/admin/blog/yeni', wait_until='networkidle')

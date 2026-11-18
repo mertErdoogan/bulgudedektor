@@ -11,7 +11,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
     <main className="grid min-h-[70vh] place-items-center px-4 py-16 text-center">
       <div className="max-w-md">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/arena-logo.svg" alt="Arena Dedektör" className="mx-auto h-12" />
+        <img src="/brand/logo.svg" alt="Derinova Dedektör" className="mx-auto h-12" />
         <h1 className="font-display mt-8 text-3xl font-extrabold">Bir sorun oluştu</h1>
         <p className="mt-2 text-mute">Sayfayı yüklerken beklenmeyen bir hata oldu. Sepetin ve siparişlerin güvende; tekrar denemen yeterli.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">

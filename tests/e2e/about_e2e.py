@@ -16,7 +16,7 @@ with sync_playwright() as p:
     hrefs = pg.eval_on_selector_all("[data-testid=about-actions] a", "e => e.map(a => a.getAttribute('href'))")
     check("işlevsel kısayollar", {"/sihirbaz", "/seri-no", "/servis", "/siparis-takip"} <= set(hrefs))
     check("Minelab ilk marka", "Minelab" in pg.locator("[data-testid=about-brands] li").first.inner_text())
-    check("panel metni korunuyor", "Neden Arena" in pg.inner_text(".about-prose"))
+    check("panel metni korunuyor", "Neden Derinova" in pg.inner_text(".about-prose"))
     check("showroom metinde tekrar etmiyor", "Showroom" not in pg.inner_text(".about-prose"))
     check("harita önce yüklenmiyor (KVKK)", pg.locator("[data-testid=about-map-frame]").count() == 0)
     pg.click("[data-testid=about-map-load]")

@@ -18,7 +18,7 @@ export const LEGAL_PAGES: { slug: string; title: string; footerGroup?: string; s
     slug: "mesafeli-satis-sozlesmesi",
     title: "Mesafeli satış sözleşmesi",
     footerGroup: "Yasal",
-    seoDescription: "Arena Dedektör mesafeli satış sözleşmesi: taraflar, ödeme, teslimat, cayma hakkı ve uyuşmazlık çözümü.",
+    seoDescription: "Derinova Dedektör mesafeli satış sözleşmesi: taraflar, ödeme, teslimat, cayma hakkı ve uyuşmazlık çözümü.",
     content: `<h2>1. Taraflar</h2>
 <h3>Satıcı</h3>${SATICI}
 <h3>Alıcı</h3>
@@ -202,11 +202,11 @@ export const LEGAL_PAGES: { slug: string; title: string; footerGroup?: string; s
     slug: "hakkimizda",
     title: "Hakkımızda",
     footerGroup: "Kurumsal",
-    seoDescription: "Arena Dedektör: Minelab Türkiye yetkili distribütörü. İstanbul Şişli'de showroom, uzman danışmanlık ve teknik servis.",
-    content: `<p><strong>Arena Dedektör</strong>, Türkiye'de dedektör satışı ve üretimi alanındaki en köklü firmalardan biridir ve <strong>Minelab'ın Türkiye yetkili distribütörüdür</strong>. Minelab'ın yanı sıra Nokta, XP, Garrett ve CoilTek ürünlerini orijinal, faturalı ve garantili olarak sunuyoruz.</p>
-<h2>Neden Arena?</h2>
+    seoDescription: "Derinova Dedektör: metal dedektöründe uzman mağaza. İstanbul'da showroom, uzman danışmanlık ve teknik servis.",
+    content: `<p><strong>Derinova Dedektör</strong>, metal dedektörü ve aksesuarlarında uzmanlaşmış bir mağazadır. Minelab, Nokta, XP, Garrett ve CoilTek ürünlerini orijinal, faturalı ve garantili olarak sunuyoruz.</p>
+<h2>Neden Derinova?</h2>
 <ul>
-<li><strong>Yetkili distribütör güvencesi:</strong> tüm cihazlar resmi yollarla ithal edilir, seri numarasıyla orijinallik sorgulanabilir.</li>
+<li><strong>Orijinallik güvencesi:</strong> tüm cihazlar faturalı ve garantilidir, seri numarasıyla orijinallik sorgulanabilir.</li>
 <li><strong>Uzman danışmanlık:</strong> aradığınız şeye ve arazinize göre doğru cihazı birlikte seçiyoruz; telefon, WhatsApp veya showroomda.</li>
 <li><strong>Satış sonrası destek:</strong> kurulum ve kullanım eğitimi, yedek parça ve teknik servis.</li>
 </ul>

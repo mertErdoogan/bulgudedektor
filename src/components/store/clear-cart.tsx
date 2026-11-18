@@ -12,8 +12,8 @@ export function ClearCart({ purchase }: { purchase?: { id: string; value: number
     clear();
     try {
       sessionStorage.removeItem("bulgu_coupon");
-      if (purchase && !localStorage.getItem(`arena_px_${purchase.id}`)) {
-        localStorage.setItem(`arena_px_${purchase.id}`, "1");
+      if (purchase && !localStorage.getItem(`site_px_${purchase.id}`)) {
+        localStorage.setItem(`site_px_${purchase.id}`, "1");
         emit("purchase", { transaction_id: purchase.id, value: purchase.value, items: purchase.items });
       }
     } catch {}

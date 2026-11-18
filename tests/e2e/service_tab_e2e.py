@@ -40,7 +40,7 @@ with sync_playwright() as p:
     c = b.new_context(viewport={"width": 1280, "height": 900}).new_page()
     c.goto(f"{BASE}/giris")
     c.fill("input[name=id]", "musteri1@ornek.com")
-    c.fill("input[name=password]", "Arena123!")
+    c.fill("input[name=password]", "Demo12345!")
     c.click("button:has-text('Giriş yap')")
     c.wait_for_load_state("networkidle")
 

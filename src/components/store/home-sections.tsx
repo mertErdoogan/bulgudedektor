@@ -196,7 +196,7 @@ export function BlogShowcase({ posts }: { posts: PostCard[] }) {
     <section className="container-x mt-14" data-testid="blog-showcase">
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
-          <span className="text-[11.5px] font-extrabold tracking-[.14em] text-mute">ARENA REHBER</span>
+          <span className="text-[11.5px] font-extrabold tracking-[.14em] text-mute">DERÄ°NOVA REHBER</span>
           <h2 className="font-display mt-1 text-[24px] leading-tight font-extrabold md:text-[32px]">Almadan önce bilmen gerekenler</h2>
         </div>
         <Link href="/blog" className="flex shrink-0 items-center gap-1.5 text-sm font-bold hover:text-brand">Tüm rehberler <ArrowRight size={15} /></Link>

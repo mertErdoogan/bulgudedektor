@@ -75,7 +75,7 @@ export async function PostForm({ post }: { post?: Post }) {
         <Card>
           <CardHeader title="Yazar (E-E-A-T)" description="Gerçek bir kişi ve uzmanlığı: Google ve AI motorları deneyimi olan yazarı daha güvenilir bulur." />
           <div className="flex flex-col gap-4 p-5">
-            <Field label="Ad"><Input name="authorName" defaultValue={post?.authorName ?? "Arena Dedektör Uzman Ekibi"} /></Field>
+            <Field label="Ad"><Input name="authorName" defaultValue={post?.authorName ?? "Derinova Uzman Ekibi"} /></Field>
             <Field label="Unvan"><Input name="authorTitle" defaultValue={post?.authorTitle ?? ""} placeholder="12 yıllık saha uzmanı, Minelab eğitmeni" /></Field>
             <Field label="Kısa biyografi"><Textarea name="authorBio" defaultValue={post?.authorBio ?? ""} className="min-h-[80px]" /></Field>
           </div>

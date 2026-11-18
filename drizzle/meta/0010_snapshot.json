@@ -2234,7 +2234,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'Arena Dedektör Uzman Ekibi'"
+          "default": "'Derinova Uzman Ekibi'"
         },
         "author_title": {
           "name": "author_title",

@@ -57,7 +57,7 @@ async def main():
             await pg.keyboard.press("ArrowDown"); await pg.keyboard.press("Enter")
             await pg.wait_for_url(re.compile(r".*/urun/.+"), timeout=8000)
             chk("↓ + Enter ürüne gidiyor", "/urun/" in pg.url)
-            recent = await pg.evaluate("localStorage.getItem('arena:son-aramalar')")
+            recent = await pg.evaluate("localStorage.getItem('site:son-aramalar')")
             chk("Son aramalara kaydedildi", recent and "equ" in recent)
 
             # ── Kaydırınca ince başlık
@@ -76,7 +76,7 @@ async def main():
             # ── Panel: kısayol ekle, kampanya kartını elle yaz
             ac = await b.new_context(user_agent=UA, viewport={"width": 1440, "height": 1000}); ap = await ac.new_page()
             ap.on("pageerror", lambda e: errs.append(ap.url + " :: " + str(e)[:90]))
-            await ap.goto(B + "/admin/giris"); await ap.fill("input[name=email]", "admin@arenadedektor.local"); await ap.fill("input[name=password]", "Arena123!")
+            await ap.goto(B + "/admin/giris"); await ap.fill("input[name=email]", "admin@derinova.local"); await ap.fill("input[name=password]", "Demo12345!")
             await ap.click("button[type=submit]"); await ap.wait_for_url(re.compile(r".*/admin$"))
             await ap.goto(B + "/admin/vitrin", wait_until="networkidle")
             form = ap.locator("form:has([name=sLabel])")

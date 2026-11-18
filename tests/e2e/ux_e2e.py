@@ -62,7 +62,7 @@ async def main():
     chk('Sepet kaydı oluştu', sql("select count(*) from cart_snapshots where email='terk@ornek.com'")=='1')
     # görsel yükleme webp
     a=await b.new_context(); ap=await a.new_page()
-    await ap.goto(B+'/admin/giris'); await ap.fill('input[name=email]','admin@arenadedektor.local'); await ap.fill('input[name=password]','Arena123!'); await ap.click('button[type=submit]'); await ap.wait_for_url(re.compile(r'.*/admin$'))
+    await ap.goto(B+'/admin/giris'); await ap.fill('input[name=email]','admin@derinova.local'); await ap.fill('input[name=password]','Demo12345!'); await ap.click('button[type=submit]'); await ap.wait_for_url(re.compile(r'.*/admin$'))
     from PIL import Image
     im=Image.new('RGB',(3000,2000),(200,30,30)); buf=io.BytesIO(); im.save(buf,'JPEG',quality=95)
     resp=await a.request.post(B+'/api/admin/upload', multipart={'file':{'name':'buyuk.jpg','mimeType':'image/jpeg','buffer':buf.getvalue()}})

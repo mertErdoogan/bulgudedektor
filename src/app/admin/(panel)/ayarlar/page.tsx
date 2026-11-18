@@ -194,7 +194,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   <option value="netgsm">Netgsm</option>
                 </Select>
               </Field>
-              <Field label="Gönderici başlığı" hint="Netgsm'de onaylı başlık (örn. ARENADEDEKT)"><Input name="netgsmHeader" defaultValue={s.integrations.netgsmHeader} /></Field>
+              <Field label="Gönderici başlığı" hint="Netgsm'de onaylı başlık (örn. DERINOVA)"><Input name="netgsmHeader" defaultValue={s.integrations.netgsmHeader} /></Field>
               <Field label="Kullanıcı kodu" hint="Netgsm → Ayarlar → Alt kullanıcı (API yetkili)"><Input name="netgsmUser" defaultValue={s.integrations.netgsmUser} placeholder="850XXXXXXX" /></Field>
               <Field label="API şifresi"><Input name="netgsmPass" defaultValue={mask(s.integrations.netgsmPass)} autoComplete="off" /></Field>
               <div className="flex flex-wrap gap-4 md:col-span-2">

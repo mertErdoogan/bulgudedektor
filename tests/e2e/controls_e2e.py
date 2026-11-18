@@ -23,7 +23,7 @@ def sql(q):
     return subprocess.run(["psql", DB, "-Atc", q], capture_output=True, text=True).stdout.strip()
 
 
-def login(pg, email, pw="Arena123!"):
+def login(pg, email, pw="Demo12345!"):
     pg.goto(f"{BASE}/admin/giris")
     pg.fill("input[name=email]", email)
     pg.fill("input[name=password]", pw)
@@ -45,20 +45,20 @@ with sync_playwright() as p:
     pg = ctx.new_page()
     for _ in range(16):
         ctx.clear_cookies()
-        login(pg, "admin@arenadedektor.local")
+        login(pg, "admin@derinova.local")
     chk("16 doğru giriş kilitlemez", "/admin" in pg.url and "giris" not in pg.url, pg.url)
     for i in range(15):
         ctx.clear_cookies()
         login(pg, f"deneme{i}@ornek.com", "yanlis-sifre-1")
     ctx.clear_cookies()
-    login(pg, "admin@arenadedektor.local")
+    login(pg, "admin@derinova.local")
     chk("15 hatalı denemeden sonra bağlantı durur", "hatalı deneme" in pg.content(), pg.url)
     sql("truncate rate_hits")
     ctx.close()
 
     admin = b.new_context(viewport={"width": 1366, "height": 900})
     a = admin.new_page()
-    login(a, "admin@arenadedektor.local")
+    login(a, "admin@derinova.local")
 
     # 2) Mesajlar: kutular seçilen konuşmaya göre; yanıt modu açık
     a.goto(f"{BASE}/admin/mesajlar?durum=ALL")
@@ -103,7 +103,7 @@ with sync_playwright() as p:
     # 4) Yetkiler: satış uzmanı müşteri listesi indiremez, havale onaylayamaz; Mağaza personeli rolü var
     sales = b.new_context(viewport={"width": 1366, "height": 900})
     s = sales.new_page()
-    login(s, "satis@arenadedektor.local")
+    login(s, "satis@derinova.local")
     r = s.request.get(f"{BASE}/api/admin/export/customers")
     chk("satışçı müşteri listesini indiremez (403)", r.status == 403, str(r.status))
     s.goto(f"{BASE}/admin/musteriler")
@@ -211,8 +211,8 @@ with sync_playwright() as p:
     chk("girişte nedeni yazılı", a.locator("[data-testid=idle-logout]").count() == 1)
 
     # 12) Şifre değişince diğer oturum kapanır (yönetici Ekip'ten satışçının şifresini değiştirir)
-    login(a, "admin@arenadedektor.local")
-    sales_id = sql("select id from users where email='satis@arenadedektor.local'")
+    login(a, "admin@derinova.local")
+    sales_id = sql("select id from users where email='satis@derinova.local'")
     a.goto(f"{BASE}/admin/ekip?u={sales_id}")
     if a.locator("input[name=password]").count():
         a.fill("input[name=password]", "YeniSifre12345")

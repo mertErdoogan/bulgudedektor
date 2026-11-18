@@ -23,7 +23,7 @@ def sql(q):
     return subprocess.run(["psql", DB, "-Atc", q], capture_output=True, text=True).stdout.strip()
 
 
-def login(pg, email, pw="Arena123!"):
+def login(pg, email, pw="Demo12345!"):
     pg.goto(f"{BASE}/admin/giris")
     pg.fill("input[name=email]", email)
     pg.fill("input[name=password]", pw)
@@ -35,7 +35,7 @@ sql("truncate rate_hits")
 with sync_playwright() as p:
     b = p.chromium.launch()
     a = b.new_context(viewport={"width": 1366, "height": 900}).new_page()
-    login(a, "admin@arenadedektor.local")
+    login(a, "admin@derinova.local")
 
     # Servis: satılmış seri no okutulunca müşteri/ürün dolar, kabul fişi basılır
     # Seed'de satışa bağlı seri no yoksa: bir sipariş kalemine stoktaki bir seri numarasını bağla
@@ -69,7 +69,7 @@ with sync_playwright() as p:
     # Rol bazlı iş listesi: fatura işleri satışçıda görünmez, yöneticide görünür
     chk("yöneticide fatura işleri var", "faturayı ekle" in a.inner_text("main"))
     s = b.new_context(viewport={"width": 1366, "height": 900}).new_page()
-    login(s, "satis@arenadedektor.local")
+    login(s, "satis@derinova.local")
     s.goto(f"{BASE}/admin/isler")
     chk("satışçıda fatura işleri yok", "faturayı ekle" not in s.inner_text("main"))
     chk("atanmamış işte 'Ata' yazıyor", "Ata" in s.inner_text("main"))

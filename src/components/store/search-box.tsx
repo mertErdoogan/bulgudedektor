@@ -19,7 +19,7 @@ type Res = {
   uses: { name: string; slug: string }[];
 };
 const EMPTY: Res = { products: [], total: 0, categories: [], brands: [], posts: [], popular: [], models: [], uses: [] };
-const RECENT_KEY = "arena:son-aramalar";
+const RECENT_KEY = "site:son-aramalar";
 
 function readRecent(): string[] {
   try {
@@ -114,10 +114,10 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
     if (!(open && mobile)) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    document.body.classList.add("arena-search-open");
+    document.body.classList.add("site-search-open");
     return () => {
       document.body.style.overflow = prev;
-      document.body.classList.remove("arena-search-open");
+      document.body.classList.remove("site-search-open");
     };
   }, [open, mobile]);
 
@@ -149,8 +149,8 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
     if (typed) pushRecent(q);
     setOpen(false);
     input.current?.blur();
-    window.dispatchEvent(new Event("arena-nav-start"));
-    window.dispatchEvent(new CustomEvent("arena-nav-to", { detail: href.split("?")[0] }));
+    window.dispatchEvent(new Event("site-nav-start"));
+    window.dispatchEvent(new CustomEvent("site-nav-to", { detail: href.split("?")[0] }));
     router.push(href);
   };
   const pick = () => {

@@ -6,9 +6,9 @@ export default async function CatchAll({ params, searchParams }: { params: Promi
   const { rest } = await params;
   const sp = await searchParams;
   const path = "/" + rest.map((s) => decodeURIComponent(s)).join("/");
-  // Eski sitenin arama adresi: /kategori?ara=minelab → /ara?q=minelab
-  const q = sp.ara ?? sp.q ?? sp.search;
-  if ((path === "/kategori" || path === "/arama") && typeof q === "string" && q.trim()) permanentRedirect(`/ara?q=${encodeURIComponent(q.trim())}`);
+  // Tahmin edilen arama adresleri: /arama?q=minelab → /ara?q=minelab
+  const q = sp.q ?? sp.search;
+  if (path === "/arama" && typeof q === "string" && q.trim()) permanentRedirect(`/ara?q=${encodeURIComponent(q.trim())}`);
   const to = await findRedirect(path.replace(/\/$/, ""));
   if (to) permanentRedirect(to);
   await log404(path).catch(() => {});

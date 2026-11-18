@@ -11,7 +11,7 @@ async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch()
         ap = await (await b.new_context(viewport={"width": 1280, "height": 900})).new_page()
-        await ap.goto(B + "/admin/giris"); await ap.fill("input[name=email]", "admin@arenadedektor.local"); await ap.fill("input[name=password]", "Arena123!")
+        await ap.goto(B + "/admin/giris"); await ap.fill("input[name=email]", "admin@derinova.local"); await ap.fill("input[name=password]", "Demo12345!")
         await ap.click("button[type=submit]"); await ap.wait_for_url(re.compile(r".*/admin$"))
         # Kapalıyken /en → Türkçe
         r = await ap.request.get(B + "/en/urun/manticore", max_redirects=0)

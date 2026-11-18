@@ -217,7 +217,7 @@ export function BuyBox({ productId, name, max, disabled, amount, brand }: { prod
           type="button"
           onClick={() => {
             add(productId, q, name, { price: amount, brand });
-            window.dispatchEvent(new Event("arena-nav-start"));
+            window.dispatchEvent(new Event("site-nav-start"));
             router.push("/odeme");
           }}
           className="flex h-14 flex-1 basis-[140px] items-center justify-center gap-2 rounded-full bg-deep px-6 text-[15px] font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-black lg:flex-none"

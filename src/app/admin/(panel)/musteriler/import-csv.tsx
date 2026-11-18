@@ -19,7 +19,7 @@ export function ImportCustomers() {
         <ActionForm action={importCustomersCsv} onDone={() => setOpen(false)} className="flex flex-col gap-4">
           <div className="space-y-2 text-sm text-mute">
             <p>
-              Eski sitenin (Efortek) yönetim panelinden üye listesini Excel/CSV olarak alıp buraya yükleyin. Excel dosyasını önce <b>Farklı Kaydet → CSV (UTF-8)</b> ile kaydedin.
+              Eski sitenin yönetim panelinden üye listesini Excel/CSV olarak alıp buraya yükleyin. Excel dosyasını önce <b>Farklı Kaydet → CSV (UTF-8)</b> ile kaydedin.
             </p>
             <p>
               Tanınan sütunlar: <b>Ad, Soyad</b> (ya da Ad Soyad), <b>E-posta, Telefon/GSM</b>, isteğe bağlı <b>İl, İlçe, Adres</b> ve <b>İzin/Bülten</b>. Var olan e-posta veya telefon atlanır.

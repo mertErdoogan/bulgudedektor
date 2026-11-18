@@ -8,7 +8,6 @@ import { db } from "../src/db";
 import * as t from "../src/db/schema";
 import { DEFAULT_ROLES } from "../src/lib/permissions";
 import { seedContent } from "./seed-content";
-import { LEGACY_REDIRECTS } from "./lib/arena-map";
 import { LEGAL_PAGES } from "./lib/legal-texts";
 import { DEFAULT_TEMPLATES } from "../src/lib/templates";
 
@@ -25,14 +24,14 @@ async function main() {
   // Roller ve ekip
   const roleRows = await db.insert(t.roles).values(DEFAULT_ROLES.map((r) => ({ ...r, permissions: [...r.permissions], isSystem: r.key === "admin" }))).returning();
   const role = (k: string) => roleRows.find((r) => r.key === k)!.id;
-  const pw = await bcrypt.hash("Arena123!", 10);
+  const pw = await bcrypt.hash("Demo12345!", 10);
   const [admin, sales, depo, servis] = await db
     .insert(t.users)
     .values([
-      { name: "Yönetici", email: "admin@arenadedektor.local", passwordHash: pw, roleId: role("admin"), maxDiscountPct: 100 },
-      { name: "Elif Satış", email: "satis@arenadedektor.local", passwordHash: pw, roleId: role("sales"), maxDiscountPct: 5 },
-      { name: "Murat Depo", email: "depo@arenadedektor.local", passwordHash: pw, roleId: role("warehouse") },
-      { name: "Kemal Servis", email: "servis@arenadedektor.local", passwordHash: pw, roleId: role("service") },
+      { name: "Yönetici", email: "admin@derinova.local", passwordHash: pw, roleId: role("admin"), maxDiscountPct: 100 },
+      { name: "Elif Satış", email: "satis@derinova.local", passwordHash: pw, roleId: role("sales"), maxDiscountPct: 5 },
+      { name: "Murat Depo", email: "depo@derinova.local", passwordHash: pw, roleId: role("warehouse") },
+      { name: "Kemal Servis", email: "servis@derinova.local", passwordHash: pw, roleId: role("service") },
     ])
     .returning();
 
@@ -121,20 +120,19 @@ async function main() {
   }
 
   // Vitrin
-  const ARENA = "https://www.arenadedektor.com/Images/Banner";
-  const warm = (a: [number, number, number], b: [number, number, number], lum: number) => ({ a, b, lum });
-  const ARENA_BANNERS = [
-    { title: "Minelab Manticore Kasım Kampanyası", subtitle: "Define dedektörü", imageUrl: `${ARENA}/10112026141137.webp`, linkUrl: "/urun/manticore", palette: warm([176, 42, 37], [182, 117, 57], 0.307) },
-    { title: "Minelab X-Terra Elite Kasım Kampanyası", subtitle: "Çok amaçlı", imageUrl: `${ARENA}/10112026141702.webp`, linkUrl: "/ara?q=X-Terra", palette: warm([172, 47, 42], [182, 122, 66], 0.297) },
-    { title: "Minelab Vanquish 60 Serisi Kasım Kampanyası", subtitle: "Başlangıç serisi", imageUrl: `${ARENA}/10112026141924.webp`, linkUrl: "/ara?q=Vanquish", palette: warm([174, 43, 38], [192, 120, 49], 0.308) },
-    { title: "Minelab Equinox 900 Kasım Kampanyası", subtitle: "Çok amaçlı, su geçirmez", imageUrl: `${ARENA}/10112026142254.webp`, linkUrl: "/urun/equinox-900", palette: warm([169, 44, 42], [175, 112, 61], 0.309) },
-    { title: "Minelab GPZ 8000 Dedektör", subtitle: "Altın dedektörü", imageUrl: img("banner-gpz8000-clean"), linkUrl: "/urun/gpz-8000", palette: (await paletteFromUrl(img("banner-gpz8000-clean"))) ?? warm([58, 104, 143], [179, 37, 40], 0.224) },
+  // Demo ana banner'ları: mağaza çalışanlarının hazırladığı türden, yazısı görselin içinde olan hazır görseller
+  const HERO_BANNERS = [
+    { title: "Minelab Manticore: define aramada yeni seviye", subtitle: "Define dedektörü", image: "banner-manticore", linkUrl: "/urun/manticore" },
+    { title: "Minelab GPZ 8000: mineralli toprakta bile derinde", subtitle: "Altın dedektörü", image: "banner-gpz-8000", linkUrl: "/urun/gpz-8000" },
+    { title: "Minelab Equinox 900: tarla, plaj, su altı", subtitle: "Çok amaçlı, su geçirmez", image: "banner-equinox-900", linkUrl: "/urun/equinox-900" },
   ];
+  const heroRows = [];
+  for (const [i, b] of HERO_BANNERS.entries()) {
+    const imageUrl = img(b.image);
+    heroRows.push({ title: b.title, subtitle: b.subtitle, imageUrl, linkUrl: b.linkUrl, palette: (await paletteFromUrl(imageUrl)) ?? undefined, placement: "HERO" as const, sortOrder: i, showText: false });
+  }
   await db.insert(t.banners).values([
-    // arenadedektor.com ana sayfasındaki güncel kampanya banner'ları (13.11.2026). Kasım banner'ları eski
-    // sitedeki adresinden yüklenir (gerçek kurulumda `npm run import:arena -- --banners-only` indirip depoya koyar);
-    // GPZ 8000 banner'ı yerelde. Paletler görsellerden hesaplandı (aurora ışıması ve kenar rengi).
-    ...ARENA_BANNERS.map((b, i) => ({ ...b, placement: "HERO" as const, sortOrder: i, showText: false })),
+    ...heroRows,
     { title: "Vanquish 560 Pro-Pack", eyebrow: "YENİ · MINELAB", subtitle: "49.588 TL'den", imageUrl: img("vanquish-560-pro"), linkUrl: "/urun/vanquish-560-pro-pack", placement: "SIDE", sortOrder: 0 },
     { title: "Equinox 900, 3 taksit", eyebrow: "VADE FARKSIZ · MINELAB", subtitle: "3 × 33.227 TL", imageUrl: img("equinox-900"), linkUrl: "/urun/equinox-900", placement: "SIDE", sortOrder: 1 },
     { title: "Kazıda hedefi saniyede bul", eyebrow: "POINTER · GARRETT", subtitle: "12.751 TL'den", imageUrl: img("garrett-pro-pointer-at"), linkUrl: "/kategori/pointer", placement: "SIDE", sortOrder: 2 },
@@ -272,8 +270,10 @@ async function main() {
 
   await db.insert(t.settings).values([
     // Gerçek şirket bilgileri DEFAULT_SETTINGS'te (src/lib/settings.ts); burada yalnızca demo farkları
-    { key: "store", value: { name: "Arena Dedektör" } },
+    { key: "store", value: { name: "Derinova Dedektör" } },
     { key: "setup", value: { completed: false, completedSteps: ["store"] } },
+    // seed-if-empty.ts DEMO_VERSION ile aynı olmalı
+    { key: "demo", value: { version: 2 } },
   ]);
   await db.insert(t.auditLogs).values({ userId: admin.id, action: "create", entity: "system", summary: "Demo verisi yüklendi" });
 
@@ -286,12 +286,10 @@ async function main() {
   await db.insert(t.productActivity).values(act);
 
   await seedContent();
-  // Eski site (arenadedektor.com / Efortek) adresleri → yeni adresler (301)
-  await db.insert(t.redirects).values(LEGACY_REDIRECTS.map(([fromPath, toPath]) => ({ fromPath, toPath }))).onConflictDoNothing();
 
   await ensureDemoGallery();
 
-  console.log("Bitti. Giriş: admin@arenadedektor.local / Arena123!  (satis@, depo@, servis@ aynı şifre)");
+  console.log("Bitti. Giriş: admin@derinova.local / Demo12345!  (satis@, depo@, servis@ aynı şifre)");
   process.exit(0);
 }
 

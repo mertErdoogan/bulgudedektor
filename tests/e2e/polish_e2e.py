@@ -127,8 +127,8 @@ async def main():
         await pg.wait_for_url("**/urun/x-terra-pro"); await pg.wait_for_timeout(500)
         chk("Sayfa gelince iskelet kalkıyor", await pg.locator("[data-testid=route-skeleton]").count() == 0)
         await pg.unroute("**/*")
-        r = await pg.request.get(B + "/uye/giris", max_redirects=0)
-        chk("Eski adres yönlendirmesi hâlâ 308", r.status in (301, 308), r.status)
+        r = await pg.request.get(B + "/arama?q=minelab", max_redirects=0)
+        chk("Arama kısayolu kalıcı yönlenir", r.status in (301, 308), r.status)
 
         # ── Mobil: kategori ilk ekranında ürün, banner başlığı
         m = await b.new_context(user_agent=UA, viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True); mp = await m.new_page()

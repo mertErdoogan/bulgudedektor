@@ -48,10 +48,10 @@ export function tokenize(q: string) {
 }
 
 /** Ürünün aranabilir metni (ad + marka + kod + kategori + kullanım amaçları), normalleştirilmiş. */
-const doc = sql`arena_norm(${qc(products.name)} || ' ' || coalesce(${qc(brands.name)}, '') || ' ' || ${qc(products.sku)} || ' ' || coalesce((select ${qc(categories.name)} from ${categories} where ${qc(categories.id)} = ${qc(products.categoryId)}), '') || ' ' || array_to_string(${qc(products.useCases)}, ' '))`;
-const nameDoc = sql`arena_norm(${products.name} || ' ' || coalesce(${brands.name}, ''))`;
+const doc = sql`site_norm(${qc(products.name)} || ' ' || coalesce(${qc(brands.name)}, '') || ' ' || ${qc(products.sku)} || ' ' || coalesce((select ${qc(categories.name)} from ${categories} where ${qc(categories.id)} = ${qc(products.categoryId)}), '') || ' ' || array_to_string(${qc(products.useCases)}, ' '))`;
+const nameDoc = sql`site_norm(${products.name} || ' ' || coalesce(${brands.name}, ''))`;
 /** Ürünün ana kategorisi: "altın dedektörü" aramasında asıl altın cihazları (kategorisi Doğal altın olanlar) öne çıksın. */
-const catDoc = sql`arena_norm(coalesce((select ${qc(categories.name)} from ${categories} where ${qc(categories.id)} = ${qc(products.categoryId)}), ''))`;
+const catDoc = sql`site_norm(coalesce((select ${qc(categories.name)} from ${categories} where ${qc(categories.id)} = ${qc(products.categoryId)}), ''))`;
 
 /** Sorgu için WHERE koşulu ve alaka puanı. Anlamlı kelime yoksa null (filtre uygulanmaz). */
 export function productSearch(q: string): { where: SQL; score: SQL } | null {
@@ -63,14 +63,14 @@ export function productSearch(q: string): { where: SQL; score: SQL } | null {
     const alts = [t, ...(SYN[t] ?? [])];
     const fuzzy = t.length >= 4 ? sql` or word_similarity(${t}, ${nameDoc}) >= ${t.length >= 6 ? 0.45 : 0.6}` : sql``;
     const likes = sql.join(alts.map((a) => sql`${doc} like ${"%" + a + "%"}`), sql` or `);
-    conds.push(sql`(${likes}${fuzzy} or arena_norm(coalesce(${products.shortDescription}, '')) like ${"%" + t + "%"})`);
+    conds.push(sql`(${likes}${fuzzy} or site_norm(coalesce(${products.shortDescription}, '')) like ${"%" + t + "%"})`);
     scores.push(sql`(case when ${nameDoc} like ${"%" + t + "%"} then 1.0 when ${doc} like ${"%" + t + "%"} then 0.7 else word_similarity(${t}, ${nameDoc}) * 0.8 end)`);
     scores.push(sql`(case when ${catDoc} like ${"%" + t + "%"} then 0.6 else 0 end)`);
   }
   const full = trNorm(q).trim();
   return {
     where: and(...conds)!,
-    score: sql`(${sql.join(scores, sql` + `)} + (case when arena_norm(${products.name}) like ${full + "%"} then 1 else 0 end) + (case when ${products.stock} > 0 then 0.2 else 0 end))`,
+    score: sql`(${sql.join(scores, sql` + `)} + (case when site_norm(${products.name}) like ${full + "%"} then 1 else 0 end) + (case when ${products.stock} > 0 then 0.2 else 0 end))`,
   };
 }
 
@@ -99,9 +99,9 @@ export async function suggest(q: string) {
       .where(and(eq(products.status, "ACTIVE"), s.where))
       .orderBy(desc(s.score))
       .limit(6),
-    db.select({ name: categories.name, slug: categories.slug }).from(categories).where(and(eq(categories.isActive, true), sql`arena_norm(${categories.name} || ' ' || coalesce(${categories.shortText}, '')) like ${like}`)).limit(3),
-    db.select({ name: brands.name, slug: brands.slug }).from(brands).where(and(eq(brands.isActive, true), sql`(arena_norm(${brands.name}) like ${like} or word_similarity(${n}, arena_norm(${brands.name})) >= 0.5)`)).limit(3),
-    db.select({ title: posts.title, slug: posts.slug }).from(posts).where(and(eq(posts.status, "PUBLISHED"), sql`${posts.publishedAt} <= now()`, sql`arena_norm(${posts.title}) like ${like}`)).limit(2),
+    db.select({ name: categories.name, slug: categories.slug }).from(categories).where(and(eq(categories.isActive, true), sql`site_norm(${categories.name} || ' ' || coalesce(${categories.shortText}, '')) like ${like}`)).limit(3),
+    db.select({ name: brands.name, slug: brands.slug }).from(brands).where(and(eq(brands.isActive, true), sql`(site_norm(${brands.name}) like ${like} or word_similarity(${n}, site_norm(${brands.name})) >= 0.5)`)).limit(3),
+    db.select({ title: posts.title, slug: posts.slug }).from(posts).where(and(eq(posts.status, "PUBLISHED"), sql`${posts.publishedAt} <= now()`, sql`site_norm(${posts.title}) like ${like}`)).limit(2),
   ]);
   return { products: prods.map(({ total: _t, ...p }) => p), total: prods[0]?.total ?? 0, categories: cats, brands: brs, posts: ps };
 }

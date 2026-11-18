@@ -79,8 +79,8 @@ function useRecentIds(exclude?: string) {
   useEffect(() => {
     const load = () => setIds(getRecent().filter((x) => x !== exclude));
     load();
-    window.addEventListener("arena-recent", load);
-    return () => window.removeEventListener("arena-recent", load);
+    window.addEventListener("site-recent", load);
+    return () => window.removeEventListener("site-recent", load);
   }, [exclude]);
   return ids;
 }

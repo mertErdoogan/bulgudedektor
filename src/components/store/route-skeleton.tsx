@@ -38,10 +38,10 @@ function Overlay() {
       t.current = setTimeout(() => setKind(null), 12000);
     };
     const back = () => clear();
-    window.addEventListener("arena-nav-to", on);
+    window.addEventListener("site-nav-to", on);
     window.addEventListener("popstate", back);
     return () => {
-      window.removeEventListener("arena-nav-to", on);
+      window.removeEventListener("site-nav-to", on);
       window.removeEventListener("popstate", back);
       if (t.current) clearTimeout(t.current);
     };

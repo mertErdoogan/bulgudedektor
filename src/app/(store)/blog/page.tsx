@@ -31,7 +31,7 @@ export default async function BlogIndex({ searchParams }: { searchParams: Promis
         data={graph({
           "@type": "Blog",
           "@id": `${abs("/blog")}#blog`,
-          name: "Arena Dedektör Rehberleri",
+          name: "Derinova Dedektör Rehberleri",
           url: abs("/blog"),
           inLanguage: "tr-TR",
           publisher: { "@id": ORG_ID() },

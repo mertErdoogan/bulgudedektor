@@ -1,5 +1,5 @@
 {
-  "name": "arena-dedektor",
+  "name": "derinova-dedektor",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -13,7 +13,6 @@
     "db:seed-content": "tsx scripts/seed-content.ts",
     "typecheck": "tsc --noEmit",
     "db:init": "tsx scripts/init.ts",
-    "import:arena": "tsx scripts/import-arena.ts",
     "db:legal": "tsx scripts/update-legal.ts"
   },
   "dependencies": {

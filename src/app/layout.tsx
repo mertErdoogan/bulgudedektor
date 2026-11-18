@@ -10,9 +10,9 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: "Arena Dedektör", template: "%s · Arena Dedektör" },
+  title: { default: "Derinova Dedektör", template: "%s · Derinova Dedektör" },
   description: "Metal dedektörü modelleri ve fiyatları. Orijinal, faturalı, garantili.",
-  applicationName: "Arena Dedektör",
+  applicationName: "Derinova Dedektör",
   formatDetection: { telephone: false },
   alternates: { types: { "application/rss+xml": "/blog/rss.xml" } },
 };

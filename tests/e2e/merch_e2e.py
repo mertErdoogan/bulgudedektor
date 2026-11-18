@@ -59,7 +59,7 @@ async def main():
             chk("Kayan şerit maddeleri", "Seri numaranla orijinallik sorgula" in await tk.inner_text())
             stage = await pg.get_attribute("[data-testid=hero-banner]", "data-stage")
             chk("Sahne: şerit rengi görselden ya da panelden", bool(stage) and stage.startswith("#"), stage)
-            chk("Marka ızgarası: Minelab ilk ve notlu", "Türkiye distribütörü" in (await pg.inner_text("main")))
+            chk("Marka ızgarası: Minelab ilk ve notlu", "Öncelikli marka" in (await pg.inner_text("main")))
 
             # ── Ürün sayfası rozeti
             await pg.goto(B + "/urun/manticore", wait_until="networkidle")
@@ -80,7 +80,7 @@ async def main():
             # ── Panel: kart, önizleme, banner rehberi
             ac = await b.new_context(user_agent=UA, viewport={"width": 1440, "height": 1000}); ap = await ac.new_page()
             ap.on("pageerror", lambda e: errs.append(ap.url + " :: " + str(e)[:90]))
-            await ap.goto(B + "/admin/giris"); await ap.fill("input[name=email]", "admin@arenadedektor.local"); await ap.fill("input[name=password]", "Arena123!")
+            await ap.goto(B + "/admin/giris"); await ap.fill("input[name=email]", "admin@derinova.local"); await ap.fill("input[name=password]", "Demo12345!")
             await ap.click("button[type=submit]"); await ap.wait_for_url(re.compile(r".*/admin$"))
             await ap.goto(B + "/admin/vitrin", wait_until="networkidle")
             chk("Panel: önizleme 8 ürün", await ap.locator("[data-testid=merch-preview] li").count() == 8)
@@ -125,7 +125,7 @@ async def main():
             await pg.goto(B + "/urun/manticore", wait_until="networkidle")
             chk("Rozet kapatılınca görünmez", await pg.locator("[data-testid=focus-badge]").count() == 0)
             await pg.goto(B + "/", wait_until="networkidle")
-            chk("Not boşken marka kartında görünmez", "Türkiye distribütörü" not in await pg.inner_text("main"))
+            chk("Not boşken marka kartında görünmez", "Öncelikli marka" not in await pg.inner_text("main"))
 
             # Banner altı kartlar: kampanya kartları moduna geç
             await ap.goto(B + "/admin/vitrin", wait_until="networkidle")

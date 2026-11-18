@@ -35,7 +35,7 @@ CREATE TABLE "product_activity" (
 	CONSTRAINT "product_activity_product_id_hour_pk" PRIMARY KEY("product_id","hour")
 );
 --> statement-breakpoint
-ALTER TABLE "posts" ALTER COLUMN "author_name" SET DEFAULT 'Arena Dedektör Uzman Ekibi';--> statement-breakpoint
+ALTER TABLE "posts" ALTER COLUMN "author_name" SET DEFAULT 'Derinova Uzman Ekibi';--> statement-breakpoint
 ALTER TABLE "cart_snapshots" ADD CONSTRAINT "cart_snapshots_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "favorites" ADD CONSTRAINT "favorites_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "favorites" ADD CONSTRAINT "favorites_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
