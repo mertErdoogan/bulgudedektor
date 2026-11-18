@@ -11,6 +11,7 @@ import { Badge, Button, Card, CardHeader, Checkbox, Field, Input, Select } from 
 import { requireStaff } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { formatDate } from "@/lib/utils";
+import { BannerStageField } from "@/components/admin/banner-stage-field";
 import { deleteBanner, moveSection, saveAnnouncement, saveBanner, saveSection } from "./actions";
 import { MerchCard } from "./merch-card";
 import { TickerCard } from "./ticker-card";
@@ -100,7 +101,7 @@ export default async function VitrinPage({ searchParams }: { searchParams: Promi
             <>
               <CardHeader title={edit ? "Banner düzenle" : "Yeni banner"} />
               <div className="mx-5 mt-1 rounded-xl bg-soft p-3 text-[13px] leading-relaxed">
-                <b>Büyük slider: 1520×580 px</b> (yatay, ~2,6:1). Görselin <b>tamamı görünür</b>, hiçbir yeri kırpılmaz veya örtülmez; arkasındaki renkli ışık görselin kendi renklerinden otomatik oluşur.
+                <b>Büyük slider: 1520×580 px</b> (yatay, ~2,6:1). Hazır tasarlanmış görsel olduğu gibi gösterilir: üstüne yazı veya buton binmez, hiçbir yeri kırpılmaz. Altındaki sekme şeridi görselin alt kenar rengini alır; istersen elle seçebilirsin.
                 <span className="mt-1.5 block"><b>Mobil görsel: 1080×1350 px</b> (dikey 4:5, önerilir). Telefonda ekranın yarısını kaplar. Girilmezse büyük görsel telefonda ~390×150 px boyutuna küçülür ve içindeki yazılar okunmaz; başlık altta ayrı bir bantla gösterilir. Mobil görselde yazıyı az ve büyük tutun. Tüm büyük slaytlarda mobil görsel olunca telefon görünümü 4:5 olur.</span>
                 <span className="mt-1.5 block"><b>Kampanya kartı:</b> beyaz veya şeffaf zeminli ürün fotoğrafı yeterli; beyaz zemin karta karışır.</span>
                 <span className="mt-2 flex items-center gap-2 text-mute"><span className="relative block h-[29px] w-[76px] rounded-[5px] bg-deep"><span className="absolute inset-[3px] rounded-[3px] border border-dashed border-white/70" /></span>Önemli yazı ve ürünü kenarlardan biraz içeride tutun (yuvarlak köşeler).</span>
@@ -114,19 +115,20 @@ export default async function VitrinPage({ searchParams }: { searchParams: Promi
                 </Field>
                 <Field label="Görsel *"><SingleImageField name="imageUrl" defaultValue={edit?.imageUrl} /></Field>
                 <Field label="Mobil görsel (isteğe bağlı)"><SingleImageField name="mobileImageUrl" defaultValue={edit?.mobileImageUrl} /></Field>
-                <Field label="Üst etiket"><Input name="eyebrow" defaultValue={edit?.eyebrow ?? ""} placeholder="MINELAB GPZ 8000" /></Field>
-                <Field label="Başlık *"><Input name="title" defaultValue={edit?.title} required /></Field>
-                <Field label="Alt yazı"><Input name="subtitle" defaultValue={edit?.subtitle ?? ""} /></Field>
+                <Field label="Başlık *" hint="Büyük slider'da sekmede yazar; görselin alternatif metni olarak Google'a ve ekran okuyuculara da gider. Görseldeki ana mesajı yaz (ör. Minelab GPZ 8000 altın dedektörü)."><Input name="title" defaultValue={edit?.title} required maxLength={70} /></Field>
+                <Field label="Alt yazı" hint="Büyük slider'da sekmenin ikinci satırı (ör. Altın dedektörü, %10 havale indirimi)."><Input name="subtitle" defaultValue={edit?.subtitle ?? ""} maxLength={40} /></Field>
+                <Field label="Şerit rengi (büyük slider)"><BannerStageField defaultColor={edit?.stageColor} autoColor={edit?.palette?.edge ? `#${edit.palette.edge.map((v) => v.toString(16).padStart(2, "0")).join("")}` : null} /></Field>
+                <Field label="Üst etiket (yan/şerit banner)"><Input name="eyebrow" defaultValue={edit?.eyebrow ?? ""} placeholder="MINELAB GPZ 8000" /></Field>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Buton yazısı"><Input name="ctaLabel" defaultValue={edit?.ctaLabel ?? ""} placeholder="İncele" /></Field>
+                  <Field label="Buton yazısı (yan/şerit banner)"><Input name="ctaLabel" defaultValue={edit?.ctaLabel ?? ""} placeholder="İncele" /></Field>
                   <Field label="Sıra"><Input name="sortOrder" type="number" defaultValue={edit?.sortOrder ?? 0} /></Field>
                 </div>
-                <Field label="Bağlantı" hint="/urun/..., /kategori/... veya tam adres"><Input name="linkUrl" defaultValue={edit?.linkUrl ?? ""} /></Field>
+                <Field label="Bağlantı" hint="/urun/..., /kategori/... veya tam adres. Bir ürüne bağlanırsa sekmede ürünün küçük fotoğrafı görünür."><Input name="linkUrl" defaultValue={edit?.linkUrl ?? ""} /></Field>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Başlangıç"><Input type="datetime-local" name="startsAt" defaultValue={dt(edit?.startsAt ?? null)} /></Field>
                   <Field label="Bitiş"><Input type="datetime-local" name="endsAt" defaultValue={dt(edit?.endsAt ?? null)} /></Field>
                 </div>
-                <Checkbox name="showText" defaultChecked={edit?.showText ?? true} label="Başlık ve butonu görselin üstüne yaz (görselde yazı varsa kapat)" />
+                <Checkbox name="showText" defaultChecked={edit?.showText ?? true} label="Yan/şerit banner'da başlık ve butonu görselin üstüne yaz (büyük slider'da her zaman yalnız görsel)" />
                 <Checkbox name="isActive" defaultChecked={edit?.isActive ?? true} label="Aktif" />
                 <SubmitButton>Kaydet</SubmitButton>
                 <Link href="/admin/vitrin" className="text-center text-sm text-mute">Vazgeç</Link>

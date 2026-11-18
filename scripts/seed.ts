@@ -124,11 +124,11 @@ async function main() {
   const ARENA = "https://www.arenadedektor.com/Images/Banner";
   const warm = (a: [number, number, number], b: [number, number, number], lum: number) => ({ a, b, lum });
   const ARENA_BANNERS = [
-    { title: "Minelab Manticore Kasım Kampanyası", imageUrl: `${ARENA}/10112026141137.webp`, linkUrl: "/urun/manticore", palette: warm([176, 42, 37], [182, 117, 57], 0.307) },
-    { title: "Minelab X-Terra Elite Kasım Kampanyası", imageUrl: `${ARENA}/10112026141702.webp`, linkUrl: "/ara?q=X-Terra", palette: warm([172, 47, 42], [182, 122, 66], 0.297) },
-    { title: "Minelab Vanquish 60 Serisi Kasım Kampanyası", imageUrl: `${ARENA}/10112026141924.webp`, linkUrl: "/ara?q=Vanquish", palette: warm([174, 43, 38], [192, 120, 49], 0.308) },
-    { title: "Minelab Equinox 900 Kasım Kampanyası", imageUrl: `${ARENA}/10112026142254.webp`, linkUrl: "/urun/equinox-900", palette: warm([169, 44, 42], [175, 112, 61], 0.309) },
-    { title: "Minelab GPZ 8000 Dedektör", imageUrl: img("banner-gpz8000-clean"), linkUrl: "/urun/gpz-8000", palette: (await paletteFromUrl(img("banner-gpz8000-clean"))) ?? warm([58, 104, 143], [179, 37, 40], 0.224) },
+    { title: "Minelab Manticore Kasım Kampanyası", subtitle: "Define dedektörü", imageUrl: `${ARENA}/10112026141137.webp`, linkUrl: "/urun/manticore", palette: warm([176, 42, 37], [182, 117, 57], 0.307) },
+    { title: "Minelab X-Terra Elite Kasım Kampanyası", subtitle: "Çok amaçlı", imageUrl: `${ARENA}/10112026141702.webp`, linkUrl: "/ara?q=X-Terra", palette: warm([172, 47, 42], [182, 122, 66], 0.297) },
+    { title: "Minelab Vanquish 60 Serisi Kasım Kampanyası", subtitle: "Başlangıç serisi", imageUrl: `${ARENA}/10112026141924.webp`, linkUrl: "/ara?q=Vanquish", palette: warm([174, 43, 38], [192, 120, 49], 0.308) },
+    { title: "Minelab Equinox 900 Kasım Kampanyası", subtitle: "Çok amaçlı, su geçirmez", imageUrl: `${ARENA}/10112026142254.webp`, linkUrl: "/urun/equinox-900", palette: warm([169, 44, 42], [175, 112, 61], 0.309) },
+    { title: "Minelab GPZ 8000 Dedektör", subtitle: "Altın dedektörü", imageUrl: img("banner-gpz8000-clean"), linkUrl: "/urun/gpz-8000", palette: (await paletteFromUrl(img("banner-gpz8000-clean"))) ?? warm([58, 104, 143], [179, 37, 40], 0.224) },
   ];
   await db.insert(t.banners).values([
     // arenadedektor.com ana sayfasındaki güncel kampanya banner'ları (13.11.2026). Kasım banner'ları eski

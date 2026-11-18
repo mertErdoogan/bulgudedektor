@@ -539,7 +539,8 @@ export const returnRequests = pgTable("return_requests", {
 
 // ───────────────────────────── Vitrin / CMS
 /** Banner'ın baskın canlı renkleri (ana sayfadaki aurora ışıması ve kenar için); kayıtta bir kez hesaplanır */
-export type BannerPalette = { a: [number, number, number]; b: [number, number, number]; lum: number };
+/** a/b: baskın canlı renkler; lum: ortalama parlaklık; edge: alt kenar rengi (banner altındaki sekme şeridi bununla boyanır) */
+export type BannerPalette = { a: [number, number, number]; b: [number, number, number]; lum: number; edge?: [number, number, number] };
 
 export const banners = pgTable("banners", {
   id: id(),
@@ -552,6 +553,8 @@ export const banners = pgTable("banners", {
   linkUrl: text("link_url"),
   showText: boolean("show_text").notNull().default(true),
   palette: jsonb("palette").$type<BannerPalette>(),
+  /** Banner altındaki şeridin rengi, elle seçildiyse (#rrggbb). Boşsa görselin alt kenarından otomatik. */
+  stageColor: text("stage_color"),
   placement: bannerPlacement("placement").notNull().default("HERO"),
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),

@@ -146,6 +146,17 @@ with sync_playwright() as p:
         chk("servis güncellemesinde bildirim çıkar", "güncellendi" in t, t)
         chk("durum kutusu yeni durumu gösterir", a.input_value("select[name=status]") == nxt)
 
+    # Banner şerit rengi: elle seçilen renk sahneye uygulanır, sekmede bağlı ürünün fotoğrafı
+    bid = sql("select id from banners where placement='HERO' and is_active order by sort_order limit 1")
+    sql(f"update banners set stage_color='#123456' where id='{bid}'")
+    h0 = b.new_page(viewport={"width": 1440, "height": 900})
+    h0.goto(BASE + "/")
+    chk("elle seçilen şerit rengi uygulanır", h0.get_attribute("[data-testid=hero-banner]", "data-stage") == "#123456")
+    prod = sql(f"select count(*) from banners where id='{bid}' and link_url like '/urun/%'") == "1"
+    if prod:
+        chk("ürüne bağlı banner sekmesinde ürün fotoğrafı", h0.locator("[data-testid=hero-tab]").first.locator("img").count() == 1)
+    sql(f"update banners set stage_color=null where id='{bid}'")
+
     # Kategoriler açılır menüsü: logosu girilmiş marka logo ile görünür (baş harf değil)
     logo = sql("select logo_url from brands where slug='minelab'")
     sql("update brands set logo_url='/demo/x-terra-pro.jpg' where slug='minelab'")

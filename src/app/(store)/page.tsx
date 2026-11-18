@@ -2,9 +2,9 @@ import { imgProps } from "@/lib/img";
 import Link from "@/components/locale-link";
 import { HeroStage, type HeroCard } from "@/components/store/home-client";
 import { resolveShortcuts, Shortcuts } from "@/components/store/shortcuts";
-import { eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { categories, products } from "@/db/schema";
+import { banners as bannersT, categories, productImages, products } from "@/db/schema";
 import { Ticker } from "@/components/store/ticker";
 import { BestSellers, CategoryRail, Deals, NewArrivals } from "@/components/store/home-lists";
 import { PersonalPicks, RecentlyViewed } from "@/components/store/rails";
@@ -45,7 +45,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const [{ sections, banners }, nav, s, homeFaq, posts] = await Promise.all([getHome(), getNav(), getSettings(), getFaqs({ home: true }), getPublishedPosts()]);
-  const hero = banners.filter((b) => b.placement === "HERO");
+  const hero = await heroSlides(banners.filter((b) => b.placement === "HERO"));
   const side = banners.filter((b) => b.placement === "SIDE").slice(0, 3);
   // Banner altı 3 kart: öncelikli markanın en yeni cihazları (panelden "kampanya kartları"na çevrilebilir).
   // Yeterli yeni cihaz yoksa kalan yer kampanya kartlarıyla dolar.
@@ -193,4 +193,46 @@ export default async function Home() {
       <QueryToast />
     </>
   );
+}
+
+const edgeTried = new Set<string>();
+type BannerRow = Awaited<ReturnType<typeof getHome>>["banners"][number];
+
+/**
+ * Büyük slider: yalnız görsel + altında sekmeler. Sekmede başlık/alt yazı ve (banner bir ürüne bağlıysa) ürünün
+ * küçük fotoğrafı. Şerit rengi elle seçilmediyse görselin alt kenar rengi; eski kayıtlarda bu renk bir kez hesaplanıp saklanır.
+ */
+async function heroSlides(rows: BannerRow[]) {
+  // Eski kayıtlarda alt kenar rengi yok: arka planda bir kez hesaplanıp saklanır (sayfa beklemez; bu sefer varsayılan renk)
+  for (const b of rows) {
+    if (b.stageColor || b.palette?.edge || edgeTried.has(b.id)) continue;
+    edgeTried.add(b.id);
+    void import("@/lib/palette-core")
+      .then(({ paletteFromUrl }) => paletteFromUrl(b.imageUrl))
+      .then((palette) => (palette ? db.update(bannersT).set({ palette }).where(eq(bannersT.id, b.id)) : null))
+      .catch(() => null);
+  }
+  const slug = (u: string | null) => /^\/(?:en\/)?urun\/([^/?#]+)/.exec(u ?? "")?.[1] ?? null;
+  const slugs = [...new Set(rows.map((b) => slug(b.linkUrl)).filter((x): x is string => !!x))];
+  const thumbs = new Map<string, string>();
+  if (slugs.length) {
+    const rs = await db
+      .select({ slug: products.slug, url: productImages.url })
+      .from(products)
+      .innerJoin(productImages, eq(productImages.productId, products.id))
+      .where(and(inArray(products.slug, slugs), eq(products.status, "ACTIVE")))
+      .orderBy(asc(productImages.sortOrder));
+    for (const r of rs) if (!thumbs.has(r.slug)) thumbs.set(r.slug, r.url);
+  }
+  const hex = (c?: [number, number, number]) => (c ? `#${c.map((v) => v.toString(16).padStart(2, "0")).join("")}` : null);
+  return rows.map((b) => ({
+    id: b.id,
+    title: b.title,
+    subtitle: b.subtitle,
+    imageUrl: b.imageUrl,
+    mobileImageUrl: b.mobileImageUrl,
+    linkUrl: b.linkUrl,
+    stage: b.stageColor || hex(b.palette?.edge) || "#f1efec",
+    thumb: thumbs.get(slug(b.linkUrl) ?? "") ?? null,
+  }));
 }

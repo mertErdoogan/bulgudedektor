@@ -137,7 +137,7 @@ async def main():
         top = await mp.locator("main article").first.bounding_box()
         chk("Mobil kategori: ilk ürün ilk ekranda", top and top["y"] < 700, top)
         await mp.goto(B + "/", wait_until="networkidle")
-        chk("Mobil banner başlığı", await mp.locator("[data-testid=hero-caption]").count() == 1)
+        chk("Mobil banner: sekmelerde başlık (görsel yazısı küçükse de okunur)", await mp.locator("[data-testid=hero-tabs]").count() == 1 and len(await mp.locator("[data-testid=hero-tab]").first.inner_text()) > 3)
         logo = await mp.locator("header a[aria-label$='ana sayfa'] svg, header a[aria-label$='ana sayfa'] img").first.bounding_box()
         chk("Mobil logo küçük", logo and logo["height"] <= 40, logo)
         chk("Sayfa hatası yok", not errs, errs[:2])

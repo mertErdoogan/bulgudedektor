@@ -3,22 +3,20 @@
 import { imgProps, imgUrl } from "@/lib/img";
 
 import Link from "@/components/locale-link";
-import { useEffect, useState } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatTL } from "@/lib/utils";
 
-type Pal = { a: [number, number, number]; b: [number, number, number]; lum: number };
-type B = { id: string; showText: boolean; title: string; subtitle: string | null; eyebrow: string | null; ctaLabel: string | null; imageUrl: string; mobileImageUrl: string | null; linkUrl: string | null; palette?: Pal | null };
+/** Büyük slider slaytı: yalnız görsel (hazır tasarım); sekmede başlık/alt yazı ve varsa ürün fotoğrafı */
+type B = { id: string; title: string; subtitle: string | null; imageUrl: string; mobileImageUrl: string | null; linkUrl: string | null; stage: string; thumb: string | null };
 
-const DEFAULT_PAL: Pal = { a: [212, 46, 30], b: [47, 86, 200], lum: 0.5 };
-const rgb = (c: [number, number, number]) => c.join(",");
-/** Aurora: beyaz zemin üzerinde banner'ın iki canlı renginden yumuşak haleler (gri yok, kenarları kendiliğinden erir) */
-const aurora = (p: Pal) =>
-  [
-    `radial-gradient(42% 58% at 16% 46%, rgba(${rgb(p.a)},.34) 0%, rgba(${rgb(p.a)},0) 72%)`,
-    `radial-gradient(40% 56% at 86% 38%, rgba(${rgb(p.b)},.30) 0%, rgba(${rgb(p.b)},0) 72%)`,
-    `radial-gradient(70% 34% at 50% 0%, rgba(${rgb(p.a)},.08) 0%, rgba(${rgb(p.a)},0) 80%)`,
-  ].join(",");
+/** Şerit rengine göre okunur yazı rengi (açık zeminde koyu, koyu zeminde beyaz) */
+const isDark = (hex: string) => {
+  const n = parseInt(hex.replace("#", "").slice(0, 6), 16);
+  if (Number.isNaN(n)) return false;
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => v / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.55;
+};
 
 /** Banner altı kart: öncelikli markanın yeni cihazı ya da paneldeki kampanya kartı */
 export type HeroCard = { id: string; href: string; eyebrow: string; title: string; line?: string | null; price?: number | null; oldPrice?: number | null; image: string | null; isNew?: boolean };
@@ -31,114 +29,116 @@ const CARD_TONES = [
 ];
 
 /**
- * Ana sayfa sahnesi: banner tam görünür (kırpılmaz, üstüne bir şey binmez) ve ince bir cam çerçeveyle arka
- * plandan ayrılır. Arkasında aktif banner'ın çok bulanık küçük bir kopyası "ambiyans ışığı" olarak yayılır ve
- * aşağıya doğru beyaza erir (sert bir çizgi olmadan sonraki bölüme geçer). Altında 3 renkli kart.
+ * Ana sayfa sahnesi: hazır tasarlanmış banner görseli olduğu gibi (üstüne yazı/ok binmez) ve altında aynı kartın
+ * parçası olan sekme şeridi. Şerit görselin alt kenar rengini alır (panelden elle de seçilebilir), böylece görsel
+ * şeride akar. Sekmelerde gerçek metin var: müşteri diğer slaytları görür, Google da görseldeki mesajı okur.
+ * Altında 3 renkli kart.
  */
 export function HeroStage({ slides, cards }: { slides: B[]; cards: HeroCard[] }) {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
   const n = slides.length;
   const hasMobile = slides.some((s) => s.mobileImageUrl);
-  // Telefon oranı: tüm slaytların dikey mobil görseli varsa 4:5 (ekranın yarısı), bir kısmında varsa 16:9, hiç yoksa masaüstü oranı
   const allMobile = n > 0 && slides.every((s) => s.mobileImageUrl);
-  const capOn = !!slides[i] && !slides[i].mobileImageUrl && !slides[i].showText;
   const mobileAspect = allMobile ? "aspect-[4/5]" : hasMobile ? "aspect-[16/9]" : "aspect-[1520/580]";
+  const cur = slides[i];
+  const stage = cur?.stage ?? "#f1efec";
+  const dark = isDark(stage);
+
+  // Telefonda sekmeler yatay kayar: etkin sekme görünür kalsın (sayfayı kaydırmadan, yalnız şeridi)
+  useEffect(() => {
+    const box = tabsRef.current;
+    const el = box?.children[i] as HTMLElement | undefined;
+    if (box && el && box.scrollWidth > box.clientWidth) box.scrollTo({ left: el.offsetLeft - 12, behavior: "smooth" });
+  }, [i]);
+
   if (!n && !cards.length) return null;
   return (
-    <section className="relative isolate pt-4 pb-2 md:pt-7 md:pb-16" data-testid="hero-stage">
-      {/* Aurora: aktif banner'ın paletinden iki renkli hale; slayt değişince yumuşakça geçer */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        {(n ? slides : [{ id: "x", palette: null } as unknown as B]).map((s, k) => (
-          <div key={s.id} className={cn("absolute inset-0 transition-opacity duration-1000", k === i ? "opacity-100" : "opacity-0")} style={{ background: aurora(s.palette ?? DEFAULT_PAL) }} />
-        ))}
-      </div>
+    <section className="relative pt-4 pb-2 md:pt-7 md:pb-6" data-testid="hero-stage">
       {n ? (
         <div className="relative mx-auto w-full max-w-[1400px] px-3 md:px-6">
           <div
-            className={cn("group relative", paused && "hero-paused")}
+            className={cn("overflow-hidden rounded-[22px] transition-colors duration-700 md:rounded-[28px]", paused && "hero-paused")}
+            style={{ background: stage }}
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
             onFocus={() => setPaused(true)}
             onBlur={() => setPaused(false)}
             data-testid="hero-banner"
-            style={{ ["--ha" as string]: rgb((slides[i]?.palette ?? DEFAULT_PAL).a), ["--hb" as string]: rgb((slides[i]?.palette ?? DEFAULT_PAL).b) } as React.CSSProperties}
+            data-stage={stage}
           >
-            {/* Renkli parıltı + dönen renkli kenar: banner'ı arka plandan ayırır, sahneye hareket katar */}
-            <div aria-hidden className="hero-ring hero-glow absolute hidden md:block inset-x-10 top-8 -bottom-4 rounded-[30px]" />
-            <div className="hero-ring relative md:rounded-[26px] md:p-[2px] md:shadow-[0_40px_80px_-36px_rgba(0,0,0,.65)]">
-              <div className={cn("relative overflow-hidden bg-[#1b1b1e] md:aspect-[1520/580] md:rounded-[24px]", mobileAspect, capOn ? "rounded-t-[20px]" : "rounded-[20px]")}>
-                {slides.map((s, k) => {
-                  const wide = !s.showText || s.imageUrl.includes("banner");
-                  return (
-                    <Link key={s.id} href={s.linkUrl || "#"} className={cn("absolute inset-0 overflow-hidden transition-opacity duration-700", k === i ? "opacity-100" : "pointer-events-none opacity-0")} aria-hidden={k !== i} tabIndex={k === i ? 0 : -1}>
-                      <picture>
-                        {s.mobileImageUrl ? <source media="(max-width: 767px)" srcSet={imgProps(s.mobileImageUrl, [640, 828, 1080], "100vw").srcSet ?? s.mobileImageUrl} sizes="100vw" /> : null}
-                        {/* İlk slayt LCP görselidir: öncelikli; diğerleri tembel yüklenir. Aktif slayt çok hafif yakınlaşır. */}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img {...imgProps(s.imageUrl, [640, 1080, 1600, 1920], "(min-width: 1400px) 1340px, 100vw", 80)} loading={k === 0 ? "eager" : "lazy"} fetchPriority={k === 0 ? "high" : "low"} alt={s.title} className={cn("h-full w-full", k === i && n > 1 && "hero-zoom", wide ? (hasMobile && !s.mobileImageUrl ? "object-contain md:object-cover" : "object-cover") : "bg-white object-contain p-6 md:pl-[45%]")} />
-                      </picture>
-                      {s.showText ? (
-                        <span className={cn("absolute inset-y-0 left-0 flex max-w-[60%] flex-col justify-end gap-1 p-5 md:justify-center md:p-12", wide ? "bg-gradient-to-r from-black/55 to-transparent text-white" : "text-deep md:max-w-[45%] md:pr-6")} data-testid="hero-text">
-                          {s.eyebrow ? <span className="text-xs font-extrabold tracking-wider opacity-80 md:text-sm">{s.eyebrow}</span> : null}
-                          <span className="font-display text-xl leading-tight font-extrabold text-balance break-words md:text-[clamp(26px,3vw,44px)]">{s.title}</span>
-                          {s.subtitle ? <span className="hidden text-sm opacity-90 md:block md:text-base">{s.subtitle}</span> : null}
-                          {s.ctaLabel ? <span className={cn("mt-2 inline-flex w-fit rounded-lg px-4 py-2 text-sm font-extrabold", wide ? "bg-white text-deep" : "bg-brand text-white")}>{s.ctaLabel} →</span> : null}
-                        </span>
-                      ) : null}
-                    </Link>
-                  );
-                })}
-                {n > 1 ? (
-                  <>
-                    {/* Oklar: fare banner'ın üstüne gelince (ya da klavyeyle odaklanınca) belirir */}
-                    <button onClick={() => setI((i - 1 + n) % n)} aria-label="Önceki" data-testid="hero-prev" className="absolute top-1/2 left-4 hidden h-12 w-12 -translate-x-2 -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/40 text-white opacity-0 backdrop-blur-sm transition duration-300 group-hover:translate-x-0 group-hover:opacity-100 hover:bg-black/60 focus-visible:translate-x-0 focus-visible:opacity-100 md:grid">
-                      <ChevronLeft size={22} />
-                    </button>
-                    <button onClick={() => setI((i + 1) % n)} aria-label="Sonraki" data-testid="hero-next" className="absolute top-1/2 right-4 hidden h-12 w-12 translate-x-2 -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/40 text-white opacity-0 backdrop-blur-sm transition duration-300 group-hover:translate-x-0 group-hover:opacity-100 hover:bg-black/60 focus-visible:translate-x-0 focus-visible:opacity-100 md:grid">
-                      <ChevronRight size={22} />
-                    </button>
-                    {/* Hikâye tarzı ilerleme: dolan çubuk bitince sonraki slayt (otomatik geçişi CSS animasyonu sürer,
-                        fare üstündeyken durur; "hareketi azalt" tercihinde otomatik geçiş yok) */}
-                    <div className="absolute bottom-1.5 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/25 px-2 py-0.5 backdrop-blur-[2px] md:bottom-4 md:gap-2 md:px-3 md:py-1.5">
-                      {slides.map((s, k) => (
-                        <button key={s.id} onClick={() => setI(k)} aria-label={`${k + 1}. slayt`} aria-current={k === i} className="grid h-4 place-items-center md:h-5">
-                          <span className="block h-[3px] w-5 md:h-1 overflow-hidden rounded-full bg-white/35 md:w-10">
-                            {k < i ? <span className="block h-full w-full bg-white" /> : null}
-                            {k === i ? <span key={`bar-${i}`} className="hero-bar block h-full w-full bg-white" onAnimationEnd={() => setI((x) => (x + 1) % n)} /> : null}
-                          </span>
-                        </button>
-                      ))}
-                      <span className="ml-1 hidden whitespace-nowrap text-[11px] font-bold text-white tabular-nums md:inline">{String(i + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}</span>
-                    </div>
-                  </>
-                ) : null}
-              </div>
+            <div className={cn("relative overflow-hidden md:aspect-[1520/580]", mobileAspect)}>
+              {slides.map((s, k) => (
+                <Link
+                  key={s.id}
+                  href={s.linkUrl || "#"}
+                  aria-label={s.title}
+                  className={cn("absolute inset-0 overflow-hidden transition-opacity duration-700", k === i ? "opacity-100" : "pointer-events-none opacity-0")}
+                  aria-hidden={k !== i}
+                  tabIndex={k === i ? 0 : -1}
+                >
+                  <picture>
+                    {s.mobileImageUrl ? <source media="(max-width: 767px)" srcSet={imgProps(s.mobileImageUrl, [640, 828, 1080], "100vw").srcSet ?? s.mobileImageUrl} sizes="100vw" /> : null}
+                    {/* İlk slayt LCP görselidir: öncelikli; diğerleri tembel yüklenir. Aktif slayt çok hafif yakınlaşır. */}
+                    <img
+                      {...imgProps(s.imageUrl, [640, 1080, 1600, 1920], "(min-width: 1400px) 1340px, 100vw", 80)}
+                      loading={k === 0 ? "eager" : "lazy"}
+                      fetchPriority={k === 0 ? "high" : "low"}
+                      alt={s.title}
+                      className={cn("h-full w-full", k === i && n > 1 && "hero-zoom", hasMobile && !s.mobileImageUrl ? "object-contain md:object-cover" : "object-cover")}
+                    />
+                  </picture>
+                </Link>
+              ))}
             </div>
-            {/* Mobil görseli olmayan banner telefonda küçülür, içindeki yazılar okunmaz: mesaj, banner'la tek parça
-                duran koyu bir alt şeritte verilir (banner'ın kendi renginden hafif bir ışıkla) */}
-            {capOn ? (
-              <Link
-                href={slides[i].linkUrl || "#"}
-                className="relative flex items-center gap-3 overflow-hidden rounded-b-[20px] bg-[#141417] py-3 pr-3 pl-4 text-white shadow-[0_24px_40px_-26px_rgba(0,0,0,.7)] md:hidden"
-                style={{ backgroundImage: "linear-gradient(100deg, rgba(var(--ha),.5), rgba(20,20,23,0) 62%)" }}
-                data-testid="hero-caption"
-              >
-                <span key={slides[i].id} className="min-w-0 flex-1 hero-cap-in">
-                  <span className="block truncate text-[10.5px] font-extrabold tracking-[.14em] text-white/70 uppercase">{slides[i].eyebrow || "Kampanya"}</span>
-                  <span className="line-clamp-2 block text-[15px] leading-snug font-extrabold">{slides[i].title}</span>
-                </span>
-                <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-deep">
-                  <ArrowRight size={18} strokeWidth={2.5} />
-                </span>
-                <span className="sr-only">{slides[i].ctaLabel || "İncele"}</span>
-              </Link>
+            {n > 1 ? (
+              <div className={cn("flex items-stretch border-t", dark ? "border-white/15 text-white" : "border-black/10 text-deep")} data-testid="hero-tabs">
+                <div ref={tabsRef} className="scrollbar-none flex min-w-0 flex-1 snap-x overflow-x-auto md:overflow-visible">
+                  {slides.map((s, k) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setI(k)}
+                      aria-current={k === i}
+                      aria-label={`${k + 1}. slayt: ${s.title}`}
+                      data-testid="hero-tab"
+                      className={cn(
+                        "relative flex min-w-[72%] shrink-0 snap-start items-center gap-3 px-4 py-3 text-left transition-colors sm:min-w-[45%] md:min-w-0 md:flex-1 md:shrink md:px-5 md:py-4",
+                        k > 0 && (dark ? "border-l border-white/15" : "border-l border-black/10"),
+                        k === i ? (dark ? "bg-white/12" : "bg-white/70") : dark ? "hover:bg-white/6" : "hover:bg-white/40",
+                      )}
+                    >
+                      {/* Etkin sekmede dolan çubuk: bitince sonraki slayt (fare üstündeyken durur; "hareketi azalt"ta otomatik geçiş yok) */}
+                      <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] overflow-hidden">
+                        {k === i ? <span key={`bar-${i}`} className={cn("hero-bar block h-full w-full", dark ? "bg-white" : "bg-brand")} onAnimationEnd={() => setI((x) => (x + 1) % n)} /> : null}
+                      </span>
+                      {s.thumb ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={imgUrl(s.thumb, 128)} alt="" className="h-10 w-10 shrink-0 rounded-full bg-white object-contain p-0.5 md:h-12 md:w-12" />
+                      ) : null}
+                      <span className="flex min-w-0 flex-col">
+                        <span className={cn("line-clamp-1 text-[13.5px] leading-snug md:text-[15px]", k === i ? "font-extrabold" : "font-semibold")}>{s.title}</span>
+                        {s.subtitle ? <span className={cn("line-clamp-1 text-xs md:text-[13px]", dark ? "text-white/75" : "text-[#55555a]")}>{s.subtitle}</span> : null}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className={cn("hidden shrink-0 items-center gap-2 px-4 md:flex", dark ? "border-l border-white/15" : "border-l border-black/10")}>
+                  <button type="button" onClick={() => setI((i - 1 + n) % n)} aria-label="Önceki slayt" data-testid="hero-prev" className={cn("grid h-11 w-11 place-items-center rounded-full border transition", dark ? "border-white/40 hover:bg-white/10" : "border-black/20 bg-white hover:border-deep")}>
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button type="button" onClick={() => setI((i + 1) % n)} aria-label="Sonraki slayt" data-testid="hero-next" className={cn("grid h-11 w-11 place-items-center rounded-full transition", dark ? "bg-white text-deep hover:bg-white/85" : "bg-deep text-white hover:bg-black")}>
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
             ) : null}
           </div>
         </div>
       ) : null}
       {cards.length ? (
-        <div className="container-x relative pt-0 md:pt-12">
+        <div className="container-x relative pt-0 md:pt-20">
           <div className="scrollbar-none -mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pt-4 pb-7 md:mx-0 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-0 md:pt-4 md:pb-4" data-testid="hero-cards">
             {cards.slice(0, 3).map((c, k) => (
               <Link

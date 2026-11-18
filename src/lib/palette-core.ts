@@ -44,9 +44,15 @@ export async function paletteFromBuffer(buf: Buffer): Promise<BannerPalette | nu
       .sort((x, y) => y.w - x.w)
       .slice(0, 2)
       .map((v) => [Math.round(v.r / v.w), Math.round(v.g / v.w), Math.round(v.b / v.w)] as [number, number, number]);
+    // Alt kenar rengi: en alttaki 2 satırın kanal bazında ortancası (tek tük parlak piksel sonucu bozmasın)
+    const rows: number[][] = [[], [], []];
+    for (let y = H - 2; y < H; y++)
+      for (let x = 0; x < W; x++) for (let c = 0; c < 3; c++) rows[c].push(data[(y * W + x) * 3 + c]);
+    const med = (v: number[]) => v.sort((p, q) => p - q)[v.length >> 1];
+    const edge: [number, number, number] = [med(rows[0]), med(rows[1]), med(rows[2])];
     const a = top[0] ?? FALLBACK_A;
     const b = top[1] ?? (top[0] ? FALLBACK_B : FALLBACK_B);
-    return { a, b, lum: Math.round((lum / (W * H)) * 1000) / 1000 };
+    return { a, b, lum: Math.round((lum / (W * H)) * 1000) / 1000, edge };
   } catch {
     return null;
   }

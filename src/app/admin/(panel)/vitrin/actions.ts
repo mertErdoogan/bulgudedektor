@@ -42,6 +42,8 @@ export async function saveBanner(_: ActionResult | null, fd: FormData): Promise<
       sortOrder: toNum(fd.get("sortOrder"), 0),
       isActive: fd.get("isActive") === "on",
       showText: fd.get("showText") === "on",
+      // Ana banner'ın altındaki şerit rengi: "Otomatik" ise görselden, "Elle" ise seçilen renk
+      stageColor: fd.get("stageMode") === "manual" && /^#[0-9a-f]{6}$/i.test(str(fd.get("stageColor"))) ? str(fd.get("stageColor")).toLowerCase() : null,
       startsAt: s ? new Date(s) : null,
       endsAt: e ? new Date(e) : null,
     };

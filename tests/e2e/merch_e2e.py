@@ -46,17 +46,19 @@ async def main():
             chk("Banner altı: aksesuar yok", "/urun/eqx-11-baslik" not in cards, cards)
             # "YENİ" yalnızca panelde Yeni rozeti verilen üründe (demo: Manticore)
             chk("Banner altı: 'YENİ' etiketi sadece rozetli üründe", (await pg.locator("[data-testid=hero-cards] >> text=YENİ").count()) == 1)
-            # Oklar yalnızca banner'ın üstüne gelince görünür
-            await pg.mouse.move(5, 5); await pg.wait_for_timeout(400)
-            op0 = await pg.evaluate("() => getComputedStyle(document.querySelector('[data-testid=hero-next]')).opacity")
-            await pg.locator("[data-testid=hero-stage] picture").first.hover(); await pg.wait_for_timeout(500)
-            op1 = await pg.evaluate("() => getComputedStyle(document.querySelector('[data-testid=hero-next]')).opacity")
-            chk("Banner okları: fare üstündeyken görünür, değilken gizli", op0 == "0" and op1 == "1", (op0, op1))
+            # Büyük slider: yalnız görsel + altında sekmeler (gerçek metin); oklar şeritte, görselin üstünde değil
+            tabs = pg.locator("[data-testid=hero-tab]")
+            nt = await tabs.count()
+            chk("Banner altında slayt sekmeleri", nt == await pg.locator("[data-testid=hero-banner] picture").count() and nt >= 2, nt)
+            chk("Banner görseli üstünde yazı/ok yok", await pg.locator("[data-testid=hero-banner] picture ~ *").count() == 0 and await pg.locator("[data-testid=hero-text]").count() == 0)
+            await tabs.nth(1).click(); await pg.wait_for_timeout(300)
+            chk("Sekmeye tıklayınca o slayt", await tabs.nth(1).get_attribute("aria-current") == "true")
             # Kayan şerit: varsayılan maddeler, soldan sağa
             tk = pg.locator("[data-testid=ticker]")
             chk("Kayan şerit görünür, soldan sağa", await tk.count() == 1 and await tk.get_attribute("data-dir") == "ltr")
             chk("Kayan şerit maddeleri", "Seri numaranla orijinallik sorgula" in await tk.inner_text())
-            chk("Sahne: banner paletinden aurora katmanı", await pg.locator("[data-testid=hero-stage] > div[aria-hidden] > div[style*=radial-gradient]").count() >= 1)
+            stage = await pg.get_attribute("[data-testid=hero-banner]", "data-stage")
+            chk("Sahne: şerit rengi görselden ya da panelden", bool(stage) and stage.startswith("#"), stage)
             chk("Marka ızgarası: Minelab ilk ve notlu", "Türkiye distribütörü" in (await pg.inner_text("main")))
 
             # ── Ürün sayfası rozeti
