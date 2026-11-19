@@ -16,8 +16,10 @@ export const NAV: NavGroup[] = [
     items: [
       { href: "/admin/siparisler", label: "Siparişler", icon: "ShoppingBag", perm: "orders.view", badgeKey: "toPrepare" },
       { href: "/admin/iadeler", label: "İadeler", icon: "Undo2", perm: "orders.view", badgeKey: "returns" },
+      { href: "/admin/sepetler", label: "Sepetler", icon: "ShoppingCart", perm: "orders.view" },
       { href: "/admin/kasa", label: "Gün sonu kasa", icon: "Calculator", perm: "orders.manage" },
       { href: "/admin/kampanyalar", label: "Kampanyalar", icon: "BadgePercent", perm: "campaigns.manage" },
+      { href: "/admin/paketler", label: "Paketler", icon: "PackagePlus", perm: "campaigns.manage" },
     ],
   },
   {

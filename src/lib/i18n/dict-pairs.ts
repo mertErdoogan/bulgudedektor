@@ -5,6 +5,12 @@
 type Pairs = Record<string, readonly [string, string]>;
 
 export const PAIRS = {
+  "bundle.title": ["Paketle al", "Buy as a bundle"],
+  "bundle.save": ["{x} kazanç", "Save {x}"],
+  "bundle.price": ["Paket fiyatı", "Bundle price"],
+  "bundle.add": ["Paketi sepete ekle", "Add bundle to cart"],
+  "bundle.note": ["İndirim sepette otomatik uygulanır", "The discount is applied automatically in your cart"],
+  "cart.bundle": ["Paket indirimi: {name}", "Bundle discount: {name}"],
   "nav.main": ["Ana menü", "Main menu"],
   "home.offer": ["KAMPANYA", "OFFER"],
   "hl.newBadge": ["YENİ", "NEW"],

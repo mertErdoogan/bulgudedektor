@@ -21,7 +21,7 @@ import { orderVars } from "@/lib/templates";
 import { sendOrderMessage } from "../../sablonlar/actions";
 import { orderKey } from "@/lib/store";
 import { ORDER_STATUS_LABEL, formatDate, formatTL, orderNo, PAYMENT_METHOD_LABEL } from "@/lib/utils";
-import { assignSerials, changeStatus, saveInternalNote, saveInvoice, unassignSerial, updateShippingAddress } from "../actions";
+import { issueInvoiceNow, refreshInvoiceNow, assignSerials, changeStatus, saveInternalNote, saveInvoice, unassignSerial, updateShippingAddress } from "../actions";
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
   const staff = await requireStaff("orders.view");
@@ -292,10 +292,16 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                 <span className="text-mute">Ara toplam</span>
                 <span>{formatTL(o.subtotal)}</span>
               </div>
-              {o.discountTotal - o.manualDiscount > 0 ? (
+              {o.appliedBundles?.map((b) => (
+                <div key={b.id} className="flex justify-between text-ok" data-testid="order-bundle">
+                  <span>Paket: {b.name}{b.sets > 1 ? ` ×${b.sets}` : ""}</span>
+                  <span>−{formatTL(b.amount)}</span>
+                </div>
+              ))}
+              {o.discountTotal - o.manualDiscount - o.bundleDiscount > 0 ? (
                 <div className="flex justify-between text-ok">
                   <span>İndirim {o.couponCode ? `(${o.couponCode})` : o.campaign ? `(${o.campaign.name})` : ""}</span>
-                  <span>−{formatTL(o.discountTotal - o.manualDiscount)}</span>
+                  <span>−{formatTL(o.discountTotal - o.manualDiscount - o.bundleDiscount)}</span>
                 </div>
               ) : null}
               {o.manualDiscount > 0 ? (
@@ -431,12 +437,33 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                   </a>
                 </p>
               ) : null}
+              {manage && settings.einvoice.provider === "parasut" && !o.invoiceUrl ? (
+                <div className="mt-2 flex flex-col gap-2 rounded-lg border border-line p-3" data-testid="einvoice-box">
+                  {o.invoiceStatus === "PENDING" ? (
+                    <>
+                      <span className="text-sm font-semibold">E-fatura Paraşüt&apos;te hazırlanıyor…</span>
+                      <ActionButton size="sm" variant="outline" run={refreshInvoiceNow.bind(null, o.id)}>Durumu yenile</ActionButton>
+                    </>
+                  ) : o.paymentStatus === "PAID" && !["CANCELLED", "REFUNDED"].includes(o.status) ? (
+                    <>
+                      {o.invoiceStatus === "FAILED" ? <span className="rounded-md bg-danger-bg p-2 text-xs font-semibold text-danger" data-testid="einvoice-error">Kesilemedi: {o.invoiceError}</span> : null}
+                      <ActionButton size="sm" run={issueInvoiceNow.bind(null, o.id)}>{o.invoiceStatus === "FAILED" ? "Tekrar dene" : "Paraşüt'te faturayı kes"}</ActionButton>
+                      <span className="text-xs text-mute">e-Arşiv / e-Fatura otomatik seçilir; numara ve PDF siparişe eklenir, müşteriye e-postayla gider.</span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-mute">Ödeme alınınca Paraşüt&apos;te fatura kesebilirsin.</span>
+                  )}
+                </div>
+              ) : null}
+              {settings.einvoice.provider === "birfatura" && !o.invoiceUrl ? (
+                <p className="mt-2 text-xs text-mute" data-testid="einvoice-birfatura">BirFatura bu siparişi çekip faturayı kestiğinde numara ve PDF burada görünür.</p>
+              ) : null}
               {manage && !["CANCELLED", "PENDING"].includes(o.status) ? (
-                <details className="mt-2" open={!o.invoiceUrl && o.paymentStatus === "PAID"}>
-                  <summary className="cursor-pointer font-bold text-link">{o.invoiceUrl ? "Faturayı değiştir" : "Fatura ekle"}</summary>
+                <details className="mt-2" open={!o.invoiceUrl && o.paymentStatus === "PAID" && !settings.einvoice.provider}>
+                  <summary className="cursor-pointer font-bold text-link">{o.invoiceUrl ? "Faturayı değiştir" : settings.einvoice.provider ? "Faturayı elle ekle" : "Fatura ekle"}</summary>
                   <ActionForm action={saveInvoice} className="mt-3 flex flex-col gap-2">
                     <input type="hidden" name="orderId" value={o.id} />
-                    <Input name="invoiceNo" defaultValue={o.invoiceNo ?? ""} placeholder="Fatura no (örn. ARN2026000001234)" />
+                    <Input name="invoiceNo" defaultValue={o.invoiceNo ?? ""} placeholder="Fatura no (örn. DRN2026000001234)" />
                     <FileInput name="file" accept="application/pdf" label="PDF seç" />
                     <Input name="invoiceLink" placeholder="veya e-fatura portalı bağlantısı (https://…)" />
                     {o.invoiceUrl ? (

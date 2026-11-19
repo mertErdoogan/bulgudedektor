@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { campaigns, orders, products } from "@/db/schema";
+import { bundleItems, bundles, campaigns, orders, products } from "@/db/schema";
 import { getSettings } from "./settings";
 
 export type CartInput = { productId: string; quantity: number }[];
@@ -30,6 +30,11 @@ export type Quote = {
   transferDiscount: number;
   total: number;
   campaign: { id: string; name: string; code: string | null } | null;
+  /** Paket (kombin) indirimi; discountTotal'ın içindedir */
+  bundleDiscount: number;
+  bundles: AppliedBundle[];
+  /** Paket tamam ama kampanya daha avantajlı olduğu için paket indirimi uygulanmadı (bilgi) */
+  bundleNote?: string;
   couponError?: string;
   /** Kupon geçerli ama sepetteki otomatik kampanya daha avantajlı olduğu için uygulanmadı (bilgi; siparişi engellemez) */
   couponNote?: string;
@@ -42,6 +47,49 @@ export type Quote = {
 };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+export type AppliedBundle = { id: string; name: string; sets: number; amount: number };
+
+type BundleRow = typeof bundles.$inferSelect & { items: (typeof bundleItems.$inferSelect)[] };
+
+export function bundleLive(b: Pick<BundleRow, "isActive" | "startsAt" | "endsAt">, now = new Date()) {
+  return b.isActive && (!b.startsAt || b.startsAt <= now) && (!b.endsAt || b.endsAt >= now);
+}
+
+/** Bir paket setinin indirimi (paket ürünlerinin güncel fiyatıyla) */
+export function bundleSetDiscount(b: Pick<BundleRow, "discountType" | "discountValue">, setPrice: number) {
+  if (setPrice <= 0 || b.discountValue <= 0) return 0;
+  // Yüzde indirim tam TL'ye yuvarlanır ("12.354 TL kazanç" kuruşlu görünmesin)
+  return b.discountType === "PERCENT" ? Math.round((setPrice * Math.min(b.discountValue, 90)) / 100) : r2(Math.min(b.discountValue, setPrice));
+}
+
+/**
+ * Sepetteki tamamlanmış paketler. Bir ürün birden çok pakette olabilir: en çok kazandıran paket önce uygulanır,
+ * her adet yalnızca bir pakette sayılır (çift indirim olmaz).
+ */
+async function bundleDiscounts(lines: PricedLine[]): Promise<{ total: number; applied: AppliedBundle[] }> {
+  if (lines.length < 2) return { total: 0, applied: [] };
+  const ids = lines.map((l) => l.productId);
+  const cand = (await db.query.bundles.findMany({
+    where: and(eq(bundles.isActive, true), inArray(bundles.id, db.select({ id: bundleItems.bundleId }).from(bundleItems).where(inArray(bundleItems.productId, ids)))),
+    with: { items: true },
+  })) as BundleRow[];
+  const left = new Map(lines.map((l) => [l.productId, l.quantity]));
+  const price = new Map(lines.map((l) => [l.productId, l.unitPrice]));
+  const scored = cand
+    .filter((b) => bundleLive(b) && b.items.length >= 2 && b.items.every((i) => price.has(i.productId)))
+    .map((b) => ({ b, per: bundleSetDiscount(b, b.items.reduce((s, i) => s + price.get(i.productId)! * i.quantity, 0)) }))
+    .filter((x) => x.per > 0)
+    .sort((a, b) => b.per - a.per);
+  const applied: AppliedBundle[] = [];
+  for (const { b, per } of scored) {
+    const sets = Math.min(...b.items.map((i) => Math.floor((left.get(i.productId) ?? 0) / Math.max(1, i.quantity))));
+    if (sets <= 0) continue;
+    for (const i of b.items) left.set(i.productId, (left.get(i.productId) ?? 0) - sets * Math.max(1, i.quantity));
+    applied.push({ id: b.id, name: b.name, sets, amount: r2(per * sets) });
+  }
+  return { total: r2(applied.reduce((s, a) => s + a.amount, 0)), applied };
+}
 
 type CampaignRow = typeof campaigns.$inferSelect;
 
@@ -183,6 +231,24 @@ export async function quoteCart(
     if (bestAuto.free) shippingTotal = 0;
   }
 
+  // Paket indirimi: kampanya/kuponla birleşmez, müşteri için hangisi fazlaysa o uygulanır (ücretsiz kargo hariç)
+  const bundle = await bundleDiscounts(lines);
+  let bundleDiscount = bundle.total;
+  let appliedBundles = bundle.applied;
+  let bundleNote: string | undefined;
+  if (bundleDiscount > 0 && discountTotal > 0) {
+    if (bundleDiscount >= discountTotal) {
+      if (code && campaign?.code) couponNote = "Paket indirimi daha avantajlı; kupon yerine paket indirimi uygulandı. İndirimler birleştirilmez.";
+      campaign = null;
+      discountTotal = 0;
+    } else {
+      bundleNote = `Sepetindeki "${campaign!.name}" kampanyası paket indiriminden daha avantajlı; o uygulandı. İndirimler birleştirilmez.`;
+      bundleDiscount = 0;
+      appliedBundles = [];
+    }
+  }
+  discountTotal = r2(discountTotal + bundleDiscount);
+
   let transferDiscount = 0;
   if (opts.paymentMethod === "TRANSFER" && s.payment.transferEnabled && s.payment.transferDiscountPct > 0) {
     transferDiscount = Math.round(((subtotal - discountTotal) * s.payment.transferDiscountPct) / 100); // tam TL: havale tutarı kuruşlu olmasın
@@ -197,6 +263,9 @@ export async function quoteCart(
     transferDiscount,
     total,
     campaign: campaign ? { id: campaign.id, name: campaign.name, code: campaign.code } : null,
+    bundleDiscount,
+    bundles: appliedBundles,
+    bundleNote,
     couponError,
     couponNote,
     fixes,

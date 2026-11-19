@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/admin/shell";
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { ProductForm } from "../product-form";
+import { aiConfig } from "@/lib/ai";
 
 export const metadata = { title: "Yeni ürün" };
 
@@ -15,7 +16,7 @@ export default async function NewProduct() {
   return (
     <>
       <PageHeader title="Yeni ürün" description="Zorunlu alanlar: ad, SKU, fiyat. Yayına almak için en az bir görsel gerekir." />
-      <ProductForm brands={b} categories={c} showCost={can(staff.permissions, "products.cost")} canDelete={false} />
+      <ProductForm brands={b} categories={c} showCost={can(staff.permissions, "products.cost")} canDelete={false} ai={{ ready: (await aiConfig()).ready, canConfigure: can(staff.permissions, "settings.manage") }} />
     </>
   );
 }

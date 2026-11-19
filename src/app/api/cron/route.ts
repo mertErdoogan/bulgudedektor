@@ -95,6 +95,12 @@ export async function GET(req: Request) {
     return sent;
   });
 
+  // 3b) E-fatura: hazırlanan e-belgeleri tamamla, otomatik kesimi yeniden dene
+  await run("einvoice", async () => {
+    const { invoiceCron } = await import("@/lib/einvoice");
+    return invoiceCron();
+  });
+
   // 4) Temizlik: 30 günden eski etkileşim kovaları, süresi geçmiş şifre bağlantıları
   await run("cleanup", async () => {
     const a = await db.delete(productActivity).where(lt(productActivity.hour, new Date(Date.now() - 30 * 24 * H))).returning({ p: productActivity.productId });
@@ -102,7 +108,8 @@ export async function GET(req: Request) {
     await db.delete(rateHits).where(lt(rateHits.windowStart, new Date(Date.now() - 24 * H)));
     // 90 gündür tekrar denenmeyen 404 kayıtları
     await db.delete(notFoundLogs).where(lt(notFoundLogs.lastAt, new Date(Date.now() - 90 * 24 * H)));
-    return a.length + b.length;
+    const { cleanupCarts } = await import("@/lib/live-carts");
+    return a.length + b.length + (await cleanupCarts());
   });
 
   // 4b) Haftalık dikkat özeti: pazartesi 08:00'den sonraki ilk çalışmada bir kez (İstanbul saati)

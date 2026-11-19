@@ -8,7 +8,7 @@ import { CityDistrict } from "@/components/city-district";
 import { Building2, CreditCard, Lock, Store, Truck } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { readAttribution } from "@/components/store/attribution";
-import { useCart } from "@/components/store/cart";
+import { useCart, visitorId } from "@/components/store/cart";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui";
 import type { publicSettings } from "@/lib/settings";
 import type { Quote } from "@/lib/pricing";
@@ -45,6 +45,8 @@ function Opt({ checked, onClick, icon, title, desc }: { checked: boolean; onClic
 export function CheckoutForm({ settings: s, bankAccounts, me, address }: { settings: PS; bankAccounts: { bank: string; iban: string; holder: string }[]; me: { name: string; email: string; phone: string } | null; address: { city: string; district: string; line: string; zip: string } | null }) {
   const { items, ready, applyFixes } = useCart();
   const t = useT();
+  const [vid, setVid] = useState<string | null>(null);
+  useEffect(() => setVid(visitorId()), []);
   const k = (x: string) => t(`co.${x}` as DictKey);
   const [delivery, setDelivery] = useState<"CARGO" | "PICKUP">("CARGO");
   const [pay, setPay] = useState<"CARD" | "TRANSFER">(s.payment.cardEnabled ? "CARD" : "TRANSFER");
@@ -82,7 +84,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
     const fd = new FormData(form);
     const email = String(fd.get("email") ?? "");
     if (!/^\S+@\S+\.\S+$/.test(email)) return;
-    void fetch("/api/sepet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, name: fd.get("fullName"), items, consent: fd.get("marketing") === "on" }), keepalive: true }).catch(() => {});
+    void fetch("/api/sepet", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, name: fd.get("fullName"), items, consent: fd.get("marketing") === "on", vid: visitorId() }), keepalive: true }).catch(() => {});
   };
 
   if (ready && !items.length)
@@ -99,6 +101,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
       className="container-x grid gap-6 py-6 pb-32 lg:grid-cols-[minmax(0,1fr)_400px]"
     >
       <input type="hidden" name="items" value={JSON.stringify(items)} />
+      <input type="hidden" name="vid" value={vid ?? ""} />
       <input type="hidden" name="coupon" value={coupon ?? ""} />
       <input type="hidden" name="deliveryMethod" value={delivery} />
       <input type="hidden" name="paymentMethod" value={pay} />
@@ -196,7 +199,7 @@ export function CheckoutForm({ settings: s, bankAccounts, me, address }: { setti
           {(q?.fixes?.length ? [] : q?.errors ?? []).map((e) => <p key={e} className="mt-2 text-sm text-danger">{e}</p>)}
           <dl className="mt-4 flex flex-col gap-1.5 border-t border-line pt-3 text-sm">
             <div className="flex justify-between"><dt>{t("cart.subtotal")}</dt><dd>{formatTL(q?.subtotal)}</dd></div>
-            {q?.discountTotal ? <div className="flex justify-between text-ok"><dt>{t("cart.discount")}{q.campaign ? ` (${q.campaign.name})` : ""}</dt><dd>−{formatTL(q.discountTotal)}</dd></div> : null}
+            {q?.discountTotal ? <div className="flex justify-between text-ok"><dt>{t("cart.discount")}{[q.campaign?.name, ...q.bundles.map((b) => b.name)].filter(Boolean).length ? ` (${[q.campaign?.name, ...q.bundles.map((b) => b.name)].filter(Boolean).join(", ")})` : ""}</dt><dd>−{formatTL(q.discountTotal)}</dd></div> : null}
             <div className="flex justify-between"><dt>{t("cart.shipping")}</dt><dd>{q?.shippingTotal ? formatTL(q.shippingTotal) : t("cart.free")}</dd></div>
             <div className="flex justify-between pt-2 text-lg font-extrabold"><dt>{t("cart.total")}</dt><dd>{formatTL(q?.total)}</dd></div>
           </dl>

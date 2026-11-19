@@ -7,6 +7,9 @@ import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSettings, rawSeoTexts } from "@/lib/settings";
 import { DEFAULT_LOCALE, LOCALES, LOCALE_LABEL } from "@/lib/i18n/config";
+import { AI_MODELS } from "@/lib/ai";
+import { EInvoiceForm } from "./einvoice-form";
+import { saveAi, testAi } from "./actions";
 import { saveI18n, saveSecurity, sendDigestNow, generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
 
 export const metadata = { title: "Ayarlar" };
@@ -24,6 +27,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     ["kargo", "Kargo ve teslimat"],
     ...(can(staff.permissions, "payments.manage") ? [["odeme", "Ödeme"]] : []),
     ["entegrasyon", "Entegrasyonlar"],
+    ["e-fatura", "E-fatura"],
+    ["yapay-zeka", "Yapay zekâ"],
     ["seo", "SEO"],
     ["diller", "Diller"],
     ...(can(staff.permissions, "users.manage") ? [["guvenlik", "Güvenlik"]] : []),
@@ -220,8 +225,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <p className="mt-2 font-bold md:col-span-2">Diğer</p>
               <Field label="WhatsApp Business API token"><Input name="whatsappApiToken" defaultValue={mask(s.integrations.whatsappApiToken)} autoComplete="off" /></Field>
               <Field label="Kargo entegrasyonu API anahtarı"><Input name="cargoApiKey" defaultValue={mask(s.integrations.cargoApiKey)} autoComplete="off" /></Field>
-              <Field label="e-Fatura / e-Arşiv sağlayıcı"><Input name="eInvoiceProvider" defaultValue={s.integrations.eInvoiceProvider} placeholder="Paraşüt, Logo, Uyumsoft…" /></Field>
-              <Field label="e-Fatura API anahtarı"><Input name="eInvoiceApiKey" defaultValue={mask(s.integrations.eInvoiceApiKey)} autoComplete="off" /></Field>
+              <p className="rounded-lg bg-soft p-3 text-sm text-mute md:col-span-2">E-fatura entegrasyonu (Paraşüt, BirFatura) kendi sekmesinde: <Link href="/admin/ayarlar?t=e-fatura" className="font-bold text-link">Ayarlar → E-fatura</Link></p>
               <SubmitButton className="md:col-span-2 md:justify-self-start">Kaydet</SubmitButton>
             </ActionForm>
             {s.integrations.smsProvider ? (
@@ -299,6 +303,37 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <SubmitButton>Kaydet</SubmitButton>
                 <ActionButton variant="outline" run={sendDigestNow}>Özeti şimdi gönder</ActionButton>
                 <Link href="/admin/kayitlar/ozet" className="text-sm font-bold text-link">Özeti önizle →</Link>
+              </div>
+            </ActionForm>
+          </Card>
+        ) : null}
+        {tab === "e-fatura" ? (
+          <Card>
+            <CardHeader title="E-fatura / e-Arşiv" description="Siparişlerin faturasını fatura programına otomatik aktar. Türkiye'de e-ticarette en yaygın iki entegratör desteklenir; ikisini de kullanmıyorsan faturayı sipariş sayfasından elle ekleyebilirsin." />
+            <EInvoiceForm s={s.einvoice} siteUrl={process.env.APP_URL || "https://siteniz.com"} />
+          </Card>
+        ) : null}
+        {tab === "yapay-zeka" ? (
+          <Card>
+            <CardHeader title="Yapay zekâ" description="Ürün düzenleme ekranındaki 'Yapay zekâ ile içerik' paneli bu anahtarı kullanır: Türkçe açıklama, SEO metinleri, satış maddeleri ve İngilizce sürüm." />
+            <ActionForm action={saveAi} className="flex flex-col gap-4 p-5" data-testid="ai-settings">
+              <ol className="list-decimal rounded-xl bg-soft p-4 pl-8 text-[13px] leading-relaxed text-mute">
+                <li>console.anthropic.com adresinde hesap aç (kurumsal fatura alınabilir).</li>
+                <li>Billing bölümünden kredi yükle; ürün başına maliyet genellikle birkaç kuruş–birkaç TL arasıdır.</li>
+                <li>API Keys → Create Key ile anahtar oluştur, aşağıya yapıştır.</li>
+              </ol>
+              <Field label="Anthropic API anahtarı" hint={s.ai.apiKey ? "Kayıtlı. Değiştirmek için yenisini yapıştır." : "sk-ant-… ile başlar"}>
+                <Input name="apiKey" defaultValue={mask(s.ai.apiKey)} autoComplete="off" placeholder="sk-ant-…" />
+              </Field>
+              <Field label="Model">
+                <Select name="model" defaultValue={s.ai.model}>
+                  {AI_MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                </Select>
+              </Field>
+              <p className="text-xs leading-relaxed text-mute">Gönderilen bilgi yalnızca ürünün kendi alanlarıdır (ad, marka, özellikler, mevcut açıklama ve yazdığın not); müşteri verisi gönderilmez. Kişi başı saatte 40 öneri sınırı vardır.</p>
+              <div className="flex flex-wrap gap-2">
+                <SubmitButton>Kaydet</SubmitButton>
+                {s.ai.apiKey || process.env.ANTHROPIC_API_KEY ? <ActionButton variant="outline" run={testAi}>Bağlantıyı test et</ActionButton> : null}
               </div>
             </ActionForm>
           </Card>

@@ -92,7 +92,14 @@ async function transition(orderId: string, to: Status, staff: StaffSession, extr
                 : "İade tamamlandı.";
     await addOrderEvent(tx, o.id, "status", msg + (extra.note ? ` (${extra.note})` : ""), staff.id);
     if (info) await addOrderEvent(tx, o.id, "refund", info, staff.id, false);
+    if ((to === "CANCELLED" || to === "REFUNDED") && o.invoiceUrl)
+      await addOrderEvent(tx, o.id, "invoice", "Bu siparişin faturası kesilmişti: e-fatura programında iade faturası / iptal işlemini yapmayı unutma.", staff.id, false);
   });
+  // Otomatik e-fatura (ayara göre ödeme onayında ya da kargoda)
+  if (to === "PAID" || to === "SHIPPED") {
+    const { maybeAutoInvoice } = await import("@/lib/einvoice");
+    void maybeAutoInvoice(o.id, to === "PAID" ? "paid" : "shipped");
+  }
   await audit(staff.id, "status", "order", o.id, `${orderNo(o.number)} → ${ORDER_STATUS_LABEL[to]}`);
   if (["SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED", "PAID"].includes(to)) {
     const { mailStatus } = await import("@/lib/mail");
@@ -374,6 +381,8 @@ export async function createManualOrder(_: ActionResult | null, fd: FormData): P
           total,
           couponCode: q.campaign?.code ?? null,
           campaignId: q.campaign?.id ?? null,
+          bundleDiscount: q.bundleDiscount,
+          appliedBundles: q.bundles.length ? q.bundles : null,
           deliveryMethod,
           shippingAddress: addr,
           channel: "MANUAL",
@@ -455,5 +464,27 @@ export async function saveInvoice(_: ActionResult | null, fd: FormData): Promise
     revalidatePath(`/admin/siparisler/${id}`);
     const tail = canMail ? (first ? " Müşteriye e-postayla gönderiliyor." : "") : " E-posta gönderilmedi (e-posta ayarı yok veya müşterinin e-postası yok); müşteri sipariş sayfasından indirebilir.";
     return ok(`${first ? "Fatura eklendi." : "Fatura güncellendi."}${tail}`);
+  });
+}
+
+/** Paraşüt'te faturayı kes (ya da başarısız kesimi tekrar dene) */
+export async function issueInvoiceNow(orderId: string): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("orders.manage");
+    const { issueInvoice } = await import("@/lib/einvoice");
+    const r = await issueInvoice(orderId);
+    await audit(staff.id, "update", "order", orderId, r.ok ? "E-fatura kesimi başlatıldı" : `E-fatura kesilemedi: ${r.message}`);
+    revalidatePath(`/admin/siparisler/${orderId}`);
+    return r.ok ? ok(r.message) : fail(r.message);
+  });
+}
+
+export async function refreshInvoiceNow(orderId: string): Promise<ActionResult> {
+  return safe(async () => {
+    await assertStaff("orders.view");
+    const { refreshInvoice } = await import("@/lib/einvoice");
+    const r = await refreshInvoice(orderId);
+    revalidatePath(`/admin/siparisler/${orderId}`);
+    return r.ok ? ok(r.message) : fail(r.message);
   });
 }

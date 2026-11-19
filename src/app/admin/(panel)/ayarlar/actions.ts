@@ -170,8 +170,8 @@ export async function saveIntegrations(_: ActionResult | null, fd: FormData): Pr
       smtpPass: keep("smtpPass"),
       smtpFrom: str(fd.get("smtpFrom")),
       notifyEmail: str(fd.get("notifyEmail")),
-      eInvoiceProvider: str(fd.get("eInvoiceProvider")),
-      eInvoiceApiKey: keep("eInvoiceApiKey"),
+      eInvoiceProvider: cur.eInvoiceProvider,
+      eInvoiceApiKey: cur.eInvoiceApiKey,
       cargoApiKey: keep("cargoApiKey"),
       smsProvider: str(fd.get("smsProvider")) === "netgsm" ? "netgsm" : "",
       netgsmUser: str(fd.get("netgsmUser")),
@@ -291,5 +291,90 @@ export async function sendDigestNow(): Promise<ActionResult> {
     await audit(staff.id, "settings", "security", null, `Haftalık özet elle gönderildi (${r.total} işlem)`);
     if (!r.sent) return fail(`Özet hazır (${r.total} işlem) ama e-posta gönderilemedi: Entegrasyonlar sekmesindeki e-posta (SMTP) ayarlarını kontrol et. Önizleme için İşlem kayıtları > Haftalık özet.`);
     return ok(`Özet ${r.to} adresine gönderildi (${r.total} işlem).`);
+  });
+}
+
+/** Yapay zekâ: Anthropic API anahtarı ve model */
+export async function saveAi(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("settings.manage");
+    const cur = (await getSettings()).ai;
+    const { AI_MODELS } = await import("@/lib/ai");
+    const raw = str(fd.get("apiKey"));
+    const apiKey = raw.includes("•") ? cur.apiKey : raw;
+    if (apiKey && !/^sk-ant-[\w-]{20,}$/.test(apiKey)) return fail("Anthropic API anahtarı 'sk-ant-' ile başlar. Console → API Keys'ten kopyala.");
+    const model = AI_MODELS.some((m) => m.id === str(fd.get("model"))) ? str(fd.get("model")) : AI_MODELS[0].id;
+    await saveSettings("ai", { apiKey, model });
+    return fin(staff.id, "ai");
+  });
+}
+
+export async function testAi(): Promise<ActionResult> {
+  return safe(async () => {
+    await assertStaff("settings.manage");
+    const { aiPing, AiError } = await import("@/lib/ai");
+    try {
+      return (await aiPing()) ? ok("Bağlantı başarılı: yapay zekâ hazır.") : fail("Beklenmeyen cevap.");
+    } catch (e) {
+      return fail(e instanceof AiError ? e.message : "Bağlantı kurulamadı.");
+    }
+  });
+}
+
+/** E-fatura entegrasyonu */
+export async function saveEInvoice(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("settings.manage");
+    const cur = (await getSettings()).einvoice;
+    const keepSecret = (k: "parasutClientSecret" | "parasutPassword") => {
+      const v = str(fd.get(k));
+      return v.includes("•") ? cur[k] : v;
+    };
+    const p = str(fd.get("provider"));
+    const provider = (p === "parasut" || p === "birfatura" ? p : "") as "" | "parasut" | "birfatura";
+    const a = str(fd.get("autoIssue"));
+    const autoIssue = (a === "paid" || a === "shipped" ? a : "off") as "off" | "paid" | "shipped";
+    const vatRate = Math.round(toNum(fd.get("vatRate"), 20));
+    if (![0, 1, 10, 20].includes(vatRate)) return fail("KDV oranı 0, 1, 10 ya da 20 olmalı.");
+    const next = {
+      provider,
+      autoIssue,
+      vatRate,
+      parasutCompanyId: str(fd.get("parasutCompanyId")).replace(/\D/g, ""),
+      parasutClientId: str(fd.get("parasutClientId")),
+      parasutClientSecret: keepSecret("parasutClientSecret"),
+      parasutUsername: str(fd.get("parasutUsername")),
+      parasutPassword: keepSecret("parasutPassword"),
+    };
+    if (provider === "parasut") {
+      const { parasutReady } = await import("@/lib/einvoice/parasut");
+      if (!parasutReady(next)) return fail("Paraşüt için firma numarası, client ID, client secret, kullanıcı e-postası ve şifre gerekli.");
+    }
+    // BirFatura seçildi ve token yoksa ilk kayıtta üret
+    const birfaturaToken = provider === "birfatura" && !cur.birfaturaToken ? (await import("node:crypto")).randomUUID() : cur.birfaturaToken;
+    await saveSettings("einvoice", { ...next, birfaturaToken });
+    return fin(staff.id, "einvoice");
+  });
+}
+
+export async function testParasut(): Promise<ActionResult> {
+  return safe(async () => {
+    await assertStaff("settings.manage");
+    const { parasutTest, ParasutError } = await import("@/lib/einvoice/parasut");
+    try {
+      await parasutTest((await getSettings()).einvoice);
+      return ok("Paraşüt bağlantısı başarılı.");
+    } catch (e) {
+      return fail(e instanceof ParasutError ? e.message : "Paraşüt'e bağlanılamadı.");
+    }
+  });
+}
+
+export async function rotateBirfaturaToken(): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("settings.manage");
+    await saveSettings("einvoice", { birfaturaToken: (await import("node:crypto")).randomUUID() });
+    await audit(staff.id, "settings", "einvoice", null, "BirFatura anahtarı yenilendi");
+    return ok("Yeni anahtar üretildi. BirFatura'daki API şifresini de güncelle.");
   });
 }

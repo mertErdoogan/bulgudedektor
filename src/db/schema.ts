@@ -473,6 +473,15 @@ export const orders = pgTable(
     invoiceNo: text("invoice_no"),
     invoiceUrl: text("invoice_url"),
     invoicedAt: timestamp("invoiced_at", { withTimezone: true }),
+    /** Otomatik e-fatura: hangi entegratör (parasut / birfatura), onun kayıt kimliği ve durum */
+    invoiceProvider: text("invoice_provider"),
+    invoiceRef: text("invoice_ref"),
+    invoiceStatus: text("invoice_status").$type<"PENDING" | "ISSUED" | "FAILED">(),
+    invoiceError: text("invoice_error"),
+    invoiceAttempts: integer("invoice_attempts").notNull().default(0),
+    /** Paket (kombin) indirimi: discountTotal'ın içindedir; hangi paketlerin uygulandığı ayrıca saklanır */
+    bundleDiscount: money("bundle_discount").notNull().default(0),
+    appliedBundles: jsonb("applied_bundles").$type<{ id: string; name: string; sets: number; amount: number }[]>(),
     carrier: text("carrier"),
     trackingNumber: text("tracking_number"),
     /** Ödemenin onaylandığı an (kart: anında, havale: panelden onaylanınca); hazırlık süresi buradan sayılır */
@@ -888,3 +897,64 @@ export const translations = pgTable(
   },
   (t) => [uniqueIndex("translations_entity_field_idx").on(t.entity, t.entityId, t.locale, t.field), index("translations_lookup_idx").on(t.entity, t.locale)],
 );
+
+/**
+ * Canlı sepet: ziyaretçinin tarayıcısındaki sepetin sunucudaki kopyası (panelde "şu an kimin sepetinde ne var").
+ * Kimlik tarayıcıda üretilen rastgele değerdir; yalnızca analiz izni verilmişse ya da üye girişi varsa tutulur.
+ */
+export const liveCarts = pgTable(
+  "live_carts",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").references(() => customers.id, { onDelete: "set null" }),
+    email: text("email"),
+    name: text("name"),
+    items: jsonb("items").$type<{ productId: string; qty: number }[]>().notNull().default([]),
+    value: money("value").notNull().default(0),
+    itemCount: integer("item_count").notNull().default(0),
+    path: text("path"),
+    locale: text("locale"),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    orderedAt: timestamp("ordered_at", { withTimezone: true }),
+    orderId: text("order_id").references(() => orders.id, { onDelete: "set null" }),
+  },
+  (t) => [index("live_carts_updated_idx").on(t.updatedAt), index("live_carts_email_idx").on(t.email)],
+);
+
+/** Paket (kombin) satış: birlikte alınınca indirimli ürün grubu. Sepette ürünlerin hepsi varsa indirim uygulanır. */
+export const bundles = pgTable("bundles", {
+  id: id(),
+  name: text("name").notNull(),
+  description: text("description"),
+  discountType: text("discount_type").$type<"PERCENT" | "FIXED">().notNull().default("PERCENT"),
+  discountValue: money("discount_value").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  startsAt: timestamp("starts_at", { withTimezone: true }),
+  endsAt: timestamp("ends_at", { withTimezone: true }),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export const bundleItems = pgTable(
+  "bundle_items",
+  {
+    id: id(),
+    bundleId: text("bundle_id")
+      .notNull()
+      .references(() => bundles.id, { onDelete: "cascade" }),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull().default(1),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (t) => [index("bundle_items_bundle_idx").on(t.bundleId), index("bundle_items_product_idx").on(t.productId)],
+);
+
+export const bundlesRelations = relations(bundles, ({ many }) => ({ items: many(bundleItems) }));
+export const bundleItemsRelations = relations(bundleItems, ({ one }) => ({
+  bundle: one(bundles, { fields: [bundleItems.bundleId], references: [bundles.id] }),
+  product: one(products, { fields: [bundleItems.productId], references: [products.id] }),
+}));

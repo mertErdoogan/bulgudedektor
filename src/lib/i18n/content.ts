@@ -8,7 +8,7 @@ import { revalidateTag } from "next/cache";
 import { slugify } from "@/lib/utils";
 import { SLUG_TAG } from "./slugs";
 
-export type Entity = "product" | "category" | "brand" | "page" | "menu" | "faq" | "section" | "banner" | "campaign" | "text";
+export type Entity = "product" | "category" | "brand" | "page" | "menu" | "faq" | "section" | "banner" | "campaign" | "bundle" | "text";
 /** Panelde çevrilebilen alanlar */
 export const TRANSLATABLE: Record<Entity, string[]> = {
   product: ["name", "slug", "shortDescription", "description", "seoTitle", "seoDescription"],
@@ -20,6 +20,7 @@ export const TRANSLATABLE: Record<Entity, string[]> = {
   section: ["title", "subtitle"],
   banner: ["title", "subtitle", "eyebrow", "ctaLabel"],
   campaign: ["name", "description"],
+  bundle: ["name", "description"],
   text: ["value"],
 };
 /** Panelde düz metin olarak değil, JSON olarak saklanan liste alanları (teknik özellikler, kutu içeriği…) */

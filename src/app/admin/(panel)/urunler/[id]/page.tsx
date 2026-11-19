@@ -9,6 +9,7 @@ import { ProductStatusBadge } from "@/components/admin/status";
 import { requireStaff } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { ProductForm } from "../product-form";
+import { aiConfig } from "@/lib/ai";
 import { getEntityTranslations } from "@/lib/i18n/content";
 import { getSettings } from "@/lib/settings";
 
@@ -42,6 +43,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
           translations={tr}
           locales={st.i18n.locales}
           spotlight={st.merch.newSpotlight === p.id}
+          ai={canEdit ? { ready: (await aiConfig()).ready, canConfigure: can(staff.permissions, "settings.manage") } : undefined}
         />
       </fieldset>
     </>

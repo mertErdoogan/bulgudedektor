@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { cartSnapshots, products } from "@/db/schema";
 import { getCustomer } from "@/lib/auth";
 import { allowIp } from "@/lib/guard";
+import { attachEmail } from "@/lib/live-carts";
 
 /** Ödeme formunda e-posta yazılınca sepetin son hali kaydedilir (terk edilen sepet hatırlatması için). */
 export async function POST(req: Request) {
@@ -23,5 +24,6 @@ export async function POST(req: Request) {
   const c = await getCustomer();
   const values = { email, name: String(b?.name ?? "").slice(0, 120) || null, customerId: c?.id ?? null, items: clean, consent: !!b?.consent, updatedAt: new Date(), remindedAt: null, recoveredAt: null };
   await db.insert(cartSnapshots).values(values).onConflictDoUpdate({ target: cartSnapshots.email, set: values });
+  if (typeof b?.vid === "string") await attachEmail(b.vid, email, values.name);
   return new NextResponse(null, { status: 204 });
 }

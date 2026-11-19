@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { TranslationFields } from "@/components/admin/translation-fields";
+import { AiContentPanel } from "@/components/admin/ai-content-panel";
 import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Copy, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
@@ -66,7 +67,10 @@ export function ProductForm({
   translations,
   locales,
   spotlight,
+  ai,
 }: {
+  /** Yapay zekâ içerik paneli: anahtar girilmiş mi, kişi ayarlara erişebiliyor mu */
+  ai?: { ready: boolean; canConfigure: boolean };
   spotlight?: boolean;
   translations?: Record<string, Record<string, string>>;
   locales?: string[];
@@ -151,6 +155,8 @@ export function ProductForm({
               </Field>
             </div>
           </Card>
+
+          {ai ? <AiContentPanel ready={ai.ready} canConfigure={ai.canConfigure} /> : null}
 
           <TranslationFields
             values={translations}

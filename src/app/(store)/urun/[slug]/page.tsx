@@ -1,3 +1,5 @@
+import { bundlesFor } from "@/lib/bundles";
+import { BundleOffers } from "@/components/store/bundle-offer";
 import { localePath } from "@/lib/i18n/config";
 import { permanentRedirect } from "next/navigation";
 import { resolveLocaleSlug } from "@/lib/i18n/server";
@@ -392,6 +394,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
 
+      {/* Paket (kombin): bu ürünle birlikte indirimli alınabilecek ürünler */}
+      {!out ? (
+        <Suspense fallback={null}>
+          <BundleRail productId={p.id} />
+        </Suspense>
+      ) : null}
+
       {/* Benzer modeller üstte: karar aşamasındaki müşteri alternatifleri hemen görsün */}
       <Suspense fallback={null}>
         <SimilarRail p={p} ctx={ctx} />
@@ -574,6 +583,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 }
 
 const AVATAR = ["bg-[#d42e1e]", "bg-[#1f3b8f]", "bg-[#11643a]", "bg-[#7a4a14]", "bg-[#3a3a40]"];
+
+async function BundleRail({ productId }: { productId: string }) {
+  const offers = await bundlesFor(productId, (await getT()).locale);
+  return <BundleOffers offers={offers} />;
+}
 
 /** Ürün sayfasının alt kısmı (rehberler, birlikte alınanlar, son gezilenler, benzer modeller): ayrı akar. */
 async function PdpExtras({ p, ctx }: { p: NonNullable<Awaited<ReturnType<typeof getProduct>>>; ctx: ReturnType<typeof cardCtx> }) {

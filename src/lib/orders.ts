@@ -70,6 +70,7 @@ export async function markOrderPaid(orderId: string, meta: { paymentId?: string;
   const before = await db.query.orders.findFirst({ where: eq(orders.id, orderId), columns: { paymentStatus: true, paymentMethod: true } });
   const res = await markOrderPaidTx(orderId, meta);
   if (before && before.paymentStatus !== "PAID" && before.paymentMethod === "CARD") void notifyPlaced(orderId);
+  if (before && before.paymentStatus !== "PAID") void import("./einvoice").then((m) => m.maybeAutoInvoice(orderId, "paid"));
   return res;
 }
 

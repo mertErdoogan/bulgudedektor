@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useT } from "@/components/i18n";
 import { localePath } from "@/lib/i18n/config";
@@ -12,6 +12,8 @@ type Ctx = {
   count: number;
   ready: boolean;
   add: (productId: string, qty?: number, name?: string, meta?: { price?: number; brand?: string | null }) => void;
+  /** Birden çok ürünü tek seferde ekler (paket satış); tek bildirim gösterir */
+  addMany: (list: { productId: string; quantity: number }[], label: string) => void;
   setQty: (productId: string, qty: number) => void;
   remove: (productId: string) => void;
   clear: () => void;
@@ -27,6 +29,40 @@ const CartContext = createContext<Ctx | null>(null);
 const KEY = "bulgu_cart_v1";
 const CKEY = "bulgu_compare_v1";
 const FKEY = "site_fav_v1";
+
+const VID = "site_vid";
+
+/** Canlı sepet senkronu için izin: analiz çerezi onayı ya da üye girişi */
+function analyticsAllowed() {
+  return /(?:^|;\s*)site_consent=n?[^;]*a/.test(document.cookie);
+}
+
+/** Tarayıcıya özel rastgele kimlik (yalnızca izin varsa oluşturulur) */
+export function visitorId(create = false): string | null {
+  try {
+    let v = localStorage.getItem(VID);
+    if (!v && create) {
+      v = crypto.randomUUID();
+      localStorage.setItem(VID, v);
+    }
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+/** Sepetin son halini panelin "Canlı sepetler" ekranına bildirir. Boş sepet daha önce bildirilmediyse istek atılmaz. */
+function syncLive(items: CartItem[], loggedIn: boolean) {
+  if (!loggedIn && !analyticsAllowed()) return;
+  const vid = visitorId(items.length > 0);
+  if (!vid) return;
+  void fetch("/api/sepet/canli", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ vid, items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })), path: location.pathname }),
+    keepalive: true,
+  }).catch(() => {});
+}
 
 function read<T>(k: string, fb: T): T {
   try {
@@ -75,6 +111,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
+  // Canlı sepet: sepet değişince (1,5 sn sonra) ve sekme açıkken dakikada bir bildirilir
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  useEffect(() => {
+    if (!ready) return;
+    const id = setTimeout(() => syncLive(items, loggedIn), 1500);
+    return () => clearTimeout(id);
+  }, [items, ready, loggedIn]);
+  useEffect(() => {
+    if (!ready) return;
+    const iv = setInterval(() => {
+      if (document.visibilityState === "visible" && itemsRef.current.length) syncLive(itemsRef.current, loggedIn);
+    }, 60_000);
+    return () => clearInterval(iv);
+  }, [ready, loggedIn]);
   const persist = useCallback((next: CartItem[]) => {
     setItems(next);
     write(KEY, next);
@@ -91,6 +142,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const ex = cur.find((i) => i.productId === productId);
         persist(ex ? cur.map((i) => (i.productId === productId ? { ...i, quantity: Math.min(99, i.quantity + qty) } : i)) : [...cur, { productId, quantity: qty }]);
         toast.success(name ? t("cartp.added_n", { name }) : t("cartp.added"), { action: { label: t("cartp.go"), onClick: () => (window.location.href = localePath("/sepet", t.locale)) } });
+      },
+      addMany: (list, label) => {
+        const cur = read<CartItem[]>(KEY, items);
+        const next = [...cur];
+        for (const x of list) {
+          const ex = next.find((i) => i.productId === x.productId);
+          if (ex) ex.quantity = Math.min(99, Math.max(ex.quantity, x.quantity));
+          else next.push({ productId: x.productId, quantity: x.quantity });
+          countActivity(x.productId, "c");
+        }
+        persist(next.map((i) => ({ ...i })));
+        emit("add_to_cart", { items: list.map((x) => ({ item_id: x.productId, item_name: x.productId, quantity: x.quantity })) });
+        toast.success(t("cartp.added_n", { name: label }), { action: { label: t("cartp.go"), onClick: () => (window.location.href = localePath("/sepet", t.locale)) } });
       },
       setQty: (productId, qty) => persist(qty <= 0 ? items.filter((i) => i.productId !== productId) : items.map((i) => (i.productId === productId ? { ...i, quantity: Math.min(99, qty) } : i))),
       remove: (productId) => persist(items.filter((i) => i.productId !== productId)),

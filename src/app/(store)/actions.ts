@@ -42,11 +42,16 @@ async function quoteToEnglish(q: Quote): Promise<Quote> {
       .replace(/^Bu kupon ([\d.,]+) TL ve üzeri sepette geçerli\.$/, "This coupon is valid on carts of $1 TL or more.")
       .replace(/^Bu kuponu kullanım hakkın doldu\.$/, "You have already used this coupon the maximum number of times.")
       .replace(/^Bu kupon sepetindeki ürünlerde geçerli değil\.$/, "This coupon doesn't apply to the items in your cart.")
+      .replace(/^Paket indirimi daha avantajlı; kupon yerine paket indirimi uygulandı\. İndirimler birleştirilmez\.$/, "The bundle discount is a better deal, so it was applied instead of the coupon. Discounts can't be combined.")
+      .replace(/^Sepetindeki "(.+)" kampanyası paket indiriminden daha avantajlı; o uygulandı\. İndirimler birleştirilmez\.$/, 'The "$1" offer in your cart beats the bundle discount, so it was applied instead. Discounts can\'t be combined.')
       .replace(/^Sepetindeki "(.+)" kampanyası daha avantajlı; kupon yerine o uygulandı\. Kampanyalar birleştirilmez\.$/, 'The "$1" offer in your cart is a better deal, so it was applied instead of the coupon. Offers can\'t be combined.');
   const campaign = q.campaign ? (await localize([q.campaign], "campaign", "en"))[0] : null;
+  const bundles = q.bundles.length ? await localize(q.bundles, "bundle", "en") : q.bundles;
   return {
     ...q,
     campaign,
+    bundles,
+    bundleNote: q.bundleNote ? tr(q.bundleNote) : q.bundleNote,
     lines: q.lines.map((l) => ({ ...l, name: names.get(l.productId) ?? l.name, error: l.error ? tr(l.error) : l.error })),
     errors: q.errors.map(tr),
     fixes: q.fixes.map((f) => ({ ...f, message: tr(f.message) })),

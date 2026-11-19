@@ -97,6 +97,10 @@ export function CartView({ inst, freeThreshold, flatRate }: { inst: number; free
             {applied && q?.couponError ? <p className="mt-2 text-sm text-danger">{q.couponError}</p> : null}
             {applied && q?.couponNote ? <p className="mt-2 text-sm font-semibold text-ok" data-testid="coupon-note">{q.couponNote}</p> : null}
             {q?.campaign ? <p className="mt-2 text-sm font-bold text-ok">✓ {t("cart.applied", { name: q.campaign.name })}</p> : null}
+            {q?.bundles.map((b) => (
+              <p key={b.id} className="mt-2 text-sm font-bold text-ok" data-testid="bundle-applied">✓ {t("cart.bundle", { name: b.name })}{b.sets > 1 ? ` ×${b.sets}` : ""}: −{formatTL(b.amount)}</p>
+            ))}
+            {q?.bundleNote ? <p className="mt-2 text-sm font-semibold text-mute">{q.bundleNote}</p> : null}
             <dl className="mt-4 flex flex-col gap-2 text-sm">
               <div className="flex justify-between"><dt>{t("cart.subtotal")}</dt><dd>{formatTL(q?.subtotal)}</dd></div>
               {q?.discountTotal ? <div className="flex justify-between text-ok"><dt>{t("cart.discount")}</dt><dd>−{formatTL(q.discountTotal)}</dd></div> : null}

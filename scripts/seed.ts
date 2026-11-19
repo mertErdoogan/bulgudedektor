@@ -9,6 +9,7 @@ import * as t from "../src/db/schema";
 import { DEFAULT_ROLES } from "../src/lib/permissions";
 import { seedContent } from "./seed-content";
 import { seedEnglish } from "./lib/seed-en";
+import { seedDemoBundles } from "./lib/seed-bundles";
 import { LEGAL_PAGES } from "./lib/legal-texts";
 import { DEFAULT_TEMPLATES } from "../src/lib/templates";
 
@@ -20,7 +21,7 @@ async function main() {
   console.log("Tablolar temizleniyor…");
   await db.execute(sql`TRUNCATE roles, users, audit_logs, brands, categories, products, product_images, serial_numbers, stock_movements,
     media_assets, customers, addresses, customer_notes, conversations, messages, service_records, reviews, product_questions, stock_alerts,
-    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects, search_queries, product_activity, favorites, cart_snapshots, password_resets, reply_templates, staff_notifications, rate_hits, translations RESTART IDENTITY CASCADE`);
+    newsletter_subscribers, campaigns, orders, order_items, order_events, return_requests, banners, home_sections, pages, menu_items, settings, posts, faqs, redirects, search_queries, product_activity, favorites, cart_snapshots, password_resets, reply_templates, staff_notifications, rate_hits, translations, bundles, bundle_items, live_carts RESTART IDENTITY CASCADE`);
 
   // Roller ve ekip
   const roleRows = await db.insert(t.roles).values(DEFAULT_ROLES.map((r) => ({ ...r, permissions: [...r.permissions], isSystem: r.key === "admin" }))).returning();
@@ -180,6 +181,9 @@ async function main() {
     { name: "Minelab sezon indirimi", type: "FIXED", value: 1500, scope: "BRAND", targetIds: [brand("minelab")], minSubtotal: 40000, description: "40.000 TL üzeri Minelab'da 1.500 TL indirim", showOnSite: true, endsAt: new Date(Date.now() + 20 * 86400000) },
   ]);
 
+  // Paketler (kombin): dedektör + pinpointer, birlikte alınca indirimli
+  await seedDemoBundles();
+
   // Müşteriler, siparişler
   const names = ["Ahmet Yılmaz", "Mehmet Kaya", "Ayşe Demir", "Mustafa Çelik", "Fatma Şahin", "Ali Öztürk", "Hasan Arslan", "Emine Doğan", "Hüseyin Kılıç", "Zeynep Aydın", "İbrahim Koç", "Osman Kurt"];
   const cities = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya", "Trabzon", "Konya", "Kayseri"];
@@ -274,7 +278,7 @@ async function main() {
     { key: "store", value: { name: "Derinova Dedektör" } },
     { key: "setup", value: { completed: false, completedSteps: ["store"] } },
     // seed-if-empty.ts DEMO_VERSION ile aynı olmalı
-    { key: "demo", value: { version: 3 } },
+    { key: "demo", value: { version: 4 } },
     // Demo mağaza İngilizce sürümü açık gelir (yurt dışı satış denemesi için)
     { key: "i18n", value: { locales: ["tr", "en"], switcher: true } },
   ]);

@@ -405,6 +405,11 @@ export const EN_CAMPAIGNS: Record<string, [string, string]> = {
   "Minelab sezon indirimi": ["Minelab season sale", "1,500 TL off Minelab orders over 40,000 TL"],
 };
 
+export const EN_BUNDLES: Record<string, [string, string]> = {
+  "Manticore + Pro-Pointer AT seti": ["Manticore + Pro-Pointer AT set", "The detector finds the target and the pinpointer shows exactly where it is in the hole. Save 8% when you buy them together."],
+  "Vanquish başlangıç seti": ["Vanquish starter set", "Get your first detector together with a pinpointer and dig faster."],
+};
+
 /** Tek metinler (localizeText anahtarları): duyuru şeridi ve kayan duyurular */
 export const EN_TEXTS: Record<string, string> = {
   "store.workingHours": "Weekdays 09:00–19:00, Saturday 10:00–17:00 (Turkey time, GMT+3)",

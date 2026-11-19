@@ -7,7 +7,7 @@
 # Önkoşul:   çalışan sunucu (BASE_URL, varsayılan http://localhost:3000) ve DATABASE_URL
 #            sunucu şu ortamla başlatılmış olmalı:
 #            CRON_SECRET=test123 PAYMENT_SIMULATION=force-test-only \
-#            PAYTR_BASE_URL=http://127.0.0.1:4010 META_GRAPH_URL=http://127.0.0.1:4011
+#            PAYTR_BASE_URL=http://127.0.0.1:4010 META_GRAPH_URL=http://127.0.0.1:4011 AI_BASE_URL=http://127.0.0.1:4012 PARASUT_BASE_URL=http://127.0.0.1:4013
 set -u
 cd "$(dirname "$0")/../.."
 

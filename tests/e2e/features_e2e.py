@@ -167,15 +167,15 @@ async def main():
         sql(f"update orders set invoice_url=null, invoice_no=null, invoiced_at=null where id='{oid}'")
         await pg.goto(B + f"/admin/siparisler/{oid}")
         await pg.locator("details:has(input[name=invoiceNo])").evaluate("d => d.open = true")
-        await pg.fill("input[name=invoiceNo]", "ARN2026000000123")
-        await pg.fill("input[name=invoiceLink]", "https://efatura.example.com/ARN2026000000123.pdf")
+        await pg.fill("input[name=invoiceNo]", "DRN2026000000123")
+        await pg.fill("input[name=invoiceLink]", "https://efatura.example.com/DRN2026000000123.pdf")
         await pg.locator("form:has(input[name=invoiceNo])").get_by_role("button", name="Kaydet").click()
         t = await toast(pg, "Fatura")
         check("fatura eklendi", "Fatura eklendi" in t, t[:80])
         await ctx.close()
 
         # Müşteri sipariş sayfasında fatura bağlantısı (sipariş anahtarı yerine DB'den doğrudan kontrol + sayfa)
-        check("fatura siparişe yazıldı", sql(f"select invoice_no from orders where id='{oid}'") == "ARN2026000000123")
+        check("fatura siparişe yazıldı", sql(f"select invoice_no from orders where id='{oid}'") == "DRN2026000000123")
 
         # ── Müşteri: kayıt, e-posta doğrulama, veri dökümü, hesap silme
         ctx = await br.new_context(user_agent=UA, accept_downloads=True)

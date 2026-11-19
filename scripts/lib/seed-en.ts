@@ -3,7 +3,7 @@ import "dotenv/config";
 import { sql } from "drizzle-orm";
 import { db } from "../../src/db";
 import * as t from "../../src/db/schema";
-import { EN_BANNERS, EN_BRANDS, EN_CAMPAIGNS, EN_CATEGORIES, EN_FAQS, EN_FAQ_GROUPS, EN_MENU, EN_PAGES, EN_PRODUCTS, EN_SECTIONS, EN_TEXTS } from "./en-content";
+import { EN_BANNERS, EN_BRANDS, EN_BUNDLES, EN_CAMPAIGNS, EN_CATEGORIES, EN_FAQS, EN_FAQ_GROUPS, EN_MENU, EN_PAGES, EN_PRODUCTS, EN_SECTIONS, EN_TEXTS } from "./en-content";
 
 type Row = { entity: string; entityId: string; locale: string; field: string; value: string };
 
@@ -48,6 +48,10 @@ export async function seedEnglish() {
   for (const c of await db.select({ id: t.campaigns.id, name: t.campaigns.name }).from(t.campaigns)) {
     const e = EN_CAMPAIGNS[c.name];
     if (e) add("campaign", c.id, { name: e[0], description: e[1] });
+  }
+  for (const b of await db.select({ id: t.bundles.id, name: t.bundles.name }).from(t.bundles)) {
+    const e = EN_BUNDLES[b.name];
+    if (e) add("bundle", b.id, { name: e[0], description: e[1] });
   }
   for (const [k, v] of Object.entries(EN_TEXTS)) add("text", k, { value: v });
 

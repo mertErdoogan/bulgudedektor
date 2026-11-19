@@ -35,6 +35,8 @@ jobs:
       PAYMENT_SIMULATION: force-test-only
       PAYTR_BASE_URL: http://127.0.0.1:4010
       META_GRAPH_URL: http://127.0.0.1:4011
+      AI_BASE_URL: http://127.0.0.1:4012
+      PARASUT_BASE_URL: http://127.0.0.1:4013
       BASE_URL: http://localhost:3000
       CHROME: /usr/bin/google-chrome
       NEXT_TELEMETRY_DISABLED: "1"

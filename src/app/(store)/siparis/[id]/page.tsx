@@ -268,7 +268,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         ) : canReturn && wa ? (
           <Tile href={wa} external icon={<PackageOpen size={19} />} title="İade et" sub="Üyeliksiz siparişte WhatsApp'tan yaz" />
         ) : null}
-        {o.invoiceUrl ? <Tile href={o.invoiceUrl} external icon={<FileText size={19} />} title="Faturam" sub={o.invoiceNo ?? "PDF indir"} /> : null}
+        {o.invoiceUrl ? <Tile href={o.invoiceUrl.startsWith("/api/fatura/") ? `${o.invoiceUrl}?k=${orderKey(o.id)}` : o.invoiceUrl} external icon={<FileText size={19} />} title="Faturam" sub={o.invoiceNo ?? "PDF indir"} /> : null}
         {o.status === "DELIVERED" && firstSerial ? (
           <Tile href={`/hesabim?ariza=${firstSerial}`} icon={<Wrench size={19} />} title="Arıza / servis" sub={warrantyEnd ? `Garanti ${formatDate(warrantyEnd)}'e kadar` : "Ücretsiz kargo ile servise gönder"} />
         ) : null}
@@ -334,7 +334,10 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         </ul>
         <dl className="flex flex-col gap-1 border-t border-line bg-soft/40 p-5 text-sm">
           <div className="flex justify-between"><dt>Ara toplam</dt><dd>{formatTL(o.subtotal)}</dd></div>
-          {o.discountTotal ? <div className="flex justify-between text-ok"><dt>İndirim</dt><dd>−{formatTL(o.discountTotal)}</dd></div> : null}
+          {o.appliedBundles?.map((b) => (
+            <div key={b.id} className="flex justify-between text-ok"><dt>Paket: {b.name}</dt><dd>−{formatTL(b.amount)}</dd></div>
+          ))}
+          {o.discountTotal - o.bundleDiscount > 0 ? <div className="flex justify-between text-ok"><dt>İndirim</dt><dd>−{formatTL(o.discountTotal - o.bundleDiscount)}</dd></div> : null}
           <div className="flex justify-between"><dt>Kargo</dt><dd>{o.shippingTotal ? formatTL(o.shippingTotal) : "Ücretsiz"}</dd></div>
           <div className="flex justify-between text-base font-extrabold"><dt>Toplam</dt><dd>{formatTL(o.total)}</dd></div>
         </dl>

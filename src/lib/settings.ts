@@ -181,6 +181,28 @@ export type NavSettings = {
 /** Diller: Türkçe her zaman açık; diğerleri admin > Ayarlar > Diller'den açılır */
 export type I18nSettings = { locales: string[]; switcher: boolean };
 
+/** Yapay zekâ (ürün içeriği oluşturucu): Anthropic Claude API */
+export type AiSettings = { apiKey: string; model: string };
+
+/** E-fatura / e-arşiv entegrasyonu */
+export type EInvoiceSettings = {
+  /** parasut: site faturayı Paraşüt'e gönderir; birfatura: BirFatura siparişleri siteden çeker */
+  provider: "" | "parasut" | "birfatura";
+  /** Otomatik kesim: ödeme alınınca ya da kargoya verilince (yalnızca Paraşüt; BirFatura kendi panelinden keser) */
+  autoIssue: "off" | "paid" | "shipped";
+  /** Ürün fiyatlarına dahil KDV oranı (ürün bazında oran girilmemişse) */
+  vatRate: number;
+  parasutCompanyId: string;
+  parasutClientId: string;
+  parasutClientSecret: string;
+  parasutUsername: string;
+  parasutPassword: string;
+  /** BirFatura'nın her istekte "token" başlığında gönderdiği gizli anahtar (sitede üretilir) */
+  birfaturaToken: string;
+  birfaturaLastPullAt: string;
+  birfaturaLastPullCount: number;
+};
+
 /** Güvenlik ve iç kontrol (Ayarlar > Güvenlik, yalnızca ekip yöneticisi) */
 export type SecuritySettings = {
   /** Yönetici, para iadesi veya havale onayı yetkisi olanlar iki adımlı doğrulama açmadan panele giremez */
@@ -203,6 +225,8 @@ export type AllSettings = {
   nav: NavSettings;
   i18n: I18nSettings;
   security: SecuritySettings;
+  ai: AiSettings;
+  einvoice: EInvoiceSettings;
 };
 
 export const DEFAULT_SETTINGS: AllSettings = {
@@ -329,6 +353,20 @@ export const DEFAULT_SETTINGS: AllSettings = {
   setup: { completed: false, completedSteps: [] },
   merch: { focusBrand: "minelab", weight: "balanced", pinned: [], badge: true, focusNote: "Öncelikli marka", heroCards: "latest", wizard: "priority" },
   i18n: { locales: ["tr"], switcher: true },
+  ai: { apiKey: "", model: "claude-sonnet-5-5" },
+  einvoice: {
+    provider: "",
+    autoIssue: "off",
+    vatRate: 20,
+    parasutCompanyId: "",
+    parasutClientId: "",
+    parasutClientSecret: "",
+    parasutUsername: "",
+    parasutPassword: "",
+    birfaturaToken: "",
+    birfaturaLastPullAt: "",
+    birfaturaLastPullCount: 0,
+  },
   security: { require2fa: false, digestEmail: "", priceDropConfirmPct: 30 },
   ticker: {
     enabled: true,
@@ -366,6 +404,8 @@ export const DEFAULT_SETTINGS: AllSettings = {
 const SECRET_FIELDS: Partial<Record<keyof AllSettings, string[]>> = {
   payment: ["iyzicoSecretKey", "paytrMerchantKey", "paytrMerchantSalt"],
   integrations: ["metaCapiToken", "smtpPass", "netgsmPass", "trendyolApiSecret", "hbPass", "eInvoiceApiKey", "cargoApiKey"],
+  ai: ["apiKey"],
+  einvoice: ["parasutClientSecret", "parasutPassword", "birfaturaToken"],
 };
 
 function mapSecrets(key: string, value: Record<string, unknown>, fn: (v: string) => string) {

@@ -169,6 +169,13 @@
       "when": 1795030000000,
       "tag": "0023_rebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795081767253,
+      "tag": "0024_commerce_tools",
+      "breakpoints": true
     }
   ]
 }

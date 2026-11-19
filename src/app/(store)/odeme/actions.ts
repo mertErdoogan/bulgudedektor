@@ -19,6 +19,7 @@ import { orderKey } from "@/lib/store";
 import { normalizePhone, str, strOrNull } from "@/lib/utils";
 import { validTckn } from "@/lib/tckn";
 import { getLocale } from "@/lib/i18n/server";
+import { markLiveCartOrdered } from "@/lib/live-carts";
 
 export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
@@ -95,6 +96,8 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
           total: q.total,
           couponCode: q.campaign?.code ?? null,
           campaignId: q.campaign?.id ?? null,
+          bundleDiscount: q.bundleDiscount,
+          appliedBundles: q.bundles.length ? q.bundles : null,
           deliveryMethod,
           shippingAddress: address,
           invoiceType,
@@ -119,6 +122,7 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
       return { orderId: o.id, customerId: cust.id };
     });
 
+    await markLiveCartOrdered({ orderId, email, customerId, vid: strOrNull(fd.get("vid")) }).catch(() => {});
     if (!me && password) await setSessionCookie(CUSTOMER_COOKIE, await signToken({ sub: customerId, kind: "customer" }, 30), 30);
     const key = orderKey(orderId);
     const base = process.env.APP_URL || "http://localhost:3000";

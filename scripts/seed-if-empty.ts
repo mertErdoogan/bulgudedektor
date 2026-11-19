@@ -11,22 +11,40 @@ import * as t from "../src/db/schema";
 import { ensureDemoGallery, removeTrialRental } from "./demo-gallery";
 
 /** Demo içeriğinin sürümü: artırılırsa ön izleme veritabanı bir sonraki açılışta demo veriyle baştan kurulur */
-const DEMO_VERSION = 3;
+const DEMO_VERSION = 4;
+
+/** Silmeden yükseltme adımları: anahtar = başlangıç sürümü */
+const UPGRADES: Record<number, () => Promise<void>> = {
+  // 2 → 3: İngilizce içerik ve İngilizce dil
+  2: async () => {
+    const { seedEnglish } = await import("./lib/seed-en");
+    await seedEnglish();
+    await db
+      .insert(t.settings)
+      .values({ key: "i18n", value: { locales: ["tr", "en"], switcher: true } })
+      .onConflictDoUpdate({ target: t.settings.key, set: { value: { locales: ["tr", "en"], switcher: true } } });
+  },
+  // 3 → 4: demo paketler (kombin) ve İngilizce adları
+  3: async () => {
+    const { seedDemoBundles } = await import("./lib/seed-bundles");
+    const { seedEnglish } = await import("./lib/seed-en");
+    await seedDemoBundles();
+    await seedEnglish();
+  },
+};
 
 async function main() {
   if (process.env.SEED_DEMO !== "1") return;
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(t.products);
   const [ver] = await db.select({ v: t.settings.value }).from(t.settings).where(sql`${t.settings.key} = 'demo'`);
   const current = (ver?.v as { version?: number } | undefined)?.version ?? 1;
-  if (n > 0 && current === 2) {
-    // 2 → 3: yalnızca İngilizce içerik eklenir; panelde yapılan değişiklikler (görseller, ürünler) silinmez
-    const { seedEnglish } = await import("./lib/seed-en");
-    console.log(`Demo içerik sürümü 2 → 3: ${await seedEnglish()} İngilizce çeviri eklendi.`);
-    await db
-      .insert(t.settings)
-      .values({ key: "i18n", value: { locales: ["tr", "en"], switcher: true } })
-      .onConflictDoUpdate({ target: t.settings.key, set: { value: { locales: ["tr", "en"], switcher: true } } });
-    await db.insert(t.settings).values({ key: "demo", value: { version: 3 } }).onConflictDoUpdate({ target: t.settings.key, set: { value: { version: 3 } } });
+  if (n > 0 && current >= 2 && current < DEMO_VERSION) {
+    // Sürüm 2'den sonrası verisi silinmeden adım adım yükseltilir; panelde yapılan değişiklikler korunur
+    for (let v = current; v < DEMO_VERSION; v++) {
+      await UPGRADES[v]?.();
+      console.log(`Demo içerik sürümü ${v} → ${v + 1} uygulandı.`);
+    }
+    await db.insert(t.settings).values({ key: "demo", value: { version: DEMO_VERSION } }).onConflictDoUpdate({ target: t.settings.key, set: { value: { version: DEMO_VERSION } } });
   } else if (n > 0 && current < DEMO_VERSION) {
     console.log(`Demo içerik sürümü ${current} → ${DEMO_VERSION}: ön izleme verisi baştan yükleniyor…`);
     execSync("npx tsx scripts/seed.ts", { stdio: "inherit" });
