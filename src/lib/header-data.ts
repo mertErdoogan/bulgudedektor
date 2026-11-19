@@ -2,7 +2,7 @@ import { and, asc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { db } from "@/db";
 import { campaigns } from "@/db/schema";
-import { latestFocus } from "./merch";
+import { bestSellersAcrossBrands, latestFocus } from "./merch";
 import { getSettings } from "./settings";
 import { localize } from "./i18n/content";
 import { getLocale } from "./i18n/server";
@@ -19,7 +19,13 @@ export type FocusMenu = {
   models: NavCard[];
   promo: { eyebrow: string; title: string; href: string; image: string | null } | null;
 };
-export type HeaderData = { focus: FocusMenu | null; cats: Record<string, CatMenu> };
+/** Öncelikli marka yokken: "Markalar" menüsü — bütün markalar eşit, sağda markalar arası çok satanlar */
+export type BrandsMenu = {
+  brands: { name: string; slug: string; logoUrl: string | null; total: number }[];
+  models: NavCard[];
+  promo: FocusMenu["promo"];
+};
+export type HeaderData = { focus: FocusMenu | null; brands: BrandsMenu | null; cats: Record<string, CatMenu> };
 
 const card = (p: ProductCard): NavCard => ({
   id: p.id,
@@ -52,37 +58,42 @@ async function build(_key: string): Promise<HeaderData> {
     }),
   );
 
-  // Öncelikli marka (Minelab) menüsü
+  // Menünün sağındaki kampanya kartı (ayardan: otomatik / elle / kapalı)
+  const promoFor = async (fallbackImage: string | null): Promise<FocusMenu["promo"]> => {
+    if (s.nav.promo.mode === "custom" && s.nav.promo.title)
+      return { eyebrow: s.nav.promo.eyebrow, title: s.nav.promo.title, href: s.nav.promo.href || "/kampanyalar", image: s.nav.promo.image || fallbackImage };
+    if (s.nav.promo.mode !== "auto") return null;
+    const now = new Date();
+    const [c] = await db
+      .select({ name: campaigns.name, description: campaigns.description, endsAt: campaigns.endsAt })
+      .from(campaigns)
+      .where(and(eq(campaigns.isActive, true), eq(campaigns.showOnSite, true), or(isNull(campaigns.startsAt), sql`${campaigns.startsAt} <= now()`), or(isNull(campaigns.endsAt), gte(campaigns.endsAt, now))))
+      .orderBy(sql`${campaigns.endsAt} asc nulls last`, asc(campaigns.name))
+      .limit(1);
+    if (!c) return null;
+    const days = c.endsAt ? Math.ceil((new Date(c.endsAt).getTime() - now.getTime()) / 86400000) : null;
+    return { eyebrow: days !== null && days <= 14 ? `SON ${days} GÜN` : "KAMPANYA", title: c.description || c.name, href: "/kampanyalar", image: fallbackImage };
+  };
+
+  // Öncelikli marka seçiliyse o markanın menüsü; değilse bütün markaların eşit durduğu "Markalar" menüsü
   let focus: FocusMenu | null = null;
+  let brandsMenu: BrandsMenu | null = null;
   const g = m.focusBrand ? groups.find((x) => x.slug === m.focusBrand) : undefined;
   if (g) {
     const models = (await latestFocus(m, 6)).map(card);
-    let promo: FocusMenu["promo"] = null;
-    if (s.nav.promo.mode === "custom" && s.nav.promo.title) {
-      promo = { eyebrow: s.nav.promo.eyebrow, title: s.nav.promo.title, href: s.nav.promo.href || "/kampanyalar", image: s.nav.promo.image || models[0]?.image || null };
-    } else if (s.nav.promo.mode === "auto") {
-      const now = new Date();
-      const [c] = await db
-        .select({ name: campaigns.name, description: campaigns.description, endsAt: campaigns.endsAt })
-        .from(campaigns)
-        .where(and(eq(campaigns.isActive, true), eq(campaigns.showOnSite, true), or(isNull(campaigns.startsAt), sql`${campaigns.startsAt} <= now()`), or(isNull(campaigns.endsAt), gte(campaigns.endsAt, now))))
-        .orderBy(sql`${campaigns.endsAt} asc nulls last`, asc(campaigns.name))
-        .limit(1);
-      if (c) {
-        const days = c.endsAt ? Math.ceil((new Date(c.endsAt).getTime() - now.getTime()) / 86400000) : null;
-        promo = { eyebrow: days !== null && days <= 14 ? `SON ${days} GÜN` : "KAMPANYA", title: c.description || c.name, href: "/kampanyalar", image: models[0]?.image ?? null };
-      }
-    }
-    focus = { brand: { name: g.name, slug: g.slug }, total: g.total, series: g.categories, models, promo };
+    focus = { brand: { name: g.name, slug: g.slug }, total: g.total, series: g.categories, models, promo: await promoFor(models[0]?.image ?? null) };
+  } else if (groups.length) {
+    const models = (await bestSellersAcrossBrands(6)).map(card);
+    brandsMenu = { brands: groups.map((x) => ({ name: x.name, slug: x.slug, logoUrl: x.logoUrl, total: x.total })), models, promo: await promoFor(models[0]?.image ?? null) };
   }
-  return { focus, cats };
+  return { focus, brands: brandsMenu, cats };
 }
 
 /**
  * Header menüleri her sayfada çizilir; veriyi 60 sn önbellekte tutar (sayfa açılışı hızlı kalsın).
  * Paneldeki kayıtlar revalidatePath("/", "layout") ile önbelleği hemen tazeler.
  */
-const cached = unstable_cache(build, ["header-data-v3"], { revalidate: 60, tags: ["header"] });
+const cached = unstable_cache(build, ["header-data-v4"], { revalidate: 60, tags: ["header"] });
 /** Vitrin/menü kartı ayarları önbellek anahtarına girer: ayar değişince eski menü hiç gösterilmez. */
 export async function getHeaderData(locale?: Locale): Promise<HeaderData> {
   const s = await getSettings();
@@ -90,7 +101,7 @@ export async function getHeaderData(locale?: Locale): Promise<HeaderData> {
   const l = locale ?? (await getLocale());
   if (l === DEFAULT_LOCALE) return hd;
   // Önbellekteki Türkçe menüyü isteğin diline çevir (ürün adları, kısa açıklama, alt kategoriler, kampanya etiketi)
-  const allCards = [...(hd.focus?.models ?? []), ...Object.values(hd.cats).flatMap((c) => c.products)];
+  const allCards = [...(hd.focus?.models ?? []), ...(hd.brands?.models ?? []), ...Object.values(hd.cats).flatMap((c) => c.products)];
   const allSubs = Object.values(hd.cats).flatMap((c) => c.subs);
   const [lp, lc] = await Promise.all([
     localize(allCards.map((p) => ({ id: p.id, name: p.name, shortDescription: p.line })), "product", l),
@@ -102,6 +113,7 @@ export async function getHeaderData(locale?: Locale): Promise<HeaderData> {
   const eyebrow = (e: string) => e.replace(/^SON (\d+) GÜN$/, "LAST $1 DAYS").replace(/^KAMPANYA$/, "OFFER");
   return {
     focus: hd.focus ? { ...hd.focus, models: hd.focus.models.map(tc), promo: hd.focus.promo ? { ...hd.focus.promo, eyebrow: eyebrow(hd.focus.promo.eyebrow) } : null } : null,
+    brands: hd.brands ? { ...hd.brands, models: hd.brands.models.map(tc), promo: hd.brands.promo ? { ...hd.brands.promo, eyebrow: eyebrow(hd.brands.promo.eyebrow) } : null } : null,
     cats: Object.fromEntries(Object.entries(hd.cats).map(([k, c]) => [k, { ...c, subs: c.subs.map((x) => ({ ...x, name: cm.get(x.id) ?? x.name })), products: c.products.map(tc) }])),
   };
 }

@@ -11,7 +11,7 @@ import * as t from "../src/db/schema";
 import { ensureDemoGallery, removeTrialRental } from "./demo-gallery";
 
 /** Demo içeriğinin sürümü: artırılırsa ön izleme veritabanı bir sonraki açılışta demo veriyle baştan kurulur */
-const DEMO_VERSION = 4;
+const DEMO_VERSION = 5;
 
 /** Silmeden yükseltme adımları: anahtar = başlangıç sürümü */
 const UPGRADES: Record<number, () => Promise<void>> = {
@@ -29,6 +29,46 @@ const UPGRADES: Record<number, () => Promise<void>> = {
     const { seedDemoBundles } = await import("./lib/seed-bundles");
     const { seedEnglish } = await import("./lib/seed-en");
     await seedDemoBundles();
+    await seedEnglish();
+  },
+  // 4 → 5: Minelab odağı kaldırıldı, tüm markalar eşit; çok satanlar önde
+  4: async () => {
+    const { paletteFromUrl } = await import("../src/lib/palette-core");
+    const { seedEnglish } = await import("./lib/seed-en");
+    // Öncelikli marka kapalı (varsayılana dön); Minelab'a bağlı kayan yazı / kısayollar varsayılana dönsün
+    await db.delete(t.settings).where(sql`${t.settings.key} = 'merch'`);
+    await db.delete(t.settings).where(sql`${t.settings.key} in ('ticker', 'nav') and ${t.settings.value}::text like '%/marka/minelab%'`);
+    // Markalar alfabetik
+    for (const [i, slug] of ["garrett", "minelab", "nokta", "xp"].entries()) {
+      await db.update(t.brands).set({ sortOrder: i + 1 }).where(sql`${t.brands.slug} = ${slug}`);
+    }
+    // Ana banner'lar: Minelab'ın 3 banner'ı yerine her markadan bir çok satan model
+    const OLD_HERO = ["Minelab Manticore: define aramada yeni seviye", "Minelab GPZ 8000: mineralli toprakta bile derinde", "Minelab Equinox 900: tarla, plaj, su altı"];
+    const old = await db.select({ id: t.banners.id }).from(t.banners).where(sql`${t.banners.placement} = 'HERO' and ${t.banners.title} in (${sql.join(OLD_HERO.map((x) => sql`${x}`), sql`, `)})`);
+    if (old.length === OLD_HERO.length) {
+      await db.delete(t.banners).where(sql`${t.banners.placement} = 'HERO' and ${t.banners.title} in (${sql.join(OLD_HERO.map((x) => sql`${x}`), sql`, `)})`);
+      const HERO = [
+        { title: "XP Deus II: tamamen kablosuz, 20 metre su altı", subtitle: "Profesyonel çok frekans", image: "banner-deus-2", linkUrl: "/urun/deus-ii-22-cm-ws6-kulaklik" },
+        { title: "Minelab Equinox 900: tarla, plaj, su altı", subtitle: "Çok amaçlı, su geçirmez", image: "banner-equinox-900", linkUrl: "/urun/equinox-900" },
+        { title: "Nokta Double Score 2: çift frekans, tam su geçirmez", subtitle: "Define ve altın", image: "banner-double-score-2", linkUrl: "/urun/double-score-2" },
+        { title: "Garrett Ace 250: ilk dedektör için en kolay başlangıç", subtitle: "Yeni başlayanlar için", image: "banner-ace-250", linkUrl: "/urun/ace-250" },
+      ];
+      for (const [i, b] of HERO.entries()) {
+        const imageUrl = `/demo/${b.image}.jpg`;
+        await db.insert(t.banners).values({ title: b.title, subtitle: b.subtitle, imageUrl, linkUrl: b.linkUrl, palette: (await paletteFromUrl(imageUrl)) ?? undefined, placement: "HERO", sortOrder: i, showText: false });
+      }
+    }
+    // Yan kartlar
+    await db.update(t.banners).set({ eyebrow: "ÇOK SATAN · MINELAB" }).where(sql`${t.banners.placement} = 'SIDE' and ${t.banners.title} = 'Vanquish 560 Pro-Pack' and ${t.banners.eyebrow} = 'YENİ · MINELAB'`);
+    await db.update(t.banners)
+      .set({ title: "Double Score 2, 3 taksit", eyebrow: "VADE FARKSIZ · NOKTA", subtitle: "3 × 8.667 TL", imageUrl: "/demo/nokta-double-score-2.jpg", linkUrl: "/urun/double-score-2" })
+      .where(sql`${t.banners.placement} = 'SIDE' and ${t.banners.title} = 'Equinox 900, 3 taksit'`);
+    // Marka kampanyası tüm markalara açılır
+    await db.update(t.campaigns)
+      .set({ name: "Sezon indirimi", scope: "ALL", targetIds: [], description: "40.000 TL üzeri dedektör alışverişinde 1.500 TL indirim" })
+      .where(sql`${t.campaigns.name} = 'Minelab sezon indirimi'`);
+    // Sektörde çok satan modellere rozet
+    await db.execute(sql`update products set badges = array_append(coalesce(badges, '{}'), 'Çok satan') where slug in ('ace-250', 'double-score-2', 'pro-pointer-at', 'deus-ii-22-cm-ws6-kulaklik') and not ('Çok satan' = any(coalesce(badges, '{}')))`);
     await seedEnglish();
   },
 };

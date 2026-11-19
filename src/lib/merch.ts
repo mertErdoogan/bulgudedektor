@@ -115,20 +115,42 @@ export async function focusThumbs(m: MerchSettings, n = 4): Promise<string[]> {
 }
 
 /**
- * Banner altı kartlar için öncelikli markanın en yeni cihazları.
+ * Banner altı kartlar ve marka menüsü için en yeni cihazlar.
+ * Öncelikli marka seçiliyse o markanın; seçili değilse tüm markaların — her markadan sırayla biri (eşit görünürlük).
  * Cihaz = teknoloji alanı dolu ürün (başlık, kulaklık gibi aksesuarlar girmez).
  * Sıra: sabitlenmiş (süresi geçmemiş) → "Yeni" rozetli → en son eklenen. Stokta olmayanlar sona.
  */
 export async function latestFocus(m: MerchSettings, n = 3): Promise<ProductCard[]> {
-  if (!m.focusBrand) return [];
   const { cardQuery } = await import("./store");
   const { and, desc, eq, isNotNull } = await import("drizzle-orm");
   const rows = await cardQuery()
-    .where(and(eq(products.status, "ACTIVE"), isNotNull(products.technology), focusBrandCond(m.focusBrand)))
+    .where(and(eq(products.status, "ACTIVE"), isNotNull(products.technology), m.focusBrand ? focusBrandCond(m.focusBrand) : undefined))
     .orderBy(sql`(${products.stock} > 0 or ${products.allowBackorder}) desc`, sql`(coalesce(${products.badges}, '{}') && array['Yeni']) desc`, desc(products.createdAt))
-    .limit(n + 6);
+    .limit(m.focusBrand ? n + 6 : 60);
   const pins = activePins(m);
-  const list = rows as unknown as ProductCard[];
+  let list = rows as unknown as ProductCard[];
+  if (!m.focusBrand) list = roundRobin(list);
   const pinned = pins.map((id) => list.find((r) => r.id === id)).filter((x): x is ProductCard => !!x);
   return [...pinned, ...list.filter((r) => !pinned.includes(r))].slice(0, n);
+}
+
+/** Sırayı bozmadan markaları dönüşümlü dizer: A1 B1 C1 A2 B2 … (hiçbir marka başı tutmaz) */
+export function roundRobin<T extends { brandSlug?: string | null }>(list: T[]): T[] {
+  const groups = new Map<string, T[]>();
+  for (const p of list) {
+    const k = p.brandSlug ?? "";
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(p);
+  }
+  const out: T[] = [];
+  const queues = [...groups.values()];
+  for (let i = 0; out.length < list.length; i++) for (const q of queues) if (q[i]) out.push(q[i]);
+  return out;
+}
+
+/** Marka menüsü (öncelikli marka yokken): tüm markaların çok satanları, markalar dönüşümlü */
+export async function bestSellersAcrossBrands(n = 6): Promise<ProductCard[]> {
+  const { productsFor } = await import("./store");
+  const top = await productsFor("featured", n * 3);
+  return roundRobin(top).slice(0, n);
 }

@@ -5,7 +5,7 @@ import { BrandMark } from "./brand-mark";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, BadgeCheck, ChevronDown, Compass, Flame } from "lucide-react";
-import type { CatMenu, FocusMenu, NavCard } from "@/lib/header-data";
+import type { BrandsMenu, CatMenu, FocusMenu, NavCard } from "@/lib/header-data";
 import { imgUrl } from "@/lib/img";
 import { INFO_LINK } from "@/lib/nav-links";
 import { cn, formatTL } from "@/lib/utils";
@@ -19,10 +19,10 @@ type Cat = Parameters<typeof MegaMenu>[0]["categories"];
 const INFO = INFO_LINK;
 
 /**
- * Ana menü: sade metin linkler. Öncelikli marka (Minelab) ve kategori linkleri üzerine gelince görselli menü açar.
+ * Ana menü: sade metin linkler. Markalar (ya da panelden seçilen öncelikli marka) ve kategori linkleri üzerine gelince görselli menü açar.
  * Açılış 120 ms gecikmeli (fare üstünden geçerken yanlışlıkla açılmasın), kapanış 160 ms (panele geçerken kapanmasın).
  */
-export function NavBar({ items, categories, brands, focus, cats }: { items: Item[]; categories: Cat; brands: { name: string; slug: string; logoUrl?: string | null }[]; focus: FocusMenu | null; cats: Record<string, CatMenu> }) {
+export function NavBar({ items, categories, brands, focus, brandsMenu, cats }: { items: Item[]; categories: Cat; brands: { name: string; slug: string; logoUrl?: string | null }[]; focus: FocusMenu | null; brandsMenu?: BrandsMenu | null; cats: Record<string, CatMenu> }) {
   const path = usePathname();
   const [open, setOpen] = useState<string | null>(null);
   const t = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,7 +84,9 @@ export function NavBar({ items, categories, brands, focus, cats }: { items: Item
                 <FocusPanel f={focus} close={() => setOpen(null)} />,
                 path.startsWith(`/marka/${focus.brand.slug}`),
               )
-            : null}
+            : brandsMenu
+              ? drop("brands", "/markalar", tr("nav.brands"), <BrandsPanel b={brandsMenu} close={() => setOpen(null)} />, path.startsWith("/markalar") || path.startsWith("/marka/"))
+              : null}
           {main.map((m) => {
             const slug = /^\/kategori\/([^/?#]+)/.exec(m.url)?.[1];
             const c = slug ? cats[slug] : undefined;
@@ -175,6 +177,58 @@ function FocusPanel({ f, close }: { f: FocusMenu; close: () => void }) {
               <span className="absolute -right-5 -bottom-5 grid h-[132px] w-[132px] place-items-center rounded-full bg-white shadow-[0_0_0_6px_rgba(255,255,255,.18)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={imgUrl(f.promo.image, 256)} alt="" className="h-[96px] w-[96px] object-contain" />
+              </span>
+            ) : null}
+            <span className="relative z-10 mt-auto inline-flex items-center gap-1.5 text-[13px] font-bold"><T k="nav.seeDeal" /> <ArrowRight size={14} /></span>
+          </Link>
+        ) : null}
+        <Link href="/sihirbaz" onClick={close} className="flex items-center gap-3 rounded-[18px] border border-line p-4 transition hover:border-deep">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-soft text-brand"><Compass size={22} /></span>
+          <span>
+            <b className="block text-[14px]"><T k="nav.whichFits" /></b>
+            <span className="text-[12.5px] text-mute"><T k="nav.whichFitsD" /></span>
+          </span>
+        </Link>
+        <span className="flex items-center gap-1.5 px-1 text-[12.5px] text-mute"><BadgeCheck size={15} className="text-[#11643a]" /> <T k="nav.genuine" /></span>
+      </div>
+    </div>
+  );
+}
+
+/** "Markalar" menüsü: bütün markalar eşit (alfabetik), sağda markalar arası çok satanlar */
+function BrandsPanel({ b, close }: { b: BrandsMenu; close: () => void }) {
+  return (
+    <div className="grid grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_290px]" data-testid="brands-menu">
+      <div className="border-r border-line px-3 py-5">
+        <p className="px-3 pb-2 text-[11px] font-extrabold tracking-[.1em] text-mute"><T k="nav.allBrandsCap" /></p>
+        {b.brands.map((x) => (
+          <Link key={x.slug} href={`/marka/${x.slug}`} onClick={close} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-[14px] font-medium hover:bg-soft">
+            <BrandMark name={x.name} logoUrl={x.logoUrl} size={28} className="rounded-lg" />
+            <span className="min-w-0 flex-1 truncate">{x.name}</span> <span className="text-xs font-semibold text-mute">{x.total}</span>
+          </Link>
+        ))}
+        <Link href="/markalar" onClick={close} className="mt-3 flex items-center gap-1.5 px-3 text-[13px] font-bold text-brand"><T k="nav.compareBrands" /> <ArrowRight size={14} /></Link>
+      </div>
+      <div className="p-5">
+        <div className="mb-3.5 flex items-baseline justify-between">
+          <p className="text-[16px] font-extrabold"><T k="nav.bestSellers" /></p>
+          <Link href="/urunler?sirala=cok-satan" onClick={close} className="flex items-center gap-1 text-[13px] font-bold text-brand"><T k="nav.allBestSellers" /> <ArrowRight size={14} /></Link>
+        </div>
+        <div className="grid grid-cols-3 gap-3.5">
+          {b.models.slice(0, 6).map((p) => (
+            <ModelCard key={p.id} p={p} onClick={close} />
+          ))}
+        </div>
+      </div>
+      <div className="hidden flex-col gap-3.5 border-l border-line p-5 xl:flex">
+        {b.promo ? (
+          <Link href={b.promo.href} onClick={close} className="relative flex h-[236px] flex-col overflow-hidden rounded-[18px] bg-[linear-gradient(150deg,#2a1210,#7a1d14_60%,#d42e1e)] p-5 text-white">
+            {b.promo.eyebrow ? <span className="text-[11px] font-extrabold tracking-[.12em] text-[#ffb4a8]">{b.promo.eyebrow}</span> : null}
+            <span className="relative z-10 mt-1.5 line-clamp-3 max-w-[85%] text-[20px] leading-tight font-extrabold">{b.promo.title}</span>
+            {b.promo.image ? (
+              <span className="absolute -right-5 -bottom-5 grid h-[132px] w-[132px] place-items-center rounded-full bg-white shadow-[0_0_0_6px_rgba(255,255,255,.18)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imgUrl(b.promo.image, 256)} alt="" className="h-[96px] w-[96px] object-contain" />
               </span>
             ) : null}
             <span className="relative z-10 mt-auto inline-flex items-center gap-1.5 text-[13px] font-bold"><T k="nav.seeDeal" /> <ArrowRight size={14} /></span>

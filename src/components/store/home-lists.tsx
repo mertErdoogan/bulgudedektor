@@ -44,7 +44,7 @@ export function BestSellers({ items, ctx }: { items: P[]; ctx: CardCtx }) {
 }
 
 /**
- * Yeni gelenler: açık, sıcak→soğuk degrade zemin (kırmızıdan Minelab mavisine) ve bulanık renk lekeleri;
+ * Yeni gelenler: açık, sıcak→soğuk degrade zemin (kırmızıdan maviye) ve bulanık renk lekeleri;
  * öne çıkan yeni ürün banner altı kartlarıyla aynı dilde (mavi degrade, beyaz ürün dairesi, YENİ etiketi).
  */
 export function NewArrivals({ items, ctx, spotlight = false }: { items: P[]; ctx: CardCtx; spotlight?: boolean }) {

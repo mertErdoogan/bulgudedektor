@@ -203,7 +203,7 @@ export const LEGAL_PAGES: { slug: string; title: string; footerGroup?: string; s
     title: "Hakkımızda",
     footerGroup: "Kurumsal",
     seoDescription: "Derinova Dedektör: metal dedektöründe uzman mağaza. İstanbul'da showroom, uzman danışmanlık ve teknik servis.",
-    content: `<p><strong>Derinova Dedektör</strong>, metal dedektörü ve aksesuarlarında uzmanlaşmış bir mağazadır. Minelab, Nokta, XP, Garrett ve CoilTek ürünlerini orijinal, faturalı ve garantili olarak sunuyoruz.</p>
+    content: `<p><strong>Derinova Dedektör</strong>, metal dedektörü ve aksesuarlarında uzmanlaşmış bir mağazadır. Garrett, Minelab, Nokta, XP ve CoilTek ürünlerini orijinal, faturalı ve garantili olarak sunuyoruz.</p>
 <h2>Neden Derinova?</h2>
 <ul>
 <li><strong>Orijinallik güvencesi:</strong> tüm cihazlar faturalı ve garantilidir, seri numarasıyla orijinallik sorgulanabilir.</li>

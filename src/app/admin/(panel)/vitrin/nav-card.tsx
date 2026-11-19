@@ -16,7 +16,7 @@ const ICONS = [
 /**
  * Header ve ana sayfa kısayolları:
  * - "Ne arıyorsun?" yuvarlak kısayolları (görsel, ad, link, sıra)
- * - Minelab menüsünün sağındaki kampanya kartı
+ * - Marka menüsünün sağındaki kampanya kartı
  */
 export async function NavCard() {
   const n = (await getSettings()).nav;
@@ -52,7 +52,7 @@ export async function NavCard() {
         </div>
 
         <fieldset className="flex flex-col gap-3 rounded-xl border border-line p-4">
-          <legend className="px-1 text-sm font-bold">Minelab menüsündeki kampanya kartı</legend>
+          <legend className="px-1 text-sm font-bold">Marka menüsündeki kampanya kartı</legend>
           <div className="flex flex-wrap gap-4 text-sm">
             {(
               [
@@ -68,7 +68,7 @@ export async function NavCard() {
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             <Field label="Üst yazı (elle)"><Input name="pEyebrow" defaultValue={n.promo.eyebrow} maxLength={30} placeholder="KASIM'A ÖZEL" /></Field>
-            <Field label="Başlık (elle)"><Input name="pTitle" defaultValue={n.promo.title} maxLength={90} placeholder="40.000 TL üzeri Minelab'da 1.500 TL indirim" /></Field>
+            <Field label="Başlık (elle)"><Input name="pTitle" defaultValue={n.promo.title} maxLength={90} placeholder="40.000 TL üzeri dedektörlerde 1.500 TL indirim" /></Field>
             <Field label="Bağlantı (elle)"><Input name="pHref" defaultValue={n.promo.href} placeholder="/kampanyalar" /></Field>
           </div>
           <Field label="Görsel (boşsa en yeni model)"><SingleImageField name="pImage" defaultValue={n.promo.image || null} /></Field>

@@ -57,7 +57,7 @@ export function BrandGrid({ brands, focus }: { brands: BrandGroup[]; focus?: { s
   const rest = f ? brands.filter((b) => b !== f) : brands;
   const cols = rest.length >= 4 ? "xl:grid-cols-4" : rest.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2";
   return (
-    <div className="flex flex-col gap-3 md:gap-4">
+    <div className="flex flex-col gap-3 md:gap-4" data-testid="brand-grid">
       {f ? <BrandCard b={f} thumbs={focus!.thumbs} note={focus!.note} /> : null}
       {rest.length ? (
         <div className={cn("grid grid-cols-2 gap-3 md:gap-4", f ? cols : "xl:grid-cols-4")}>
@@ -73,7 +73,7 @@ export function BrandGrid({ brands, focus }: { brands: BrandGroup[]; focus?: { s
 type Model = { id: string; name: string; slug: string; image: string | null; price: number };
 
 /**
- * Ana sayfa "Markaya göre": öncelikli marka (Minelab) koyu, büyük bir vitrinde — kategorileri ve öne çıkan
+ * Ana sayfa "Markaya göre": öncelikli marka (panelden seçilirse) koyu, büyük bir vitrinde — kategorileri ve öne çıkan
  * 4 modeliyle; diğer markalar yanında sade karolar halinde (görünür ama ikinci planda).
  */
 export function BrandShowcase({ focus, models, note, rest, full = false }: { focus: BrandGroup; models: Model[]; note?: string; rest: BrandGroup[]; full?: boolean }) {
@@ -150,7 +150,7 @@ export function BrandShowcase({ focus, models, note, rest, full = false }: { foc
 
 
 /**
- * Kategoriler ve Markalar sayfaları için: vitrin önceliğindeki marka (Minelab) ana sayfadaki gibi koyu vitrinde
+ * Kategoriler ve Markalar sayfaları için: vitrin önceliğindeki marka (seçilmişse) ana sayfadaki gibi koyu vitrinde
  * en üstte, diğer markalar altında. Öncelikli marka tanımlı değilse düz ızgara.
  */
 export async function FocusBrands({ brands }: { brands: BrandGroup[] }) {

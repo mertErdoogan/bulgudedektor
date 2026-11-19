@@ -55,8 +55,11 @@ with sync_playwright() as p:
         hits = sorted(((text.find(n), n) for n in allp if text.find(n) >= 0))
         return [n for _, n in hits]
 
+    sql("delete from settings where key='merch'")
     a.goto(f"{BASE}/admin/vitrin")
-    chk("varsayılan: öncelikli seçili", a.locator("[data-testid=wizard-mode] input[value=priority]").is_checked())
+    chk("varsayılan: tarafsız (tüm markalar) seçili", a.locator("[data-testid=wizard-mode] input[value=all]").is_checked())
+    # Öncelik modlarını sınamak için panelde öncelikli marka Minelab seçilmiş gibi
+    sql("""insert into settings(key, value) values ('merch', '{"focusBrand":"minelab","weight":"balanced","pinned":[],"badge":true,"focusNote":"","heroCards":"latest","wizard":"priority"}'::jsonb) on conflict (key) do update set value = excluded.value""")
 
     # Tarafsız → referans
     mode("all")
@@ -81,7 +84,7 @@ with sync_playwright() as p:
     _, t = run(POINTER)
     chk("sadece Minelab, uyan yok: zorlamıyor, uzmana yönlendiriyor", c.locator("[data-testid=wizard-empty]").count() == 1 and "Minelab modeli bulamadık" in t)
 
-    mode("priority")
+    sql("delete from settings where key='merch'")
     print("tarafsız define:", neutral)
     b.close()
 

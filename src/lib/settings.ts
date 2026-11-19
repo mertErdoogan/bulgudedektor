@@ -174,7 +174,7 @@ export type Shortcut = { label: string; href: string; image: string; icon: Short
 /** Header / menü ayarları */
 export type NavSettings = {
   shortcuts: Shortcut[];
-  /** Minelab menüsünün sağındaki kampanya kartı: auto = yayındaki ilk kampanya, custom = aşağıdaki alanlar, off = gizli */
+  /** Marka menüsünün sağındaki kampanya kartı: auto = yayındaki ilk kampanya, custom = aşağıdaki alanlar, off = gizli */
   promo: { mode: "auto" | "custom" | "off"; eyebrow: string; title: string; href: string; image: string };
 };
 
@@ -351,7 +351,8 @@ export const DEFAULT_SETTINGS: AllSettings = {
       "Derinova Dedektör, İstanbul'da bulunan ve Türkiye geneline {markalar} metal dedektörleri, dedektör başlıkları, pointer ve aksesuarlar satan bir dedektör mağazasıdır. Tüm cihazlar faturalı ve 2 yıl garantilidir; seri numarasıyla orijinallik sorgulanabilir. Satıştan önce uzman danışmanlık (WhatsApp ve telefon), 'Bana hangisi?' seçim sihirbazı ve showroomda deneme; satıştan sonra kurulum eğitimi ve teknik servis sunar.",
   },
   setup: { completed: false, completedSteps: [] },
-  merch: { focusBrand: "minelab", weight: "balanced", pinned: [], badge: true, focusNote: "Öncelikli marka", heroCards: "latest", wizard: "priority" },
+  // Markalar eşit: öncelikli marka kapalı, raflar satış ve yeniliğe göre doğal sırada (panelden açılabilir)
+  merch: { focusBrand: "", weight: "off", pinned: [], badge: false, focusNote: "", heroCards: "latest", wizard: "all" },
   i18n: { locales: ["tr"], switcher: true },
   ai: { apiKey: "", model: "claude-sonnet-5-5" },
   einvoice: {
@@ -371,7 +372,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
   ticker: {
     enabled: true,
     items: [
-      { text: "Minelab'ın en yeni modelleri stoklarda", href: "/marka/minelab", highlight: true },
+      { text: "Tüm markaların en yeni modelleri stoklarda", href: "/urunler?sirala=yeni", highlight: true },
       { text: "3 aya kadar vade farksız taksit", href: "", highlight: false },
       { text: "Seri numaranla orijinallik sorgula", href: "/seri-no", highlight: false },
       { text: "Hangi dedektör? Uzmanımıza WhatsApp'tan sor", href: "/iletisim", highlight: false },
@@ -382,7 +383,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
   },
   nav: {
     shortcuts: [
-      { label: "Minelab", href: "/marka/minelab", image: "", icon: "", featured: true },
+      { label: "En Çok Satılan", href: "/urunler?sirala=cok-satan", image: "", icon: "trend", featured: true },
       { label: "Pointer", href: "/kategori/pointer", image: "", icon: "", featured: false },
       { label: "Altın Dedektörü", href: "/kategori/dogal-altin", image: "", icon: "", featured: false },
       { label: "Define ve Sikke", href: "/kategori/define-ve-sikke", image: "", icon: "", featured: false },
@@ -390,7 +391,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
       { label: "Derin Arama", href: "/kategori/derin-arama", image: "", icon: "", featured: false },
       { label: "Başlık ve Aksesuar", href: "/kategori/baslik-ve-aksesuar", image: "", icon: "", featured: false },
       { label: "Yeni Gelenler", href: "/urunler?sirala=yeni", image: "", icon: "sparkles", featured: false },
-      { label: "En Çok Satılan", href: "/urunler?sirala=cok-satan", image: "", icon: "trend", featured: false },
+      { label: "Tüm Markalar", href: "/markalar", image: "", icon: "", featured: false },
     ],
     promo: { mode: "auto", eyebrow: "", title: "", href: "", image: "" },
   },

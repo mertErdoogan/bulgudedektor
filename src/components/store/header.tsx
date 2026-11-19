@@ -101,7 +101,7 @@ export async function StoreHeader() {
             <SearchBox placeholder={t("nav.searchPlaceholderShort")} />
           </div>
         </div>
-        <NavBar items={header.map((m) => ({ id: m.id, label: m.label, url: m.url, highlight: !!m.highlight }))} categories={nav.categories} brands={brandList} focus={hd.focus} cats={hd.cats} />
+        <NavBar items={header.map((m) => ({ id: m.id, label: m.label, url: m.url, highlight: !!m.highlight }))} categories={nav.categories} brands={brandList} focus={hd.focus} brandsMenu={hd.brands} cats={hd.cats} />
       </header>
       <StickyBar categories={nav.categories} brands={brandList} wa={wa} storeName={s.store.name} />
     </>

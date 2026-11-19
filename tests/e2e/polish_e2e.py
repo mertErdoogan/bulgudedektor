@@ -68,7 +68,7 @@ async def main():
         saved = sql(f"select url || '|' || sort_order from product_images where product_id='{pid}'").split("\n")
         sql(f"delete from product_images where product_id='{pid}'")
         await pg.goto(B + "/kategori/define-ve-sikke", wait_until="networkidle")
-        chk("Görselsiz üründe yer tutucu", await pg.locator("article:has(a[href='/urun/ace-250']) [role=img][aria-label='Görsel hazırlanıyor']").count() == 1)
+        chk("Görselsiz üründe yer tutucu", await pg.locator("article:has(a[href='/urun/ace-250']) [role=img][aria-label='Garrett']").count() >= 1)
         for row in filter(None, saved):
             url, so = row.rsplit("|", 1)
             sql(f"insert into product_images (id, product_id, url, sort_order) values (gen_random_uuid()::text, '{pid}', '{url}', {so})")
@@ -92,7 +92,8 @@ async def main():
         await ex.get_by_role("tab", name="Doğal altın").click(); await pg.wait_for_timeout(400)
         hrefs = await ex.locator("[role=tabpanel] a[href^='/urun/']").evaluate_all("els => [...new Set(els.map(e => e.getAttribute('href')))]")
         chk("Sekme değişince altın cihazları", "/urun/gpx-6000" in hrefs and "/urun/ace-250" not in hrefs, hrefs)
-        chk("Marka vitrini: Minelab büyük + diğer markalar", await pg.locator("[data-testid=brand-showcase] a[href='/marka/garrett']").count() == 1 and await pg.locator("[data-testid=brand-showcase] a[href^='/urun/']").count() == 4)
+        bg = pg.locator("[data-testid=brand-grid]")
+        chk("Markaya göre: tüm markalar eşit kartlarda", await pg.locator("[data-testid=brand-showcase]").count() == 0 and all([await bg.locator(f"a[href^='/marka/{s}']").count() >= 1 for s in ("garrett", "minelab", "nokta", "xp")]))
         eb = await pg.locator("[data-testid=expert-band]").inner_text()
         chk("Uzman bandı: kamera/görüntülü yok", "kamera" not in eb.lower() and "görüntülü" not in eb.lower() and "WhatsApp" in eb)
         chk("Güven bandı: seri no formu", await pg.locator("[data-testid=trust-band] form[action='/seri-no'] input[name=no]").count() == 1)
@@ -145,3 +146,6 @@ async def main():
     ok = sum(1 for _, c in res if c); print(f"{ok}/{len(res)} geçti")
 
 asyncio.run(main())
+
+# Bir kontrol bile kaldıysa CI kırmızı olsun
+raise SystemExit(0 if all(c for _, c in res) else 1)

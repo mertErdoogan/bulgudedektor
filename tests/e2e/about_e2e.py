@@ -15,7 +15,8 @@ with sync_playwright() as p:
     check("sayılar gösteriliyor", pg.locator("[data-testid=about-stats] li").count() >= 3)
     hrefs = pg.eval_on_selector_all("[data-testid=about-actions] a", "e => e.map(a => a.getAttribute('href'))")
     check("işlevsel kısayollar", {"/sihirbaz", "/seri-no", "/servis", "/siparis-takip"} <= set(hrefs))
-    check("Minelab ilk marka", "Minelab" in pg.locator("[data-testid=about-brands] li").first.inner_text())
+    names = [x.strip() for x in pg.locator("[data-testid=about-brands] li").all_inner_texts()]
+    check("markalar eşit, alfabetik", len(names) == 4 and [n.split()[0] for n in names] == sorted(n.split()[0] for n in names))
     check("panel metni korunuyor", "Neden Derinova" in pg.inner_text(".about-prose"))
     check("showroom metinde tekrar etmiyor", "Showroom" not in pg.inner_text(".about-prose"))
     check("harita önce yüklenmiyor (KVKK)", pg.locator("[data-testid=about-map-frame]").count() == 0)

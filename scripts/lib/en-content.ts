@@ -51,6 +51,7 @@ export const EN_PRODUCTS: Record<string, EnProduct> = {
   "deus-ii-22-cm-ws6-kulaklik": {
     name: "Deus II 22 cm · WS6 Headphones",
     slug: "deus-ii-22-cm-ws6-headphones",
+    badges: ["Best seller"],
     shortDescription: "Fully wireless, waterproof to 20 m, professional multi-frequency detector.",
     seoTitle: "XP Deus II 22 cm with WS6 Headphones",
     seoDescription: "XP Deus II with 22 cm coil and WS6 headphones: fully wireless, FMF multi-frequency, waterproof to 20 m, only 750 g.",
@@ -61,6 +62,7 @@ export const EN_PRODUCTS: Record<string, EnProduct> = {
     ],
   },
   "ace-250": {
+    badges: ["Best seller"],
     shortDescription: "A classic first detector: simple menu, reliable discrimination.",
     seoTitle: "Garrett Ace 250 Metal Detector",
     seoDescription: "Garrett Ace 250: an easy, reliable beginner metal detector with simple controls, target ID and dependable iron discrimination.",
@@ -70,6 +72,7 @@ export const EN_PRODUCTS: Record<string, EnProduct> = {
     ],
   },
   "double-score-2": {
+    badges: ["Best seller"],
     shortDescription: "Dual-frequency and fully waterproof, made in Turkey.",
     seoTitle: "Nokta Double Score 2 Metal Detector",
     seoDescription: "Nokta Double Score 2: dual-frequency, fully waterproof detector for coins, relics and gold. Built by Turkish manufacturer Nokta.",
@@ -136,6 +139,7 @@ export const EN_PRODUCTS: Record<string, EnProduct> = {
     badges: ["New"],
   },
   "pro-pointer-at": {
+    badges: ["Best seller"],
     shortDescription: "Find the target in the hole in seconds. Waterproof to 3 m.",
     seoTitle: "Garrett Pro-Pointer AT Pinpointer",
     seoDescription: "Garrett Pro-Pointer AT: waterproof to 3 m, finds the target in the hole in seconds. The most popular pinpointer.",
@@ -271,7 +275,7 @@ export const EN_PAGES: Record<string, { title: string; slug: string; content?: s
   hakkimizda: {
     title: "About us",
     slug: "about-us",
-    content: `<p><strong>Derinova Dedektör</strong> is a store specialising in metal detectors and accessories. We sell Minelab, Nokta, XP, Garrett and CoilTek products that are genuine, invoiced and covered by warranty.</p>
+    content: `<p><strong>Derinova Dedektör</strong> is a store specialising in metal detectors and accessories. We sell Garrett, Minelab, Nokta, XP and CoilTek products that are genuine, invoiced and covered by warranty.</p>
 <h2>Why Derinova?</h2>
 <ul>
 <li><strong>Guaranteed genuine:</strong> every detector comes with an invoice and warranty, and you can verify it by serial number.</li>
@@ -391,18 +395,21 @@ export const EN_SECTIONS: Record<string, [string, string]> = {
 
 /** Banner / promosyon kartları: Türkçe başlık → İngilizce alanlar */
 export const EN_BANNERS: Record<string, { title: string; subtitle?: string; eyebrow?: string }> = {
+  "XP Deus II: tamamen kablosuz, 20 metre su altı": { title: "XP Deus II: fully wireless, waterproof to 20 metres", subtitle: "Professional multi-frequency" },
+  "Minelab Equinox 900: tarla, plaj, su altı": { title: "Minelab Equinox 900: fields, beach, underwater", subtitle: "All-terrain, waterproof" },
+  "Nokta Double Score 2: çift frekans, tam su geçirmez": { title: "Nokta Double Score 2: dual frequency, fully waterproof", subtitle: "Coins, relics and gold" },
+  "Garrett Ace 250: ilk dedektör için en kolay başlangıç": { title: "Garrett Ace 250: the easiest first detector", subtitle: "For beginners" },
   "Minelab Manticore: define aramada yeni seviye": { title: "Minelab Manticore: the next level in coin and relic hunting", subtitle: "Coin & relic detector" },
   "Minelab GPZ 8000: mineralli toprakta bile derinde": { title: "Minelab GPZ 8000: deep even in mineralised ground", subtitle: "Gold detector" },
-  "Minelab Equinox 900: tarla, plaj, su altı": { title: "Minelab Equinox 900: fields, beach, underwater", subtitle: "All-terrain, waterproof" },
-  "Vanquish 560 Pro-Pack": { title: "Vanquish 560 Pro-Pack", subtitle: "From 49,588 TL", eyebrow: "NEW · MINELAB" },
-  "Equinox 900, 3 taksit": { title: "Equinox 900 in 3 instalments", subtitle: "3 × 33,227 TL", eyebrow: "INTEREST-FREE · MINELAB" },
+  "Vanquish 560 Pro-Pack": { title: "Vanquish 560 Pro-Pack", subtitle: "From 49,588 TL", eyebrow: "BEST SELLER · MINELAB" },
+  "Double Score 2, 3 taksit": { title: "Double Score 2 in 3 instalments", subtitle: "3 × 8,667 TL", eyebrow: "INTEREST-FREE · NOKTA" },
   "Kazıda hedefi saniyede bul": { title: "Find the target in seconds", subtitle: "From 12,751 TL", eyebrow: "PINPOINTER · GARRETT" },
 };
 
 export const EN_CAMPAIGNS: Record<string, [string, string]> = {
   "Hoş geldin indirimi": ["Welcome discount", "5% off your first order, up to 3,000 TL"],
   "Pointer'da kargo bedava": ["Free shipping on pinpointers", "Free shipping on pinpointer orders"],
-  "Minelab sezon indirimi": ["Minelab season sale", "1,500 TL off Minelab orders over 40,000 TL"],
+  "Sezon indirimi": ["Season sale", "1,500 TL off detector orders over 40,000 TL"],
 };
 
 export const EN_BUNDLES: Record<string, [string, string]> = {
@@ -418,7 +425,7 @@ export const EN_TEXTS: Record<string, string> = {
   "seo.aboutForAi": "Derinova Dedektör is a metal detector store based in Istanbul, selling {markalar} metal detectors, search coils, pinpointers and accessories across Turkey. Every detector is invoiced with a 2-year warranty and can be verified as genuine by serial number. Before you buy: expert advice (WhatsApp and phone), the 'Which one for me?' detector finder and hands-on trials in the showroom; after you buy: setup training and technical service.",
   "merch.focusNote": "Featured brand",
   "store.announcement": "Free shipping · Up to 3 interest-free instalments · Genuine, invoiced, 2-year warranty · Easy 14-day returns",
-  "ticker:Minelab'ın en yeni modelleri stoklarda": "Minelab's latest models are in stock",
+  "ticker:Tüm markaların en yeni modelleri stoklarda": "The latest models from every brand are in stock",
   "ticker:3 aya kadar vade farksız taksit": "Up to 3 interest-free instalments",
   "ticker:Seri numaranla orijinallik sorgula": "Check your detector is genuine by serial number",
   "ticker:Hangi dedektör? Uzmanımıza WhatsApp'tan sor": "Which detector? Ask our expert on WhatsApp",
@@ -429,5 +436,6 @@ export const EN_TEXTS: Record<string, string> = {
   "nav:Derin Arama": "Deep Search",
   "nav:Başlık ve Aksesuar": "Coils & Accessories",
   "nav:Yeni Gelenler": "New Arrivals",
+  "nav:Tüm Markalar": "All Brands",
   "nav:En Çok Satılan": "Best Sellers",
 };

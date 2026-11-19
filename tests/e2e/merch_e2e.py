@@ -23,7 +23,8 @@ BEST = """() => {
 async def main():
     sql("update users set totp_enabled=false, totp_secret=null, totp_last_step=null")
     sql("delete from rate_hits")
-    sql("delete from settings where key in ('merch','ticker')")  # varsayılanlar: minelab / dengeli / en yeni kartlar; şerit açık
+    sql("delete from settings where key in ('merch','ticker')")  # varsayılan: öncelikli marka yok, tüm markalar eşit; şerit açık
+    FOCUS = '{"focusBrand":"minelab","weight":"balanced","pinned":[],"badge":true,"focusNote":"Öncelikli marka","heroCards":"latest","wizard":"priority"}'
     minelab = set(sql("select p.slug from products p join brands b on b.id=p.brand_id where b.slug='minelab' and p.status='ACTIVE'").split("\n"))
     ace = sql("select id from products where slug='ace-250'")
     try:
@@ -33,9 +34,21 @@ async def main():
             errs = []; pg.on("pageerror", lambda e: errs.append(pg.url + " :: " + str(e)[:90]))
             share = lambda items: sum(1 for x in items if x.split("/")[-1] in minelab)
 
-            # ── Varsayılan (Dengeli): 10'luk rafta 8 Minelab, diğerleri araya serpiştirilmiş
+            # ── Varsayılan: öncelikli marka yok, çok satanlar markalar arası karışık; rozet ve not yok
             await pg.goto(B + "/", wait_until="networkidle")
             await pg.click('button:has-text("Sadece zorunlu")')
+            best0 = await pg.evaluate(BEST)
+            slugs0 = ",".join("'" + x.split("/")[-1] + "'" for x in best0)
+            nb0 = int(sql(f"select count(distinct brand_id) from products where slug in ({slugs0})") or 0)
+            chk("Tarafsız: çok satanlarda en az 3 marka", len(best0) == 8 and nb0 >= 3, (nb0, [x.split('/')[-1] for x in best0]))
+            chk("Tarafsız: Minelab rafı domine etmiyor", share(best0) <= 4, share(best0))
+            top = sql(f"select slug from products where slug in ({slugs0}) and 'Çok satan' = any(badges)").split()
+            chk("Tarafsız: çok satanlar rafın başında", best0 and best0[0].split('/')[-1] in top, (best0[:2], top))
+            chk("Tarafsız: öncelik notu yok", "Öncelikli marka" not in await pg.inner_text("main"))
+
+            # ── Panelden öncelikli marka açılınca (Dengeli): 8'lik rafta 6 Minelab, diğerleri araya serpiştirilmiş
+            sql(f"insert into settings(key, value) values ('merch', '{FOCUS}'::jsonb) on conflict (key) do update set value = excluded.value")
+            await pg.goto(B + "/", wait_until="networkidle")
             best = await pg.evaluate(BEST)
             chk("Çok satanlar 8 ürün", len(best) == 8, best)
             chk("Dengeli: 8'de 6 Minelab", share(best) == 6, [x.split('/')[-1] for x in best])
@@ -133,7 +146,7 @@ async def main():
             await card.get_by_role("button", name="Kaydet").click(); await ap.wait_for_timeout(1500)
             await pg.goto(B + "/", wait_until="networkidle")
             txt = await pg.locator("[data-testid=hero-cards]").inner_text()
-            chk("Kampanya kartı modu: paneldeki kartlar", "Equinox 900, 3 taksit" in txt and "Kazıda hedefi saniyede bul" in txt, txt[:120])
+            chk("Kampanya kartı modu: paneldeki kartlar", "Double Score 2, 3 taksit" in txt and "Kazıda hedefi saniyede bul" in txt, txt[:120])
 
             # Kayan şerit: madde ekle (bağlantı + öne çıkar), yön/renk değiştir
             tf = ap.locator("form:has([name=tText])")
@@ -145,7 +158,7 @@ async def main():
             await tf.locator("input[name=tRemove][value='2']").check()
             await tf.get_by_role("button", name="Kaydet").click(); await ap.wait_for_timeout(1500)
             tset = json.loads(sql("select value::text from settings where key='ticker'") or "{}")
-            chk("Şerit kaydı: 4 madde, sağdan sola, siyah", [i["text"] for i in tset.get("items", [])] == ["Minelab'ın en yeni modelleri stoklarda", "3 aya kadar vade farksız taksit", "Hangi dedektör? Uzmanımıza WhatsApp'tan sor", "Yılbaşına özel kampanya"] and tset.get("direction") == "rtl" and tset.get("theme") == "dark", tset)
+            chk("Şerit kaydı: 4 madde, sağdan sola, siyah", [i["text"] for i in tset.get("items", [])] == ["Tüm markaların en yeni modelleri stoklarda", "3 aya kadar vade farksız taksit", "Hangi dedektör? Uzmanımıza WhatsApp'tan sor", "Yılbaşına özel kampanya"] and tset.get("direction") == "rtl" and tset.get("theme") == "dark", tset)
             await pg.goto(B + "/", wait_until="networkidle")
             tk = pg.locator("[data-testid=ticker]")
             chk("Şerit ana sayfada güncel (yön + yeni madde + bağlantı)", await tk.get_attribute("data-dir") == "rtl" and await tk.locator("a[href='/kampanyalar']").count() >= 1 and "orijinallik" not in await tk.inner_text())
@@ -175,3 +188,6 @@ async def main():
     print(f"{sum(c for _, c in res)}/{len(res)} geçti")
 
 asyncio.run(main())
+
+# Bir kontrol bile kaldıysa CI kırmızı olsun
+raise SystemExit(0 if all(c for _, c in res) else 1)

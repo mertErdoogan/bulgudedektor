@@ -1,6 +1,6 @@
 """Header ve menü uçtan uca.
 
-Sade nav (Minelab ve kategori menüleri), arama paleti (boş durum + yazarken), "/" kısayolu, kaydırınca ince başlık,
+Sade nav (Markalar ve kategori menüleri), arama paleti (boş durum + yazarken), "/" kısayolu, kaydırınca ince başlık,
 ana sayfa "Ne arıyorsun?" kısayolları ve paneldeki "Kısayollar ve menü kartı" ayarı.
 """
 import os, re, asyncio, subprocess
@@ -26,15 +26,20 @@ async def main():
             await pg.click('button:has-text("Sadece zorunlu")')
             nav = pg.locator("nav[aria-label='Ana menü']")
 
-            # ── Nav: Minelab menüsü (seriler + görselli modeller + kampanya kartı)
-            await nav.locator("a:has-text('Minelab')").hover(); await pg.wait_for_timeout(500)
-            panel = nav.locator("text=Öne çıkan modeller")
-            chk("Minelab menüsü açılıyor", await panel.count() == 1)
-            chk("Minelab menüsünde 6 model", await nav.locator("a[href^='/urun/']").count() == 6)
-            chk("Seriler listesi", await nav.locator("a[href^='/marka/minelab?kategori=']").count() >= 3)
-            chk("Kampanya kartı (otomatik)", await nav.locator("a[href='/kampanyalar']:has-text('Kampanyayı gör')").count() == 1)
+            # ── Nav: Markalar menüsü (tüm markalar eşit + markalar arası çok satanlar + kampanya kartı)
+            await nav.locator("a:has-text('Markalar')").first.hover(); await pg.wait_for_timeout(500)
+            panel = nav.locator("[data-testid=brands-menu]")
+            chk("Markalar menüsü açılıyor", await panel.count() == 1)
+            chk("Tüm markalar listede", all([await panel.locator(f"a[href='/marka/{s}']").count() == 1 for s in ("garrett", "minelab", "nokta", "xp")]))
+            models = await panel.locator("a[href^='/urun/']").count()
+            chk("Çok satanlarda 6 model", models == 6, models)
+            hrefs = [await a.get_attribute("href") for a in await panel.locator("a[href^='/urun/']").all()]
+            slugs = ",".join("'" + h.split("/urun/")[1].split("?")[0] + "'" for h in hrefs)
+            nb = int(sql(f"select count(distinct brand_id) from products where slug in ({slugs})") or 0)
+            chk("Çok satanlar tek markaya yığılmıyor", nb >= 3, nb)
+            chk("Kampanya kartı (otomatik)", await panel.locator("a[href='/kampanyalar']:has-text('Kampanyayı gör')").count() == 1)
             await pg.keyboard.press("Escape"); await pg.wait_for_timeout(200)
-            chk("Esc menüyü kapatıyor", await nav.locator("text=Öne çıkan modeller").count() == 0)
+            chk("Esc menüyü kapatıyor", await nav.locator("[data-testid=brands-menu]").count() == 0)
 
             # ── Kategori menüsü: markaya göre + öne çıkanlar
             await pg.mouse.move(700, 700); await pg.wait_for_timeout(300)
@@ -70,7 +75,8 @@ async def main():
             # ── Ana sayfa kısayolları
             sc = pg.locator("[data-testid=shortcuts]")
             chk("Ne arıyorsun? kısayolları", await sc.count() == 1 and await sc.locator("a.group").count() == 9)
-            chk("Minelab kısayolu öne çıkmış", await sc.locator("a[href='/marka/minelab'] span.ring-brand").count() == 1)
+            chk("Çok satanlar kısayolu öne çıkmış", await sc.locator("a[href='/urunler?sirala=cok-satan'] span.ring-brand").count() == 1)
+            chk("Tüm markalar kısayolu", await sc.locator("a[href='/markalar']").count() == 1)
             chk("En çok satılan sıralaması çalışıyor", (await (await pg.request.get(B + "/urunler?sirala=cok-satan")).text()).count("/urun/") > 3)
 
             # ── Panel: kısayol ekle, kampanya kartını elle yaz
@@ -100,8 +106,8 @@ async def main():
             first = pg.locator("[data-testid=shortcuts] a.group").first
             chk("Yeni kısayol ilk sırada", await first.get_attribute("href") == "/urun/manticore" and "Haftanın Ürünü" in await first.inner_text())
             chk("Silinen kısayol gitti", await pg.locator("[data-testid=shortcuts] a[href='/kategori/derin-arama']").count() == 0)
-            await nav.locator("a:has-text('Minelab')").hover(); await pg.wait_for_timeout(500)
-            chk("Elle kampanya kartı menüde", await nav.locator("a[href='/marka/minelab']:has-text('Deneme kampanya başlığı')").count() == 1)
+            await nav.locator("a:has-text('Markalar')").first.hover(); await pg.wait_for_timeout(500)
+            chk("Elle kampanya kartı menüde", await nav.locator("[data-testid=brands-menu] a[href='/marka/minelab']:has-text('Deneme kampanya başlığı')").count() == 1)
 
             # ── Mobil: tam ekran arama
             m = await b.new_context(user_agent=UA, viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True); mp = await m.new_page()
@@ -119,3 +125,6 @@ async def main():
     ok = sum(1 for _, c in res if c); print(f"{ok}/{len(res)} geçti")
 
 asyncio.run(main())
+
+# Bir kontrol bile kaldıysa CI kırmızı olsun
+raise SystemExit(0 if all(c for _, c in res) else 1)

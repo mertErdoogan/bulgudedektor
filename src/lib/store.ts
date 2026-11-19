@@ -1,5 +1,5 @@
-import { q } from "@/db/q";
 import "server-only";
+import { q } from "@/db/q";
 import { cache } from "react";
 import { createHmac } from "node:crypto";
 import { and, asc, desc, eq, gte, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
@@ -67,6 +67,12 @@ export type ProductCard = {
 };
 
 const active = eq(products.status, "ACTIVE");
+
+/**
+ * Son 90 günde satılan adet: raflarda ve "Önerilen" sıralamada çok satanlar öne çıkar (markadan bağımsız).
+ * Satış verisi az olan yeni mağazada isFeatured ("öne çıkan") ve sıra alanı devreye girer.
+ */
+export const soldLast90 = sql`(select coalesce(sum(oi.quantity), 0) from order_items oi join orders o on o.id = oi.order_id where oi.product_id = ${q(products.id)} and o.status not in ('CANCELLED','REFUNDED','PENDING_PAYMENT') and o.created_at > now() - interval '90 days')`;
 
 export function cardQuery() {
   return db.select(cardColumns).from(products).leftJoin(brands, eq(brands.id, products.brandId));
@@ -163,7 +169,12 @@ function railQuery(kind: Kind) {
           : kind === "pro"
             ? and(active, eq(products.isPro, true))
             : active;
-  const order = kind === "new" ? desc(products.createdAt) : kind === "deals" ? desc(sql`(${products.compareAtPrice} - ${products.price}) / ${products.compareAtPrice}`) : asc(products.sortOrder);
+  const order =
+    kind === "new"
+      ? desc(products.createdAt)
+      : kind === "deals"
+        ? desc(sql`(${products.compareAtPrice} - ${products.price}) / ${products.compareAtPrice}`)
+        : sql`(${products.stock} > 0 or ${products.allowBackorder}) desc, ${soldLast90} desc, ${products.sortOrder} asc`;
   return { where: where!, order };
 }
 
@@ -176,7 +187,7 @@ async function rawProductsFor(kind: Kind, limit: number): Promise<ProductCard[]>
 export async function categoryRail(categoryId: string, limit = 12): Promise<ProductCard[]> {
   const { weighed } = await import("./merch");
   const where = and(active, eq(products.categoryId, categoryId))!;
-  const order = [sql`(${products.stock} > 0) desc`, asc(products.sortOrder)];
+  const order = [sql`(${products.stock} > 0) desc`, sql`${soldLast90} desc`, desc(products.isFeatured), asc(products.sortOrder)];
   return weighed((n) => cardQuery().where(where).orderBy(...order).limit(n), (cond, n) => cardQuery().where(and(where, cond)).orderBy(...order).limit(n), limit);
 }
 
@@ -184,7 +195,7 @@ export async function categoryRail(categoryId: string, limit = 12): Promise<Prod
 export async function railWhere(cond: SQL, limit = 8): Promise<ProductCard[]> {
   const { weighed } = await import("./merch");
   const where = and(active, cond)!;
-  const order = [sql`(${products.stock} > 0) desc`, desc(products.isFeatured), asc(products.sortOrder)];
+  const order = [sql`(${products.stock} > 0) desc`, sql`${soldLast90} desc`, desc(products.isFeatured), asc(products.sortOrder)];
   return weighed((n) => cardQuery().where(where).orderBy(...order).limit(n), (c, n) => cardQuery().where(and(where, c)).orderBy(...order).limit(n), limit);
 }
 
@@ -239,12 +250,12 @@ export async function listProducts(f: CatalogFilter) {
         : f.sort === "yeni"
           ? desc(products.createdAt)
           : f.sort === "cok-satan"
-            ? sql`(select coalesce(sum(oi.quantity), 0) from order_items oi join orders o on o.id = oi.order_id where oi.product_id = ${products.id} and o.status not in ('CANCELLED','REFUNDED','PENDING_PAYMENT') and o.created_at > now() - interval '90 days') desc, ${products.isFeatured} desc`
+            ? sql`${soldLast90} desc, ${products.isFeatured} desc`
           : f.sort === "hafif"
             ? sql`${products.weightKg} asc nulls last`
             : search
               ? sql`${search.score} desc, ${products.isFeatured} desc`
-              : sql`(${products.stock} > 0) desc, ${products.isFeatured} desc, ${products.sortOrder} asc`;
+              : sql`(${products.stock} > 0) desc, ${soldLast90} desc, ${products.isFeatured} desc, ${products.sortOrder} asc`;
   // Listeler sayfalanarak gösterilir (Catalog, 24'er); sıralama/vitrin ağırlığı tüm sonuç üzerinde yapılsın diye hepsi alınır
   const rows = await cardQuery().where(and(...conds)).orderBy(order).limit(2000);
   // "Önerilen" sıralama (kullanıcı sıralama seçmediyse, arama değilse): vitrin önceliği. Stoktakiler yine önce.

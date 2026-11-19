@@ -258,3 +258,6 @@ async def main():
     print(f"\n{sum(r for _, r in results)}/{len(results)} geçti")
 
 asyncio.run(main())
+
+# Bir kontrol bile kaldıysa CI kırmızı olsun
+raise SystemExit(0 if all(r for _, r in results) else 1)

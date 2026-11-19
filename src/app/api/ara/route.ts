@@ -24,7 +24,7 @@ export async function GET(req: Request) {
       {
         ...NONE,
         popular: pop.map((p) => p.term),
-        models: hd.focus?.models ?? [],
+        models: hd.focus?.models ?? hd.brands?.models ?? [],
         brands: brands.map((b) => ({ name: b.name, slug: b.slug })),
         uses: uses.map((c) => ({ name: c.name, slug: c.slug })),
       },

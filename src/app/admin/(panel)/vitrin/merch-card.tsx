@@ -45,7 +45,7 @@ export async function MerchCard() {
         <div className="flex min-w-0 flex-col gap-4">
           <Field label="Öncelikli marka">
             <Select name="focusBrand" defaultValue={m.focusBrand}>
-              <option value="">— Yok (tüm raflar tarafsız) —</option>
+              <option value="">— Yok (tüm markalar eşit, önerilen) —</option>
               {bs.map((b) => <option key={b.slug} value={b.slug}>{b.name}</option>)}
             </Select>
           </Field>
@@ -98,7 +98,7 @@ export async function MerchCard() {
                 </label>
               ))}
             </div>
-            {!m.focusBrand ? <span className="text-xs font-bold text-warn">Öncelikli marka seçilmediği için sihirbaz şu an tarafsız çalışır.</span> : null}
+            {!m.focusBrand ? <span className="text-xs text-muted">Öncelikli marka yok: tüm markalar eşit, sıralama satış adedine göre yapılır.</span> : null}
           </fieldset>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Marka kartındaki not" hint="Sözleşmedeki ifadeyle aynı olmalı. Boşsa gösterilmez."><Input name="focusNote" defaultValue={m.focusNote} maxLength={60} placeholder="Türkiye distribütörü" /></Field>

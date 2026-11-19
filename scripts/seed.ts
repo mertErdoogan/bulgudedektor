@@ -41,8 +41,9 @@ async function main() {
   const brandRows = await db
     .insert(t.brands)
     .values([
-      { name: "Minelab", slug: "minelab", sortOrder: 1, description: "Avustralya merkezli; Multi-IQ ve PI teknolojileri." },
-      { name: "Garrett", slug: "garrett", sortOrder: 2, description: "ABD merkezli; Ace, AT ve Vortex serileri." },
+      // Markalar eşit: alfabetik sıra
+      { name: "Garrett", slug: "garrett", sortOrder: 1, description: "ABD merkezli; Ace, AT ve Vortex serileri." },
+      { name: "Minelab", slug: "minelab", sortOrder: 2, description: "Avustralya merkezli; Multi-IQ ve PI teknolojileri." },
       { name: "Nokta", slug: "nokta", sortOrder: 3, description: "Türk üretici; Double Score, FindX ve görüntüleme sistemleri." },
       { name: "XP", slug: "xp", sortOrder: 4, description: "Fransız üretici; Deus serisi kablosuz dedektörler." },
     ])
@@ -124,9 +125,11 @@ async function main() {
   // Vitrin
   // Demo ana banner'ları: mağaza çalışanlarının hazırladığı türden, yazısı görselin içinde olan hazır görseller
   const HERO_BANNERS = [
-    { title: "Minelab Manticore: define aramada yeni seviye", subtitle: "Define dedektörü", image: "banner-manticore", linkUrl: "/urun/manticore" },
-    { title: "Minelab GPZ 8000: mineralli toprakta bile derinde", subtitle: "Altın dedektörü", image: "banner-gpz-8000", linkUrl: "/urun/gpz-8000" },
+    // Her markadan sektörün çok satan bir modeli
+    { title: "XP Deus II: tamamen kablosuz, 20 metre su altı", subtitle: "Profesyonel çok frekans", image: "banner-deus-2", linkUrl: "/urun/deus-ii-22-cm-ws6-kulaklik" },
     { title: "Minelab Equinox 900: tarla, plaj, su altı", subtitle: "Çok amaçlı, su geçirmez", image: "banner-equinox-900", linkUrl: "/urun/equinox-900" },
+    { title: "Nokta Double Score 2: çift frekans, tam su geçirmez", subtitle: "Define ve altın", image: "banner-double-score-2", linkUrl: "/urun/double-score-2" },
+    { title: "Garrett Ace 250: ilk dedektör için en kolay başlangıç", subtitle: "Yeni başlayanlar için", image: "banner-ace-250", linkUrl: "/urun/ace-250" },
   ];
   const heroRows = [];
   for (const [i, b] of HERO_BANNERS.entries()) {
@@ -135,8 +138,8 @@ async function main() {
   }
   await db.insert(t.banners).values([
     ...heroRows,
-    { title: "Vanquish 560 Pro-Pack", eyebrow: "YENİ · MINELAB", subtitle: "49.588 TL'den", imageUrl: img("vanquish-560-pro"), linkUrl: "/urun/vanquish-560-pro-pack", placement: "SIDE", sortOrder: 0 },
-    { title: "Equinox 900, 3 taksit", eyebrow: "VADE FARKSIZ · MINELAB", subtitle: "3 × 33.227 TL", imageUrl: img("equinox-900"), linkUrl: "/urun/equinox-900", placement: "SIDE", sortOrder: 1 },
+    { title: "Vanquish 560 Pro-Pack", eyebrow: "ÇOK SATAN · MINELAB", subtitle: "49.588 TL'den", imageUrl: img("vanquish-560-pro"), linkUrl: "/urun/vanquish-560-pro-pack", placement: "SIDE", sortOrder: 0 },
+    { title: "Double Score 2, 3 taksit", eyebrow: "VADE FARKSIZ · NOKTA", subtitle: "3 × 8.667 TL", imageUrl: img("nokta-double-score-2"), linkUrl: "/urun/double-score-2", placement: "SIDE", sortOrder: 1 },
     { title: "Kazıda hedefi saniyede bul", eyebrow: "POINTER · GARRETT", subtitle: "12.751 TL'den", imageUrl: img("garrett-pro-pointer-at"), linkUrl: "/kategori/pointer", placement: "SIDE", sortOrder: 2 },
   ]);
   await db.insert(t.homeSections).values([
@@ -170,15 +173,17 @@ async function main() {
   // Hazır yanıt şablonları (yalnızca hiç yoksa)
   if (!(await db.select({ id: t.replyTemplates.id }).from(t.replyTemplates).limit(1)).length)
     await db.insert(t.replyTemplates).values(DEFAULT_TEMPLATES.map((x, i) => ({ ...x, sortOrder: i })));
+  // Sektörde çok satan modeller (markalara dağılmış)
+  await db.update(t.products).set({ badges: ["Çok satan"] }).where(sql`${t.products.slug} in ('ace-250', 'double-score-2', 'pro-pointer-at', 'deus-ii-22-cm-ws6-kulaklik')`);
   // Demo varyant: aynı ailenin iki modeli ürün sayfasında seçenek olarak görünür
   await db.update(t.products).set({ variantGroup: "minelab-gp", variantLabel: "GPZ 8000 · ZVT" }).where(sql`${t.products.slug} = 'gpz-8000'`);
   await db.update(t.products).set({ variantGroup: "minelab-gp", variantLabel: "GPX 6000 · PI" }).where(sql`${t.products.slug} = 'gpx-6000'`);
 
-  // Kampanyalar
+  // Kampanyalar (markadan bağımsız)
   await db.insert(t.campaigns).values([
     { name: "Hoş geldin indirimi", code: "HOSGELDIN", type: "PERCENT", value: 5, minSubtotal: 10000, maxDiscount: 3000, description: "İlk alışverişe %5, en fazla 3.000 TL", showOnSite: true, perCustomerLimit: 1 },
     { name: "Pointer'da kargo bedava", type: "FREE_SHIPPING", value: 0, scope: "CATEGORY", targetIds: [cat("pointer")], description: "Pointer alışverişlerinde kargo ücretsiz" },
-    { name: "Minelab sezon indirimi", type: "FIXED", value: 1500, scope: "BRAND", targetIds: [brand("minelab")], minSubtotal: 40000, description: "40.000 TL üzeri Minelab'da 1.500 TL indirim", showOnSite: true, endsAt: new Date(Date.now() + 20 * 86400000) },
+    { name: "Sezon indirimi", type: "FIXED", value: 1500, minSubtotal: 40000, description: "40.000 TL üzeri dedektör alışverişinde 1.500 TL indirim", showOnSite: true, endsAt: new Date(Date.now() + 20 * 86400000) },
   ]);
 
   // Paketler (kombin): dedektör + pinpointer, birlikte alınca indirimli
@@ -196,10 +201,14 @@ async function main() {
     await db.insert(t.addresses).values({ customerId: c.id, fullName: c.name, phone: c.phone!, city: rand(cities), district: "Merkez", line: "Örnek Mah. Deneme Sk. No: 1", isDefault: true });
   }
 
+  // Demo satışlar sektörde çok satan modellere ağırlıklı ve markalara dağılmış: çok satanlar rafı gerçekçi görünsün
+  const POPULAR: Record<string, number> = { "vanquish-560-pro-pack": 10, "ace-250": 9, "double-score-2": 8, "pro-pointer-at": 7, "equinox-900": 6, "deus-ii-22-cm-ws6-kulaklik": 6, "findx-pro": 5, "x-terra-pro": 4, "apex-raider-paket": 4, "vortex-vx9": 3, "go-find-66": 2 };
+  const bag = prodRows.flatMap((x) => Array(POPULAR[x.slug] ?? (x.price < 120000 ? 1 : 0)).fill(x));
+  const popular = () => rand(bag);
   const statuses: (typeof t.orderStatus.enumValues)[number][] = ["DELIVERED", "DELIVERED", "DELIVERED", "SHIPPED", "PREPARING", "PAID", "PAID", "CANCELLED"];
   for (let i = 0; i < 46; i++) {
     const c = rand(cust);
-    const p = rand(prodRows.filter((x) => x.price < 120000));
+    const p = popular();
     const qty = p.price < 20000 && Math.random() > 0.7 ? 2 : 1;
     const second = Math.random() > 0.75 ? rand(prodRows.filter((x) => x.categoryId === cat("pointer") || x.categoryId === cat("baslik-ve-aksesuar"))) : null;
     const items = [{ p, qty }, ...(second && second.id !== p.id ? [{ p: second, qty: 1 }] : [])];
@@ -278,7 +287,7 @@ async function main() {
     { key: "store", value: { name: "Derinova Dedektör" } },
     { key: "setup", value: { completed: false, completedSteps: ["store"] } },
     // seed-if-empty.ts DEMO_VERSION ile aynı olmalı
-    { key: "demo", value: { version: 4 } },
+    { key: "demo", value: { version: 5 } },
     // Demo mağaza İngilizce sürümü açık gelir (yurt dışı satış denemesi için)
     { key: "i18n", value: { locales: ["tr", "en"], switcher: true } },
   ]);

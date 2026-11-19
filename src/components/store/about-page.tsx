@@ -111,8 +111,8 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
     db.select({ id: brands.id, name: brands.name, slug: brands.slug, logoUrl: brands.logoUrl }).from(brands).where(eq(brands.isActive, true)).orderBy(brands.sortOrder, brands.name),
     db.select({ n: count() }).from(products).where(and(eq(products.status, "ACTIVE"))),
   ]);
-  // Öncelikli marka (Vitrin ayarı, varsayılan Minelab) her zaman başta
-  const brandList = [...brandRows].sort((a, b) => Number(/minelab/i.test(b.name)) - Number(/minelab/i.test(a.name)));
+  // Markalar eşit: panelde verilen sırayla (varsayılan alfabetik)
+  const brandList = brandRows;
   const years = st.foundingYear && /^\d{4}$/.test(st.foundingYear) ? new Date().getFullYear() - Number(st.foundingYear) : 0;
   const stats = [
     years > 0 ? { v: `${years}+`, l: L.sYears, c: "text-[#d42e1e]" } : null,
@@ -221,9 +221,9 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
           <h2 className="font-display text-2xl font-extrabold">{L.brandsTitle}</h2>
           <p className="mt-1 text-sm text-mute">{L.brandsSub}</p>
           <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5" data-testid="about-brands">
-            {brandList.map((b, i) => (
+            {brandList.map((b) => (
               <li key={b.id}>
-                <Link href={`/marka/${b.slug}`} className={`flex h-full items-center gap-3 rounded-2xl border bg-white p-3 transition hover:-translate-y-0.5 hover:border-[#d0d0d4] hover:shadow-[0_14px_30px_-20px_rgba(20,20,22,.45)] ${i === 0 && /minelab/i.test(b.name) ? "border-brand/40 ring-2 ring-brand/10" : "border-line"}`}>
+                <Link href={`/marka/${b.slug}`} className={`flex h-full items-center gap-3 rounded-2xl border bg-white p-3 transition hover:-translate-y-0.5 hover:border-[#d0d0d4] hover:shadow-[0_14px_30px_-20px_rgba(20,20,22,.45)] border-line`}>
                   <BrandMark name={b.name} logoUrl={b.logoUrl} size={40} />
                   <b className="truncate text-sm">{b.name}</b>
                 </Link>

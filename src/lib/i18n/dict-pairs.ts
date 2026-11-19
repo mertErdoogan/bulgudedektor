@@ -5,6 +5,11 @@
 type Pairs = Record<string, readonly [string, string]>;
 
 export const PAIRS = {
+  "nav.brands": ["Markalar", "Brands"],
+  "nav.allBrandsCap": ["TÜM MARKALAR", "ALL BRANDS"],
+  "nav.compareBrands": ["Markaları karşılaştır", "Compare brands"],
+  "nav.bestSellers": ["Markalar arasında çok satanlar", "Best sellers across brands"],
+  "nav.allBestSellers": ["Tüm çok satanlar", "All best sellers"],
   "bundle.title": ["Paketle al", "Buy as a bundle"],
   "bundle.save": ["{x} kazanç", "Save {x}"],
   "bundle.price": ["Paket fiyatı", "Bundle price"],
