@@ -1,7 +1,7 @@
 /* Demo verisi: npm run db:seed  (mevcut veriyi SİLER, sadece kurulumda kullanın) */
 import { paletteFromUrl } from "../src/lib/palette-core";
 import "dotenv/config";
-import { ensureDemoGallery } from "./demo-gallery";
+import { DEMO_IMAGES, ensureDemoGallery } from "./demo-gallery";
 import bcrypt from "bcryptjs";
 import { sql } from "drizzle-orm";
 import { db } from "../src/db";
@@ -14,6 +14,8 @@ import { LEGAL_PAGES } from "./lib/legal-texts";
 import { DEFAULT_TEMPLATES } from "../src/lib/templates";
 
 const img = (f: string) => `/demo/${f}.jpg`;
+/** Ürünün temiz ana görseli (beyaz zemin, 1200×1200) */
+const pimg = (slug: string) => `/demo/p/${slug}-1.jpg`;
 const daysAgo = (d: number, h = 12) => new Date(Date.now() - d * 86400000 - h * 3600000);
 const rand = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 
@@ -54,12 +56,12 @@ async function main() {
   const catRows = await db
     .insert(t.categories)
     .values([
-      { name: "Define ve sikke", slug: "define-ve-sikke", shortText: "Tarla, bağ, harabe", sortOrder: 1, imageUrl: img("x-terra-pro"), description: "Sikke, takı ve gömülü metaller için iyi ayrım yapan cihazlar." },
-      { name: "Doğal altın", slug: "dogal-altin", shortText: "Nugget, maden sahası", sortOrder: 2, imageUrl: img("gold-monster-2000"), description: "Mineralli zeminde küçük doğal altına hassas cihazlar." },
-      { name: "Sahil ve su altı", slug: "sahil-ve-su-alti", shortText: "Kayıp takı, dalış", sortOrder: 3, imageUrl: img("vanquish-560-pro"), description: "Tuzlu ıslak kum, sıradan cihazlarda sürekli parazit yapar. Buradaki modeller çok frekanslı veya sahil modu olan, en az kısmen su geçirmez cihazlar." },
-      { name: "Derin arama", slug: "derin-arama", shortText: "Görüntülü, 3D", sortOrder: 4, imageUrl: img("nokta-deephunter-pro-3d"), description: "Büyük ve derin hedefler için görüntüleme sistemleri ve büyük başlıklı cihazlar." },
-      { name: "Pointer", slug: "pointer", shortText: "Nokta tespiti", sortOrder: 5, imageUrl: img("garrett-pro-pointer-at"), description: "Kazıda hedefi saniyeler içinde bulmanı sağlayan el tipi dedektörler." },
-      { name: "Başlık ve aksesuar", slug: "baslik-ve-aksesuar", shortText: "Bobin, kulaklık, batarya", sortOrder: 6, imageUrl: img("eqx-11-bobin"), description: "Cihazına uyumlu başlık, kulaklık ve bataryalar." },
+      { name: "Define ve sikke", slug: "define-ve-sikke", shortText: "Tarla, bağ, harabe", sortOrder: 1, imageUrl: pimg("x-terra-pro"), description: "Sikke, takı ve gömülü metaller için iyi ayrım yapan cihazlar." },
+      { name: "Doğal altın", slug: "dogal-altin", shortText: "Nugget, maden sahası", sortOrder: 2, imageUrl: pimg("gold-monster-2000"), description: "Mineralli zeminde küçük doğal altına hassas cihazlar." },
+      { name: "Sahil ve su altı", slug: "sahil-ve-su-alti", shortText: "Kayıp takı, dalış", sortOrder: 3, imageUrl: pimg("vanquish-560-pro-pack"), description: "Tuzlu ıslak kum, sıradan cihazlarda sürekli parazit yapar. Buradaki modeller çok frekanslı veya sahil modu olan, en az kısmen su geçirmez cihazlar." },
+      { name: "Derin arama", slug: "derin-arama", shortText: "Görüntülü, 3D", sortOrder: 4, imageUrl: pimg("deephunter-pro-3d"), description: "Büyük ve derin hedefler için görüntüleme sistemleri ve büyük başlıklı cihazlar." },
+      { name: "Pointer", slug: "pointer", shortText: "Nokta tespiti", sortOrder: 5, imageUrl: pimg("pro-pointer-at"), description: "Kazıda hedefi saniyeler içinde bulmanı sağlayan el tipi dedektörler." },
+      { name: "Başlık ve aksesuar", slug: "baslik-ve-aksesuar", shortText: "Bobin, kulaklık, batarya", sortOrder: 6, imageUrl: pimg("eqx-11-baslik"), description: "Cihazına uyumlu başlık, kulaklık ve bataryalar." },
     ])
     .returning();
   const cat = (s: string) => catRows.find((c) => c.slug === s)!.id;
@@ -114,7 +116,8 @@ async function main() {
         compareAtPrice: "compareAtPrice" in rest && rest.compareAtPrice ? rest.compareAtPrice : [3, 6, 9, 12].includes(i) ? Math.round((rest.price * 1.09) / 100) * 100 : null,
       })
       .returning();
-    await db.insert(t.productImages).values({ productId: row.id, url: img(image), alt: p.name, sortOrder: 0 });
+    const gallery = DEMO_IMAGES[slug] ?? [img(image)];
+    await db.insert(t.productImages).values(gallery.map((url, k) => ({ productId: row.id, url, alt: k ? `${p.name} (${k + 1})` : p.name, sortOrder: k })));
     if (row.trackSerial && row.stock > 0) {
       await db.insert(t.serialNumbers).values(Array.from({ length: row.stock }, (_, k) => ({ productId: row.id, serial: `${row.sku}-${String(1000 + k)}` })));
     }
@@ -126,21 +129,21 @@ async function main() {
   // Demo ana banner'ları: mağaza çalışanlarının hazırladığı türden, yazısı görselin içinde olan hazır görseller
   const HERO_BANNERS = [
     // Her markadan sektörün çok satan bir modeli
-    { title: "XP Deus II: tamamen kablosuz, 20 metre su altı", subtitle: "Profesyonel çok frekans", image: "banner-deus-2", linkUrl: "/urun/deus-ii-22-cm-ws6-kulaklik" },
-    { title: "Minelab Equinox 900: tarla, plaj, su altı", subtitle: "Çok amaçlı, su geçirmez", image: "banner-equinox-900", linkUrl: "/urun/equinox-900" },
-    { title: "Nokta Double Score 2: çift frekans, tam su geçirmez", subtitle: "Define ve altın", image: "banner-double-score-2", linkUrl: "/urun/double-score-2" },
-    { title: "Garrett Ace 250: ilk dedektör için en kolay başlangıç", subtitle: "Yeni başlayanlar için", image: "banner-ace-250", linkUrl: "/urun/ace-250" },
+    { title: "XP Deus II: tamamen kablosuz, 20 metre su altı", subtitle: "Profesyonel çok frekans", image: "hero-deus-2", linkUrl: "/urun/deus-ii-22-cm-ws6-kulaklik" },
+    { title: "Minelab Equinox 900: tarla, plaj, su altı", subtitle: "Çok amaçlı, su geçirmez", image: "hero-equinox-900", linkUrl: "/urun/equinox-900" },
+    { title: "Nokta Double Score 2: çift frekans, tam su geçirmez", subtitle: "Define ve altın", image: "hero-double-score-2", linkUrl: "/urun/double-score-2" },
+    { title: "Garrett Ace 250: ilk dedektör için en kolay başlangıç", subtitle: "Yeni başlayanlar için", image: "hero-ace-250", linkUrl: "/urun/ace-250" },
   ];
   const heroRows = [];
   for (const [i, b] of HERO_BANNERS.entries()) {
     const imageUrl = img(b.image);
-    heroRows.push({ title: b.title, subtitle: b.subtitle, imageUrl, linkUrl: b.linkUrl, palette: (await paletteFromUrl(imageUrl)) ?? undefined, placement: "HERO" as const, sortOrder: i, showText: false });
+    heroRows.push({ title: b.title, subtitle: b.subtitle, imageUrl, mobileImageUrl: img(`${b.image}-m`), linkUrl: b.linkUrl, palette: (await paletteFromUrl(imageUrl)) ?? undefined, placement: "HERO" as const, sortOrder: i, showText: false });
   }
   await db.insert(t.banners).values([
     ...heroRows,
-    { title: "Vanquish 560 Pro-Pack", eyebrow: "ÇOK SATAN · MINELAB", subtitle: "49.588 TL'den", imageUrl: img("vanquish-560-pro"), linkUrl: "/urun/vanquish-560-pro-pack", placement: "SIDE", sortOrder: 0 },
-    { title: "Double Score 2, 3 taksit", eyebrow: "VADE FARKSIZ · NOKTA", subtitle: "3 × 8.667 TL", imageUrl: img("nokta-double-score-2"), linkUrl: "/urun/double-score-2", placement: "SIDE", sortOrder: 1 },
-    { title: "Kazıda hedefi saniyede bul", eyebrow: "POINTER · GARRETT", subtitle: "12.751 TL'den", imageUrl: img("garrett-pro-pointer-at"), linkUrl: "/kategori/pointer", placement: "SIDE", sortOrder: 2 },
+    { title: "Vanquish 560 Pro-Pack", eyebrow: "ÇOK SATAN · MINELAB", subtitle: "49.588 TL'den", imageUrl: pimg("vanquish-560-pro-pack"), linkUrl: "/urun/vanquish-560-pro-pack", placement: "SIDE", sortOrder: 0 },
+    { title: "Double Score 2, 3 taksit", eyebrow: "VADE FARKSIZ · NOKTA", subtitle: "3 × 8.667 TL", imageUrl: pimg("double-score-2"), linkUrl: "/urun/double-score-2", placement: "SIDE", sortOrder: 1 },
+    { title: "Kazıda hedefi saniyede bul", eyebrow: "POINTER · GARRETT", subtitle: "12.751 TL'den", imageUrl: pimg("pro-pointer-at"), linkUrl: "/kategori/pointer", placement: "SIDE", sortOrder: 2 },
   ]);
   await db.insert(t.homeSections).values([
     { type: "WIZARD_BAND", sortOrder: 1, title: "Hangi dedektörü alacağını bilmiyor musun?", subtitle: "6 kısa soru, yaklaşık 1 dakika. Sana uygun 3 cihazı nedenleriyle gösterelim." },
@@ -287,7 +290,7 @@ async function main() {
     { key: "store", value: { name: "Derinova Dedektör" } },
     { key: "setup", value: { completed: false, completedSteps: ["store"] } },
     // seed-if-empty.ts DEMO_VERSION ile aynı olmalı
-    { key: "demo", value: { version: 5 } },
+    { key: "demo", value: { version: 6 } },
     // Demo mağaza İngilizce sürümü açık gelir (yurt dışı satış denemesi için)
     { key: "i18n", value: { locales: ["tr", "en"], switcher: true } },
   ]);

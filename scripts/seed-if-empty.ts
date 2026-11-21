@@ -11,7 +11,7 @@ import * as t from "../src/db/schema";
 import { ensureDemoGallery, removeTrialRental } from "./demo-gallery";
 
 /** Demo içeriğinin sürümü: artırılırsa ön izleme veritabanı bir sonraki açılışta demo veriyle baştan kurulur */
-const DEMO_VERSION = 5;
+const DEMO_VERSION = 6;
 
 /** Silmeden yükseltme adımları: anahtar = başlangıç sürümü */
 const UPGRADES: Record<number, () => Promise<void>> = {
@@ -48,20 +48,20 @@ const UPGRADES: Record<number, () => Promise<void>> = {
     if (old.length === OLD_HERO.length) {
       await db.delete(t.banners).where(sql`${t.banners.placement} = 'HERO' and ${t.banners.title} in (${sql.join(OLD_HERO.map((x) => sql`${x}`), sql`, `)})`);
       const HERO = [
-        { title: "XP Deus II: tamamen kablosuz, 20 metre su altı", subtitle: "Profesyonel çok frekans", image: "banner-deus-2", linkUrl: "/urun/deus-ii-22-cm-ws6-kulaklik" },
-        { title: "Minelab Equinox 900: tarla, plaj, su altı", subtitle: "Çok amaçlı, su geçirmez", image: "banner-equinox-900", linkUrl: "/urun/equinox-900" },
-        { title: "Nokta Double Score 2: çift frekans, tam su geçirmez", subtitle: "Define ve altın", image: "banner-double-score-2", linkUrl: "/urun/double-score-2" },
-        { title: "Garrett Ace 250: ilk dedektör için en kolay başlangıç", subtitle: "Yeni başlayanlar için", image: "banner-ace-250", linkUrl: "/urun/ace-250" },
+        { title: "XP Deus II: tamamen kablosuz, 20 metre su altı", subtitle: "Profesyonel çok frekans", image: "hero-deus-2", linkUrl: "/urun/deus-ii-22-cm-ws6-kulaklik" },
+        { title: "Minelab Equinox 900: tarla, plaj, su altı", subtitle: "Çok amaçlı, su geçirmez", image: "hero-equinox-900", linkUrl: "/urun/equinox-900" },
+        { title: "Nokta Double Score 2: çift frekans, tam su geçirmez", subtitle: "Define ve altın", image: "hero-double-score-2", linkUrl: "/urun/double-score-2" },
+        { title: "Garrett Ace 250: ilk dedektör için en kolay başlangıç", subtitle: "Yeni başlayanlar için", image: "hero-ace-250", linkUrl: "/urun/ace-250" },
       ];
       for (const [i, b] of HERO.entries()) {
         const imageUrl = `/demo/${b.image}.jpg`;
-        await db.insert(t.banners).values({ title: b.title, subtitle: b.subtitle, imageUrl, linkUrl: b.linkUrl, palette: (await paletteFromUrl(imageUrl)) ?? undefined, placement: "HERO", sortOrder: i, showText: false });
+        await db.insert(t.banners).values({ title: b.title, subtitle: b.subtitle, imageUrl, mobileImageUrl: imageUrl.replace(".jpg", "-m.jpg"), linkUrl: b.linkUrl, palette: (await paletteFromUrl(imageUrl)) ?? undefined, placement: "HERO", sortOrder: i, showText: false });
       }
     }
     // Yan kartlar
     await db.update(t.banners).set({ eyebrow: "ÇOK SATAN · MINELAB" }).where(sql`${t.banners.placement} = 'SIDE' and ${t.banners.title} = 'Vanquish 560 Pro-Pack' and ${t.banners.eyebrow} = 'YENİ · MINELAB'`);
     await db.update(t.banners)
-      .set({ title: "Double Score 2, 3 taksit", eyebrow: "VADE FARKSIZ · NOKTA", subtitle: "3 × 8.667 TL", imageUrl: "/demo/nokta-double-score-2.jpg", linkUrl: "/urun/double-score-2" })
+      .set({ title: "Double Score 2, 3 taksit", eyebrow: "VADE FARKSIZ · NOKTA", subtitle: "3 × 8.667 TL", imageUrl: "/demo/p/double-score-2-1.jpg", linkUrl: "/urun/double-score-2" })
       .where(sql`${t.banners.placement} = 'SIDE' and ${t.banners.title} = 'Equinox 900, 3 taksit'`);
     // Marka kampanyası tüm markalara açılır
     await db.update(t.campaigns)
@@ -70,6 +70,37 @@ const UPGRADES: Record<number, () => Promise<void>> = {
     // Sektörde çok satan modellere rozet
     await db.execute(sql`update products set badges = array_append(coalesce(badges, '{}'), 'Çok satan') where slug in ('ace-250', 'double-score-2', 'pro-pointer-at', 'deus-ii-22-cm-ws6-kulaklik') and not ('Çok satan' = any(coalesce(badges, '{}')))`);
     await seedEnglish();
+  },
+  // 5 → 6: kaliteli görseller. Ürünler: üretici fotoğrafları (ensureDemoGallery her açılışta yerleştirir).
+  // Banner'lar: gerçek saha fotoğraflı, telefona ayrı dikey görsel. Eski demo görsel adresleri yenileriyle değişir.
+  5: async () => {
+    const { paletteFromUrl } = await import("../src/lib/palette-core");
+    const MAP: Record<string, string> = {
+      "/demo/banner-deus-2.jpg": "/demo/hero-deus-2.jpg",
+      "/demo/banner-equinox-900.jpg": "/demo/hero-equinox-900.jpg",
+      "/demo/banner-double-score-2.jpg": "/demo/hero-double-score-2.jpg",
+      "/demo/banner-ace-250.jpg": "/demo/hero-ace-250.jpg",
+      "/demo/banner-manticore.jpg": "/demo/hero-equinox-900.jpg",
+      "/demo/banner-gpz-8000.jpg": "/demo/hero-equinox-900.jpg",
+      "/demo/x-terra-pro.jpg": "/demo/p/x-terra-pro-1.jpg",
+      "/demo/gold-monster-2000.jpg": "/demo/p/gold-monster-2000-1.jpg",
+      "/demo/vanquish-560-pro.jpg": "/demo/p/vanquish-560-pro-pack-1.jpg",
+      "/demo/nokta-deephunter-pro-3d.jpg": "/demo/p/deephunter-pro-3d-1.jpg",
+      "/demo/garrett-pro-pointer-at.jpg": "/demo/p/pro-pointer-at-1.jpg",
+      "/demo/eqx-11-bobin.jpg": "/demo/p/eqx-11-baslik-1.jpg",
+      "/demo/nokta-double-score-2.jpg": "/demo/p/double-score-2-1.jpg",
+      "/demo/equinox-900.jpg": "/demo/p/equinox-900-1.jpg",
+      "/demo/manticore.jpg": "/demo/p/manticore-1.jpg",
+      "/demo/gpz-8000.jpg": "/demo/p/gpz-8000-1.jpg",
+      "/demo/xp-deus-2.jpg": "/demo/p/deus-ii-22-cm-ws6-kulaklik-1.jpg",
+      "/demo/garrett-ace-250.jpg": "/demo/p/ace-250-1.jpg",
+    };
+    for (const [from, to] of Object.entries(MAP)) {
+      const mobile = to.startsWith("/demo/hero-") ? to.replace(".jpg", "-m.jpg") : null;
+      await db.update(t.banners).set({ imageUrl: to, ...(mobile ? { mobileImageUrl: mobile, palette: (await paletteFromUrl(to)) ?? undefined } : {}) }).where(sql`${t.banners.imageUrl} = ${from}`);
+      await db.update(t.categories).set({ imageUrl: to }).where(sql`${t.categories.imageUrl} = ${from}`);
+      await db.execute(sql`update settings set value = replace(value::text, ${from}, ${to})::jsonb where value::text like ${"%" + from + "%"}`);
+    }
   },
 };
 

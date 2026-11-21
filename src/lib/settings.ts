@@ -342,7 +342,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     // {markalar}: satıştaki markalar otomatik yazılır (katalogda olmayan marka vaat edilmesin)
     title: "Derinova Dedektör | {markalar} Dedektör Modelleri ve Fiyatları",
     description: "Türkiye'nin güvenilir dedektör mağazası Derinova Dedektör: {markalar} metal dedektörleri. Orijinal, faturalı, garantili; uzman desteğiyle doğru cihazı seç.",
-    ogImage: "/demo/banner-manticore.jpg",
+    ogImage: "/demo/hero-equinox-900.jpg",
     googleVerification: "",
     bingVerification: "",
     yandexVerification: "",

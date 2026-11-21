@@ -159,7 +159,7 @@ with sync_playwright() as p:
 
     # Kategoriler açılır menüsü: logosu girilmiş marka logo ile görünür (baş harf değil)
     logo = sql("select logo_url from brands where slug='minelab'")
-    sql("update brands set logo_url='/demo/x-terra-pro.jpg' where slug='minelab'")
+    sql("update brands set logo_url='/demo/p/x-terra-pro-1.jpg' where slug='minelab'")
     sql("update menu_items set is_active=true where url like '/sayfa/hakkimizda%'")
     store = sql("select value::text from settings where key='store'")
     sql("""insert into settings(key, value) values ('store', '{"announcement": ""}') on conflict (key) do update set value = settings.value || '{"announcement": ""}'""")

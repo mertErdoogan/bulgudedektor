@@ -151,7 +151,7 @@ async def main():
         if await ap.is_checked("input[name=trackSerial]"):
             await ap.uncheck("input[name=trackSerial]")
         await ap.fill("input[name=stock]", "4")
-        await ap.set_input_files("input[type=file]", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "public", "demo", "x-terra-pro.jpg"))
+        await ap.set_input_files("input[type=file]", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "public", "demo", "p", "x-terra-pro-1.jpg"))
         await ap.wait_for_selector("text=KAPAK", timeout=20000)
         await ap.select_option("select[name=status]", "ACTIVE")
         await ap.wait_for_load_state("networkidle")
