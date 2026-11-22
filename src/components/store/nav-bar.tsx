@@ -22,6 +22,12 @@ const INFO = INFO_LINK;
  * Ana menü: sade metin linkler. Markalar (ya da panelden seçilen öncelikli marka) ve kategori linkleri üzerine gelince görselli menü açar.
  * Açılış 120 ms gecikmeli (fare üstünden geçerken yanlışlıkla açılmasın), kapanış 160 ms (panele geçerken kapanmasın).
  */
+/* Menü öğeleri: sınırları belli, tıklanabilir olduğu ilk bakışta anlaşılan ince çerçeveli kapsüller */
+const PILL = "flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[14px] font-semibold whitespace-nowrap transition duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+const PILL_IDLE = "border-line bg-white text-deep hover:border-[#c9c9cf] hover:bg-soft";
+const PILL_OPEN = "border-deep/35 bg-soft text-deep";
+const PILL_ON = "border-[#f4cdc6] bg-[#fff4f2] text-brand";
+
 export function NavBar({ items, categories, brands, focus, brandsMenu, cats }: { items: Item[]; categories: Cat; brands: { name: string; slug: string; logoUrl?: string | null }[]; focus: FocusMenu | null; brandsMenu?: BrandsMenu | null; cats: Record<string, CatMenu> }) {
   const path = usePathname();
   const [open, setOpen] = useState<string | null>(null);
@@ -43,20 +49,19 @@ export function NavBar({ items, categories, brands, focus, brandsMenu, cats }: {
   const hot = items.filter((i) => i.highlight);
 
   const drop = (key: string, href: string, label: React.ReactNode, panel: React.ReactNode, on: boolean) => (
-    <div className="flex h-full" onMouseEnter={() => later(key, open ? 0 : 120)} onMouseLeave={() => later(null, 160)}>
+    <div className="flex h-full items-center" onMouseEnter={() => later(key, open ? 0 : 120)} onMouseLeave={() => later(null, 160)}>
       <Link
         href={href}
         aria-expanded={open === key}
         aria-haspopup="true"
         onFocus={() => setOpen(key)}
         className={cn(
-          "relative flex items-center gap-1.5 px-3 text-[14.5px] font-semibold whitespace-nowrap transition",
-          "after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:transition",
-          open === key || on ? "text-brand after:bg-brand" : "text-deep after:bg-transparent hover:text-brand",
+          PILL,
+          on ? PILL_ON : open === key ? PILL_OPEN : PILL_IDLE,
         )}
       >
         {label}
-        <ChevronDown size={15} strokeWidth={2.3} className={cn("transition", open === key && "rotate-180")} />
+        <ChevronDown size={15} strokeWidth={2.3} className={cn("transition", open === key && "rotate-180", on ? "text-brand" : "text-mute")} />
       </Link>
       {open === key ? (
         <div className="absolute inset-x-0 top-full z-40" onMouseEnter={() => later(key, 0)}>
@@ -70,9 +75,10 @@ export function NavBar({ items, categories, brands, focus, brandsMenu, cats }: {
 
   return (
     <nav className="relative hidden border-b border-line bg-white md:block" aria-label={tr("nav.main")}>
-      <div className="container-x flex h-[52px] items-stretch">
+      <div className="container-x flex h-[60px] items-stretch">
         <MegaMenu categories={categories} brands={brands} />
-        <div className="scrollbar-none ml-2 flex min-w-0 items-stretch overflow-x-auto">
+        <span className="mx-4 my-auto h-6 w-px shrink-0 bg-line" aria-hidden />
+        <div className="scrollbar-none flex min-w-0 items-stretch gap-1.5 overflow-x-auto">
           {focus
             ? drop(
                 "focus",
@@ -96,17 +102,14 @@ export function NavBar({ items, categories, brands, focus, brandsMenu, cats }: {
                 key={m.id}
                 href={m.url}
                 aria-current={isActive(m.url) ? "page" : undefined}
-                className={cn(
-                  "relative flex items-center px-3 text-[14.5px] font-semibold whitespace-nowrap transition after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full",
-                  isActive(m.url) ? "text-brand after:bg-brand" : "text-deep hover:text-brand",
-                )}
+                className={cn("self-center", PILL, isActive(m.url) ? PILL_ON : PILL_IDLE)}
               >
                 {m.label}
               </Link>
             );
           })}
           {hot.map((m) => (
-            <Link key={m.id} href={m.url} className="flex items-center gap-1.5 px-3 text-[14.5px] font-bold whitespace-nowrap text-brand transition hover:text-brand-dark">
+            <Link key={m.id} href={m.url} className={cn("self-center font-bold", PILL, "border-[#f4cdc6] bg-[#fff4f2] text-brand hover:border-brand hover:bg-brand hover:text-white")}>
               <Flame size={16} /> {m.label}
             </Link>
           ))}
