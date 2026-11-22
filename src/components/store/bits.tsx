@@ -145,7 +145,7 @@ export function MegaMenu({ categories, brands, variant = "nav" }: { categories: 
         aria-expanded={open}
         className={
           variant === "nav"
-            ? cn("flex h-9 items-center gap-2 rounded-full px-4 text-[14px] font-bold whitespace-nowrap text-white transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand", open ? "bg-black" : "bg-deep hover:bg-black")
+            ? "flex h-full items-center gap-2.5 pr-4 text-[14.5px] font-bold whitespace-nowrap text-deep transition hover:text-brand"
             : "flex h-10 items-center gap-2 rounded-full border border-line bg-white px-4 text-[14px] font-bold transition hover:border-deep"
         }
       >
