@@ -45,7 +45,8 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
-      DOMAIN: ${DOMAIN:?DOMAIN gerekli (ör. www.derinova.example)}
+      DOMAIN: ${DOMAIN:?DOMAIN gerekli (ör. www.magazam.com)}
+      APEX_DOMAIN: ${APEX_DOMAIN:-}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

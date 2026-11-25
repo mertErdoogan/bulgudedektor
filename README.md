@@ -1,8 +1,12 @@
-# Derinova Dedektör — e-ticaret mağazası + yönetim paneli
+# Mağaza — e-ticaret sitesi + yönetim paneli (beyaz etiket)
 
 Next.js 15 (App Router) · TypeScript · PostgreSQL + Drizzle ORM · Tailwind CSS · iyzico
 
 Tek projede: müşteri mağazası (`/`), yönetim paneli (`/admin`), ödeme ve API'ler.
+
+**Beyaz etiket:** mağaza adı, logo, ikon, marka rengi (Panel → Ayarlar → Marka) ve sektör (Panel → Ayarlar → Katalog: ürün türü adı, sihirbaz/sözlük/seri no/servis/teknik özellik modülleri) panelden değişir; kodda müşteri adı yoktur. Demo veri ("Derinova Dedektör", metal dedektörü profili) yalnızca `npm run db:seed` ile yüklenir; temiz kurulum (`db:init`) genel ve boş başlar.
+
+Müşteriye teslim: **[docs/teslim/](docs/teslim/)** (kurulum, mağaza sahibi kılavuzu, sözleşme şablonları, teslim kontrol listesi).
 
 ## Hızlı başlangıç (yerel)
 
@@ -15,7 +19,7 @@ PAYMENT_SIMULATION=1 npm run dev
 ```
 
 - Mağaza: http://localhost:3000
-- Panel: http://localhost:3000/admin — `admin@derinova.local` / `Demo12345!`
+- Panel: http://localhost:3000/admin — `admin@derinova.local` / `Demo12345!` (yalnızca demo veri)
   - Diğer roller (aynı şifre): `satis@`, `depo@`, `servis@derinova.local`
 - `PAYMENT_SIMULATION=1` iken iyzico anahtarı yoksa kart ödemesi test ekranıyla simüle edilir (sadece geliştirmede çalışır).
 
@@ -31,7 +35,7 @@ PAYMENT_SIMULATION=1 npm run dev
 
 **Zamanlanmış işler:** `/api/cron` her 15 dakikada bir çağrılmalı (`Authorization: Bearer $CRON_SECRET`). Yaptıkları: süresi dolan kart ödemelerini iptal edip stoğu geri alma, teslimattan 3 gün sonra yorum daveti, izin veren müşterilere terk edilen sepet hatırlatması, eski kayıtların temizliği. Vercel'de `vercel.json` hazır; VPS'te crontab:
 ```
-*/15 * * * * curl -fsS -H "Authorization: Bearer GIZLI" https://www.derinova.example/api/cron > /dev/null
+*/15 * * * * curl -fsS -H "Authorization: Bearer GIZLI" https://www.magazam.com/api/cron > /dev/null
 ```
 
 **İzleme ve yedek:**
@@ -39,7 +43,7 @@ PAYMENT_SIMULATION=1 npm run dev
 - `ERROR_WEBHOOK_URL` → sunucu hataları Slack/Discord'a düşer.
 - Yönetilen Postgres kullanıyorsanız otomatik yedeği açın; VPS'te `scripts/backup.sh` (pg_dump + görseller, 14 gün saklar) gece cron'una eklenir.
 
-**Güvenlik:** Giriş, kayıt, şifre sıfırlama ve sorgu sayfalarında deneme sınırı vardır (sunucu belleğinde; birden fazla sunucuya ölçeklenirse Redis'e taşınmalı). Formlarda Cloudflare Turnstile, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` girilince otomatik açılır.
+**Güvenlik:** Giriş, kayıt, şifre sıfırlama ve sorgu sayfalarında deneme sınırı vardır (sayaçlar veritabanında tutulur). Formlarda Cloudflare Turnstile, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` girilince otomatik açılır.
 
 **Vitrin önceliği (distribütör markası):** Panel → Ana sayfa ve banner → "Raflarda marka ağırlığı". Öncelikli marka (varsayılan Minelab) çok satanlar, yeni gelenler, fırsatlar, kategori şeritleri, benzer modeller ve kategorilerdeki "Önerilen" sıralamada ağırlıklı görünür (Kapalı / Hafif ~%60 / Dengeli ~%75 / Yüksek ~%90); diğer markalar araya serpiştirilir, hiçbir zaman gizlenmez. Yeni çıkan cihaz gibi dönemsel ürünler bitiş tarihiyle rafların başına sabitlenir. Arama sonuçları ve müşterinin seçtiği sıralamalar tarafsızdır. Öncelikli marka ürünlerinde "Distribütör garantili" rozeti, marka ızgarasında geniş kart ve panelden değiştirilebilen kısa not ("Türkiye distribütörü") gösterilir.
 

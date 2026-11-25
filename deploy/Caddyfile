@@ -1,6 +1,11 @@
 # Caddy alan adı için Let's Encrypt sertifikasını kendisi alır ve yeniler.
-{$DOMAIN} {
+# DOMAIN: sitenin asıl adresi (ör. www.magazam.com).
+# APEX_DOMAIN (isteğe bağlı): asıl adrese yönlendirilecek diğer adres(ler), ör. "magazam.com". Boş bırakılabilir.
+{$DOMAIN} {$APEX_DOMAIN} {
 	encode zstd gzip
+	# Asıl adres dışındaki her adres (ör. çıplak alan adı) kalıcı olarak asıl adrese gider
+	@other not host {$DOMAIN}
+	redir @other https://{$DOMAIN}{uri} permanent
 	reverse_proxy app:3000 {
 		header_up X-Forwarded-For {remote_host}
 	}
@@ -8,9 +13,4 @@
 	request_body {
 		max_size 12MB
 	}
-}
-
-# Çıplak alan adını www'ya yönlendir (DOMAIN www ile başlıyorsa)
-derinova.example {
-	redir https://www.derinova.example{uri} permanent
 }

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Derinova Dedektör gece yedeği: veritabanı (+ pazar günleri yüklenen görseller) → yerel ./backups ve sunucu dışı depolama.
+# Mağaza gece yedeği: veritabanı (+ pazar günleri yüklenen görseller) → yerel ./backups ve sunucu dışı depolama.
 # docker-compose "backup" servisi her gece 03:30'da çalıştırır. Elle çalıştırmak için:
 #   docker compose exec backup sh /deploy/backup.sh
 #
