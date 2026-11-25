@@ -8,7 +8,7 @@ import { graph, storeLd } from "@/lib/seo";
 
 export async function generateMetadata() {
   const L = await getL();
-  return pageMeta({ title: L("İletişim — Uzmana Sor, Showroom ve WhatsApp", "Contact — Ask an Expert, Showroom and WhatsApp"), description: L("Dedektör uzmanımıza WhatsApp, telefon veya görüntülü görüşmeyle ulaşın. Showroom adresi ve çalışma saatleri.", "Reach our metal detector expert by WhatsApp, phone or video call. Showroom address and opening hours."), path: "/iletisim" });
+  return pageMeta({ title: L("İletişim — Uzmana Sor, Showroom ve WhatsApp", "Contact — Ask an Expert, Showroom and WhatsApp"), description: L("Uzmanımıza WhatsApp, telefon veya görüntülü görüşmeyle ulaşın. Showroom adresi ve çalışma saatleri.", "Reach our metal detector expert by WhatsApp, phone or video call. Showroom address and opening hours."), path: "/iletisim" });
 }
 
 export default async function ContactPage({ searchParams }: { searchParams: Promise<{ konu?: string; urun?: string }> }) {
@@ -21,7 +21,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
       <JsonLd data={graph(storeLd(s))} />
       <div className="flex flex-col gap-4">
         <h1 className="font-display text-3xl font-extrabold">{L("Bize ulaş", "Get in touch")}</h1>
-        <p className="text-mute">{s.store.workingHours}. {L("Cihaz seçimi, sipariş, servis — hepsi aynı hatta.", "Choosing a detector, orders, service — all on the same line.")}</p>
+        <p className="text-mute">{s.store.workingHours ? `${s.store.workingHours}. ` : ""}{L("Ürün seçimi, sipariş, iade — hepsi aynı hatta.", "Choosing a product, orders, returns — all in one place.")}</p>
         {s.store.whatsapp ? <a href={`https://wa.me/${s.store.whatsapp}`} target="_blank" className="flex items-center gap-3 rounded-xl bg-[#e9f9ef] p-4 font-bold text-[#11643a]"><MessageCircle /> WhatsApp: +{s.store.whatsapp}</a> : null}
         {s.store.phone ? <a href={`tel:${s.store.phone.replace(/\s/g, "")}`} className="flex items-center gap-3 rounded-xl bg-soft p-4 font-bold"><Phone /> {s.store.phone}</a> : null}
         {s.store.address ? <p className="flex items-start gap-3 rounded-xl bg-soft p-4 text-sm"><Store className="shrink-0" /> <span><b>Showroom</b><br />{s.store.address}</span></p> : null}

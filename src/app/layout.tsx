@@ -10,6 +10,7 @@ import { siteUrl } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
 import { brandCss } from "@/lib/brand-color";
 import { BrandProvider } from "@/components/brand";
+import { setNiche } from "@/lib/i18n/dict";
 import "./globals.css";
 
 /* Mağaza adı, açıklama, ikon ve tema rengi ayarlardan gelir (Ayarlar > Mağaza / Marka / SEO) */
@@ -37,7 +38,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = await getLocale();
   const slugs = locale === "en" ? await getSlugMap() : undefined;
   const s = await getSettings();
-  const brand = { name: s.store.name, logoUrl: s.brand.logoUrl, logoWhiteUrl: s.brand.logoWhiteUrl };
+  const c = s.catalog;
+  const brand = { name: s.store.name, logoUrl: s.brand.logoUrl, logoWhiteUrl: s.brand.logoWhiteUrl, features: { wizard: c.wizard, glossary: c.glossary, serial: c.serial, service: c.service, detectorSpecs: c.detectorSpecs } };
+  const niche = { one: c.nounOne, acc: c.nounAcc, many: c.nounMany, oneEn: c.nounOneEn, manyEn: c.nounManyEn };
+  setNiche(niche);
   return (
     <html lang={HTML_LANG[locale]}>
       <head>
@@ -48,7 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <BrandProvider value={brand}>
-        <I18nProvider locale={locale} slugs={slugs}>
+        <I18nProvider locale={locale} slugs={slugs} niche={niche}>
           <NavProgress />
           <FormValidation />
           {children}

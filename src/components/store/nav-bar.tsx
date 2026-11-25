@@ -1,4 +1,5 @@
 "use client";
+import { IfFeature } from "@/components/brand";
 
 import Link from "@/components/locale-link";
 import { BrandMark } from "./brand-mark";
@@ -112,9 +113,9 @@ export function NavBar({ items, categories, brands, focus, brandsMenu, cats }: {
               </span>
             );
           })}
-          {hot.map((m) => (
+          {hot.map((m, i) => (
             <span key={m.id} className="contents">
-            <Sep />
+            {i > 0 || main.length || focus || brandsMenu ? <Sep /> : null}
             <Link href={m.url} className="flex items-center gap-1.5 px-3 text-[14.5px] font-bold whitespace-nowrap text-brand transition hover:text-brand-dark">
               <Flame size={16} /> {m.label}
             </Link>
@@ -192,13 +193,13 @@ function FocusPanel({ f, close }: { f: FocusMenu; close: () => void }) {
             <span className="relative z-10 mt-auto inline-flex items-center gap-1.5 text-[13px] font-bold"><T k="nav.seeDeal" /> <ArrowRight size={14} /></span>
           </Link>
         ) : null}
-        <Link href="/sihirbaz" onClick={close} className="flex items-center gap-3 rounded-[18px] border border-line p-4 transition hover:border-deep">
+        <IfFeature f="wizard"><Link href="/sihirbaz" onClick={close} className="flex items-center gap-3 rounded-[18px] border border-line p-4 transition hover:border-deep">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-soft text-brand"><Compass size={22} /></span>
           <span>
             <b className="block text-[14px]"><T k="nav.whichFits" /></b>
             <span className="text-[12.5px] text-mute"><T k="nav.whichFitsD" /></span>
           </span>
-        </Link>
+        </Link></IfFeature>
         <span className="flex items-center gap-1.5 px-1 text-[12.5px] text-mute"><BadgeCheck size={15} className="text-[#11643a]" /> <T k="nav.genuine" /></span>
       </div>
     </div>
@@ -244,13 +245,13 @@ function BrandsPanel({ b, close }: { b: BrandsMenu; close: () => void }) {
             <span className="relative z-10 mt-auto inline-flex items-center gap-1.5 text-[13px] font-bold"><T k="nav.seeDeal" /> <ArrowRight size={14} /></span>
           </Link>
         ) : null}
-        <Link href="/sihirbaz" onClick={close} className="flex items-center gap-3 rounded-[18px] border border-line p-4 transition hover:border-deep">
+        <IfFeature f="wizard"><Link href="/sihirbaz" onClick={close} className="flex items-center gap-3 rounded-[18px] border border-line p-4 transition hover:border-deep">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-soft text-brand"><Compass size={22} /></span>
           <span>
             <b className="block text-[14px]"><T k="nav.whichFits" /></b>
             <span className="text-[12.5px] text-mute"><T k="nav.whichFitsD" /></span>
           </span>
-        </Link>
+        </Link></IfFeature>
         <span className="flex items-center gap-1.5 px-1 text-[12.5px] text-mute"><BadgeCheck size={15} className="text-[#11643a]" /> <T k="nav.genuine" /></span>
       </div>
     </div>
@@ -294,7 +295,7 @@ function CatPanel({ c, href, label, close }: { c: CatMenu; href: string; label: 
             </div>
           </>
         ) : null}
-        <Link href="/sihirbaz" onClick={close} className="mt-4 flex items-center gap-2 text-[13px] font-semibold text-mute hover:text-deep"><Compass size={16} className="text-brand" /> <T k="nav.unsureTest" /></Link>
+        <IfFeature f="wizard"><Link href="/sihirbaz" onClick={close} className="mt-4 flex items-center gap-2 text-[13px] font-semibold text-mute hover:text-deep"><Compass size={16} className="text-brand" /> <T k="nav.unsureTest" /></Link></IfFeature>
       </div>
     </div>
   );

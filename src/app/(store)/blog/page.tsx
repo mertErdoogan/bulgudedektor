@@ -1,3 +1,5 @@
+import { fillNiche } from "@/lib/i18n/dict";
+import { syncNiche } from "@/lib/i18n/server";
 import { getSettings } from "@/lib/settings";
 import Link from "@/components/locale-link";
 import { Breadcrumbs } from "@/components/seo/blocks";
@@ -14,8 +16,8 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ k?: string }> }) {
   const k = (await searchParams).k;
   return pageMeta({
-    title: k ? `${k} — Dedektör Rehberleri` : "Dedektör Rehberleri ve Blog",
-    description: "Metal dedektörü seçimi, kullanım, ayarlar, bakım ve yasal mevzuat üzerine uzman rehberleri. Hangi dedektör, nasıl kullanılır, hangi bölgede ne aranır.",
+    title: k ? `${k} — Rehberler` : "Rehberler ve Blog",
+    description: (await syncNiche(), fillNiche("{Tür} seçimi, kullanım, ayarlar ve bakım üzerine uzman rehberleri.")),
     path: k ? `/blog?k=${encodeURIComponent(k)}` : "/blog",
   });
 }
@@ -40,8 +42,8 @@ export default async function BlogIndex({ searchParams }: { searchParams: Promis
         })}
       />
       <Breadcrumbs items={[{ name: "Rehberler", path: "/blog" }]} />
-      <h1 className="font-display text-[28px] font-extrabold md:text-[36px]">Dedektör rehberleri</h1>
-      <p className="mt-2 max-w-3xl text-[15px] text-[#3f3f46]">Cihaz seçiminden ayarlara, sahada kullanımdan yasal mevzuata: sahada çalışan uzmanlarımızın sade ve doğrudan yanıtları.</p>
+      <h1 className="font-display text-[28px] font-extrabold md:text-[36px]">Rehberler</h1>
+      <p className="mt-2 max-w-3xl text-[15px] text-[#3f3f46]">Ürün seçiminden kullanıma ve bakıma: uzmanlarımızın sade, uygulanabilir rehberleri.</p>
       {cats.length > 1 ? (
         <div className="scrollbar-none mt-5 flex gap-2 overflow-x-auto">
           <Link href="/blog" className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-bold ${!k ? "bg-deep text-white" : "border border-line"}`}>Tümü</Link>

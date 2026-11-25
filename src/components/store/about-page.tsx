@@ -1,4 +1,6 @@
-import { and, count, eq } from "drizzle-orm";
+import { fillNiche } from "@/lib/i18n/dict";
+import { syncNiche } from "@/lib/i18n/server";
+import { and, count, eq, sql } from "drizzle-orm";
 import { ArrowRight, BadgeCheck, Clock, Hash, Mail, MapPin, MessageCircle, Navigation, PackageSearch, Phone, ShieldCheck, Sparkles, Store, Wand2, Wrench, BookOpen } from "lucide-react";
 import Link from "@/components/locale-link";
 import { db } from "@/db";
@@ -11,7 +13,7 @@ import type { Locale } from "@/lib/i18n/config";
 
 const TR = {
   eyebrow: "Hakkımızda",
-  lead: "Metal dedektöründe uzman mağaza. Doğru cihazı birlikte seçer, kutudan çıktıktan sonra da yanınızda oluruz.",
+  lead: "{Tür} konusunda uzman mağaza. Doğru ürünü birlikte seçer, satıştan sonra da yanınızda oluruz.",
   b1: "Uzman danışmanlık",
   b2: "Orijinal · faturalı · garantili",
   b3: "İstanbul'da showroom",
@@ -33,12 +35,14 @@ const TR = {
   t3s: "Arıza, bakım, yedek parça",
   t4: "Siparişini takip et",
   t4s: "Kargon nerede?",
-  t5: "Dedektör sözlüğü",
+  t5: "{Tür} sözlüğü",
   t5s: "Terimleri öğren",
   brandsTitle: "Sattığımız markalar",
   brandsSub: "Hepsi resmi yollarla ithal, faturalı ve garantili.",
   showroom: "Showroom",
-  showroomSub: "Cihazları elinde tart, arazine göre uzmanımızla birlikte seç.",
+  showroomSub: "Ürünleri yerinde gör, uzmanımızla birlikte seç.",
+  contact: "İletişim",
+  contactSub: "Sorularınız için bize ulaşın; en kısa sürede yanıt veriyoruz.",
   open: "Şu an açık",
   until: "{t}'e kadar",
   closed: "Şu an kapalı",
@@ -46,14 +50,14 @@ const TR = {
   dir: "Yol tarifi",
   mapCta: "Haritayı göster",
   mapNote: "Harita Google Haritalar'dan yüklenir.",
-  wizTitle: "Hangi dedektör sana uygun?",
+  wizTitle: "Hangi {tür} sana uygun?",
   wizSub: "Arazini ve aradığın şeyi seç, sana en uygun 3 modeli önerelim.",
   wizCta: "Sihirbazı başlat",
   days: ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"],
 };
 const EN: typeof TR = {
   eyebrow: "About us",
-  lead: "A metal detector specialist. We help you pick the right detector and stay with you long after it leaves the box.",
+  lead: "A {type} specialist. We help you pick the right one and stay with you long after it leaves the box.",
   b1: "Expert advice",
   b2: "Genuine · invoiced · warranty",
   b3: "Showroom in Istanbul",
@@ -80,7 +84,9 @@ const EN: typeof TR = {
   brandsTitle: "Brands we carry",
   brandsSub: "All officially imported, invoiced and under warranty.",
   showroom: "Showroom",
-  showroomSub: "Hold the devices, compare them and choose with our expert.",
+  showroomSub: "See the products in person and choose with our expert.",
+  contact: "Contact",
+  contactSub: "Get in touch with any question; we reply as soon as we can.",
   open: "Open now",
   until: "until {t}",
   closed: "Closed now",
@@ -95,17 +101,21 @@ const EN: typeof TR = {
 };
 
 const TILES = [
-  { href: "/sihirbaz", icon: Wand2, k: "t1", tone: "from-pop to-tint text-on-pop", ring: "bg-brand" },
-  { href: "/seri-no", icon: Hash, k: "t2", tone: "from-[#e6efff] to-[#f4f8ff] text-[#1d4ed8]", ring: "bg-[#2563eb]" },
-  { href: "/servis", icon: Wrench, k: "t3", tone: "from-[#e3f6ef] to-[#f2fbf7] text-[#0f766e]", ring: "bg-[#0f9f86]" },
-  { href: "/siparis-takip", icon: PackageSearch, k: "t4", tone: "from-[#fdf3e2] to-[#fffaf0] text-[#9a5b06]", ring: "bg-[#e08a00]" },
-  { href: "/sozluk", icon: BookOpen, k: "t5", tone: "from-[#f1eafe] to-[#f9f5ff] text-[#6d28d9]", ring: "bg-[#7c3aed]" },
+  { href: "/sihirbaz", feature: "wizard", icon: Wand2, k: "t1", tone: "from-pop to-tint text-on-pop", ring: "bg-brand" },
+  { href: "/seri-no", feature: "serial", icon: Hash, k: "t2", tone: "from-[#e6efff] to-[#f4f8ff] text-[#1d4ed8]", ring: "bg-[#2563eb]" },
+  { href: "/servis", feature: "service", icon: Wrench, k: "t3", tone: "from-[#e3f6ef] to-[#f2fbf7] text-[#0f766e]", ring: "bg-[#0f9f86]" },
+  { href: "/siparis-takip", feature: "", icon: PackageSearch, k: "t4", tone: "from-[#fdf3e2] to-[#fffaf0] text-[#9a5b06]", ring: "bg-[#e08a00]" },
+  { href: "/sozluk", feature: "glossary", icon: BookOpen, k: "t5", tone: "from-[#f1eafe] to-[#f9f5ff] text-[#6d28d9]", ring: "bg-[#7c3aed]" },
 ] as const;
 
 const fill = (s: string, t: string) => s.replace("{t}", t);
 
 export async function AboutPage({ title, html, settings, locale }: { title: string; html: string; settings: AllSettings; locale: Locale }) {
-  const L = locale === "en" ? EN : TR;
+  // Ürün türü adı ({tür}) metinlere işlenir; kapalı modüllerin kısayolları gösterilmez (Ayarlar > Katalog)
+  await syncNiche();
+  const L = Object.fromEntries(Object.entries(locale === "en" ? EN : TR).map(([k, v]) => [k, typeof v === "string" ? fillNiche(v) : v])) as unknown as typeof TR;
+  const cat = settings.catalog;
+  const tiles = TILES.filter((x) => !x.feature || cat[x.feature]);
   const st = settings.store;
   const [brandRows, [{ n: productCount }]] = await Promise.all([
     db.select({ id: brands.id, name: brands.name, slug: brands.slug, logoUrl: brands.logoUrl }).from(brands).where(eq(brands.isActive, true)).orderBy(brands.sortOrder, brands.name),
@@ -114,13 +124,18 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
   // Markalar eşit: panelde verilen sırayla (varsayılan alfabetik)
   const brandList = brandRows;
   const years = st.foundingYear && /^\d{4}$/.test(st.foundingYear) ? new Date().getFullYear() - Number(st.foundingYear) : 0;
+  // Sayılar mağazanın gerçek verisinden; sıfır olan ya da bilinmeyen değer gösterilmez
+  const [{ w }] = await db.select({ w: sql<number>`coalesce(max(${products.warrantyMonths}), 0)::int` }).from(products).where(eq(products.status, "ACTIVE"));
+  const warranty = w >= 12 && w % 12 === 0 ? (locale === "en" ? `${w / 12} yr${w > 12 ? "s" : ""}` : `${w / 12} yıl`) : w > 0 ? (locale === "en" ? `${w} mo` : `${w} ay`) : "";
   const stats = [
     years > 0 ? { v: `${years}+`, l: L.sYears, c: "text-brand" } : null,
-    { v: String(brandList.length), l: L.sBrands, c: "text-[#2563eb]" },
-    { v: String(productCount), l: L.sProducts, c: "text-[#0f9f86]" },
+    brandList.length ? { v: String(brandList.length), l: L.sBrands, c: "text-[#2563eb]" } : null,
+    productCount ? { v: String(productCount), l: L.sProducts, c: "text-[#0f9f86]" } : null,
     { v: "81", l: L.sCities, c: "text-[#e08a00]" },
-    years > 0 ? null : { v: locale === "en" ? "2 yrs" : "2 yıl", l: L.sWarranty, c: "text-[#7c3aed]" },
+    warranty ? { v: warranty, l: L.sWarranty, c: "text-[#7c3aed]" } : null,
   ].filter(Boolean) as { v: string; l: string; c: string }[];
+  // Showroom yalnızca mağazadan teslim açıksa (Ayarlar > Kargo); değilse bölüm "İletişim" olur
+  const showroom = settings.shipping.pickupEnabled && !!st.address;
 
   const where = st.latitude && st.longitude ? `${st.latitude},${st.longitude}` : st.address;
   const q = encodeURIComponent(where);
@@ -150,7 +165,7 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
             {[
               [BadgeCheck, L.b1],
               [ShieldCheck, L.b2],
-              [Store, L.b3],
+              ...(showroom ? [[Store, st.city ? (locale === "en" ? `Showroom in ${st.city}` : `Showroom: ${st.city}`) : L.showroom]] : []),
             ].map(([I, t], i) => {
               const Icon = I as typeof BadgeCheck;
               return (
@@ -161,9 +176,11 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
             })}
           </ul>
           <div className="mt-7 flex flex-wrap gap-3">
-            <a href="#showroom" className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-bold text-white shadow-[0_10px_30px_-10px_color-mix(in_srgb,var(--color-brand)_90%,transparent)] transition hover:bg-brand-dark">
-              <MapPin className="h-4 w-4" /> {L.visit}
-            </a>
+            {showroom ? (
+              <a href="#showroom" className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-bold text-white shadow-[0_10px_30px_-10px_color-mix(in_srgb,var(--color-brand)_90%,transparent)] transition hover:bg-brand-dark">
+                <MapPin className="h-4 w-4" /> {L.visit}
+              </a>
+            ) : null}
             {wa ? (
               <a href={wa} target="_blank" rel="noopener" className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-deep transition hover:bg-soft">
                 <MessageCircle className="h-4 w-4 text-[#11643a]" /> {L.ask}
@@ -173,7 +190,8 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
         </div>
       </section>
 
-      {/* SAYILAR */}
+      {/* SAYILAR: yeni mağazada tek kutu boş görünür; en az 2 gerçek sayı olunca gösterilir */}
+      {stats.length >= 2 ? (
       <div className="container-x relative z-10 -mt-8 md:-mt-10">
         <ul className="grid grid-cols-2 gap-2.5 rounded-[22px] border border-line bg-white p-2.5 shadow-[0_24px_50px_-30px_rgba(20,20,22,.45)] md:grid-cols-4 md:gap-3 md:p-3" data-testid="about-stats">
           {stats.slice(0, 4).map((s) => (
@@ -184,6 +202,7 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
           ))}
         </ul>
       </div>
+      ) : null}
 
       {/* HİKÂYE + İŞLEVSEL KISAYOLLAR */}
       <section className="container-x grid gap-6 py-12 md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] md:py-16">
@@ -197,7 +216,7 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
           <h2 className="font-display text-2xl font-extrabold">{L.doTitle}</h2>
           <p className="mt-1 text-sm text-mute">{L.doSub}</p>
           <ul className="mt-4 grid gap-2.5" data-testid="about-actions">
-            {TILES.map((t) => (
+            {tiles.map((t) => (
               <li key={t.href}>
                 <Link href={t.href} className={`group flex items-center gap-3 rounded-2xl bg-gradient-to-r p-3.5 transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-18px_rgba(20,20,22,.45)] ${t.tone}`}>
                   <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white transition group-hover:rotate-[-6deg] ${t.ring}`}>
@@ -233,12 +252,13 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
         </section>
       ) : null}
 
-      {/* SHOWROOM + HARİTA */}
+      {/* SHOWROOM (ya da İLETİŞİM) + HARİTA: hiçbir iletişim bilgisi girilmemişse bölüm yok */}
+      {st.address || st.phone || st.email || wa ? (
       <section id="showroom" className="scroll-mt-28 bg-soft py-12 md:py-16">
         <div className="container-x grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
           <div className="flex flex-col gap-3 rounded-[22px] border border-line bg-white p-6">
-            <h2 className="font-display text-2xl font-extrabold">{L.showroom}</h2>
-            <p className="text-sm text-mute">{L.showroomSub}</p>
+            <h2 className="font-display text-2xl font-extrabold">{showroom ? L.showroom : L.contact}</h2>
+            <p className="text-sm text-mute">{showroom ? L.showroomSub : L.contactSub}</p>
             {os ? (
               <p className={`flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${os.open ? "bg-ok-bg text-ok" : "bg-warn-bg text-warn"}`} data-testid="about-open">
                 <span className={`relative h-2 w-2 rounded-full ${os.open ? "bg-ok" : "bg-warn"}`}>{os.open ? <span className="absolute inset-0 animate-ping rounded-full bg-ok" /> : null}</span>
@@ -275,11 +295,13 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
               </a>
             ) : null}
           </div>
-          {where ? <MapEmbed query={st.latitude && st.longitude ? where : `${st.name}, ${st.address}`} label={`${st.name} — ${L.showroom}`} cta={L.mapCta} note={L.mapNote} /> : null}
+          {where ? <MapEmbed query={st.latitude && st.longitude ? where : `${st.name}, ${st.address}`} label={`${st.name} — ${showroom ? L.showroom : L.contact}`} cta={L.mapCta} note={L.mapNote} /> : null}
         </div>
       </section>
+      ) : null}
 
       {/* SİHİRBAZ ÇAĞRISI */}
+      {cat.wizard ? (
       <section className="container-x py-12 md:py-16">
         <div className="relative isolate flex flex-col items-start gap-4 overflow-hidden rounded-[26px] bg-gradient-to-br from-brand to-brand-dark p-7 text-white md:flex-row md:items-center md:p-10">
           <span aria-hidden className="radar-sweep pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full opacity-60" />
@@ -292,6 +314,7 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
           </Link>
         </div>
       </section>
+      ) : null}
     </div>
   );
 }

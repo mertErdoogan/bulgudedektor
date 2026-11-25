@@ -37,7 +37,7 @@ export async function GET() {
         p.barcode && /^\d{8,14}$/.test(p.barcode) ? `<g:gtin>${p.barcode}</g:gtin>` : `<g:mpn>${x(p.sku)}</g:mpn>`,
         !p.barcode && !p.brand ? "<g:identifier_exists>no</g:identifier_exists>" : "",
         `<g:google_product_category>Sporting Goods &gt; Outdoor Recreation &gt; Metal Detectors</g:google_product_category>`,
-        p.category ? `<g:product_type>Metal dedektörü &gt; ${x(p.category.name)}</g:product_type>` : "",
+        p.category ? `<g:product_type>${x(p.category.name)}</g:product_type>` : "",
         p.weightKg ? `<g:shipping_weight>${p.weightKg} kg</g:shipping_weight>` : "",
         `<g:shipping><g:country>TR</g:country><g:service>Standart</g:service><g:price>${freeShip ? "0.00" : ship.toFixed(2)} TRY</g:price></g:shipping>`,
         "</item>",

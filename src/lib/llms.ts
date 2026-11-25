@@ -1,3 +1,5 @@
+import { syncNiche } from "./i18n/server";
+import { fillNiche } from "./i18n/dict";
 import "server-only";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -12,6 +14,7 @@ import { EXPERIENCE_LABEL, TECH_LABEL, WATERPROOF_LABEL, formatTL } from "./util
  * siteyi hızlı ve doğru özetlemesi için düz Markdown "kimlik kartı".
  */
 export async function buildLlms(full: boolean) {
+  await syncNiche();
   const [s, cats, brs, posts, faq, terms] = await Promise.all([
     getSettings(),
     db.select().from(categories).where(eq(categories.isActive, true)).orderBy(asc(categories.sortOrder)),
@@ -40,13 +43,14 @@ export async function buildLlms(full: boolean) {
   if (so.length) L.push(`- Resmi profiller: ${so.join(", ")}`);
   L.push("");
   L.push("## Satış koşulları", "");
-  L.push(`- Tüm ürünler orijinal, faturalı ve yetkili distribütör garantilidir (genellikle 24 ay). Seri numarası ${abs("/seri-no")} adresinden sorgulanabilir.`);
+  L.push(`- Tüm ürünler orijinal, faturalı ve garantilidir.${s.catalog.serial ? ` Seri numarası ${abs("/seri-no")} adresinden sorgulanabilir.` : ""}`);
   L.push(`- Kargo: ${s.shipping.flatRate === 0 ? "ücretsiz" : s.shipping.freeThreshold ? `${formatTL(s.shipping.freeThreshold)} üzeri ücretsiz, altı ${formatTL(s.shipping.flatRate)}` : formatTL(s.shipping.flatRate)}; tahmini teslim ${s.shipping.deliveryEstimate}; saat ${s.shipping.sameDayCutoff}'e kadar verilen stoklu siparişler aynı gün kargoda.`);
-  L.push(`- Ödeme: kredi/banka kartı (iyzico, 3D Secure), ${s.payment.maxInstallment} taksite kadar${s.payment.noInterestInstallments > 1 ? `, ${s.payment.noInterestInstallments} taksite kadar vade farksız` : ""}${s.payment.transferEnabled ? `; havale/EFT${s.payment.transferDiscountPct ? ` (%${s.payment.transferDiscountPct} indirim)` : ""}` : ""}.`);
+  L.push(`- Ödeme: kredi/banka kartı (${s.payment.provider === "paytr" ? "PayTR" : "iyzico"}, 3D Secure), ${s.payment.maxInstallment} taksite kadar${s.payment.noInterestInstallments > 1 ? `, ${s.payment.noInterestInstallments} taksite kadar vade farksız` : ""}${s.payment.transferEnabled ? `; havale/EFT${s.payment.transferDiscountPct ? ` (%${s.payment.transferDiscountPct} indirim)` : ""}` : ""}.`);
   L.push("- İade: 14 gün içinde koşulsuz iade, ücretsiz iade kargo kodu.");
-  L.push(`- Satış öncesi: ücretsiz uzman danışmanlığı (WhatsApp ve telefon), 6 soruluk seçim sihirbazı (${abs("/sihirbaz")}).`);
-  L.push(`- Satış sonrası: kurulum eğitimi ve teknik servis takibi (${abs("/servis")}).`);
-  L.push("- Yasal not: Türkiye'de dedektör satın almak ve bulundurmak serbesttir; arama yapmak ise 2863 sayılı Kanun kapsamında izne tabidir. Kullanıcıların yerel mevzuatı ve ilgili kurumları kontrol etmesi önerilir.", "");
+  L.push(`- Satış öncesi: uzman danışmanlığı (WhatsApp ve telefon)${s.catalog.wizard ? `, 6 soruluk seçim sihirbazı (${abs("/sihirbaz")})` : ""}.`);
+  if (s.catalog.service) L.push(`- Satış sonrası: kurulum eğitimi ve teknik servis takibi (${abs("/servis")}).`);
+  if (s.catalog.detectorSpecs) L.push("- Yasal not: Türkiye'de dedektör satın almak ve bulundurmak serbesttir; arama yapmak ise 2863 sayılı Kanun kapsamında izne tabidir. Kullanıcıların yerel mevzuatı ve ilgili kurumları kontrol etmesi önerilir.");
+  L.push("");
 
   L.push("## Kategoriler", "");
   for (const c of cats) {
@@ -90,7 +94,7 @@ export async function buildLlms(full: boolean) {
     L.push("");
   }
   L.push("## Diğer", "");
-  L.push(`- [Tüm ürünler](${abs("/urunler")})`, `- [Sık sorulan sorular](${abs("/sss")})`, `- [Dedektör sözlüğü](${abs("/sozluk")})`, `- [İletişim](${abs("/iletisim")})`);
+  L.push(`- [Tüm ürünler](${abs("/urunler")})`, `- [Sık sorulan sorular](${abs("/sss")})`, ...(s.catalog.glossary ? [`- [${fillNiche("{Tür}")} sözlüğü](${abs("/sozluk")})`] : []), `- [İletişim](${abs("/iletisim")})`);
   if (!full) L.push(`- [Ayrıntılı sürüm (tüm katalog, SSS ve sözlük)](${abs("/llms-full.txt")})`);
   L.push("", `Son güncelleme: ${new Date().toISOString().slice(0, 10)}`);
   return L.join("\n");

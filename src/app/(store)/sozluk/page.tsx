@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { getSettings } from "@/lib/settings";
 import { Breadcrumbs } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getGlossary } from "@/lib/content";
@@ -14,6 +16,8 @@ export async function generateMetadata() {
 const TR_ORDER = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
 
 export default async function GlossaryPage() {
+  // Sektöre özel modül (Ayarlar > Katalog); kapalıysa sayfa yok
+  if (!(await getSettings()).catalog.glossary) notFound();
   const tt = await getT();
   const lc = tt.locale === "en" ? "en" : "tr";
   const terms = (await getGlossary()).map((t) => ({ ...t, id: headingId(t.question) }));

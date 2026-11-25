@@ -23,7 +23,8 @@ BEST = """() => {
 async def main():
     sql("update users set totp_enabled=false, totp_secret=null, totp_last_step=null")
     sql("delete from rate_hits")
-    sql("delete from settings where key in ('merch','ticker')")  # varsayılan: öncelikli marka yok, tüm markalar eşit; şerit açık
+    sql("delete from settings where key='merch'")  # varsayılan: öncelikli marka yok, tüm markalar eşit
+    ticker0 = sql("select value::text from settings where key='ticker'")  # demo şerit maddeleri (seed)
     FOCUS = '{"focusBrand":"minelab","weight":"balanced","pinned":[],"badge":true,"focusNote":"Öncelikli marka","heroCards":"latest","wizard":"priority"}'
     minelab = set(sql("select p.slug from products p join brands b on b.id=p.brand_id where b.slug='minelab' and p.status='ACTIVE'").split("\n"))
     ace = sql("select id from products where slug='ace-250'")
@@ -184,7 +185,8 @@ async def main():
             chk("Sayfa hatası yok", not errs, errs[:3])
             await b.close()
     finally:
-        sql("delete from settings where key in ('merch','ticker')")
+        sql("delete from settings where key='merch'")
+        sql(f"update settings set value = $${ticker0}$$::jsonb where key='ticker'" if ticker0 else "delete from settings where key='ticker'")
     print(f"{sum(c for _, c in res)}/{len(res)} geçti")
 
 asyncio.run(main())

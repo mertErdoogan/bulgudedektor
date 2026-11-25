@@ -27,11 +27,12 @@ async function main() {
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(t.homeSections);
   if (!n)
     await db.insert(t.homeSections).values([
-      { type: "WIZARD_BAND", sortOrder: 0, title: "Hangi dedektörü alacağını bilmiyor musun?", subtitle: "6 kısa soru, yaklaşık 1 dakika. Sana uygun 3 cihazı nedenleriyle gösterelim." },
+      // {türü}, {tür}: Ayarlar > Katalog'daki ürün türü adı. Sihirbaz bandı yalnızca sihirbaz açıkken görünür.
+      { type: "WIZARD_BAND", sortOrder: 0, title: "Hangi {türü} alacağını bilmiyor musun?", subtitle: "6 kısa soru, yaklaşık 1 dakika. Sana uygun 3 seçeneği nedenleriyle gösterelim." },
       { type: "CATEGORY_TILES", sortOrder: 1, title: "Ne arıyorsun?", subtitle: "Seç, gerisini bize bırak." },
       { type: "PRODUCT_TABS", sortOrder: 2, title: "Çok satanlar", config: { limit: 10 } },
-      { type: "EXPERT_BAND", sortOrder: 3, title: "Kararsız mı kaldın? Bir uzman cihazı kamerada göstersin." },
-      { type: "PRODUCT_ROW", sortOrder: 4, title: "Profesyonel ve derin arama", config: { limit: 5 } },
+      { type: "EXPERT_BAND", sortOrder: 3, title: "Kararsız mı kaldın? Uzmanımız ürünü görüntülü görüşmede göstersin." },
+      { type: "PRODUCT_ROW", sortOrder: 4, title: "Yeni gelenler", config: { limit: 5 } },
       { type: "TRUST", sortOrder: 5 },
     ]);
   // Yasal sayfalar (şirket bilgileri ayarlardan otomatik dolar)

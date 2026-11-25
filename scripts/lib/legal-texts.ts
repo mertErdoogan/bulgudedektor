@@ -18,7 +18,7 @@ export const LEGAL_PAGES: { slug: string; title: string; footerGroup?: string; s
     slug: "mesafeli-satis-sozlesmesi",
     title: "Mesafeli satış sözleşmesi",
     footerGroup: "Yasal",
-    seoDescription: "Derinova Dedektör mesafeli satış sözleşmesi: taraflar, ödeme, teslimat, cayma hakkı ve uyuşmazlık çözümü.",
+    seoDescription: "Mesafeli satış sözleşmesi: taraflar, ödeme, teslimat, cayma hakkı ve uyuşmazlık çözümü.",
     content: `<h2>1. Taraflar</h2>
 <h3>Satıcı</h3>${SATICI}
 <h3>Alıcı</h3>
@@ -202,15 +202,14 @@ export const LEGAL_PAGES: { slug: string; title: string; footerGroup?: string; s
     slug: "hakkimizda",
     title: "Hakkımızda",
     footerGroup: "Kurumsal",
-    seoDescription: "Derinova Dedektör: metal dedektöründe uzman mağaza. İstanbul'da showroom, uzman danışmanlık ve teknik servis.",
-    content: `<p><strong>Derinova Dedektör</strong>, metal dedektörü ve aksesuarlarında uzmanlaşmış bir mağazadır. Garrett, Minelab, Nokta, XP ve CoilTek ürünlerini orijinal, faturalı ve garantili olarak sunuyoruz.</p>
-<h2>Neden Derinova?</h2>
+    seoDescription: "Hakkımızda: orijinal ve faturalı ürünler, güvenli ödeme, kolay iade.",
+    // Genel başlangıç metni: mağaza sahibi Panel > Sayfalar > Hakkımızda'dan kendi hikâyesiyle değiştirir
+    content: `<p><strong>{{magaza}}</strong>, müşterilerine orijinal, faturalı ve garantili ürünler sunan bir çevrim içi mağazadır. Siparişlerinizi özenle hazırlıyor, satış öncesinde ve sonrasında sorularınıza hızlıca yanıt veriyoruz.</p>
+<h2>Neden {{magaza}}?</h2>
 <ul>
-<li><strong>Orijinallik güvencesi:</strong> tüm cihazlar faturalı ve garantilidir, seri numarasıyla orijinallik sorgulanabilir.</li>
-<li><strong>Uzman danışmanlık:</strong> aradığınız şeye ve arazinize göre doğru cihazı birlikte seçiyoruz; telefon, WhatsApp veya showroomda.</li>
-<li><strong>Satış sonrası destek:</strong> kurulum ve kullanım eğitimi, yedek parça ve teknik servis.</li>
-</ul>
-<h2>Showroom</h2>
-<p>{{adres}}<br>Telefon: {{telefon}} · WhatsApp: {{whatsapp}} · {{eposta}}</p>`,
+<li><strong>Orijinal ve faturalı ürün:</strong> sattığımız her ürün faturalıdır ve üretici garantisi kapsamındadır.</li>
+<li><strong>Güvenli ödeme:</strong> kartla ödemeler lisanslı ödeme kuruluşu üzerinden 3D Secure ile alınır; kart bilginiz bizde saklanmaz.</li>
+<li><strong>Kolay iade:</strong> teslimattan itibaren 14 gün içinde cayma hakkınızı hesabınızdan kolayca kullanabilirsiniz.</li>
+</ul>`,
   },
 ];

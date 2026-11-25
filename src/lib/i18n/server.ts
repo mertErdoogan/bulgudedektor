@@ -1,3 +1,4 @@
+import { setNiche } from "./dict";
 import { headers } from "next/headers";
 import { DEFAULT_LOCALE, isLocale, localePath, setSlugMap, trInternalPath, type Locale } from "./config";
 import { getSlugMap } from "./slugs";
@@ -29,6 +30,7 @@ export async function getPathname(): Promise<string> {
 
 export async function getT() {
   const locale = await getLocale();
+  await syncNiche();
   return Object.assign((key: DictKey, vars?: Record<string, string | number>) => translate(locale, key, vars), { locale });
 }
 
@@ -55,4 +57,11 @@ export async function localRedirect(path: string): Promise<never> {
 export async function getL() {
   const l = await getLocale();
   return Object.assign((tr: string, en: string) => (l === "en" ? en : tr), { locale: l });
+}
+
+/** Sunucuda ürün türü adlarını ayarlardan yükler (her istekte; ayarlar istek başına önbellekte) */
+export async function syncNiche() {
+  const { getSettings } = await import("@/lib/settings");
+  const c = (await getSettings()).catalog;
+  setNiche({ one: c.nounOne, acc: c.nounAcc, many: c.nounMany, oneEn: c.nounOneEn, manyEn: c.nounManyEn });
 }

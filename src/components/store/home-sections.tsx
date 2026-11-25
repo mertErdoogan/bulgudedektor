@@ -1,10 +1,14 @@
+import { getSettings } from "@/lib/settings";
 import { localePath } from "@/lib/i18n/config";
 import { imgProps } from "@/lib/img";
 import Link from "@/components/locale-link";
 import { ArrowRight, BookOpen, Clock3, Coins, Compass, Gem, GitCompare, MessageCircle, Phone, Radar, RotateCcw, ShieldCheck, Store, Waves, Truck } from "lucide-react";
 import type { PostCard } from "@/lib/content";
 import type { CSSProperties } from "react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTL } from "@/lib/utils";
+import { db } from "@/db";
+import { products } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { getT } from "@/lib/i18n/server";
 
 /* ───────────────────────── "Hangi dedektör sana göre?" testi ───────────────────────── */
@@ -83,14 +87,16 @@ export async function WizardBand({ title, subtitle }: { title?: string | null; s
  * Karar anındaki müşteri için: WhatsApp (en hızlı), telefon, karşılaştırma ve showroom.
  * Görüntülü görüşme sözü verilmez (ekibin her arayana ayıracak vakti olmayabilir).
  */
-export async function ExpertBand({ title, wa, phone, hours }: { title?: string | null; wa: string; phone: string; hours: string }) {
+export async function ExpertBand({ title, wa, phone, hours, showroom = true }: { title?: string | null; wa: string; phone: string; hours: string; showroom?: boolean }) {
   const tr = await getT();
   const tel = phone ? `tel:${phone.replace(/[^\d+]/g, "")}` : "/iletisim";
+  // Girilmemiş kanal gösterilmez: WhatsApp yoksa iletişim formu, telefon yoksa telefon kutusu yok, showroom kapalıysa ziyaret yok
+  const hasWa = wa.startsWith("https://wa.me/");
   const tiles = [
-    { href: wa, ext: true, I: MessageCircle, t: tr("nav.writeWhatsapp"), d: tr("home.exWaD"), tone: "bg-[#e9f7ef] text-[#11643a]" },
-    { href: tel, ext: false, I: Phone, t: phone || tr("home.exCall"), d: (tr.locale === "en" ? "" : hours.split(",")[0]) || tr("home.exCallD"), tone: "bg-[#eef2fd] text-[#1f3b8f]" },
+    hasWa ? { href: wa, ext: true, I: MessageCircle, t: tr("nav.writeWhatsapp"), d: tr("home.exWaD"), tone: "bg-[#e9f7ef] text-[#11643a]" } : { href: "/iletisim", ext: false, I: MessageCircle, t: tr("nav.writeUs"), d: tr("home.exWaD"), tone: "bg-[#e9f7ef] text-[#11643a]" },
+    ...(phone ? [{ href: tel, ext: false, I: Phone, t: phone, d: (tr.locale === "en" ? "" : hours.split(",")[0]) || tr("home.exCallD"), tone: "bg-[#eef2fd] text-[#1f3b8f]" }] : []),
     { href: "/karsilastir", ext: false, I: GitCompare, t: tr("home.exCmp"), d: tr("home.exCmpD"), tone: "bg-tint text-brand" },
-    { href: "/iletisim", ext: false, I: Store, t: tr("home.exVisit"), d: tr("home.exVisitD"), tone: "bg-[#f4f4f5] text-deep" },
+    ...(showroom ? [{ href: "/iletisim", ext: false, I: Store, t: tr("home.exVisit"), d: tr("home.exVisitD"), tone: "bg-[#f4f4f5] text-deep" }] : []),
   ];
   return (
     <section className="container-x mt-12" data-testid="expert-band">
@@ -125,13 +131,33 @@ export async function ExpertBand({ title, wa, phone, hours }: { title?: string |
 
 export async function TrustBand() {
   const tr = await getT();
+  // Seri no sorgulama kapalıysa (Ayarlar > Katalog) yalnızca üç güven kartı gösterilir
+  const st = await getSettings();
+  const serial = st.catalog.serial;
+  // Vaatler mağazanın gerçek verisinden: en uzun ürün garantisi ve kargo kuralı. Doğru olmayan bir söz verilmez.
+  const [{ w }] = await db.select({ w: sql<number>`coalesce(max(${products.warrantyMonths}), 0)::int` }).from(products).where(eq(products.status, "ACTIVE"));
+  const sh = st.shipping;
+  const warranty =
+    w >= 12 && w % 12 === 0
+      ? { big: tr("home.tr1Big", { n: w / 12 }), t: tr("home.tr1"), d: tr("home.tr1D") }
+      : w > 0
+        ? { big: tr("home.tr1BigM", { n: w }), t: tr("home.tr1"), d: tr("home.tr1D") }
+        : { big: tr("home.tr1BigNone"), t: tr("home.tr1None"), d: tr("home.tr1DNone") };
+  const ship =
+    sh.flatRate === 0
+      ? { big: tr("home.tr3Big"), t: tr("home.tr3"), d: tr("home.tr3D") }
+      : sh.freeThreshold > 0
+        ? { big: tr("home.tr3BigOver", { tutar: formatTL(sh.freeThreshold) }), t: tr("home.tr3Over"), d: tr("home.tr3D") }
+        : { big: tr("home.tr3BigFast"), t: tr("home.tr3"), d: tr("home.tr3DFast", { sure: sh.deliveryEstimate }) };
   const cards = [
-    { big: tr("home.tr1Big"), t: tr("home.tr1"), d: tr("home.tr1D"), I: ShieldCheck, c: "22,163,74" },
+    { ...warranty, I: ShieldCheck, c: "22,163,74" },
+    // 14 gün cayma hakkı mesafeli satışta yasal zorunluluk, her mağaza için doğru
     { big: tr("home.tr2Big"), t: tr("home.tr2"), d: tr("home.tr2D"), I: RotateCcw, c: "37,99,235" },
-    { big: tr("home.tr3Big"), t: tr("home.tr3"), d: tr("home.tr3D"), I: Truck, c: "212,46,30" },
+    { ...ship, I: Truck, c: "212,46,30" },
   ];
   return (
-    <section data-stagger="" className="container-x mt-12 grid grid-cols-3 gap-2.5 md:gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr]" data-testid="trust-band">
+    <section data-stagger="" className={`container-x mt-12 grid grid-cols-3 gap-2.5 md:gap-4 ${serial ? "lg:grid-cols-[1.5fr_1fr_1fr_1fr]" : ""}`} data-testid="trust-band">
+      {serial ? (
       <form action={localePath("/seri-no", tr.locale)} className="relative isolate col-span-3 flex flex-col lg:col-span-1 justify-between gap-4 overflow-hidden rounded-[24px] bg-[#141416] p-5 text-white md:p-6">
         <span aria-hidden className="absolute -top-16 -right-10 -z-10 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(34,197,94,.35),transparent_65%)] blur-xl" />
         <ShieldCheck aria-hidden size={120} strokeWidth={1} className="absolute -right-4 -bottom-6 -z-10 text-white/[.06]" />
@@ -147,6 +173,7 @@ export async function TrustBand() {
           <button className="h-10 shrink-0 rounded-full bg-white px-5 text-[13.5px] font-extrabold text-deep transition hover:bg-[#86efac]">{tr("home.serBtn")}</button>
         </span>
       </form>
+      ) : null}
       {cards.map(({ big, t, d, I, c }) => (
         <div key={t} style={{ ["--tc" as string]: c } as CSSProperties} className="group relative isolate flex flex-col justify-start gap-2.5 md:justify-between overflow-hidden rounded-[20px] border border-line bg-[linear-gradient(160deg,rgba(var(--tc),.09),#fff_55%)] p-3.5 shadow-[0_10px_24px_-20px_rgba(20,20,22,.5)] md:bg-white md:bg-none md:shadow-none transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-22px_rgba(20,20,22,.4)] md:gap-6 md:rounded-[24px] md:p-6">
           <span aria-hidden className="absolute -right-6 -bottom-8 -z-10 hidden md:grid h-32 w-32 place-items-center rounded-full bg-soft transition duration-500 group-hover:scale-110">

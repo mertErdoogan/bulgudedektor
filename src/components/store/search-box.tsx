@@ -1,4 +1,5 @@
 "use client";
+import { IfFeature } from "@/components/brand";
 import { localePath } from "@/lib/i18n/config";
 
 import { imgUrl } from "@/lib/img";
@@ -389,7 +390,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
                   </div>
                 ) : null}
                 {!res.brands.length && !res.categories.length && !res.posts.length ? (
-                  <Link href="/sihirbaz" onClick={pick} className="flex items-center gap-2.5 text-[13.5px] font-semibold"><Compass size={18} className="text-brand" /> {t("nav.unsureTest")}</Link>
+                  <IfFeature f="wizard"><Link href="/sihirbaz" onClick={pick} className="flex items-center gap-2.5 text-[13.5px] font-semibold"><Compass size={18} className="text-brand" /> {t("nav.unsureTest")}</Link></IfFeature>
                 ) : null}
               </div>
             </div>
@@ -400,7 +401,7 @@ export function SearchBox({ defaultValue, className, hotkey, placeholder }: { de
             {typed ? (
               <button type="button" onClick={() => go(`/ara?q=${encodeURIComponent(q.trim())}`)} className="text-[13.5px] font-bold text-deep hover:text-brand">{t("sb.all", { q: q.trim() })}{res.total ? ` (${res.total})` : ""} →</button>
             ) : (
-              <Link href="/sihirbaz" onClick={pick} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-deep hover:text-brand"><Compass size={15} /> {t("nav.unsureTest")}</Link>
+              <IfFeature f="wizard"><Link href="/sihirbaz" onClick={pick} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-deep hover:text-brand"><Compass size={15} /> {t("nav.unsureTest")}</Link></IfFeature>
             )}
             <span className="flex gap-4"><span>↑ ↓ {t("sb.kNav")}</span><span>↵ {t("sb.kOpen")}</span><span>esc {t("sb.kClose")}</span></span>
           </div>

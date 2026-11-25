@@ -559,6 +559,9 @@ export const banners = pgTable("banners", {
   ctaLabel: text("cta_label"),
   imageUrl: text("image_url").notNull(),
   mobileImageUrl: text("mobile_image_url"),
+  /** İngilizce sayfalarda kullanılacak görseller (görselin üstünde yazı varsa). Boşsa Türkçe görsel gösterilir. */
+  imageUrlEn: text("image_url_en"),
+  mobileImageUrlEn: text("mobile_image_url_en"),
   linkUrl: text("link_url"),
   showText: boolean("show_text").notNull().default(true),
   palette: jsonb("palette").$type<BannerPalette>(),
@@ -627,7 +630,7 @@ export const posts = pgTable(
     coverImage: text("cover_image"),
     category: text("category").notNull().default("Rehber"),
     tags: textArray("tags"),
-    authorName: text("author_name").notNull().default("Derinova Uzman Ekibi"),
+    authorName: text("author_name").notNull().default("Uzman Ekibi"),
     authorTitle: text("author_title"),
     authorBio: text("author_bio"),
     status: postStatus("status").notNull().default("DRAFT"),

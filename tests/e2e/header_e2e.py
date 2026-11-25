@@ -16,7 +16,8 @@ def sql(q): return subprocess.run(["psql", DB, "-tAc", q], capture_output=True, 
 async def main():
     sql("update users set totp_enabled=false, totp_secret=null, totp_last_step=null")
     sql("delete from rate_hits")
-    sql("delete from settings where key in ('nav','merch')")
+    sql("delete from settings where key='merch'")
+    nav0 = sql("select value::text from settings where key='nav'")  # demo kısayolları (seed); temiz kurulum varsayılanı geneldir
     try:
         async with async_playwright() as p:
             b = await p.chromium.launch(executable_path=os.environ.get("CHROME", "/usr/bin/google-chrome"))
@@ -121,7 +122,7 @@ async def main():
             chk("Sayfa hatası yok", not errs, errs[:2])
             await b.close()
     finally:
-        sql("delete from settings where key='nav'")
+        sql(f"update settings set value = $${nav0}$$::jsonb where key='nav'" if nav0 else "delete from settings where key='nav'")
     ok = sum(1 for _, c in res if c); print(f"{ok}/{len(res)} geçti")
 
 asyncio.run(main())

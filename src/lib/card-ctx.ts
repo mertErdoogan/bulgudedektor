@@ -8,10 +8,14 @@ export type CardCtx = {
   ship: { sameDayCutoff: string; transitMinDays: number; transitMaxDays: number; shipOnSaturday: boolean };
   /** Kartlardaki hazır metinlerin (teslim tarihi vb.) dili */
   locale: "tr" | "en";
+  /** Sayfanın sunucuda oluşturulduğu an (ms). Teslim tarihi hem sunucuda hem tarayıcıda bu anla hesaplanır;
+   *  kesim saati ya da gece yarısı tam sayfa yüklenirken geçerse iki taraf farklı metin üretmez. */
+  now: number;
 };
 
 export const cardCtx = (s: AllSettings, locale: "tr" | "en" = "tr"): CardCtx => ({
   locale,
+  now: Date.now(),
   // Kart ödemesi çalışmıyorsa kartlarda "x taksit" vaadi gösterilmez
   installments: cardReady(s) ? s.payment.noInterestInstallments : 1,
   social: s.store.socialProof !== false,

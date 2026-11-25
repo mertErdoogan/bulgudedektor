@@ -26,6 +26,7 @@ export function legalTokens(store: Store, payment?: Payment, siteUrl = ""): Reco
   return {
     unvan: v(store.legalName || store.name),
     marka: v(store.name),
+    magaza: v(store.name),
     adres: v(store.address),
     telefon: v(store.phone),
     whatsapp: wa ? `+${wa.replace(/^(\d{2})(\d{3})(\d{3})(\d{2})(\d{2})$/, "$1 $2 $3 $4 $5")}` : missing,
@@ -34,7 +35,7 @@ export function legalTokens(store: Store, payment?: Payment, siteUrl = ""): Reco
     vergi_no: v(store.taxNumber),
     mersis: v(store.mersis),
     etbis: v(store.etbis),
-    site: esc(/localhost|127\.0\.0\.1|\.local\b|\.test\b/.test(siteUrl) || !siteUrl ? "www.derinova.example" : siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")),
+    site: esc(/localhost|127\.0\.0\.1|\.local\b|\.test\b/.test(siteUrl) || !siteUrl ? "(site adresi)" : siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")),
     odeme_kurulusu: payment?.provider === "paytr" ? "PayTR" : "iyzico",
     taksit: String(payment?.maxInstallment ?? 6),
     vade_farksiz: String(payment?.noInterestInstallments ?? 3),

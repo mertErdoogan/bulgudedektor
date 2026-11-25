@@ -1,4 +1,5 @@
 "use client";
+import { IfFeature } from "@/components/brand";
 
 import Link from "next/link";
 import { TranslationFields } from "@/components/admin/translation-fields";
@@ -121,10 +122,10 @@ export function ProductForm({
               <Field label="Barkod (GTIN)">
                 <Input name="barcode" defaultValue={product?.barcode ?? ""} />
               </Field>
-              <Field label="Varyant grubu" hint="Aynı modelin farklı paketleri/başlıkları için aynı kodu yaz (örn. vanquish-540). Ürün sayfasında seçenek olarak birbirine bağlanır.">
+              <Field label="Varyant grubu" hint="Aynı modelin farklı seçenekleri (renk, beden, paket) için aynı kodu yaz (örn. vanquish-540, kosu-ayakkabisi-x). Ürün sayfasında seçenek olarak birbirine bağlanır; her seçeneğin kendi stoğu ve fiyatı olur.">
                 <Input name="variantGroup" defaultValue={product?.variantGroup ?? ""} placeholder="Boş bırakılabilir" />
               </Field>
-              <Field label="Varyant adı" hint="Seçenek düğmesinde görünen kısa ad (örn. Standart, Pro-Pack, 15&quot; başlık).">
+              <Field label="Varyant adı" hint="Tek seçenekte kısa ad (örn. Pro-Pack). Renk ve beden gibi birden çok seçenekte 'Renk: Siyah / Beden: 42' yaz; her biri ayrı satırda seçilir.">
                 <Input name="variantLabel" defaultValue={product?.variantLabel ?? ""} placeholder="Örn. Pro-Pack" />
               </Field>
               <Field label="Marka">
@@ -255,8 +256,10 @@ export function ProductForm({
           </Card>
 
           <Card>
-            <CardHeader title="Teknik özellikler ve filtreler" description="Kategori filtreleri ve 'Bana hangisi?' sihirbazı bu alanları kullanır." />
+            <CardHeader title="Teknik özellikler ve filtreler" description="Özellik tablosu ürün sayfasında ve karşılaştırmada görünür." />
             <div className="grid gap-4 p-5 md:grid-cols-3">
+              {/* Dedektöre özel alanlar: yalnızca Ayarlar > Katalog'da açıksa */}
+              <IfFeature f="detectorSpecs">
               <Field label="Teknoloji">
                 <Select name="technology" defaultValue={product?.technology ?? ""}>
                   <option value="">—</option>
@@ -287,9 +290,11 @@ export function ProductForm({
                   ))}
                 </Select>
               </Field>
+              </IfFeature>
               <Field label="Garanti (ay)">
                 <Input name="warrantyMonths" type="number" min={0} defaultValue={product?.warrantyMonths ?? 24} />
               </Field>
+              <IfFeature f="detectorSpecs">
               <Field label="Kullanım amacı" className="md:col-span-2">
                 <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
                   {USE_CASES.map((u) => (
@@ -297,13 +302,14 @@ export function ProductForm({
                   ))}
                 </div>
               </Field>
+              </IfFeature>
               <div className="md:col-span-3">
                 <p className="mb-2 text-[13px] font-semibold text-mute">Özellik tablosu</p>
                 <div className="flex flex-col gap-2">
                   {specs.map((s, i) => (
                     <div key={i} className="grid grid-cols-[1fr_1.4fr_auto] gap-2">
-                      <Input placeholder="Özellik (ör. Frekans)" value={s.key} onChange={(e) => setSpecs(specs.map((x, j) => (j === i ? { ...x, key: e.target.value } : x)))} />
-                      <Input placeholder="Değer (ör. Multi-IQ)" value={s.value} onChange={(e) => setSpecs(specs.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))} />
+                      <Input placeholder="Özellik (ör. Ağırlık)" value={s.key} onChange={(e) => setSpecs(specs.map((x, j) => (j === i ? { ...x, key: e.target.value } : x)))} />
+                      <Input placeholder="Değer (ör. 1,3 kg)" value={s.value} onChange={(e) => setSpecs(specs.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))} />
                       <Button type="button" variant="ghost" size="icon" aria-label="Satırı sil" onClick={() => setSpecs(specs.filter((_, j) => j !== i))}>
                         <Trash2 size={16} />
                       </Button>

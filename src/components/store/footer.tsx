@@ -1,3 +1,5 @@
+import { cardReady } from "@/lib/card-ready";
+import { linkAllowed } from "@/lib/nav-links";
 import Link from "@/components/locale-link";
 import { Logo } from "@/components/logo";
 import { ConsentLink } from "./consent";
@@ -15,7 +17,7 @@ export async function StoreFooter() {
   const help = nav.menu.filter((m) => m.location === "FOOTER_HELP");
   const groups = [
     { title: t("footer.categories"), links: nav.categories.map((c) => ({ href: `/kategori/${c.slug}`, label: c.name })) },
-    { title: t("footer.help"), links: [...(t.locale === "tr" ? [{ href: "/blog", label: t("footer.guides") }] : []), { href: "/sss", label: t("footer.faq") }, { href: "/sozluk", label: t("footer.glossary") }, { href: "/sihirbaz", label: t("footer.whichDetector") }, ...help.map((m) => ({ href: m.url, label: m.label })), ...pages.filter((p) => p.group === "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title }))] },
+    { title: t("footer.help"), links: [...(t.locale === "tr" ? [{ href: "/blog", label: t("footer.guides") }] : []), { href: "/sss", label: t("footer.faq") }, { href: "/sozluk", label: t("footer.glossary") }, { href: "/sihirbaz", label: t("footer.whichDetector") }, ...help.map((m) => ({ href: m.url, label: m.label })), ...pages.filter((p) => p.group === "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title }))].filter((l) => linkAllowed(l.href, s.catalog)) },
     { title: t("footer.legal"), links: pages.filter((p) => p.group !== "Yardım").map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title })) },
   ];
   return (
@@ -57,7 +59,8 @@ export async function StoreFooter() {
       <div className="border-t border-white/10">
         <div className="container-x flex flex-wrap items-center justify-between gap-2 py-4 text-xs opacity-60">
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1">© {new Date().getFullYear()} {s.store.name}. {t("footer.rights")} · <ConsentLink className="underline hover:text-white" />{s.i18n.switcher && langs.length > 1 ? <LangSwitch langs={langs} current={t.locale} path={path} /> : null}</span>
-          <span>{t("footer.secure", { saglayici: s.payment.provider === "paytr" ? "PayTR" : "iyzico" })}</span>
+          {/* Kartla ödeme gerçekten hazırsa (anahtarlar girilmiş) sağlayıcı adı yazılır */}
+          {cardReady(s) ? <span>{t("footer.secure", { saglayici: s.payment.provider === "paytr" ? "PayTR" : "iyzico" })}</span> : null}
         </div>
       </div>
     </footer>

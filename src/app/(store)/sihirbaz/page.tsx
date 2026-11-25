@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { getT } from "@/lib/i18n/server";
 import { pageMeta } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
@@ -9,6 +10,8 @@ export async function generateMetadata() {
 }
 
 export default async function WizardPage({ searchParams }: { searchParams: Promise<{ amac?: string }> }) {
+  // Sektöre özel modül (Ayarlar > Katalog); kapalıysa sayfa yok
+  if (!(await getSettings()).catalog.wizard) notFound();
   const s = await getSettings();
   return <Wizard initialAmac={(await searchParams).amac} whatsapp={s.store.whatsapp} />;
 }

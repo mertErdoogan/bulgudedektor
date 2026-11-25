@@ -65,6 +65,7 @@ export default async function VitrinPage({ searchParams }: { searchParams: Promi
                     <div className="flex-1 text-sm">
                       <Link href={`/admin/vitrin?id=${b.id}`} className="font-bold hover:text-link">{b.title}</Link>
                       <p className="text-xs text-mute">{PLACE[b.placement]} · sıra {b.sortOrder}{b.endsAt ? ` · bitiş ${formatDate(b.endsAt)}` : ""}</p>
+                      {s.i18n.locales.includes("en") && b.placement === "HERO" && !b.imageUrlEn ? <p className="mt-1 text-xs font-semibold text-[#b45309]" data-testid="no-en-warn">İngilizce görsel yok: görselde yazı varsa İngilizce sayfada Türkçe görünür.</p> : null}
                       {b.placement === "HERO" && !b.mobileImageUrl ? <p className="mt-1 text-xs font-semibold text-[#b45309]" data-testid="no-mobile-warn">Mobil görsel yok: telefonda küçük görünür. 1080×1350 dikey görsel ekleyin.</p> : null}
                     </div>
                     {live ? <Badge tone="ok">Yayında</Badge> : <Badge>{b.isActive ? "Zamanlanmış" : "Kapalı"}</Badge>}
@@ -115,6 +116,17 @@ export default async function VitrinPage({ searchParams }: { searchParams: Promi
                 </Field>
                 <Field label="Görsel *"><SingleImageField name="imageUrl" defaultValue={edit?.imageUrl} /></Field>
                 <Field label="Mobil görsel (isteğe bağlı)"><SingleImageField name="mobileImageUrl" defaultValue={edit?.mobileImageUrl} /></Field>
+                {s.i18n.locales.includes("en") ? (
+                  <>
+                    <Field label="İngilizce görsel (isteğe bağlı)" hint="Görselin üstünde yazı varsa İngilizce sayfalarda bu gösterilir. Boşsa Türkçe görsel kullanılır."><SingleImageField name="imageUrlEn" defaultValue={edit?.imageUrlEn} /></Field>
+                    <Field label="İngilizce mobil görsel (isteğe bağlı)"><SingleImageField name="mobileImageUrlEn" defaultValue={edit?.mobileImageUrlEn} /></Field>
+                  </>
+                ) : (
+                  <>
+                    <input type="hidden" name="imageUrlEn" value={edit?.imageUrlEn ?? ""} />
+                    <input type="hidden" name="mobileImageUrlEn" value={edit?.mobileImageUrlEn ?? ""} />
+                  </>
+                )}
                 <Field label="Başlık *" hint="Büyük slider'da sekmede yazar; görselin alternatif metni olarak Google'a ve ekran okuyuculara da gider. Görseldeki ana mesajı yaz (ör. Minelab GPZ 8000 altın dedektörü)."><Input name="title" defaultValue={edit?.title} required maxLength={70} /></Field>
                 <Field label="Alt yazı" hint="Büyük slider'da sekmenin ikinci satırı (ör. Altın dedektörü, %10 havale indirimi)."><Input name="subtitle" defaultValue={edit?.subtitle ?? ""} maxLength={40} /></Field>
                 <Field label="Şerit rengi (büyük slider)"><BannerStageField defaultColor={edit?.stageColor} autoColor={edit?.palette?.edge ? `#${edit.palette.edge.map((v) => v.toString(16).padStart(2, "0")).join("")}` : null} /></Field>

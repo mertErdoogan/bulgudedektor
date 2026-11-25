@@ -11,7 +11,7 @@ import * as t from "../src/db/schema";
 import { ensureDemoGallery, removeTrialRental } from "./demo-gallery";
 
 /** Demo içeriğinin sürümü: artırılırsa ön izleme veritabanı bir sonraki açılışta demo veriyle baştan kurulur */
-const DEMO_VERSION = 7;
+const DEMO_VERSION = 10;
 
 /** Silmeden yükseltme adımları: anahtar = başlangıç sürümü */
 const UPGRADES: Record<number, () => Promise<void>> = {
@@ -111,6 +111,29 @@ const UPGRADES: Record<number, () => Promise<void>> = {
       const value = { ...demo, ...((row?.value as object) ?? {}) };
       await db.insert(t.settings).values({ key, value }).onConflictDoUpdate({ target: t.settings.key, set: { value } });
     }
+  },
+  // 7 → 8: sektör profili (Ayarlar > Katalog). Varsayılanlar genel mağazaya göre; demo dedektör profilini ve
+  // dedektöre özel kayan yazı/kısayolları, panelden kaydedilmemişse alır.
+  7: async () => {
+    const { DEMO_CATALOG, DEMO_NAV_SHORTCUTS, DEMO_TICKER } = await import("./lib/demo-store");
+    const has = async (key: string) => (await db.select({ k: t.settings.key }).from(t.settings).where(sql`${t.settings.key} = ${key}`)).length > 0;
+    if (!(await has("catalog"))) await db.insert(t.settings).values({ key: "catalog", value: DEMO_CATALOG });
+    if (!(await has("ticker"))) await db.insert(t.settings).values({ key: "ticker", value: DEMO_TICKER });
+    if (!(await has("nav"))) await db.insert(t.settings).values({ key: "nav", value: { shortcuts: DEMO_NAV_SHORTCUTS } });
+  },
+  // 8 → 9: varsayılanlar boş kuruluma göre (IBAN yok, showroom kapalı). Demo, kaydedilmemiş alanlarda eski değerleri korur.
+  8: async () => {
+    const { DEMO_BANK_ACCOUNTS, DEMO_PICKUP } = await import("./lib/demo-store");
+    const row = async (key: string) => ((await db.select().from(t.settings).where(sql`${t.settings.key} = ${key}`))[0]?.value ?? {}) as Record<string, unknown>;
+    const pay = await row("payment");
+    if (!("bankAccounts" in pay)) await db.insert(t.settings).values({ key: "payment", value: { ...pay, bankAccounts: DEMO_BANK_ACCOUNTS } }).onConflictDoUpdate({ target: t.settings.key, set: { value: { ...pay, bankAccounts: DEMO_BANK_ACCOUNTS } } });
+    const ship = await row("shipping");
+    if (!("pickupEnabled" in ship)) await db.insert(t.settings).values({ key: "shipping", value: { ...ship, ...DEMO_PICKUP } }).onConflictDoUpdate({ target: t.settings.key, set: { value: { ...ship, ...DEMO_PICKUP } } });
+  },
+  // 9 → 10: yazılı demo ana banner'larının İngilizce görselleri (yalnızca boşsa)
+  9: async () => {
+    for (const slug of ["deus-2", "equinox-900", "double-score-2", "ace-250"])
+      await db.execute(sql`update banners set image_url_en = ${`/demo/hero-${slug}-en.jpg`}, mobile_image_url_en = ${`/demo/hero-${slug}-en-m.jpg`} where image_url = ${`/demo/hero-${slug}.jpg`} and image_url_en is null`);
   },
 };
 

@@ -1,4 +1,6 @@
 "use client";
+import { useFeatures } from "@/components/brand";
+import { linkAllowed } from "@/lib/nav-links";
 
 import { useEffect, useState } from "react";
 import Link from "@/components/locale-link";
@@ -21,7 +23,9 @@ const HOLD_MS = { slow: 6000, normal: 4200, fast: 3000 } as const;
  * Panelden: maddeler, geçiş yönü, hız, renk. "Hareketi azalt" tercihinde geçiş animasyonsuzdur.
  */
 export function Ticker({ t, preview = false }: { t: TickerSettings; preview?: boolean }) {
-  const items = t.items.filter((i) => i.text.trim()).sort((a, b) => Number(b.highlight) - Number(a.highlight));
+  const feat = useFeatures();
+  // Kapalı sektör modüllerine (Ayarlar > Katalog) giden maddeler gösterilmez
+  const items = t.items.filter((i) => i.text.trim() && (preview || !i.href || linkAllowed(i.href, feat))).sort((a, b) => Number(b.highlight) - Number(a.highlight));
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const n = items.length;

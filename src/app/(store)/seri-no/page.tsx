@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { getSettings } from "@/lib/settings";
 import { getL } from "@/lib/i18n/server";
 import { allowIp } from "@/lib/guard";
 import { pageMeta } from "@/lib/seo";
@@ -13,6 +15,8 @@ export async function generateMetadata() {
 }
 
 export default async function SerialPage({ searchParams }: { searchParams: Promise<{ no?: string }> }) {
+  // Sektöre özel modül (Ayarlar > Katalog); kapalıysa sayfa yok
+  if (!(await getSettings()).catalog.serial) notFound();
   const no = ((await searchParams).no ?? "").trim().toUpperCase();
   const L = await getL();
   const limited = !!no && !(await allowIp("serial", 30, 15 * 60 * 1000));

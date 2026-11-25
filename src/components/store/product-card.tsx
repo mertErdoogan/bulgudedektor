@@ -23,7 +23,7 @@ export function isNew(p: Pick<P, "createdAt">) {
 
 /** Ürünün altında görünen sade "kargo / teslim" rozeti. */
 export function DeliveryBadge({ p, ctx, className }: { p: Pick<P, "stock" | "allowBackorder" | "sameDayShipping">; ctx: CardCtx; className?: string }) {
-  const d = deliveryInfo(p, ctx.ship, undefined, ctx.locale);
+  const d = deliveryInfo(p, ctx.ship, new Date(ctx.now ?? Date.now()), ctx.locale);
   if (d.tone === "none") return null;
   return (
     <span
@@ -44,7 +44,7 @@ export function DeliveryBadge({ p, ctx, className }: { p: Pick<P, "stock" | "all
 
 /** Ürün sayfası fiyat kartında tek satır teslimat bilgisi: "Pazartesi kargoda · Sal–Çar, 17–18 Kas kapında". */
 export function DeliveryLine({ p, ctx, pickup }: { p: Pick<P, "stock" | "allowBackorder" | "sameDayShipping">; ctx: CardCtx; pickup?: boolean }) {
-  const d = deliveryInfo(p, ctx.ship, undefined, ctx.locale);
+  const d = deliveryInfo(p, ctx.ship, new Date(ctx.now ?? Date.now()), ctx.locale);
   if (d.tone === "none") return null;
   return (
     <span className="flex items-start gap-2" data-testid="pdp-delivery">
@@ -97,7 +97,7 @@ export function ProductCard({ p, ctx, compare = false, className, rank }: { p: P
   // "Yeni" yalnızca panelde "Yeni" rozeti verilen ürünlerde: eklenme tarihine bakılmaz (toplu içe aktarımda her ürün "yeni" görünürdü).
   const fresh = p.badges.some((b) => /^yeni/i.test(b));
   const badge = p.badges.find((b) => !/^yeni/i.test(b));
-  const d = deliveryInfo(p, ctx.ship, undefined, ctx.locale);
+  const d = deliveryInfo(p, ctx.ship, new Date(ctx.now ?? Date.now()), ctx.locale);
   const deal = !out && p.cartDeal && p.cartDeal > 0 ? Math.round((p.price - p.cartDeal) * 100) / 100 : 0;
   const name = ctx.locale === "en" && p.nameEn ? p.nameEn : p.name;
   return (

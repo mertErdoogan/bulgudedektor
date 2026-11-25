@@ -1,10 +1,11 @@
 "use client";
+import { IfFeature, useFeatures } from "@/components/brand";
 
 import { imgUrl } from "@/lib/img";
 import Link from "@/components/locale-link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ArrowRight, Check, ChevronRight, Compass, Grid2X2, Heart, Home, Menu, Scale, Search, ShoppingCart, User, X } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Compass, Flame, Grid2X2, Heart, Home, Menu, Scale, Search, ShoppingCart, User, X } from "lucide-react";
 import { cn, formatTL } from "@/lib/utils";
 import { Button } from "@/components/ui";
 import { Logo } from "@/components/logo";
@@ -186,6 +187,7 @@ export function MegaMenu({ categories, brands, variant = "nav" }: { categories: 
                 </Link>
               ))}
             </div>
+            <IfFeature f="wizard">
             <div className="mt-auto flex items-center justify-between rounded-xl bg-tint p-4">
               <span className="text-sm">
                 <b>{t("mega.unsure")}</b> {t("mega.unsureD")}
@@ -194,6 +196,7 @@ export function MegaMenu({ categories, brands, variant = "nav" }: { categories: 
                 {t("mega.which")}
               </Link>
             </div>
+            </IfFeature>
           </div>
         </div>
       ) : null}
@@ -205,10 +208,12 @@ export function MobileTabBar() {
   const p = splitLocale(usePathname()).path;
   const { count, ready } = useCart();
   const t = useT();
+  const feat = useFeatures();
   const items = [
     { href: "/", label: t("nav.home"), icon: Home },
     { href: "/kategoriler", label: t("nav.categories"), icon: Grid2X2 },
-    { href: "/sihirbaz", label: t("nav.whichOne"), icon: Compass, center: true },
+    // Ortadaki vurgulu sekme: seçim sihirbazı kapalıysa kampanyalar
+    feat.wizard ? { href: "/sihirbaz", label: t("nav.whichOne"), icon: Compass, center: true } : { href: "/kampanyalar", label: t("nav.campaigns"), icon: Flame, center: true },
     { href: "/sepet", label: t("nav.cart"), icon: ShoppingCart, badge: ready ? count : 0 },
     { href: "/hesabim", label: t("nav.account"), icon: User },
   ];

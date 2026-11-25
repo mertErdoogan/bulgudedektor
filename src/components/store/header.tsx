@@ -71,14 +71,14 @@ export async function StoreHeader() {
             </Link>
             <SearchBox hotkey className="hidden max-w-[640px] flex-1 md:flex" placeholder={t("nav.searchPlaceholder")} />
             <div className="ml-auto flex items-center gap-1">
-              <a href={wa} target="_blank" className="mr-1 hidden h-11 items-center gap-2.5 rounded-full px-3 transition hover:bg-[#f1faf4] lg:flex">
+              <a href={wa} target={s.store.whatsapp ? "_blank" : undefined} className="mr-1 hidden h-11 items-center gap-2.5 rounded-full px-3 transition hover:bg-[#f1faf4] lg:flex">
                 <MessageCircle size={21} className="text-[#11643a]" />
                 <span className="flex flex-col leading-[1.15]">
                   <span className="text-[14px] font-bold">{t("nav.askExpert")}</span>
-                  <span className="text-[11.5px] font-medium text-mute">{t("nav.writeWhatsapp")}</span>
+                  <span className="text-[11.5px] font-medium text-mute">{s.store.whatsapp ? t("nav.writeWhatsapp") : t("nav.writeUs")}</span>
                 </span>
               </a>
-              <a href={wa} target="_blank" aria-label={t("nav.askExpertAria")} className="grid h-11 w-11 place-items-center rounded-full text-[#11643a] hover:bg-[#f1faf4] lg:hidden">
+              <a href={wa} target={s.store.whatsapp ? "_blank" : undefined} aria-label={t("nav.askExpertAria")} className="grid h-11 w-11 place-items-center rounded-full text-[#11643a] hover:bg-[#f1faf4] lg:hidden">
                 <MessageCircle size={21} />
               </a>
               <span className="mx-1.5 hidden h-7 w-px bg-line lg:block" />

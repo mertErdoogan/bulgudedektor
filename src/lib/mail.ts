@@ -88,7 +88,7 @@ export async function mailReviewRequest(orderId: string) {
   const base = process.env.APP_URL || "";
   const list = items.map((i) => `<li style="margin:6px 0"><a href="${base}/urun/${i.slug}#yorumlar">${i.name} için yorum yaz →</a></li>`).join("");
   const google = s.store.googleReviewUrl
-    ? `<p style="margin-top:18px">Alışveriş deneyimini Google'da paylaşırsan, dedektör arayan başka birinin doğru mağazayı bulmasına yardım etmiş olursun:</p><p><a href="${s.store.googleReviewUrl}" style="display:inline-block;background:#d42e1e;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">Google'da değerlendir ★★★★★</a></p>`
+    ? `<p style="margin-top:18px">Alışveriş deneyimini Google'da paylaşırsan, aradığını bulmaya çalışan başka birinin doğru mağazayı bulmasına yardım etmiş olursun:</p><p><a href="${s.store.googleReviewUrl}" style="display:inline-block;background:#d42e1e;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">Google'da değerlendir ★★★★★</a></p>`
     : "";
   await sendMail(
     o.email,

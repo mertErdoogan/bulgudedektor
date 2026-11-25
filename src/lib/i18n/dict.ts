@@ -12,10 +12,11 @@ const trBase = {
   "nav.campaigns": "Kampanyalar",
   "nav.orderTracking": "Sipariş takibi",
   "nav.cutoff": "Bugün {saat}'e kadar siparişler kargoda",
-  "nav.searchPlaceholder": "Marka, model veya ürün ara — ör. Ace 250, Deus II",
+  "nav.searchPlaceholder": "Marka, model veya ürün ara",
   "nav.searchPlaceholderShort": "Marka veya model ara",
   "nav.askExpert": "Uzmana sor",
   "nav.writeWhatsapp": "WhatsApp'tan yaz",
+  "nav.writeUs": "Bize yaz",
   "nav.askExpertAria": "WhatsApp ile uzmana sor",
   "nav.login": "Giriş yap",
   "nav.account": "Hesabım",
@@ -29,10 +30,10 @@ const trBase = {
   // Alt bilgi
   "footer.categories": "Kategoriler",
   "footer.help": "Yardım ve rehberler",
-  "footer.guides": "Dedektör rehberleri",
+  "footer.guides": "Rehberler",
   "footer.faq": "Sık sorulan sorular",
-  "footer.glossary": "Dedektör sözlüğü",
-  "footer.whichDetector": "Hangi dedektörü almalıyım?",
+  "footer.glossary": "{Tür} sözlüğü",
+  "footer.whichDetector": "Hangi {türü} almalıyım?",
   "footer.legal": "Sözleşmeler ve kurumsal",
   "footer.rights": "Tüm hakları saklıdır.",
   "footer.secure": "Ödemeler {saglayici} güvencesiyle 3D Secure · Kart bilgisi saklanmaz",
@@ -124,7 +125,7 @@ const trBase = {
   "exp.PRO": "Profesyonel",
   "pdp.tabCompare": "Karşılaştır",
   // Liste ve filtreler
-  "cat.title": "{ad} için dedektörler",
+  "cat.title": "{ad}",
   "cat.shortInfo": "Kısa bilgi",
   "cat.wizard": "Kararsız mısın? 6 soruda öneri al",
   "cat.quick": "HIZLI",
@@ -132,6 +133,7 @@ const trBase = {
   "cat.clear": "Temizle",
   "cat.empty": "Bu filtrelerle ürün bulunamadı.",
   "cat.emptyHint": "Filtreleri azalt ya da sihirbaza sor.",
+  "cat.emptyHintPlain": "Filtreleri azaltmayı dene.",
   "cat.qStock": "Stokta",
   "cat.qBeginner": "İlk cihaz",
   "cat.qMulti": "Çok frekanslı",
@@ -217,10 +219,11 @@ const enBase: Partial<Record<DictKey, string>> = {
   "nav.campaigns": "Deals",
   "nav.orderTracking": "Track order",
   "nav.cutoff": "Orders before {saat} ship today",
-  "nav.searchPlaceholder": "Search brand, model or product — e.g. Ace 250, Deus II",
+  "nav.searchPlaceholder": "Search brand, model or product",
   "nav.searchPlaceholderShort": "Search brand or model",
   "nav.askExpert": "Ask an expert",
   "nav.writeWhatsapp": "Message on WhatsApp",
+  "nav.writeUs": "Send us a message",
   "nav.askExpertAria": "Ask an expert on WhatsApp",
   "nav.login": "Sign in",
   "nav.account": "My account",
@@ -233,10 +236,10 @@ const enBase: Partial<Record<DictKey, string>> = {
   "lang.label": "Language",
   "footer.categories": "Categories",
   "footer.help": "Help and guides",
-  "footer.guides": "Detector guides",
+  "footer.guides": "Guides",
   "footer.faq": "FAQ",
-  "footer.glossary": "Detector glossary",
-  "footer.whichDetector": "Which detector should I buy?",
+  "footer.glossary": "{Type} glossary",
+  "footer.whichDetector": "Which {type} should I buy?",
   "footer.legal": "Legal and company",
   "footer.rights": "All rights reserved.",
   "footer.secure": "Payments secured by {saglayici} with 3D Secure · Card details are never stored",
@@ -324,7 +327,7 @@ const enBase: Partial<Record<DictKey, string>> = {
   "exp.INTERMEDIATE": "Intermediate",
   "exp.PRO": "Professional",
   "pdp.tabCompare": "Compare",
-  "cat.title": "{ad} detectors",
+  "cat.title": "{ad}",
   "cat.shortInfo": "Quick facts",
   "cat.wizard": "Not sure? Get a pick in 6 questions",
   "cat.quick": "QUICK",
@@ -332,6 +335,7 @@ const enBase: Partial<Record<DictKey, string>> = {
   "cat.clear": "Clear",
   "cat.empty": "No products match these filters.",
   "cat.emptyHint": "Remove some filters or ask the finder.",
+  "cat.emptyHintPlain": "Try removing some filters.",
   "cat.qStock": "In stock",
   "cat.qBeginner": "Beginner",
   "cat.qMulti": "Multi-frequency",
@@ -408,10 +412,35 @@ const en: Partial<Record<DictKey, string>> = { ...enBase, ...pairsEn(PAIRS) };
 
 export const DICTS: Record<Locale, Partial<Record<DictKey, string>>> = { tr, en };
 
+/** Ürün türünün adı (Ayarlar > Katalog): metinlerde {tür} / {Tür} / {türü} / {türleri} ve {type} / {types} */
+export type Niche = { one: string; acc: string; many: string; oneEn: string; manyEn: string };
+let NICHE: Niche = { one: "ürün", acc: "ürünü", many: "ürünleri", oneEn: "product", manyEn: "products" };
+export const setNiche = (n: Niche) => {
+  NICHE = n;
+};
+const capTr = (x: string) => x.charAt(0).toLocaleUpperCase("tr-TR") + x.slice(1);
+const capEn = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
+
+/** Metindeki ürün türü yer tutucularını doldurur (sözlük dışındaki metinler için de kullanılabilir) */
+export function fillNiche(s: string) {
+  if (!s.includes("{")) return s;
+  return s
+    .replaceAll("{türleri}", NICHE.many)
+    .replaceAll("{Türleri}", capTr(NICHE.many))
+    .replaceAll("{türü}", NICHE.acc)
+    .replaceAll("{Türü}", capTr(NICHE.acc))
+    .replaceAll("{tür}", NICHE.one)
+    .replaceAll("{Tür}", capTr(NICHE.one))
+    .replaceAll("{types}", NICHE.manyEn)
+    .replaceAll("{Types}", capEn(NICHE.manyEn))
+    .replaceAll("{type}", NICHE.oneEn)
+    .replaceAll("{Type}", capEn(NICHE.oneEn));
+}
+
 export function translate(locale: Locale, key: DictKey, vars?: Record<string, string | number>) {
   let s = DICTS[locale]?.[key] ?? tr[key] ?? key;
   if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
-  return s;
+  return fillNiche(s);
 }
 
 /** Teknoloji / su / deneyim gibi sabit değerlerin çevirisi; bilinmeyen değer olduğu gibi döner. */

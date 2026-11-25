@@ -1,3 +1,4 @@
+import { IfFeature } from "@/components/brand";
 import Link from "@/components/locale-link";
 import { MessageCircle } from "lucide-react";
 import { Breadcrumbs, FaqSection } from "@/components/seo/blocks";
@@ -39,7 +40,7 @@ export default async function FaqPage() {
         <span><b>{t("faqp.no_answer")}</b><br /><span className="text-sm text-mute">{t("faqp.ask")}</span></span>
         <span className="flex gap-2">
           <a href={wa} target="_blank" className="flex h-11 items-center gap-2 rounded-lg bg-[#15803d] px-4 text-sm font-extrabold text-white"><MessageCircle size={17} /> WhatsApp</a>
-          <Link href="/sozluk" className="flex h-11 items-center rounded-lg border border-deep px-4 text-sm font-extrabold">{t("glp.crumb")}</Link>
+          <IfFeature f="glossary"><Link href="/sozluk" className="flex h-11 items-center rounded-lg border border-deep px-4 text-sm font-extrabold">{t("glp.crumb")}</Link></IfFeature>
         </span>
       </div>
     </div>

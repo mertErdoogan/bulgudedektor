@@ -180,7 +180,7 @@ export async function placeOrder(_: ActionResult | null, fd: FormData): Promise<
         buyer: { id: customerId, name: fullName, email, phone, identityNumber: tckn || undefined, city: address.city, address: `${address.line} ${address.district}/${address.city}`, ip },
         // iyzico: kalem toplamı "price" olmalı; indirim "paidPrice"ta yansır, kargo ayrı kalem.
         items: [
-          ...q.lines.map((l) => ({ id: l.productId, name: l.name, category: "Dedektör", price: l.total })),
+          ...q.lines.map((l) => ({ id: l.productId, name: l.name, category: "Ürün", price: l.total })),
           ...(q.shippingTotal > 0 ? [{ id: "kargo", name: "Kargo", category: "Kargo", price: q.shippingTotal }] : []),
         ],
         // Kayıtlı kartlar yalnızca oturum açmış hesabın kendi siparişinde gösterilir (misafir siparişte asla)

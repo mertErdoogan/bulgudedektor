@@ -90,7 +90,11 @@ export const getNav = cache(async () => {
   // İsteğin diline çevir (Türkçede sorgu yapılmaz)
   const { localize } = await import("./i18n/content");
   const [lm, lc] = await Promise.all([localize(menu, "menu"), localize(cats, "category")]);
-  return { menu: lm, categories: lc };
+  // Kapalı sektör modüllerine giden menü öğeleri gizlenir (Ayarlar > Katalog)
+  const { getSettings } = await import("./settings");
+  const { linkAllowed } = await import("./nav-links");
+  const f = (await getSettings()).catalog;
+  return { menu: lm.filter((m) => linkAllowed(m.url, f)), categories: lc };
 });
 
 export const getFooterPages = cache(async () => {
@@ -111,7 +115,11 @@ export async function getHome() {
     db.select().from(homeSections).where(eq(homeSections.isActive, true)).orderBy(asc(homeSections.sortOrder)),
     db.select().from(banners).where(liveBanner()).orderBy(asc(banners.sortOrder)),
   ]);
-  return { sections: secs, banners: bs };
+  // İngilizce sayfa: yazılı banner'ın İngilizce görseli varsa onu kullan
+  const { getLocale } = await import("./i18n/server");
+  const en = (await getLocale()) === "en";
+  const out = en ? bs.map((b) => ({ ...b, imageUrl: b.imageUrlEn || b.imageUrl, mobileImageUrl: b.imageUrlEn ? b.mobileImageUrlEn || null : b.mobileImageUrl })) : bs;
+  return { sections: secs, banners: out };
 }
 
 /**

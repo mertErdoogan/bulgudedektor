@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { getSettings } from "@/lib/settings";
 import { getL } from "@/lib/i18n/server";
 import { allowIp } from "@/lib/guard";
 import { pageMeta } from "@/lib/seo";
@@ -13,6 +15,8 @@ export async function generateMetadata() {
 }
 
 export default async function ServicePublic({ searchParams }: { searchParams: Promise<{ no?: string; iletisim?: string }> }) {
+  // Sektöre özel modül (Ayarlar > Katalog); kapalıysa sayfa yok
+  if (!(await getSettings()).catalog.service) notFound();
   const sp = await searchParams;
   const L = await getL();
   const num = Number((sp.no ?? "").replace(/\D/g, ""));

@@ -1,3 +1,4 @@
+import { fillNiche } from "./i18n/dict";
 import type { Metadata } from "next";
 import type { AllSettings } from "./settings";
 import { localePath, type Locale } from "./i18n/config";
@@ -97,7 +98,9 @@ export function organizationLd(s: AllSettings, brandNames: string[] = []) {
       { "@type": "ContactPoint", contactType: "customer service", telephone: st.phone, email: st.email, areaServed: "TR", availableLanguage: ["Turkish"] },
       ...(st.whatsapp ? [{ "@type": "ContactPoint", contactType: "sales", url: `https://wa.me/${st.whatsapp}`, areaServed: "TR", availableLanguage: ["Turkish"] }] : []),
     ],
-    knowsAbout: ["Metal dedektörü", "Altın dedektörü", "Define arama cihazı", ...brandNames, "Pulse Induction", "VLF dedektör", "Çok frekanslı dedektör"],
+    knowsAbout: s.catalog.detectorSpecs
+      ? ["Metal dedektörü", "Altın dedektörü", "Define arama cihazı", ...brandNames, "Pulse Induction", "VLF dedektör", "Çok frekanslı dedektör"]
+      : [s.catalog.nounOne.charAt(0).toLocaleUpperCase("tr-TR") + s.catalog.nounOne.slice(1), ...brandNames],
   });
 }
 
@@ -214,7 +217,7 @@ export function productLd(p: ProductInput, s: AllSettings, locale: Locale = "tr"
     image: p.images.map((i) => abs(i.url)),
     description: p.seoDescription || p.shortDescription,
     brand: p.brand ? { "@type": "Brand", name: p.brand.name, url: abs(`/marka/${p.brand.slug}`) } : undefined,
-    category: p.category ? `Metal dedektörü > ${p.category.name}` : "Metal dedektörü",
+    category: p.category?.name,
     weight: p.weightKg ? { "@type": "QuantitativeValue", value: p.weightKg, unitCode: "KGM" } : undefined,
     additionalProperty: p.specs.slice(0, 25).map((x) => ({ "@type": "PropertyValue", name: x.key, value: x.value })),
     offers: {
@@ -290,7 +293,7 @@ export function definedTermSetLd(terms: { id: string; question: string; answer: 
   return {
     "@type": "DefinedTermSet",
     "@id": `${url}#terms`,
-    name: "Metal dedektörü sözlüğü",
+    name: fillNiche("{Tür} sözlüğü"),
     url,
     hasDefinedTerm: terms.map((t) => ({ "@type": "DefinedTerm", name: t.question, description: t.answer, url: `${url}#${t.id}`, inDefinedTermSet: `${url}#terms` })),
   };

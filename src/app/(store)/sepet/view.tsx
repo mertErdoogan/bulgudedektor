@@ -1,4 +1,5 @@
 "use client";
+import { IfFeature } from "@/components/brand";
 
 import { imgUrl } from "@/lib/img";
 import { CartUpsell } from "@/components/store/rails";
@@ -44,7 +45,7 @@ export function CartView({ inst, freeThreshold, flatRate }: { inst: number; free
         <h1 className="font-display text-2xl font-extrabold">{t("cart.empty")}</h1>
         <p className="mt-2 text-mute">{t("cart.empty_sub")}</p>
         <div className="mt-5 flex justify-center gap-2">
-          <Button asChild><Link href="/sihirbaz">{t("cart.which")}</Link></Button>
+          <IfFeature f="wizard"><Button asChild><Link href="/sihirbaz">{t("cart.which")}</Link></Button></IfFeature>
           <Button variant="outline" asChild><Link href="/urunler">{t("cart.browse")}</Link></Button>
         </div>
       </div>

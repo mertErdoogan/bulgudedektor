@@ -1,4 +1,5 @@
 "use client";
+import { useFeatures } from "@/components/brand";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,7 +21,14 @@ type Props = {
 export function AdminShell({ user, badges, setupPending, logout, children }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const groups = NAV.map((g) => ({ ...g, items: g.items.filter((i) => user.permissions.includes(i.perm)) })).filter((g) => g.items.length);
+  // Kapalı sektör modülleri (Ayarlar > Katalog) menüde görünmez; seri no kapalıysa stok sayfası yalnızca "Stok"
+  const feat = useFeatures();
+  const groups = NAV.map((g) => ({
+    ...g,
+    items: g.items
+      .filter((i) => user.permissions.includes(i.perm) && (i.href !== "/admin/servis" || feat.service))
+      .map((i) => (i.href === "/admin/stok" && !feat.serial ? { ...i, label: "Stok" } : i)),
+  })).filter((g) => g.items.length);
 
   const sidebar = (
     <nav className="flex h-full flex-col gap-1 overflow-y-auto px-3 pb-6">

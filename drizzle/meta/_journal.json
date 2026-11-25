@@ -176,6 +176,13 @@
       "when": 1795081767253,
       "tag": "0024_commerce_tools",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795200000000,
+      "tag": "0025_banner_en_images",
+      "breakpoints": true
     }
   ]
 }

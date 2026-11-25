@@ -80,7 +80,7 @@ export async function initCheckoutForm(args: {
     basketItems: args.items.map((i) => ({
       id: i.id,
       name: i.name.slice(0, 100),
-      category1: i.category || "Dedektör",
+      category1: i.category || "Genel",
       itemType: Iyzipay.BASKET_ITEM_TYPE.PHYSICAL,
       price: p2(i.price),
     })),

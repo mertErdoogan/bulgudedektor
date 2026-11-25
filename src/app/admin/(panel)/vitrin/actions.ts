@@ -37,6 +37,8 @@ export async function saveBanner(_: ActionResult | null, fd: FormData): Promise<
       ctaLabel: strOrNull(fd.get("ctaLabel")),
       imageUrl,
       mobileImageUrl: strOrNull(fd.get("mobileImageUrl")),
+      imageUrlEn: strOrNull(fd.get("imageUrlEn")),
+      mobileImageUrlEn: strOrNull(fd.get("mobileImageUrlEn")),
       linkUrl: strOrNull(fd.get("linkUrl")),
       placement: str(fd.get("placement")) as "HERO",
       sortOrder: toNum(fd.get("sortOrder"), 0),

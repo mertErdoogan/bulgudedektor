@@ -59,6 +59,22 @@ export async function saveBrand(_: ActionResult | null, fd: FormData): Promise<A
   });
 }
 
+/** Ayarlar > Katalog: ürün türünün adı ve sektöre özel modüller */
+export async function saveCatalog(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("settings.manage");
+    const w = (k: string) => str(fd.get(k)).toLocaleLowerCase("tr-TR");
+    const v = { nounOne: w("nounOne"), nounAcc: w("nounAcc"), nounMany: w("nounMany"), nounOneEn: str(fd.get("nounOneEn")).toLowerCase(), nounManyEn: str(fd.get("nounManyEn")).toLowerCase() };
+    if (Object.values(v).some((x) => !x || x.length > 40)) return fail("Ürün türü adlarının hepsini doldurun (en fazla 40 karakter).");
+    const on = (k: string) => fd.get(k) === "on";
+    await saveSettings("catalog", { ...v, wizard: on("wizard"), glossary: on("glossary"), serial: on("serial"), service: on("service"), detectorSpecs: on("detectorSpecs") });
+    // Kurulum sihirbazında "Sektör ve ürün türü" adımı tamamlandı sayılır
+    const setup = (await getSettings()).setup;
+    if (!setup.completedSteps.includes("catalog")) await saveSettings("setup", { ...setup, completedSteps: [...setup.completedSteps, "catalog"] });
+    return fin(staff.id, "catalog");
+  });
+}
+
 export async function saveShipping(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
     const staff = await assertStaff("settings.manage");

@@ -1,3 +1,4 @@
+import { IfFeature } from "@/components/brand";
 import { getLocale, getT } from "@/lib/i18n/server";
 import Link from "@/components/locale-link";
 import { MessageCircle } from "lucide-react";
@@ -34,7 +35,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           <p className="mt-2 max-w-2xl text-[15px] text-[#3f3f46]">{t("search.noneD")}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <a href={wa} target="_blank" className="flex h-11 items-center gap-2 rounded-lg bg-[#15803d] px-4 text-sm font-extrabold text-white"><MessageCircle size={17} /> Uzmana sor</a>
-            <Link href="/sihirbaz" className="flex h-11 items-center rounded-lg border border-deep px-4 text-sm font-extrabold">{t("search.wizard")}</Link>
+            <IfFeature f="wizard"><Link href="/sihirbaz" className="flex h-11 items-center rounded-lg border border-deep px-4 text-sm font-extrabold">{t("search.wizard")}</Link></IfFeature>
             <Link href="/urunler" className="flex h-11 items-center rounded-lg bg-soft px-4 text-sm font-extrabold">{t("all.title")}</Link>
           </div>
           <h2 className="font-display mt-10 mb-4 text-2xl font-extrabold">{t("search.popular")}</h2>

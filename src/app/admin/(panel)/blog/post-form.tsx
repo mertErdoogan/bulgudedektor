@@ -10,7 +10,7 @@ import { Card, CardHeader, Field, Input, Select, Textarea } from "@/components/u
 import { savePost } from "./actions";
 
 type Post = typeof posts.$inferSelect;
-const CATS = ["Rehber", "Cihaz seçimi", "Karşılaştırma", "Kullanım ve ayarlar", "Bakım", "Mevzuat", "Saha notları"];
+const CATS = ["Rehber", "Ürün seçimi", "Karşılaştırma", "Kullanım ve ayarlar", "Bakım", "Mevzuat", "Haberler"];
 const local = (d: Date | null | undefined) => (d ? new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "");
 
 export async function PostForm({ post }: { post?: Post }) {

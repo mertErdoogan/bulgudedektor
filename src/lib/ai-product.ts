@@ -1,3 +1,5 @@
+import { fillNiche } from "./i18n/dict";
+import { syncNiche } from "./i18n/server";
 import "server-only";
 import { aiStructured } from "./ai";
 
@@ -32,10 +34,10 @@ export type AiProductResult = {
   en?: { name: string; slug: string; shortDescription: string; description: string; seoTitle: string; seoDescription: string };
 };
 
-const SYSTEM = `Sen bir metal dedektörü mağazasının deneyimli içerik editörüsün. Türkçe ürün içerikleri yazıyorsun; istenirse İngilizcesini de hazırlıyorsun.
+const SYSTEM_TPL = `Sen bir {tür} mağazasının deneyimli içerik editörüsün. Türkçe ürün içerikleri yazıyorsun; istenirse İngilizcesini de hazırlıyorsun.
 Kurallar:
 - Yalnızca sana verilen bilgilere dayan. Teknik özellik, sayı, derinlik, frekans, ağırlık, garanti süresi UYDURMA. Bilgi yoksa o konudan hiç bahsetme.
-- Abartma: "en iyi", "kesin bulur", "garantili sonuç" gibi iddialar yok. Dedektörün ne işe yaradığını, kime uygun olduğunu dürüstçe anlat.
+- Abartma: "en iyi", "kesin bulur", "garantili sonuç" gibi iddialar yok. Ürünün ne işe yaradığını, kime uygun olduğunu dürüstçe anlat.
 - Fiyat, kampanya, stok veya tarih yazma (değişir).
 - Yasal konularda (define arama izni vb.) iddiada bulunma.
 - Emoji kullanma. Doğal, sade, güven veren bir dil kullan; "sen" diye hitap et.
@@ -95,7 +97,7 @@ export async function generateProductContent(p: AiProductInput, parts: AiProduct
     parts.includes("en") && "İngilizce ad, slug, kısa açıklama, detaylı açıklama, SEO başlığı ve SEO açıklaması (Türkçe içerik yazıyorsan onunla tutarlı olsun)",
   ].filter(Boolean);
   const r = await aiStructured<AiProductResult>({
-    system: SYSTEM,
+    system: (await syncNiche(), fillNiche(SYSTEM_TPL)),
     prompt: `Aşağıdaki ürün için şunları yaz: ${want.join("; ")}.\n\n${describe(p)}`,
     tool: { name: "product_content", description: "Ürün sayfası içeriği", input_schema: { type: "object", properties, required } },
     maxTokens: parts.includes("en") ? 5000 : 3000,

@@ -1,4 +1,5 @@
-import { getLocale } from "@/lib/i18n/server";
+import { IfFeature } from "@/components/brand";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { imgProps } from "@/lib/img";
 import { cardCtx } from "@/lib/card-ctx";
 import { redirectOrNotFound } from "@/lib/redirects";
@@ -32,6 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const t = await getT();
   const p = await getPost((await params).slug);
   if (!p) return redirectOrNotFound(`/blog/${(await params).slug}`);
   const [s, items, more, loc] = await Promise.all([
@@ -92,11 +94,13 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                 <ol className="mt-2 flex flex-col gap-1.5 text-sm">{toc.map((h) => <li key={h.id} className={h.level === 3 ? "pl-3" : ""}><a href={`#${h.id}`} className="text-link hover:underline">{h.text}</a></li>)}</ol>
               </nav>
             ) : null}
+            <IfFeature f="wizard">
             <div className="rounded-2xl bg-deep p-5 text-white">
-              <b className="text-lg">Hangi dedektör sana uygun?</b>
+              <b className="text-lg">{t("home.wizTitle")}</b>
               <p className="mt-1 text-sm text-white/80">6 soruyu yanıtla, sana özel 3 öneri al.</p>
               <Link href="/sihirbaz" className="mt-3 inline-flex h-10 items-center rounded-lg bg-accent px-4 text-sm font-extrabold text-white">Sihirbazı başlat</Link>
             </div>
+            </IfFeature>
           </div>
         </aside>
       </div>

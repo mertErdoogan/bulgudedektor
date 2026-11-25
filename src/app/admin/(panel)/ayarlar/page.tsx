@@ -10,6 +10,7 @@ import { DEFAULT_LOCALE, LOCALES, LOCALE_LABEL } from "@/lib/i18n/config";
 import { AI_MODELS } from "@/lib/ai";
 import { EInvoiceForm } from "./einvoice-form";
 import { BrandForm } from "./brand-form";
+import { CatalogForm } from "./catalog-form";
 import { saveAi, testAi } from "./actions";
 import { saveI18n, saveSecurity, sendDigestNow, generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
 
@@ -26,6 +27,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const tabs = [
     ["magaza", "Mağaza"],
     ["marka", "Marka"],
+    ["katalog", "Katalog"],
     ["kargo", "Kargo ve teslimat"],
     ...(can(staff.permissions, "payments.manage") ? [["odeme", "Ödeme"]] : []),
     ["entegrasyon", "Entegrasyonlar"],
@@ -44,6 +46,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         ))}
       </div>
       <div className="max-w-3xl">
+        {tab === "katalog" ? (
+          <Card>
+            <CardHeader title="Katalog ve sektör" description="Sattığın ürünlerin genel adı sitedeki başlık ve metinlerde kullanılır (ör. 'Hangi dedektör sana uygun?'). Sektörüne uymayan modülleri kapat." />
+            <CatalogForm catalog={s.catalog} />
+          </Card>
+        ) : null}
         {tab === "marka" ? (
           <Card>
             <CardHeader title="Marka kimliği" description="Logo, site ikonu ve ana renk. Mağaza adı Mağaza sekmesinden değişir; logo yüklenmezse ad yazı olarak gösterilir." />

@@ -1,3 +1,6 @@
+import { variantAxes } from "@/lib/variants";
+import { IfFeature } from "@/components/brand";
+import { fillNiche } from "@/lib/i18n/dict";
 import { bundlesFor } from "@/lib/bundles";
 import { BundleOffers } from "@/components/store/bundle-offer";
 import { localePath } from "@/lib/i18n/config";
@@ -86,7 +89,7 @@ function quickAnswer(p: P, s: AllSettings, locale: Locale) {
   const bits: string[] = [];
   const who = p.experience ? WHO[p.experience] : null;
   const uses = p.idealFor.slice(0, 2).map((x) => x.replace(/\.$/, "").toLocaleLowerCase("tr-TR"));
-  bits.push(`${fullName(p)}, ${p.technology && p.technology !== "OTHER" ? `${TECH_LABEL[p.technology]} teknolojili ` : ""}bir ${p.category?.name.toLocaleLowerCase("tr-TR") ?? "metal"} dedektörüdür${who ? ` ve ${who} kullanıcılar için uygundur` : ""}.`);
+  bits.push(`${fullName(p)}, ${p.technology && p.technology !== "OTHER" ? `${TECH_LABEL[p.technology]} teknolojili ` : ""}${p.category ? `${p.category.name} kategorisinde ` : ""}bir ${fillNiche("{tür}")}${who ? ` ve ${who} kullanıcılar için uygundur` : ""}.`);
   if (uses.length) bits.push(`Öne çıktığı alanlar: ${uses.join(", ")}.`);
   const facts = [p.weightKg ? `${p.weightKg.toLocaleString("tr-TR")} kg` : null, p.waterproof ? WATERPROOF_LABEL[p.waterproof].toLocaleLowerCase("tr-TR") : null].filter(Boolean);
   if (facts.length) bits.push(`Ağırlığı ve su dayanımı: ${facts.join(", ")}.`);
@@ -111,7 +114,7 @@ function quickAnswerEn(p: P, s: AllSettings) {
 function autoFaqEn(p: P, s: AllSettings) {
   const n = fullName(p);
   const out: { q: string; a: string }[] = [];
-  out.push({ q: `Is the ${n} genuine, and does it come with a warranty?`, a: `Yes. Every ${n} we sell is a genuine product with an invoice and a ${p.warrantyMonths}-month warranty.${p.trackSerial ? " You can check the device's serial number on our Serial Number Check page." : ""}` });
+  out.push({ q: `Is the ${n} genuine, and does it come with a warranty?`, a: `Yes. Every ${n} we sell is a genuine product with an invoice and a ${p.warrantyMonths}-month warranty.${p.trackSerial && s.catalog.serial ? " You can check the device's serial number on our Serial Number Check page." : ""}` });
   if (p.waterproof) out.push({ q: `Is the ${n} waterproof?`, a: `Water resistance of the ${n}: ${enumLabel("en", "water", p.waterproof)}.${p.waterproof === "NONE" ? " A rain cover is recommended in wet weather." : ""}` });
   if (p.weightKg) out.push({ q: `How much does the ${n} weigh?`, a: `The ${n} weighs about ${p.weightKg.toLocaleString("en-US")} kg.${p.weightKg <= 1.5 ? " It is in the lightweight class, comfortable for long hunts." : ""}` });
   if (p.experience) out.push({ q: `Is the ${n} good for beginners?`, a: p.experience === "BEGINNER" ? `Yes. With its simple menu and preset modes, the ${n} is well suited to beginners.` : `The ${n} is designed for ${WHO_EN[p.experience]} users. If you are just starting out, you can join our free setup training after purchase.` });
@@ -124,7 +127,7 @@ function autoFaq(p: P, s: AllSettings, locale: Locale) {
   if (locale === "en") return autoFaqEn(p, s);
   const n = fullName(p);
   const out: { q: string; a: string }[] = [];
-  out.push({ q: `${n} orijinal mi, garantisi var mı?`, a: `Evet. ${s.store.name} mağazasında satılan ${n} yetkili distribütör ürünüdür; faturalı ve ${p.warrantyMonths} ay garantilidir.${p.trackSerial ? " Cihazın seri numarasını sitemizdeki Seri No Sorgula sayfasından kontrol edebilirsiniz." : ""}` });
+  out.push({ q: `${n} orijinal mi, garantisi var mı?`, a: `Evet. ${s.store.name} mağazasında satılan ${n} yetkili distribütör ürünüdür; faturalı ve ${p.warrantyMonths} ay garantilidir.${p.trackSerial && s.catalog.serial ? " Cihazın seri numarasını sitemizdeki Seri No Sorgula sayfasından kontrol edebilirsiniz." : ""}` });
   if (p.waterproof) out.push({ q: `${n} su geçirmez mi?`, a: `${n} için su dayanımı: ${WATERPROOF_LABEL[p.waterproof]}.${p.waterproof === "NONE" ? " Yağmurda koruyucu kılıf kullanılması önerilir." : ""}` });
   if (p.weightKg) out.push({ q: `${n} kaç kilo?`, a: `${n} yaklaşık ${p.weightKg.toLocaleString("tr-TR")} kg ağırlığındadır.${p.weightKg <= 1.5 ? " Uzun süreli aramalarda yormayan hafif sınıftadır." : ""}` });
   if (p.experience) out.push({ q: `${n} yeni başlayanlar için uygun mu?`, a: p.experience === "BEGINNER" ? `Evet, ${n} kolay menüsü ve hazır programlarıyla yeni başlayanlar için uygundur.` : `${n} ${WHO[p.experience]} kullanıcılar için tasarlanmıştır. Yeni başlıyorsanız satın alma sonrası ücretsiz kurulum eğitimimizden yararlanabilirsiniz.` });
@@ -176,6 +179,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     out || archived ? Promise.resolve(null) : autoDealFor({ id: p.id, price: p.price, brandId: p.brandId, categoryId: p.categoryId }),
     s.payment.cardEnabled && s.payment.provider !== "paytr" && p.price >= 1000 ? installmentTable(p.price, s.payment.maxInstallment) : Promise.resolve(null),
   ]);
+  // "Renk: Siyah / Beden: 42" biçimli varyant adlarında her boyut ayrı satırda seçilir
+  const axes = variantAxes(variants, p.id);
   const faqItems = [...toQA(dbFaq), ...autoFaq(p, s, t.locale)];
 
   const rCount = p.reviews.length;
@@ -250,7 +255,30 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           ) : null}
 
-          {variants.length > 1 ? (
+          {axes ? (
+            <div className="flex flex-col gap-3" data-testid="variant-axes">
+              {axes.map((ax) => (
+                <div key={ax.name}>
+                  <p className="mb-2 text-[13px] font-bold">
+                    {ax.name}: <span className="font-semibold text-mute">{ax.options.find((o) => o.current)?.value}</span>
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {ax.options.map((o) => (
+                      <Link
+                        key={o.value}
+                        href={o.href}
+                        aria-current={o.current ? "true" : undefined}
+                        title={o.available ? undefined : t("card.outOfStock")}
+                        className={`min-w-11 rounded-xl border px-3 py-2 text-center text-sm font-bold transition ${o.current ? "border-deep bg-deep text-white" : "border-line hover:border-deep"} ${!o.available ? "text-mute line-through opacity-60" : ""} ${!o.exact && !o.current ? "border-dashed" : ""}`}
+                      >
+                        {o.value}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : variants.length > 1 ? (
             <div>
               <p className="mb-2 text-[13px] font-bold">{t("pdp.option")}</p>
               <div className="flex flex-wrap gap-2">
@@ -357,7 +385,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {/* Güven: dört renkli kutu; her biri kendi rengi ve hareketli ikonuyla, bir bakışta ayırt edilir */}
           <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4" data-testid="pdp-trust">
             {[
-              { I: BadgeCheck, t: t("pdp.trustDist"), d: p.trackSerial ? t("pdp.trustSerial") : t("pdp.trustOriginal"), href: p.trackSerial ? "/seri-no" : undefined, c: "22,163,74" },
+              { I: BadgeCheck, t: t("pdp.trustDist"), d: p.trackSerial && s.catalog.serial ? t("pdp.trustSerial") : t("pdp.trustOriginal"), href: p.trackSerial && s.catalog.serial ? "/seri-no" : undefined, c: "22,163,74" },
               { I: Truck, t: t("pdp.trustShip"), d: t("pdp.trustShipD"), c: "37,99,235" },
               { I: RotateCcw, t: t("pdp.trustReturn"), d: t("pdp.trustReturnD"), c: "217,119,6" },
               { I: Headset, t: t("pdp.trustExpert"), d: t("pdp.trustExpertD"), href: wa, c: "124,58,237" },
@@ -429,7 +457,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <div className="rounded-[22px] border border-[#f1e2c4] bg-[#fffbf2] p-5">
                   <b className="flex items-center gap-2 text-[15px]"><span className="grid h-8 w-8 place-items-center rounded-full bg-[#fdefd0] text-[#8a5a00]"><Info size={16} /></span> {t("pdp.notFor")}</b>
                   <ul className="mt-3 flex flex-col gap-2.5 text-[14.5px] text-[#5c4a26]">{p.notFor.map((x) => <li key={x} className="flex gap-2.5"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#c99a3a]" />{x}</li>)}</ul>
-                  <Link href="/sihirbaz" className="mt-3 inline-block text-[13.5px] font-bold text-deep underline-offset-2 hover:underline">{t("pdp.otherJob")}</Link>
+                  <IfFeature f="wizard"><Link href="/sihirbaz" className="mt-3 inline-block text-[13.5px] font-bold text-deep underline-offset-2 hover:underline">{t("pdp.otherJob")}</Link></IfFeature>
                 </div>
               ) : null}
             </div>

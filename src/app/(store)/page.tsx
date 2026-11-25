@@ -1,3 +1,4 @@
+import { fillNiche } from "@/lib/i18n/dict";
 import { getLocale } from "@/lib/i18n/server";
 import { imgProps } from "@/lib/img";
 import Link from "@/components/locale-link";
@@ -92,10 +93,13 @@ export default async function Home() {
       return { best, fresh, deals, seen };
     })());
   const rendered = await Promise.all(
-    sections.map(async (sec) => {
+    sections.map(async (sec0) => {
+      // Bölüm başlıklarında {tür} gibi ürün türü yer tutucuları (Ayarlar > Katalog)
+      const sec = { ...sec0, title: sec0.title ? fillNiche(sec0.title) : sec0.title, subtitle: sec0.subtitle ? fillNiche(sec0.subtitle) : sec0.subtitle };
       const limit = Number(sec.config.limit) || 10;
       switch (sec.type) {
         case "WIZARD_BAND":
+          if (!s.catalog.wizard) return null;
           return <WizardBand key={sec.id} title={sec.title} subtitle={sec.subtitle} />;
         case "CATEGORY_TILES": {
           // "Ne arıyorsun?": paneldeki yuvarlak kısayollar (kategori kutuları /kategoriler sayfasında)
@@ -111,14 +115,15 @@ export default async function Home() {
           // "Aynı gün kargo" ayrı raf değil; her kartta kargo satırı zaten yazıyor.
           const { best, fresh, deals } = await topLists();
           // "Amacına göre keşfet": aynı katalog, müşterinin amacına göre sekmeli (tekrar değil, farklı bir bakış)
-          const explore = await Promise.all(
+          // Amaçlar dedektöre özel (define, altın, sahil…): yalnızca dedektör alanları açıkken (Ayarlar > Katalog)
+          const explore = !s.catalog.detectorSpecs ? [] : await Promise.all(
             EXPLORE.map(async (e) => ({ k: e.k, l: t(`home.ex_${e.k}` as DictKey), d: t(`home.ex_${e.k}D` as DictKey), href: e.href, items: await railWhere(e.cond, 8) })),
           );
           return (
             <div key={sec.id}>
               <BestSellers items={best} ctx={ctx} />
               {fresh.length >= 3 ? <NewArrivals items={fresh} ctx={ctx} spotlight={!!s.merch.newSpotlight && fresh[0]?.id === s.merch.newSpotlight} /> : null}
-              <ExploreTabs tabs={explore} ctx={ctx} />
+              {explore.length ? <ExploreTabs tabs={explore} ctx={ctx} /> : null}
               {deals.length >= 3 ? <Deals items={deals} ctx={ctx} /> : null}
             </div>
           );
@@ -156,7 +161,7 @@ export default async function Home() {
           );
         }
         case "EXPERT_BAND":
-          return <ExpertBand key={sec.id} title={sec.title} wa={wa} phone={s.store.phone} hours={s.store.workingHours} />;
+          return <ExpertBand key={sec.id} title={sec.title} wa={wa} phone={s.store.phone} hours={s.store.workingHours} showroom={s.shipping.pickupEnabled} />;
         case "TRUST":
           return <TrustBand key={sec.id} />;
         default:
@@ -185,14 +190,17 @@ export default async function Home() {
       <PersonalPicks className="container-x mt-12" />
       <HomeReviews googleReviewUrl={s.store.googleReviewUrl || undefined} />
       {t.locale === "tr" ? <BlogShowcase posts={posts.slice(0, 3)} /> : null}
-      <section className="container-x mt-12 max-w-4xl">
-        <h2 className="font-display text-[22px] leading-tight font-extrabold md:text-[26px]">{t("home.aboutTitle", { ad: s.store.name })}</h2>
-        <p className="mt-2 text-[15px] leading-relaxed text-[#3f3f46]">{s.seo.aboutForAi}</p>
-      </section>
+      {/* Mağaza tanımı (Ayarlar > SEO > AI için mağaza tanımı) yazılmamışsa boş başlık gösterilmez */}
+      {s.seo.aboutForAi.trim() ? (
+        <section className="container-x mt-12 max-w-4xl">
+          <h2 className="font-display text-[22px] leading-tight font-extrabold md:text-[26px]">{t("home.aboutTitle", { ad: s.store.name })}</h2>
+          <p className="mt-2 text-[15px] leading-relaxed text-[#3f3f46]">{s.seo.aboutForAi}</p>
+        </section>
+      ) : null}
       {homeFaq.length ? (
         <div className="container-x mt-12 max-w-4xl">
           <FaqSection items={toQA(homeFaq)} title={t("home.faqTitle")} />
-          <p className="mt-3 text-sm"><Link href="/sss" className="font-bold text-link">{t("home.allQ")}</Link> · <Link href="/sozluk" className="font-bold text-link">{t("home.glossary")}</Link></p>
+          <p className="mt-3 text-sm"><Link href="/sss" className="font-bold text-link">{t("home.allQ")}</Link>{s.catalog.glossary ? <> · <Link href="/sozluk" className="font-bold text-link">{t("home.glossary")}</Link></> : null}</p>
         </div>
       ) : null}
       </RevealSections>

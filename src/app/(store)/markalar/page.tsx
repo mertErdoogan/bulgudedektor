@@ -11,7 +11,7 @@ export const generateMetadata = async () => {
   const [names, t] = await Promise.all([activeBrandNames(), getT()]);
   return pageMeta({
     title: names.length ? `${t("brands.metaTitle")} — ${names.slice(0, 4).join(", ")}` : t("brands.metaTitle"),
-    description: t.locale === "en" ? `Shop by brand: ${names.slice(0, 4).join(", ")} detectors by category. All models genuine, invoiced and under warranty.` : fillBrands("Markaya göre alışveriş: {markalar} dedektörleri kategorilerine göre. Tüm modeller orijinal, faturalı ve garantili.", names, 4),
+    description: t.locale === "en" ? `Shop by brand: ${names.slice(0, 4).join(", ")} products by category. All models genuine, invoiced and under warranty.` : fillBrands("Markaya göre alışveriş: {markalar} dedektörleri kategorilerine göre. Tüm modeller orijinal, faturalı ve garantili.", names, 4),
     path: "/markalar",
   });
 };

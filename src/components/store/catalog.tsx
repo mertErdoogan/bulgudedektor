@@ -1,3 +1,4 @@
+import { IfFeature } from "@/components/brand";
 import { cardCtx } from "@/lib/card-ctx";
 import Link from "@/components/locale-link";
 import { Check, ChevronDown, Compass, Sparkles } from "lucide-react";
@@ -107,9 +108,9 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
               <div className="mt-2.5">{top}</div>
             </details>
           ) : null}
-          <Link href="/sihirbaz" className="inline-flex items-center gap-1.5 font-bold text-link hover:underline">
+          <IfFeature f="wizard"><Link href="/sihirbaz" className="inline-flex items-center gap-1.5 font-bold text-link hover:underline">
             <Compass size={14} className="text-brand" /> {t("cat.wizard")}
-          </Link>
+          </Link></IfFeature>
         </div>
       </div>
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[250px_minmax(0,1fr)]">
@@ -159,7 +160,7 @@ export async function Catalog({ title, intro, crumbs, sp, base, hideBrand, top, 
           ) : (
             <div className="rounded-xl bg-soft p-10 text-center">
               <p className="font-bold">{t("cat.empty")}</p>
-              <p className="mt-1 text-sm text-mute"><Link href="/sihirbaz" className="font-bold text-link">{t("cat.emptyHint")}</Link></p>
+              <p className="mt-1 text-sm text-mute"><IfFeature f="wizard" fallback={t("cat.emptyHintPlain")}><Link href="/sihirbaz" className="font-bold text-link">{t("cat.emptyHint")}</Link></IfFeature></p>
             </div>
           )}
         </div>

@@ -1,3 +1,5 @@
+import { IfFeature } from "@/components/brand";
+import { fillNiche } from "@/lib/i18n/dict";
 import { permanentRedirect } from "next/navigation";
 import { resolveLocaleSlug } from "@/lib/i18n/server";
 import { redirectOrNotFound } from "@/lib/redirects";
@@ -58,7 +60,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
       . Every device is genuine, invoiced and under warranty; not sure? Our 6-question finder suggests the right model.
     </AnswerBox>
   ) : stats.count ? (
-    <AnswerBox title={`${c.name} için hangi dedektör?`}>
+    <AnswerBox title={fillNiche(`${c.name} için hangi {tür}?`)}>
       {s.store.name}’de {lower} için <b>{stats.count} model</b> var
       {stats.min != null ? (stats.min === stats.max ? <>; fiyatı <b>{formatTL(stats.min)}</b></> : <>; fiyatlar <b>{formatTL(stats.min)}</b> ile <b>{formatTL(stats.max)}</b> arasında</>) : null}
       {stats.brands.length ? <> ({stats.brands.join(", ")})</> : null}. Öne çıkanlar:{" "}
@@ -88,6 +90,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
               ) : null}
             </div>
             <aside className="flex flex-col gap-3 lg:sticky lg:top-24 lg:self-start">
+              <IfFeature f="wizard">
               <div className="relative isolate overflow-hidden rounded-[26px] bg-deep p-6 text-white">
                 <Compass aria-hidden size={120} strokeWidth={1} className="absolute -right-6 -bottom-8 -z-10 text-white/[.06]" />
                 <span className="text-[11px] font-extrabold tracking-[.14em] text-white/60">{t("home.wizEyebrow")}</span>
@@ -95,6 +98,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
                 <p className="mt-1.5 text-[13.5px] text-white/70">{t("cat.stillUnsureD")}</p>
                 <Link href="/sihirbaz" className="mt-5 flex h-11 items-center justify-center gap-2 rounded-full bg-white text-[14px] font-extrabold text-deep transition hover:-translate-y-0.5">{t("home.wizStart")} <ArrowRight size={16} /></Link>
               </div>
+              </IfFeature>
               <a href={wa} target="_blank" rel="noopener" className="group flex items-center gap-3 rounded-[22px] bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-20px_rgba(20,20,22,.5)]">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#e8f8ee] text-[#1f8a4c] transition group-hover:-rotate-6"><MessageCircle size={20} /></span>
                 <span className="min-w-0"><b className="block text-[14px]">{t("cat.askExpert")}</b><span className="block text-[12.5px] text-mute">{t("cat.askExpertD")}</span></span>

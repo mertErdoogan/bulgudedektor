@@ -52,6 +52,29 @@ export type BrandSettings = {
   color: string;
 };
 
+/** Katalog ve sektör (Ayarlar > Katalog): ürün türünün adı ve sektöre özel modüller.
+ *  Metinlerdeki {tür}, {türü}, {türleri} (EN: {type}, {types}) yer tutucuları bu adlarla doldurulur. */
+export type CatalogSettings = {
+  /** Ürün türü, tekil: "dedektör", "ürün", "çanta" */
+  nounOne: string;
+  /** Belirtme hâli: "dedektörü", "ürünü" (ör. "Hangi ürünü almalıyım?") */
+  nounAcc: string;
+  /** Tamlama / çoğul: "dedektörleri", "ürünleri" (ör. "Minelab dedektörleri") */
+  nounMany: string;
+  nounOneEn: string;
+  nounManyEn: string;
+  /** "Bana hangisi?" seçim sihirbazı (ürünlerde teknoloji/arazi gibi alanlar gerekir) */
+  wizard: boolean;
+  /** Terimler sözlüğü sayfası */
+  glossary: boolean;
+  /** Seri numarası ile orijinallik sorgulama */
+  serial: boolean;
+  /** Teknik servis kaydı ve sorgulama */
+  service: boolean;
+  /** Dedektöre özel ürün alanları (teknoloji, su dayanımı, kimin için) ve filtreleri */
+  detectorSpecs: boolean;
+};
+
 export type ShippingSettings = {
   freeThreshold: number;
   flatRate: number;
@@ -228,6 +251,7 @@ export type SecuritySettings = {
 export type AllSettings = {
   store: StoreSettings;
   brand: BrandSettings;
+  catalog: CatalogSettings;
   shipping: ShippingSettings;
   payment: PaymentSettings;
   integrations: IntegrationSettings;
@@ -278,6 +302,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     socialProof: true,
   },
   brand: { logoUrl: "", logoWhiteUrl: "", iconUrl: "", color: "#d42e1e" },
+  catalog: { nounOne: "ürün", nounAcc: "ürünü", nounMany: "ürünleri", nounOneEn: "product", nounManyEn: "products", wizard: false, glossary: false, serial: false, service: false, detectorSpecs: false },
 
   shipping: {
     freeThreshold: 0,
@@ -289,7 +314,8 @@ export const DEFAULT_SETTINGS: AllSettings = {
     transitMinDays: 1,
     transitMaxDays: 2,
     shipOnSaturday: false,
-    pickupEnabled: true,
+    // Mağazadan teslim (showroom) yalnızca açıkça açılırsa; adres girilmeden müşteriye sunulmaz
+    pickupEnabled: false,
     pickupAddress: "",
     trackingUrlTemplate: {
       "Yurtiçi Kargo": "https://www.yurticikargo.com/tr/online-servisler/gonderi-sorgula?code={code}",
@@ -313,10 +339,8 @@ export const DEFAULT_SETTINGS: AllSettings = {
     installmentRates: { "4": 7.34, "5": 9.21, "6": 11.08 },
     transferEnabled: true,
     transferDiscountPct: 2,
-    bankAccounts: [
-      // Örnek hesap: gerçek IBAN değildir, canlıya almadan panelden değiştirilmeli
-      { bank: "Örnek Bank", holder: "Derinova Elektronik Ticaret Ltd. Şti. (örnek)", iban: "TR00 0000 0000 0000 0000 0000 00" },
-    ],
+    // Panelden eklenir; hesap yokken havale seçeneği müşteriye gösterilmez
+    bankAccounts: [],
   },
   integrations: {
     gaMeasurementId: "",
@@ -387,10 +411,8 @@ export const DEFAULT_SETTINGS: AllSettings = {
   ticker: {
     enabled: true,
     items: [
-      { text: "Tüm markaların en yeni modelleri stoklarda", href: "/urunler?sirala=yeni", highlight: true },
-      { text: "3 aya kadar vade farksız taksit", href: "", highlight: false },
-      { text: "Seri numaranla orijinallik sorgula", href: "/seri-no", highlight: false },
-      { text: "Hangi dedektör? Uzmanımıza WhatsApp'tan sor", href: "/iletisim", highlight: false },
+      { text: "Yeni gelen ürünler stoklarda", href: "/urunler?sirala=yeni", highlight: true },
+      { text: "Güvenli ödeme, hızlı kargo", href: "", highlight: false },
     ],
     direction: "ltr",
     speed: "normal",
@@ -399,13 +421,8 @@ export const DEFAULT_SETTINGS: AllSettings = {
   nav: {
     shortcuts: [
       { label: "En Çok Satılan", href: "/urunler?sirala=cok-satan", image: "", icon: "trend", featured: true },
-      { label: "Pointer", href: "/kategori/pointer", image: "", icon: "", featured: false },
-      { label: "Altın Dedektörü", href: "/kategori/dogal-altin", image: "", icon: "", featured: false },
-      { label: "Define ve Sikke", href: "/kategori/define-ve-sikke", image: "", icon: "", featured: false },
-      { label: "Sualtı Dedektörü", href: "/kategori/sahil-ve-su-alti", image: "", icon: "", featured: false },
-      { label: "Derin Arama", href: "/kategori/derin-arama", image: "", icon: "", featured: false },
-      { label: "Başlık ve Aksesuar", href: "/kategori/baslik-ve-aksesuar", image: "", icon: "", featured: false },
       { label: "Yeni Gelenler", href: "/urunler?sirala=yeni", image: "", icon: "sparkles", featured: false },
+      { label: "Kampanyalar", href: "/kampanyalar", image: "", icon: "flame", featured: false },
       { label: "Tüm Markalar", href: "/markalar", image: "", icon: "", featured: false },
     ],
     promo: { mode: "auto", eyebrow: "", title: "", href: "", image: "" },
@@ -443,6 +460,8 @@ export const getSettings = cache(async (): Promise<AllSettings> => {
   // Boş alanların karşılığı: başlık yoksa mağaza adı, renk geçersizse varsayılan
   if (!out.seo.title.trim()) out.seo.title = out.store.name;
   if (!/^#[0-9a-f]{6}$/i.test(out.brand.color)) out.brand.color = DEFAULT_SETTINGS.brand.color;
+  // IBAN girilmeden havale müşteriye açılmaz (sipariş sonrası ödenecek hesap gösterilemez)
+  if (!out.payment.bankAccounts?.length) out.payment.transferEnabled = false;
   // İngilizce sayfalar: panelde serbest yazılan mağaza metinlerinin çevirisi (translations, entity "text")
   const en = (await requestLocale()) === "en";
   if (en) await applyTextTranslations(out);

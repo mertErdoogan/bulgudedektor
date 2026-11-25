@@ -2,7 +2,7 @@
 import { paletteFromUrl } from "../src/lib/palette-core";
 import "dotenv/config";
 import { DEMO_IMAGES, ensureDemoGallery } from "./demo-gallery";
-import { DEMO_BRAND, DEMO_SEO, DEMO_STORE } from "./lib/demo-store";
+import { DEMO_ABOUT, DEMO_BANK_ACCOUNTS, DEMO_PICKUP, DEMO_BRAND, DEMO_CATALOG, DEMO_NAV_SHORTCUTS, DEMO_SEO, DEMO_STORE, DEMO_TICKER } from "./lib/demo-store";
 import bcrypt from "bcryptjs";
 import { sql } from "drizzle-orm";
 import { db } from "../src/db";
@@ -138,7 +138,7 @@ async function main() {
   const heroRows = [];
   for (const [i, b] of HERO_BANNERS.entries()) {
     const imageUrl = img(b.image);
-    heroRows.push({ title: b.title, subtitle: b.subtitle, imageUrl, mobileImageUrl: img(`${b.image}-m`), linkUrl: b.linkUrl, palette: (await paletteFromUrl(imageUrl)) ?? undefined, placement: "HERO" as const, sortOrder: i, showText: false });
+    heroRows.push({ title: b.title, subtitle: b.subtitle, imageUrl, mobileImageUrl: img(`${b.image}-m`), imageUrlEn: img(`${b.image}-en`), mobileImageUrlEn: img(`${b.image}-en-m`), linkUrl: b.linkUrl, palette: (await paletteFromUrl(imageUrl)) ?? undefined, placement: "HERO" as const, sortOrder: i, showText: false });
   }
   await db.insert(t.banners).values([
     ...heroRows,
@@ -173,7 +173,8 @@ async function main() {
     { location: "FOOTER_HELP", label: "Seri no sorgula", url: "/seri-no", sortOrder: 3 },
     { location: "FOOTER_HELP", label: "İletişim", url: "/iletisim", sortOrder: 4 },
   ]);
-  await db.insert(t.pages).values(LEGAL_PAGES);
+  // Demo mağazanın Hakkımızda metni (gerçek kurulumda genel şablon kalır)
+  await db.insert(t.pages).values(LEGAL_PAGES.map((p) => (p.slug === "hakkimizda" ? { ...p, ...DEMO_ABOUT } : p)));
   // Hazır yanıt şablonları (yalnızca hiç yoksa)
   if (!(await db.select({ id: t.replyTemplates.id }).from(t.replyTemplates).limit(1)).length)
     await db.insert(t.replyTemplates).values(DEFAULT_TEMPLATES.map((x, i) => ({ ...x, sortOrder: i })));
@@ -291,9 +292,14 @@ async function main() {
     { key: "store", value: DEMO_STORE },
     { key: "seo", value: DEMO_SEO },
     { key: "brand", value: DEMO_BRAND },
+    { key: "catalog", value: DEMO_CATALOG },
+    { key: "ticker", value: DEMO_TICKER },
+    { key: "nav", value: { shortcuts: DEMO_NAV_SHORTCUTS } },
+    { key: "payment", value: { bankAccounts: DEMO_BANK_ACCOUNTS } },
+    { key: "shipping", value: DEMO_PICKUP },
     { key: "setup", value: { completed: false, completedSteps: ["store"] } },
     // seed-if-empty.ts DEMO_VERSION ile aynı olmalı
-    { key: "demo", value: { version: 7 } },
+    { key: "demo", value: { version: 10 } },
     // Demo mağaza İngilizce sürümü açık gelir (yurt dışı satış denemesi için)
     { key: "i18n", value: { locales: ["tr", "en"], switcher: true } },
   ]);
