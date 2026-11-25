@@ -36,7 +36,7 @@ export function MapEmbed({ query, label, cta, note }: { query: string; label: st
           <span aria-hidden className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#5ee0b0]/20" />
           <span aria-hidden className="radar-ping absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/40" />
           <span className="relative flex flex-col items-center gap-3">
-            <span className="grid h-14 w-14 place-items-center rounded-full bg-brand shadow-[0_10px_30px_-6px_rgba(212,46,30,.7)] transition group-hover:-translate-y-1">
+            <span className="grid h-14 w-14 place-items-center rounded-full bg-brand shadow-[0_10px_30px_-6px_color-mix(in_srgb,var(--color-brand)_70%,transparent)] transition group-hover:-translate-y-1">
               <MapPin className="h-7 w-7" />
             </span>
             <span className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-deep shadow-lg transition group-hover:bg-soft">

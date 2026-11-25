@@ -40,6 +40,18 @@ export type StoreSettings = {
   socialProof: boolean;
 };
 
+/** Marka kimliği (Ayarlar > Marka): logo, ikon ve ana renk. Boş alanlar için otomatik karşılık üretilir. */
+export type BrandSettings = {
+  /** Açık zeminde logo (PNG/SVG/WebP). Boşsa mağaza adı yazı olarak gösterilir. */
+  logoUrl: string;
+  /** Koyu zeminde (footer) logo. Boşsa açık logo beyaza çevrilerek kullanılır. */
+  logoWhiteUrl: string;
+  /** Tarayıcı sekmesi / ana ekran ikonu (kare). Boşsa mağaza adının baş harfi ana renkte çizilir. */
+  iconUrl: string;
+  /** Ana marka rengi (#rrggbb). Butonlar, vurgular, bağlantılar bundan türetilir. */
+  color: string;
+};
+
 export type ShippingSettings = {
   freeThreshold: number;
   flatRate: number;
@@ -215,6 +227,7 @@ export type SecuritySettings = {
 
 export type AllSettings = {
   store: StoreSettings;
+  brand: BrandSettings;
   shipping: ShippingSettings;
   payment: PaymentSettings;
   integrations: IntegrationSettings;
@@ -231,28 +244,28 @@ export type AllSettings = {
 
 export const DEFAULT_SETTINGS: AllSettings = {
   store: {
-    // Geçici, uydurma mağaza bilgileri (gerçek bir şirkete ait değildir); canlıya almadan panelden değiştirilmeli
-    name: "Derinova Dedektör",
-    legalName: "Derinova Elektronik Ticaret Ltd. Şti. (örnek)",
-    phone: "0216 000 00 00",
-    whatsapp: "905000000000",
-    email: "info@derinova.example",
-    address: "Örnek Mah. Deneme Cad. No: 1, Kadıköy / İstanbul",
+    // Boş kurulum: mağaza sahibi Ayarlar > Mağaza ve Kurulum sihirbazından doldurur (demo değerleri scripts/lib/demo-store.ts)
+    name: "Mağazam",
+    legalName: "[Şirket unvanı]",
+    phone: "",
+    whatsapp: "",
+    email: "",
+    address: "",
     taxOffice: "",
     taxNumber: "",
     mersis: "",
     etbis: "",
-    workingHours: "Hafta içi 09:00–19:00, Cumartesi 10:00–17:00",
-    announcement: "Ücretsiz kargo · 3 aya kadar vade farksız taksit · Orijinal ürün, faturalı, 2 yıl garanti · 14 gün kolay iade",
-    logoText: "Derinova Dedektör",
-    city: "İstanbul",
-    district: "Kadıköy",
+    workingHours: "",
+    announcement: "",
+    logoText: "",
+    city: "",
+    district: "",
     postalCode: "",
     latitude: "",
     longitude: "",
-    openingHours: "Mo-Fr 09:00-20:00, Sa 10:00-18:00",
+    openingHours: "",
     foundingYear: "",
-    priceRange: "₺₺₺",
+    priceRange: "",
     instagram: "",
     youtube: "",
     facebook: "",
@@ -264,6 +277,8 @@ export const DEFAULT_SETTINGS: AllSettings = {
     sikayetvarUrl: "",
     socialProof: true,
   },
+  brand: { logoUrl: "", logoWhiteUrl: "", iconUrl: "", color: "#d42e1e" },
+
   shipping: {
     freeThreshold: 0,
     flatRate: 0,
@@ -339,17 +354,17 @@ export const DEFAULT_SETTINGS: AllSettings = {
     hbPriceMarkupPct: 0,
   },
   seo: {
-    // {markalar}: satıştaki markalar otomatik yazılır (katalogda olmayan marka vaat edilmesin)
-    title: "Derinova Dedektör | {markalar} Dedektör Modelleri ve Fiyatları",
-    description: "Türkiye'nin güvenilir dedektör mağazası Derinova Dedektör: {markalar} metal dedektörleri. Orijinal, faturalı, garantili; uzman desteğiyle doğru cihazı seç.",
-    ogImage: "/demo/hero-equinox-900.jpg",
+    // Boşsa mağaza adı kullanılır. {markalar}: satıştaki markalar otomatik yazılır.
+    title: "",
+    description: "",
+    ogImage: "",
     googleVerification: "",
     bingVerification: "",
     yandexVerification: "",
     indexNowKey: "",
-    aboutForAi:
-      "Derinova Dedektör, İstanbul'da bulunan ve Türkiye geneline {markalar} metal dedektörleri, dedektör başlıkları, pointer ve aksesuarlar satan bir dedektör mağazasıdır. Tüm cihazlar faturalı ve 2 yıl garantilidir; seri numarasıyla orijinallik sorgulanabilir. Satıştan önce uzman danışmanlık (WhatsApp ve telefon), 'Bana hangisi?' seçim sihirbazı ve showroomda deneme; satıştan sonra kurulum eğitimi ve teknik servis sunar.",
+    aboutForAi: "",
   },
+
   setup: { completed: false, completedSteps: [] },
   // Markalar eşit: öncelikli marka kapalı, raflar satış ve yeniliğe göre doğal sırada (panelden açılabilir)
   merch: { focusBrand: "", weight: "off", pinned: [], badge: false, focusNote: "", heroCards: "latest", wizard: "all" },
@@ -425,6 +440,9 @@ export const getSettings = cache(async (): Promise<AllSettings> => {
     const k = r.key as keyof AllSettings;
     if (k in out) (out as Record<string, unknown>)[k] = { ...(out[k] as object), ...(r.value as object) };
   }
+  // Boş alanların karşılığı: başlık yoksa mağaza adı, renk geçersizse varsayılan
+  if (!out.seo.title.trim()) out.seo.title = out.store.name;
+  if (!/^#[0-9a-f]{6}$/i.test(out.brand.color)) out.brand.color = DEFAULT_SETTINGS.brand.color;
   // İngilizce sayfalar: panelde serbest yazılan mağaza metinlerinin çevirisi (translations, entity "text")
   const en = (await requestLocale()) === "en";
   if (en) await applyTextTranslations(out);

@@ -9,6 +9,7 @@ import { getSettings, rawSeoTexts } from "@/lib/settings";
 import { DEFAULT_LOCALE, LOCALES, LOCALE_LABEL } from "@/lib/i18n/config";
 import { AI_MODELS } from "@/lib/ai";
 import { EInvoiceForm } from "./einvoice-form";
+import { BrandForm } from "./brand-form";
 import { saveAi, testAi } from "./actions";
 import { saveI18n, saveSecurity, sendDigestNow, generateIndexNowKey, saveIntegrations, savePayment, saveSeo, saveShipping, saveStore, hepsiburadaSyncNow, testIyzico, testPaytr, testSms, trendyolSyncNow } from "./actions";
 
@@ -24,6 +25,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const hoursMismatch = s.store.workingHours && s.store.openingHours && times(s.store.workingHours) !== times(s.store.openingHours) ? `${times(s.store.workingHours)} ≠ ${times(s.store.openingHours)}` : "";
   const tabs = [
     ["magaza", "Mağaza"],
+    ["marka", "Marka"],
     ["kargo", "Kargo ve teslimat"],
     ...(can(staff.permissions, "payments.manage") ? [["odeme", "Ödeme"]] : []),
     ["entegrasyon", "Entegrasyonlar"],
@@ -42,6 +44,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         ))}
       </div>
       <div className="max-w-3xl">
+        {tab === "marka" ? (
+          <Card>
+            <CardHeader title="Marka kimliği" description="Logo, site ikonu ve ana renk. Mağaza adı Mağaza sekmesinden değişir; logo yüklenmezse ad yazı olarak gösterilir." />
+            <BrandForm brand={s.brand} storeName={s.store.name} />
+          </Card>
+        ) : null}
         {tab === "magaza" ? (
           <Card>
             <CardHeader title="Mağaza bilgileri" description="Footer, sözleşmeler, faturalar ve iletişim butonlarında kullanılır. ETBİS ve MERSİS numaraları yasal olarak sitede görünmelidir." />
@@ -199,7 +207,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   <option value="netgsm">Netgsm</option>
                 </Select>
               </Field>
-              <Field label="Gönderici başlığı" hint="Netgsm'de onaylı başlık (örn. DERINOVA)"><Input name="netgsmHeader" defaultValue={s.integrations.netgsmHeader} /></Field>
+              <Field label="Gönderici başlığı" hint="Netgsm'de onaylı başlık (örn. MAGAZAM)"><Input name="netgsmHeader" defaultValue={s.integrations.netgsmHeader} /></Field>
               <Field label="Kullanıcı kodu" hint="Netgsm → Ayarlar → Alt kullanıcı (API yetkili)"><Input name="netgsmUser" defaultValue={s.integrations.netgsmUser} placeholder="850XXXXXXX" /></Field>
               <Field label="API şifresi"><Input name="netgsmPass" defaultValue={mask(s.integrations.netgsmPass)} autoComplete="off" /></Field>
               <div className="flex flex-wrap gap-4 md:col-span-2">

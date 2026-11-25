@@ -70,10 +70,10 @@ export function CheckoutGate() {
           {/* Üyeliği olmayan için göze çarpan kayıt çağrısı */}
           <Link
             href="/kayit?next=/odeme"
-            className="group relative mt-5 flex items-center gap-3 overflow-hidden rounded-2xl bg-[linear-gradient(120deg,#fdecea,#fff6ef)] p-4 ring-1 ring-[#f6d3cd] transition hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-22px_rgba(212,46,30,.8)]"
+            className="group relative mt-5 flex items-center gap-3 overflow-hidden rounded-2xl bg-[linear-gradient(120deg,#fdecea,#fff6ef)] p-4 ring-1 ring-[#f6d3cd] transition hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-22px_color-mix(in_srgb,var(--color-brand)_80%,transparent)]"
             data-testid="gate-signup"
           >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand text-white shadow-[0_8px_16px_-8px_rgba(212,46,30,.9)] transition group-hover:-rotate-6"><UserPlus size={20} /></span>
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand text-white shadow-[0_8px_16px_-8px_color-mix(in_srgb,var(--color-brand)_90%,transparent)] transition group-hover:-rotate-6"><UserPlus size={20} /></span>
             <span className="min-w-0 flex-1">
               <b className="block text-[15px] text-deep">{t("checkout.noAccount")}</b>
               <span className="block text-[12.5px] leading-snug text-[#6b2a22]">{t("checkout.noAccountD")}</span>

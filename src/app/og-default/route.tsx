@@ -28,7 +28,7 @@ export async function GET() {
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#141416", color: "#fff", padding: "72px 80px", fontFamily: "Public Sans, Public Sans Ext" }}>
-        <div style={{ display: "flex", width: 120, height: 10, background: "#d42e1e", borderRadius: 6 }} />
+        <div style={{ display: "flex", width: 120, height: 10, background: s.brand.color, borderRadius: 6 }} />
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 84, fontWeight: 800, letterSpacing: -2 }}>{name}</div>
           {line ? <div style={{ marginTop: 24, fontSize: 34, color: "#c9c9cf", lineHeight: 1.3 }}>{line}</div> : null}

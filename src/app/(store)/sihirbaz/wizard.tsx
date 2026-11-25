@@ -65,7 +65,7 @@ export function Wizard({ initialAmac, whatsapp }: { initialAmac?: string; whatsa
                   <Link href={`/urun/${x.p.slug}`} className="text-lg font-extrabold hover:text-link">{x.p.name}</Link>
                   <b className="font-display text-xl">{formatTL(x.p.price)}</b>
                   <p><b>{t("wiz.why")}</b> {x.why.join("; ")}.</p>
-                  {x.caveat ? <p className="rounded-lg bg-[#fff4f2] p-2.5 text-[#7a2a20]"><b>{t("wiz.caveat")}</b> {x.caveat}</p> : null}
+                  {x.caveat ? <p className="rounded-lg bg-tint p-2.5 text-on-pop"><b>{t("wiz.caveat")}</b> {x.caveat}</p> : null}
                   <div className="mt-auto flex flex-col gap-2 pt-2">
                     <AddToCart productId={x.p.id} name={x.p.name} disabled={x.p.stock <= 0 && !x.p.allowBackorder} />
                     <Link href={`/urun/${x.p.slug}`} className="text-center text-sm font-bold text-link">{t("hl.view")} →</Link>

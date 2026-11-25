@@ -180,7 +180,7 @@ function FocusPanel({ f, close }: { f: FocusMenu; close: () => void }) {
       </div>
       <div className="hidden flex-col gap-3.5 border-l border-line p-5 xl:flex">
         {f.promo ? (
-          <Link href={f.promo.href} onClick={close} className="relative flex h-[236px] flex-col overflow-hidden rounded-[18px] bg-[linear-gradient(150deg,#2a1210,#7a1d14_60%,#d42e1e)] p-5 text-white">
+          <Link href={f.promo.href} onClick={close} className="relative flex h-[236px] flex-col overflow-hidden rounded-[18px] bg-[linear-gradient(150deg,color-mix(in_srgb,var(--color-brand)_22%,#000),color-mix(in_srgb,var(--color-brand)_62%,#000)_60%,var(--color-brand))] p-5 text-white">
             {f.promo.eyebrow ? <span className="text-[11px] font-extrabold tracking-[.12em] text-[#ffb4a8]">{f.promo.eyebrow}</span> : null}
             <span className="relative z-10 mt-1.5 line-clamp-3 max-w-[85%] text-[20px] leading-tight font-extrabold">{f.promo.title}</span>
             {f.promo.image ? (
@@ -232,7 +232,7 @@ function BrandsPanel({ b, close }: { b: BrandsMenu; close: () => void }) {
       </div>
       <div className="hidden flex-col gap-3.5 border-l border-line p-5 xl:flex">
         {b.promo ? (
-          <Link href={b.promo.href} onClick={close} className="relative flex h-[236px] flex-col overflow-hidden rounded-[18px] bg-[linear-gradient(150deg,#2a1210,#7a1d14_60%,#d42e1e)] p-5 text-white">
+          <Link href={b.promo.href} onClick={close} className="relative flex h-[236px] flex-col overflow-hidden rounded-[18px] bg-[linear-gradient(150deg,color-mix(in_srgb,var(--color-brand)_22%,#000),color-mix(in_srgb,var(--color-brand)_62%,#000)_60%,var(--color-brand))] p-5 text-white">
             {b.promo.eyebrow ? <span className="text-[11px] font-extrabold tracking-[.12em] text-[#ffb4a8]">{b.promo.eyebrow}</span> : null}
             <span className="relative z-10 mt-1.5 line-clamp-3 max-w-[85%] text-[20px] leading-tight font-extrabold">{b.promo.title}</span>
             {b.promo.image ? (

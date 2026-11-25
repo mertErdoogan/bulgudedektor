@@ -25,7 +25,7 @@ export async function WizardBand({ title, subtitle }: { title?: string | null; s
   return (
     <section className="container-x mt-8 md:mt-12" data-testid="wizard-band">
       <div className="relative isolate overflow-hidden rounded-[24px] bg-[#141416] text-white md:rounded-[28px]">
-        <span aria-hidden className="absolute -top-32 -left-24 -z-10 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(212,46,30,.55),transparent_65%)] blur-2xl" />
+        <span aria-hidden className="absolute -top-32 -left-24 -z-10 h-80 w-80 rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--color-brand)_55%,transparent),transparent_65%)] blur-2xl" />
         <span aria-hidden className="absolute -right-24 -bottom-40 -z-10 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(47,86,200,.45),transparent_65%)] blur-2xl" />
         <span aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(rgba(255,255,255,.08)_1px,transparent_1px)] [mask-image:linear-gradient(90deg,transparent,#000_30%,#000_70%,transparent)] bg-[size:22px_22px]" />
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 p-5 md:gap-8 md:p-10 lg:grid-cols-[1fr_1.35fr] lg:items-center">
@@ -89,7 +89,7 @@ export async function ExpertBand({ title, wa, phone, hours }: { title?: string |
   const tiles = [
     { href: wa, ext: true, I: MessageCircle, t: tr("nav.writeWhatsapp"), d: tr("home.exWaD"), tone: "bg-[#e9f7ef] text-[#11643a]" },
     { href: tel, ext: false, I: Phone, t: phone || tr("home.exCall"), d: (tr.locale === "en" ? "" : hours.split(",")[0]) || tr("home.exCallD"), tone: "bg-[#eef2fd] text-[#1f3b8f]" },
-    { href: "/karsilastir", ext: false, I: GitCompare, t: tr("home.exCmp"), d: tr("home.exCmpD"), tone: "bg-[#fdf0ee] text-brand" },
+    { href: "/karsilastir", ext: false, I: GitCompare, t: tr("home.exCmp"), d: tr("home.exCmpD"), tone: "bg-tint text-brand" },
     { href: "/iletisim", ext: false, I: Store, t: tr("home.exVisit"), d: tr("home.exVisitD"), tone: "bg-[#f4f4f5] text-deep" },
   ];
   return (

@@ -207,7 +207,7 @@ export function BuyBox({ productId, name, max, disabled, amount, brand }: { prod
             setDone(true);
             setTimeout(() => setDone(false), 1400);
           }}
-          className={cn("flex h-14 flex-1 items-center justify-center gap-2 rounded-full text-[16px] font-extrabold text-white shadow-[0_12px_24px_-12px_rgba(212,46,30,.7)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none", done ? "bg-ok shadow-none" : "bg-brand hover:bg-brand-dark")}
+          className={cn("flex h-14 flex-1 items-center justify-center gap-2 rounded-full text-[16px] font-extrabold text-white shadow-[0_12px_24px_-12px_color-mix(in_srgb,var(--color-brand)_70%,transparent)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none", done ? "bg-ok shadow-none" : "bg-brand hover:bg-brand-dark")}
         >
           {disabled ? t("card.outOfStock") : done ? <span key="ok" className="pop-in flex items-center gap-1.5"><Check size={19} strokeWidth={3} /> {t("card.addedLong")}</span> : <><ShoppingCart size={19} /> {t("card.addToCart")}</>}
         </button>
@@ -238,7 +238,7 @@ export function StickyBuy({ productId, name, price, inst, disabled, amount, bran
         <b className="font-display text-lg">{price}</b>
         {inst ? <span className="text-[11.5px] text-mute">{inst}</span> : null}
       </span>
-      <button type="button" disabled={disabled} onClick={() => add(productId, 1, name, { price: amount, brand })} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-brand text-[15px] font-extrabold text-white shadow-[0_10px_22px_-12px_rgba(212,46,30,.7)] transition active:scale-[.98] disabled:opacity-50">
+      <button type="button" disabled={disabled} onClick={() => add(productId, 1, name, { price: amount, brand })} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-brand text-[15px] font-extrabold text-white shadow-[0_10px_22px_-12px_color-mix(in_srgb,var(--color-brand)_70%,transparent)] transition active:scale-[.98] disabled:opacity-50">
         {disabled ? t("card.outOfStock") : <><ShoppingCart size={18} /> {t("card.addToCart")}</>}
       </button>
     </div>

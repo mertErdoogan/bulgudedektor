@@ -126,7 +126,7 @@ const badgeTones = {
   warn: "bg-warn-bg text-warn",
   danger: "bg-danger-bg text-danger",
   dark: "bg-deep text-white",
-  gold: "bg-[#fff4f2] text-[#7a2a20]",
+  gold: "bg-tint text-on-pop",
 };
 export function Badge({ tone = "neutral", className, ...props }: React.HTMLAttributes<HTMLSpanElement> & { tone?: keyof typeof badgeTones }) {
   return <span className={cn("inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold whitespace-nowrap", badgeTones[tone], className)} {...props} />;

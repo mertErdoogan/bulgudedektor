@@ -19,6 +19,8 @@ export async function sendMail(to: string, subject: string, html: string, opts: 
     const [host, portStr] = i.smtpHost.split(":");
     const port = Number(portStr) || 465;
     const t = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user: i.smtpUser, pass: i.smtpPass } });
+    // Şablonlardaki buton rengi mağazanın ana rengine çevrilir (Ayarlar > Marka)
+    html = html.replaceAll("#d42e1e", s.brand.color);
     await t.sendMail({ from: i.smtpFrom || i.smtpUser, to, subject, html, headers: opts.headers, attachments: opts.attachments });
     return true;
   } catch (e) {

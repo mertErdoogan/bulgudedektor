@@ -32,7 +32,7 @@ export function middleware(req: NextRequest) {
     if (!ok)
       return new NextResponse("Ön izleme ortamı: giriş gerekli.", {
         status: 401,
-        headers: { "WWW-Authenticate": 'Basic realm="Derinova Dedektor on izleme", charset="UTF-8"', "X-Robots-Tag": "noindex, nofollow" },
+        headers: { "WWW-Authenticate": 'Basic realm="On izleme", charset="UTF-8"', "X-Robots-Tag": "noindex, nofollow" },
       });
   }
 

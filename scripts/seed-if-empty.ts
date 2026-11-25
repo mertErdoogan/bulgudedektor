@@ -11,7 +11,7 @@ import * as t from "../src/db/schema";
 import { ensureDemoGallery, removeTrialRental } from "./demo-gallery";
 
 /** Demo içeriğinin sürümü: artırılırsa ön izleme veritabanı bir sonraki açılışta demo veriyle baştan kurulur */
-const DEMO_VERSION = 6;
+const DEMO_VERSION = 7;
 
 /** Silmeden yükseltme adımları: anahtar = başlangıç sürümü */
 const UPGRADES: Record<number, () => Promise<void>> = {
@@ -100,6 +100,16 @@ const UPGRADES: Record<number, () => Promise<void>> = {
       await db.update(t.banners).set({ imageUrl: to, ...(mobile ? { mobileImageUrl: mobile, palette: (await paletteFromUrl(to)) ?? undefined } : {}) }).where(sql`${t.banners.imageUrl} = ${from}`);
       await db.update(t.categories).set({ imageUrl: to }).where(sql`${t.categories.imageUrl} = ${from}`);
       await db.execute(sql`update settings set value = replace(value::text, ${from}, ${to})::jsonb where value::text like ${"%" + from + "%"}`);
+    }
+  },
+  // 6 → 7: mağaza kimliği panelden yönetilir (beyaz etiket). Varsayılanlar artık boş; demo kimliği kayıtlı değere
+  // eksik alanlar olarak eklenir, panelden değiştirilmiş alanlara dokunulmaz.
+  6: async () => {
+    const { DEMO_BRAND, DEMO_SEO, DEMO_STORE } = await import("./lib/demo-store");
+    for (const [key, demo] of [["store", DEMO_STORE], ["seo", DEMO_SEO], ["brand", DEMO_BRAND]] as const) {
+      const [row] = await db.select().from(t.settings).where(sql`${t.settings.key} = ${key}`);
+      const value = { ...demo, ...((row?.value as object) ?? {}) };
+      await db.insert(t.settings).values({ key, value }).onConflictDoUpdate({ target: t.settings.key, set: { value } });
     }
   },
 };

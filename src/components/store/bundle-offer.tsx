@@ -38,7 +38,7 @@ function BundleCard({ o }: { o: Offer }) {
   const [done, setDone] = useState(false);
   return (
     <div className="overflow-hidden rounded-[28px] border border-line bg-white shadow-[0_1px_0_rgba(20,20,22,.03)]" data-testid="bundle-card">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-[linear-gradient(90deg,#fff4f2,#fff)] px-5 py-3 md:px-7">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-[linear-gradient(90deg,var(--color-tint),#fff)] px-5 py-3 md:px-7">
         <span className="flex items-center gap-2 text-[15px] font-extrabold">
           <span className="grid h-8 w-8 place-items-center rounded-full bg-brand text-white"><PackagePlus size={16} /></span>
           {o.name}

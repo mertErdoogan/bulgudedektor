@@ -42,6 +42,23 @@ export async function saveStore(_: ActionResult | null, fd: FormData): Promise<A
   });
 }
 
+/** Ayarlar > Marka: logo, ikon ve ana renk. Yüklenen dosyalar medya kütüphanesine gider; burada yalnızca adresleri tutulur. */
+export async function saveBrand(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return safe(async () => {
+    const staff = await assertStaff("settings.manage");
+    const url = (k: string) => {
+      const v = str(fd.get(k));
+      // Yalnızca kendi yüklemelerimiz ya da https adresleri (javascript:, data: vb. engellenir)
+      if (v && !/^(\/(?!\/)|https:\/\/)/.test(v)) throw new Error("Görsel adresi geçersiz.");
+      return v;
+    };
+    const color = str(fd.get("color")).toLowerCase();
+    if (!/^#[0-9a-f]{6}$/.test(color)) return fail("Ana renk #rrggbb biçiminde olmalı (örn. #d42e1e).");
+    await saveSettings("brand", { logoUrl: url("logoUrl"), logoWhiteUrl: url("logoWhiteUrl"), iconUrl: url("iconUrl"), color });
+    return fin(staff.id, "brand");
+  });
+}
+
 export async function saveShipping(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
     const staff = await assertStaff("settings.manage");

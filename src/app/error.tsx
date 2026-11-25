@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Logo } from "@/components/logo";
 
 /** Beklenmeyen hata sayfası (mağaza ve panel). Hata sunucuya zaten instrumentation.ts ile bildirilir. */
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -10,8 +11,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
   return (
     <main className="grid min-h-[70vh] place-items-center px-4 py-16 text-center">
       <div className="max-w-md">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/logo.svg" alt="Derinova Dedektör" className="mx-auto h-12" />
+        <div className="flex justify-center"><Logo size={28} /></div>
         <h1 className="font-display mt-8 text-3xl font-extrabold">Bir sorun oluştu</h1>
         <p className="mt-2 text-mute">Sayfayı yüklerken beklenmeyen bir hata oldu. Sepetin ve siparişlerin güvende; tekrar denemen yeterli.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">

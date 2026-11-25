@@ -11,7 +11,7 @@ export function CategoryTile({ c, className, sizes = "(min-width: 768px) 200px, 
   return (
     <Link
       href={`/kategori/${c.slug}`}
-      className={cn("group relative isolate flex flex-col overflow-hidden rounded-2xl bg-[radial-gradient(110%_80%_at_50%_30%,#ffffff_0%,#fdf0ee_60%,#fae3df_100%)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_34px_-18px_rgba(196,42,27,.45)]", className)}
+      className={cn("group relative isolate flex flex-col overflow-hidden rounded-2xl bg-[radial-gradient(110%_80%_at_50%_30%,#ffffff_0%,var(--color-tint)_60%,var(--color-pop)_100%)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_34px_-18px_rgba(196,42,27,.45)]", className)}
     >
       <span aria-hidden className="absolute -right-10 -bottom-12 -z-10 h-32 w-32 rounded-full bg-white/70 transition duration-500 group-hover:scale-125" />
       <span className="block h-[110px] px-3 pt-3 md:h-[160px]">

@@ -10,7 +10,7 @@ export function BrandCard({ b, className, thumbs, note }: { b: BrandGroup; class
   return (
     <div className={cn("group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition duration-300 hover:-translate-y-0.5 hover:border-[#f0c9c2] hover:shadow-[0_18px_34px_-20px_rgba(196,42,27,.4)]", className)}>
       <Link href={`/marka/${b.slug}`} className="relative isolate flex items-center gap-3 overflow-hidden bg-[radial-gradient(90%_120%_at_85%_50%,#ffffff_0%,#f6f6f6_60%)] p-4">
-        <span aria-hidden className="absolute -right-12 -bottom-16 -z-10 h-36 w-36 rounded-full bg-[#fdf0ee] transition duration-500 group-hover:scale-125" />
+        <span aria-hidden className="absolute -right-12 -bottom-16 -z-10 h-36 w-36 rounded-full bg-tint transition duration-500 group-hover:scale-125" />
         <span className="min-w-0 flex-1">
           {b.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -80,7 +80,7 @@ export function BrandShowcase({ focus, models, note, rest, full = false }: { foc
   return (
     <div className="grid gap-4 lg:grid-cols-[1.75fr_1fr]" data-testid="brand-showcase">
       <div className="relative isolate overflow-hidden rounded-[28px] bg-[#141416] p-5 text-white md:p-8">
-        <span aria-hidden className="absolute -top-28 -right-16 -z-10 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(212,46,30,.5),transparent_65%)] blur-2xl" />
+        <span aria-hidden className="absolute -top-28 -right-16 -z-10 h-80 w-80 rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--color-brand)_50%,transparent),transparent_65%)] blur-2xl" />
         <span aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(rgba(255,255,255,.07)_1px,transparent_1px)] [mask-image:linear-gradient(180deg,#000,transparent_70%)] bg-[size:22px_22px]" />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>

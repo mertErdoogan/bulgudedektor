@@ -10,7 +10,7 @@ import { requestReturn } from "@/app/(store)/hesabim/actions";
 export function ReturnForm({ orderId, groups, daysLeft }: { orderId: string; groups: UnitGroup[]; daysLeft: number }) {
   const free = groups.flatMap((g) => g.units.filter((u) => !u.taken));
   return (
-    <ActionForm action={requestReturn} className="flex flex-col gap-4 rounded-3xl border-2 border-brand bg-white p-5 shadow-[0_10px_40px_-20px_rgba(212,46,30,.45)] sm:p-6" data-testid="return-form">
+    <ActionForm action={requestReturn} className="flex flex-col gap-4 rounded-3xl border-2 border-brand bg-white p-5 shadow-[0_10px_40px_-20px_color-mix(in_srgb,var(--color-brand)_45%,transparent)] sm:p-6" data-testid="return-form">
       <input type="hidden" name="orderId" value={orderId} />
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-tint text-brand"><PackageOpen size={20} /></span>

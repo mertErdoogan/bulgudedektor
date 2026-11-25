@@ -1,3 +1,4 @@
+import { getSettings } from "@/lib/settings";
 import Link from "@/components/locale-link";
 import { Breadcrumbs } from "@/components/seo/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -31,7 +32,7 @@ export default async function BlogIndex({ searchParams }: { searchParams: Promis
         data={graph({
           "@type": "Blog",
           "@id": `${abs("/blog")}#blog`,
-          name: "Derinova Dedektör Rehberleri",
+          name: `${(await getSettings()).store.name} Rehberleri`,
           url: abs("/blog"),
           inLanguage: "tr-TR",
           publisher: { "@id": ORG_ID() },

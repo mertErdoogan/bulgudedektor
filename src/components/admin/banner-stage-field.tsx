@@ -68,7 +68,7 @@ export function BannerStageField({ defaultColor, autoColor }: { defaultColor?: s
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imgUrl(src, 640)} alt="" className="block aspect-[1520/580] w-full object-cover" />
           <div className="flex h-9 items-center gap-3 px-3 text-xs font-bold" style={{ background: color, color: dark ? "#fff" : "#1d1d1f" }}>
-            <span className="h-[3px] w-10 rounded" style={{ background: dark ? "#fff" : "#d42e1e" }} /> Sekme şeridi önizlemesi
+            <span className="h-[3px] w-10 rounded" style={{ background: dark ? "#fff" : "var(--color-brand)" }} /> Sekme şeridi önizlemesi
           </div>
         </div>
       ) : null}

@@ -95,7 +95,7 @@ const EN: typeof TR = {
 };
 
 const TILES = [
-  { href: "/sihirbaz", icon: Wand2, k: "t1", tone: "from-[#fde8e5] to-[#fff5f3] text-[#a3200f]", ring: "bg-[#d42e1e]" },
+  { href: "/sihirbaz", icon: Wand2, k: "t1", tone: "from-pop to-tint text-on-pop", ring: "bg-brand" },
   { href: "/seri-no", icon: Hash, k: "t2", tone: "from-[#e6efff] to-[#f4f8ff] text-[#1d4ed8]", ring: "bg-[#2563eb]" },
   { href: "/servis", icon: Wrench, k: "t3", tone: "from-[#e3f6ef] to-[#f2fbf7] text-[#0f766e]", ring: "bg-[#0f9f86]" },
   { href: "/siparis-takip", icon: PackageSearch, k: "t4", tone: "from-[#fdf3e2] to-[#fffaf0] text-[#9a5b06]", ring: "bg-[#e08a00]" },
@@ -115,7 +115,7 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
   const brandList = brandRows;
   const years = st.foundingYear && /^\d{4}$/.test(st.foundingYear) ? new Date().getFullYear() - Number(st.foundingYear) : 0;
   const stats = [
-    years > 0 ? { v: `${years}+`, l: L.sYears, c: "text-[#d42e1e]" } : null,
+    years > 0 ? { v: `${years}+`, l: L.sYears, c: "text-brand" } : null,
     { v: String(brandList.length), l: L.sBrands, c: "text-[#2563eb]" },
     { v: String(productCount), l: L.sProducts, c: "text-[#0f9f86]" },
     { v: "81", l: L.sCities, c: "text-[#e08a00]" },
@@ -161,7 +161,7 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
             })}
           </ul>
           <div className="mt-7 flex flex-wrap gap-3">
-            <a href="#showroom" className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-bold text-white shadow-[0_10px_30px_-10px_rgba(212,46,30,.9)] transition hover:bg-brand-dark">
+            <a href="#showroom" className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-bold text-white shadow-[0_10px_30px_-10px_color-mix(in_srgb,var(--color-brand)_90%,transparent)] transition hover:bg-brand-dark">
               <MapPin className="h-4 w-4" /> {L.visit}
             </a>
             {wa ? (
@@ -281,7 +281,7 @@ export async function AboutPage({ title, html, settings, locale }: { title: stri
 
       {/* SİHİRBAZ ÇAĞRISI */}
       <section className="container-x py-12 md:py-16">
-        <div className="relative isolate flex flex-col items-start gap-4 overflow-hidden rounded-[26px] bg-gradient-to-br from-[#d42e1e] to-[#8f1b10] p-7 text-white md:flex-row md:items-center md:p-10">
+        <div className="relative isolate flex flex-col items-start gap-4 overflow-hidden rounded-[26px] bg-gradient-to-br from-brand to-brand-dark p-7 text-white md:flex-row md:items-center md:p-10">
           <span aria-hidden className="radar-sweep pointer-events-none absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full opacity-60" />
           <div className="flex-1">
             <h2 className="font-display text-2xl font-extrabold md:text-3xl">{L.wizTitle}</h2>

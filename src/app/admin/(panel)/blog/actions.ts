@@ -1,5 +1,6 @@
 "use server";
 
+import { getSettings } from "@/lib/settings";
 import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
@@ -51,7 +52,7 @@ export async function savePost(_: ActionResult | null, fd: FormData): Promise<Ac
       content,
       coverImage: strOrNull(fd.get("coverImage")),
       tags: str(fd.get("tags")).split(",").map((t) => t.trim()).filter(Boolean),
-      authorName: str(fd.get("authorName")) || "Derinova Uzman Ekibi",
+      authorName: str(fd.get("authorName")) || `${(await getSettings()).store.name} Ekibi`,
       authorTitle: strOrNull(fd.get("authorTitle")),
       authorBio: strOrNull(fd.get("authorBio")),
       status: status as "DRAFT" | "PUBLISHED",

@@ -153,7 +153,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       {/* ── 1. Durum özeti ── */}
       <section className="relative overflow-hidden rounded-[28px] bg-deep p-6 text-white sm:p-8" data-testid="order-hero" data-status={o.status}>
         <span aria-hidden className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full bg-brand/45 blur-3xl" />
-        <span aria-hidden className="pointer-events-none absolute -bottom-28 -left-10 h-56 w-56 rounded-full bg-[#f0704f]/25 blur-3xl" />
+        <span aria-hidden className="pointer-events-none absolute -bottom-28 -left-10 h-56 w-56 rounded-full bg-brand/25 blur-3xl" />
         <div className="relative">
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-white/70">
             <span className="rounded-full bg-white/10 px-2.5 py-1 tracking-wide">SİPARİŞ {orderNo(o.number)}</span>
@@ -282,7 +282,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       ) : null}
 
       {o.paymentMethod === "TRANSFER" && o.paymentStatus === "PENDING" ? (
-        <div id="havale" className="mt-5 scroll-mt-24 rounded-3xl border border-accent/30 bg-[#fff4f2] p-5 text-sm">
+        <div id="havale" className="mt-5 scroll-mt-24 rounded-3xl border border-accent/30 bg-tint p-5 text-sm">
           <b className="text-base">Havale / EFT bilgileri</b>
           <p className="mt-1">Açıklamaya <b>{orderNo(o.number)}</b> yazarak <b>{formatTL(o.total)}</b> gönder. Ödeme hesabımıza geçince siparişin hazırlanır.</p>
           <ul className="mt-2 flex flex-col gap-1">{s.payment.bankAccounts.map((b) => <li key={b.iban} className="flex flex-wrap items-center gap-2"><b>{b.bank}</b> · {b.holder} · <span className="font-mono select-all">{b.iban}</span><CopyText value={b.iban.replace(/\s/g, "")} label="IBAN" className="bg-white text-deep hover:bg-soft" /></li>)}</ul>

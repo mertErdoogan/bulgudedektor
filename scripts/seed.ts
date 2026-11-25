@@ -2,6 +2,7 @@
 import { paletteFromUrl } from "../src/lib/palette-core";
 import "dotenv/config";
 import { DEMO_IMAGES, ensureDemoGallery } from "./demo-gallery";
+import { DEMO_BRAND, DEMO_SEO, DEMO_STORE } from "./lib/demo-store";
 import bcrypt from "bcryptjs";
 import { sql } from "drizzle-orm";
 import { db } from "../src/db";
@@ -286,11 +287,13 @@ async function main() {
   await db.insert(t.returnRequests).values({ orderId: (await db.select().from(t.orders).limit(1))[0].id, customerId: cust[0].id, reason: "Beklentimi karşılamadı" });
 
   await db.insert(t.settings).values([
-    // Gerçek şirket bilgileri DEFAULT_SETTINGS'te (src/lib/settings.ts); burada yalnızca demo farkları
-    { key: "store", value: { name: "Derinova Dedektör" } },
+    // Demo mağaza kimliği (uydurma). Gerçek kurulumda mağaza sahibi panelden girer.
+    { key: "store", value: DEMO_STORE },
+    { key: "seo", value: DEMO_SEO },
+    { key: "brand", value: DEMO_BRAND },
     { key: "setup", value: { completed: false, completedSteps: ["store"] } },
     // seed-if-empty.ts DEMO_VERSION ile aynı olmalı
-    { key: "demo", value: { version: 6 } },
+    { key: "demo", value: { version: 7 } },
     // Demo mağaza İngilizce sürümü açık gelir (yurt dışı satış denemesi için)
     { key: "i18n", value: { locales: ["tr", "en"], switcher: true } },
   ]);

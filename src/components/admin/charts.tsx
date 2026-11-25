@@ -13,8 +13,8 @@ export function SalesChart({ data, money = true }: { data: { label: string; valu
         <AreaChart data={data} margin={{ left: 0, right: 8, top: 8 }}>
           <defs>
             <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#d42e1e" stopOpacity={0.25} />
-              <stop offset="100%" stopColor="#d42e1e" stopOpacity={0} />
+              <stop offset="0%" stopColor="var(--color-brand)" stopOpacity={0.25} />
+              <stop offset="100%" stopColor="var(--color-brand)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#f0f0f0" vertical={false} />
@@ -25,7 +25,7 @@ export function SalesChart({ data, money = true }: { data: { label: string; valu
             labelStyle={{ fontWeight: 700 }}
             contentStyle={{ borderRadius: 10, border: "1px solid #e4e6e8", fontSize: 13 }}
           />
-          <Area type="monotone" dataKey={money ? "value" : "orders"} stroke="#d42e1e" strokeWidth={2} fill="url(#g)" isAnimationActive={false} />
+          <Area type="monotone" dataKey={money ? "value" : "orders"} stroke="var(--color-brand)" strokeWidth={2} fill="url(#g)" isAnimationActive={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -41,7 +41,7 @@ export function BarList({ data, money = true }: { data: { label: string; value: 
           <XAxis type="number" tick={{ fontSize: 11, fill: "#646e78" }} tickFormatter={money ? fmt : undefined} axisLine={false} tickLine={false} />
           <YAxis type="category" dataKey="label" width={130} tick={{ fontSize: 12, fill: "#1d1d1f" }} axisLine={false} tickLine={false} />
           <Tooltip formatter={(v) => [money ? tl(Number(v)) : Number(v), money ? "Ciro" : "Adet"]} contentStyle={{ borderRadius: 10, border: "1px solid #e4e6e8", fontSize: 13 }} />
-          <Bar dataKey="value" fill="#d42e1e" radius={[0, 6, 6, 0]} barSize={16} isAnimationActive={false} />
+          <Bar dataKey="value" fill="var(--color-brand)" radius={[0, 6, 6, 0]} barSize={16} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
     </div>

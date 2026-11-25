@@ -120,4 +120,4 @@ export async function HomeReviews({ googleReviewUrl }: { googleReviewUrl?: strin
   );
 }
 
-const AVATAR = ["bg-[#d42e1e]", "bg-[#1f3b8f]", "bg-[#11643a]", "bg-[#7a4a14]", "bg-[#3a3a40]"];
+const AVATAR = ["bg-brand", "bg-[#1f3b8f]", "bg-[#11643a]", "bg-[#7a4a14]", "bg-[#3a3a40]"];
