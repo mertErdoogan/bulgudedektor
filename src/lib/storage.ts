@@ -3,6 +3,7 @@ export { putObject } from "./storage-core";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { sniffOk } from "./upload-check";
 
 /**
  * Dosya depolama.
@@ -66,7 +67,10 @@ async function optimize(buf: Buffer, mime: string): Promise<{ buf: Buffer; mime:
 export async function saveUpload(file: File, opts: { private?: boolean } = {}) {
   if (!ALLOWED[file.type]) throw new Error("Desteklenmeyen dosya türü. JPG, PNG, WEBP, AVIF, GIF, SVG veya PDF yükleyin.");
   if (file.size > MAX_UPLOAD_BYTES) throw new Error("Dosya 8 MB'tan büyük olamaz.");
-  const o = await optimize(Buffer.from(await file.arrayBuffer()), file.type);
+  const raw = Buffer.from(await file.arrayBuffer());
+  if (!sniffOk(raw, file.type))
+    throw new Error(file.type === "image/svg+xml" ? "SVG dosyası betik veya dış bağlantı içeremez. Logoyu sade SVG ya da PNG olarak yükleyin." : "Dosyanın içeriği uzantısıyla uyuşmuyor.");
+  const o = await optimize(raw, file.type);
   const now = new Date();
   const dir = `${opts.private ? "private/" : ""}${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}`;
   const name = `${opts.private ? randomUUID() : randomUUID().slice(0, 12)}.${o.ext}`;

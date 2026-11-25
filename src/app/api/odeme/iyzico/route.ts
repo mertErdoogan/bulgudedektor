@@ -19,10 +19,8 @@ export async function POST(req: Request) {
   const order = await db.query.orders.findFirst({ where: eq(orders.id, orderId) });
   if (!order) return NextResponse.redirect(`${base}/sepet?odeme=hata`, 303);
   if (order.paymentStatus === "PAID") return back(order.id, "&yeni=1");
-  if (order.paymentToken && order.paymentToken !== token) {
-    await failOrderPayment(order.id, "Token uyuşmazlığı");
-    return back(order.id, "&odeme=hata");
-  }
+  // Başkasına ait token ile gelen istek siparişi değiştirmez (yalnızca geri yönlendirilir)
+  if (order.paymentToken && order.paymentToken !== token) return back(order.id, "&odeme=hata");
   try {
     const r = await retrieveCheckoutForm(token);
     const paid = Number(r.paidPrice ?? 0);

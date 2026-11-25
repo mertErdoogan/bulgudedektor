@@ -9,7 +9,7 @@ import { quoteCart, type CartInput, type Quote } from "@/lib/pricing";
 import { getLocale } from "@/lib/i18n/server";
 import { localize } from "@/lib/i18n/content";
 import { normalizePhone, str, strOrNull } from "@/lib/utils";
-import { allow, verifyHuman } from "@/lib/guard";
+import { allow, allowIp, verifyHuman } from "@/lib/guard";
 
 const rateLimit = (key: string, max = 5, windowMs = 10 * 60 * 1000) => allow(key, max, windowMs);
 
@@ -104,8 +104,9 @@ export async function writeReview(_: ActionResult | null, fd: FormData): Promise
 
 export async function stockAlert(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
-    const contact = str(fd.get("contact"));
+    const contact = str(fd.get("contact")).slice(0, 120);
     if (contact.length < 6) return fail("E-posta veya telefon girin.");
+    if (!(await allowIp("stock-alert", 10, 60 * 60 * 1000))) return fail("Çok fazla deneme. Biraz sonra tekrar dene.");
     await db.insert(stockAlerts).values({ productId: str(fd.get("productId")), contact });
     return ok("Stoğa girince sana haber vereceğiz.");
   });
@@ -134,8 +135,9 @@ export async function contactForm(_: ActionResult | null, fd: FormData): Promise
 
 export async function subscribe(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
   return safe(async () => {
-    const email = str(fd.get("email")).toLowerCase();
+    const email = str(fd.get("email")).toLowerCase().slice(0, 160);
     if (!/^\S+@\S+\.\S+$/.test(email)) return fail("Geçerli bir e-posta girin.");
+    if (!(await allowIp("subscribe", 5, 60 * 60 * 1000))) return fail("Çok fazla deneme. Biraz sonra tekrar dene.");
     await db.insert(newsletterSubscribers).values({ email }).onConflictDoUpdate({ target: newsletterSubscribers.email, set: { isActive: true } });
     return ok("Kaydın alındı.");
   });

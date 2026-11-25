@@ -431,6 +431,7 @@ export async function inStockSerials(productId: string) {
 }
 
 export async function getCarriers() {
+  await assertStaff("orders.view");
   return (await getSettings()).shipping.carriers;
 }
 

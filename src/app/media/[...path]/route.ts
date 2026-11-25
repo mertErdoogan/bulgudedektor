@@ -20,7 +20,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ path: stri
       headers: {
         "Content-Type": TYPES[ext] ?? "application/octet-stream",
         "Cache-Control": priv ? "private, no-store" : "public, max-age=31536000, immutable",
-        ...(ext === "svg" ? { "Content-Security-Policy": "script-src 'none'" } : {}),
+        "X-Content-Type-Options": "nosniff",
+        ...(ext === "svg" ? { "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox" } : {}),
       },
     });
   } catch {
